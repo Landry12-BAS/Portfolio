@@ -1,0 +1,73 @@
+# CLAUDE.md
+
+Guidance for Claude Code sessions working in this repository.
+
+## Project
+
+A live AI portfolio: ten AI systems (LS-01 to LS-10) built for one fictional company,
+Basalt & Bean Coffee Co., on a shared platform (LS-00). Every system runs live on the
+main site and any visitor can try it, inspect its trace, and try to break it.
+
+- Stack and the reasons behind it: [`docs/STACK.md`](docs/STACK.md)
+- How each system is built and shipped: [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md)
+- Visual proposal (private to the owner): https://claude.ai/artifact/GJi1aeCdsYB6UDwDuD6WgC
+
+Status: planning. Nothing is scaffolded yet. Add the real commands to the Commands
+section in the same change that scaffolds them.
+
+## Git rules (owner's instruction, mandatory)
+
+- Every commit is authored and committed as
+  `Tchiwa-Kibolou BODJONA <78790172+Landry12-BAS@users.noreply.github.com>`.
+- Never commit as `Claude <noreply@anthropic.com>`, and never add a `Co-Authored-By`
+  trailer that carries an Anthropic address.
+- Use the GitHub noreply address, never a personal email: the owner keeps email
+  privacy on, and GitHub can reject pushes that expose a private address.
+- Cloud sessions start with the environment's identity and its commit-signing key.
+  Before the first commit in a new environment, run:
+
+  ```sh
+  git config user.name  "Tchiwa-Kibolou BODJONA"
+  git config user.email "78790172+Landry12-BAS@users.noreply.github.com"
+  git config commit.gpgsign false   # the environment key is not on the owner's account,
+                                    # so signed commits would show as "Unverified"
+  git var GIT_AUTHOR_IDENT && git var GIT_COMMITTER_IDENT   # verify both lines
+  ```
+
+## Architecture rules
+
+- Every model call goes through the AI gateway (`services/gateway`) using a virtual
+  model alias such as `ls-fast` or `ls-tools`. Services never call a provider directly
+  and never hold provider keys.
+- Treat model output as untrusted input: validate structured output against its
+  schema (Zod or Pydantic) and repair or reject, never pass it through unchecked.
+- Free-tier limits are design inputs. A feature that adds model calls must state its
+  calls per run and fit the budgets in `services/gateway/routing.yaml`.
+- Demos open on curated samples whose results are cached. Custom input is the only
+  path that spends provider quota.
+- Synthetic data only. Visitor uploads expire through storage lifecycle rules.
+- One database, one schema per system. Each runtime owns its migrations: Django
+  migrations, Alembic for Flask, Drizzle for Node. Never write across schemas.
+
+## Code conventions
+
+- TypeScript: strict mode, Biome for lint and format, Zod at every boundary.
+- Python: 3.13, uv, Ruff for lint and format, mypy (with django-stubs), Pydantic v2.
+- Comments explain why, not what. No placeholders or pseudo-code in committed code.
+- Every change ships with tests at the right level: unit, integration
+  (Testcontainers), or end to end (Playwright). Prompt changes pass the eval gate.
+
+## Design rules
+
+- Light theme only. The look follows electronic component datasheets: part numbers,
+  spec tables, numbered figures, revision history.
+- Colors and type come from the tokens in `packages/ui`: Archivo (display and text)
+  and Martian Mono (data). No hard-coded colors, no emoji icons, no gradients.
+- The green evaluation board marks live demos and nothing else.
+- WCAG 2.2 AA, full keyboard use, `prefers-reduced-motion` respected.
+
+## Commands
+
+Not scaffolded yet. The planned single entry point is a root `justfile`
+(`just dev`, `just test`, `just lint`, `just seed`). Document each command here when it
+exists.
