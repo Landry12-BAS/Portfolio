@@ -24,6 +24,7 @@ Workers AI and OpenRouter behind one gateway, with NVIDIA NIM for private experi
 
 - [Stack decision](docs/STACK.md)
 - [Build playbook](docs/PLAYBOOK.md)
+- [Security design](docs/SECURITY.md): no accounts, no login, zero inbound ports
 - [The LB mark](brand/README.md)
 
 Status: planning. Build starts with the shared platform (LB-00) and LB-01.

@@ -66,6 +66,7 @@ A system is done when all of these are true:
 - [ ] Golden set and a CI eval gate that blocks regressions
 - [ ] Unit, integration and at least one end-to-end test, all green in CI
 - [ ] Threat model notes and operating limits enforced by the gateway
+- [ ] Security gate green: headers, CodeQL and Semgrep, secret scan, ZAP baseline
 - [ ] Replay recordings for every sample
 - [ ] Accessibility check (axe) and performance budget passing
 

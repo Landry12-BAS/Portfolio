@@ -54,6 +54,18 @@ section in the same change that scaffolds them.
 - One database, one schema per system. Each runtime owns its migrations: Django
   migrations, Alembic for Flask, Drizzle for Node. Never write across schemas.
 
+## Security rules
+
+- No accounts: never add sign-up, login or logout for visitors. Visitors stay
+  anonymous; protection comes from Turnstile, signed sessions and quotas.
+- The server opens no inbound ports (Cloudflare Tunnel). Owner tools and SSH are
+  reachable only over Tailscale, never on a public hostname.
+- Every response carries the headers in `docs/SECURITY.md`: nonce-based CSP with
+  Trusted Types, no framing. Never use `dangerouslySetInnerHTML`, and never execute
+  model output.
+- Secrets live in SOPS-encrypted files or deploy secrets, never in code, logs or
+  prompts.
+
 ## Code conventions
 
 - TypeScript: strict mode, Biome for lint and format, Zod at every boundary.

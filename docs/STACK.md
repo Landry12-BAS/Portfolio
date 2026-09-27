@@ -35,8 +35,9 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Cache and queues | Redis 8 on the box | Celery, Channels and BullMQ poll constantly, which would exhaust a command-metered free tier |
 | Files | Cloudflare R2 with lifecycle rules | Visitor uploads expire by storage policy, not by a cron job; replay recordings live here too |
 | Analytics data | DuckDB over Parquet (LB-05) | Millions of synthetic orders queried in-process, read-only, with no database load |
-| Hosting | Vercel Hobby (front end) · one ARM64 box with Docker Compose behind Caddy and Cloudflare | Always on, no cold starts, identical in development and production |
-| Edge | Cloudflare DNS, proxy, WAF, Turnstile | Hides the origin, stops bots before they spend quota |
+| Hosting | Vercel Hobby (front end) · one ARM64 box with Docker Compose, reachable only through a Cloudflare Tunnel | Always on, no cold starts, zero inbound ports, identical in development and production |
+| Edge | Cloudflare DNS, WAF, Turnstile, Tunnel | Hides the origin and stops bots before they spend quota |
+| Security | No accounts · zero inbound ports · least privilege · signed images | Every layer is in [`SECURITY.md`](SECURITY.md) |
 | Observability | Run spans in Postgres (Scope and measured datasheet numbers) · Sentry · uptime monitor | Product telemetry and ops telemetry kept separate |
 | Tooling | pnpm + Turborepo · uv · mise · just · Biome · Ruff · mypy · lefthook | Fast, polyglot, one command surface |
 | CI/CD | GitHub Actions → GHCR → SSH deploy · Vercel previews | Free on a public repo; every PR gets a preview and the full gate |
@@ -166,9 +167,10 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 - **Next.js App Router, React 19, TypeScript strict.** Datasheet pages render on the
   server from MDX (Content Collections gives typed frontmatter for part numbers and
   specs). Live demos are client islands.
-- **Backend-for-frontend.** The Next.js server issues the visitor session (signed,
-  anonymous cookie), verifies Turnstile, and mints short-lived JWTs (`jose`) for
-  direct SSE and WebSocket connections to the box. Vercel functions don't hold
+- **Backend-for-frontend.** There are no accounts: no sign-up, login or logout. The
+  Next.js server issues an anonymous visitor session (signed cookie), verifies
+  Turnstile, and mints short-lived JWTs (`jose`) for direct SSE and WebSocket
+  connections to the box. Vercel functions don't hold
   WebSockets, so live streams go straight to the API domain.
 - **Streaming.** One SSE stream per run multiplexes tokens, spans and the final
   result, which is what the Scope panel draws. LB-02 and LB-06 use WebSockets.
@@ -251,17 +253,20 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 - **Front end:** Vercel Hobby. The portfolio is personal and non-commercial, which
   the Hobby plan allows. Every pull request gets a preview.
-- **The box:** one ARM64 VM running Docker Compose: Caddy, the gateway, the three
-  system apps, their workers, the staging shop, Postgres and Redis.
+- **The box:** one ARM64 VM running Docker Compose: `cloudflared`, Caddy, the gateway,
+  the three system apps, their workers, the staging shop, Postgres and Redis.
   - Recommended: Hetzner CAX21 (4 vCPU, 8 GB RAM, about €7 a month). Predictable
     and never reclaimed.
   - Zero-cost option: Oracle Cloud Always Free (Ampere A1, 4 OCPU, 24 GB RAM). Upgrade
     the account to pay-as-you-go (still $0) so idle instances are not reclaimed.
-- **Edge:** Cloudflare proxies the API domain (the box only accepts Cloudflare IPs),
-  adds WAF rules and DDoS protection, and serves Turnstile.
-- **Deploys:** GitHub Actions builds multi-arch images, pushes them to GHCR, and
-  deploys over SSH with `docker compose pull && docker compose up -d` and health
-  checks. Rollback means redeploying the previous image tag.
+- **Edge:** the box runs `cloudflared` and opens no inbound ports. Cloudflare adds WAF
+  rules, DDoS protection and Turnstile. SSH and owner tools are reachable only over
+  Tailscale.
+- **Deploys:** GitHub Actions builds multi-arch images, signs them, pushes them to
+  GHCR, joins the Tailscale network with an ephemeral key, and deploys over SSH. The
+  box verifies each image's signature, then runs
+  `docker compose pull && docker compose up -d` with health checks. Rollback means
+  redeploying the previous image tag.
 
 ## Observability
 
@@ -276,22 +281,25 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 ## Security
 
-- **Secrets:** provider keys exist only in the gateway container. Services
-  authenticate to the gateway with per-service tokens. Keys come from GitHub
-  environment secrets at deploy time and are never committed.
-- **Visitors:** anonymous sessions, Turnstile before the first run, short-lived JWTs,
-  per-visitor quotas in the gateway, rate limits at Cloudflare and Caddy.
-- **Untrusted content:** tickets, uploads and web pages stay out of instruction
-  slots. Tools with side effects need human approval. Free-text input passes a
-  moderation model first.
-- **Sandboxes:** read-only SQL with a parse-tree allowlist (LB-05), a browser that can
-  only reach the staging shop (LB-07), mock connectors for every side effect (LB-08).
-- **Supply chain:** Renovate, CodeQL, gitleaks (pre-commit and CI), Trivy image scans,
-  GitHub Actions pinned by commit SHA.
-- **Data:** synthetic only. Visitor content only reaches providers that don't train
-  on inputs. Upload screens still warn visitors not to send personal data.
-- **Terms:** each provider's terms are reviewed weekly with its limits. NVIDIA's trial
-  terms forbid production use, so NVIDIA stays out of every visitor-facing route.
+No accounts, zero inbound ports, least privilege everywhere, and a model that is never
+trusted. The full design, layer by layer, is in [`SECURITY.md`](SECURITY.md). In
+short:
+
+- **Visitors:** anonymous signed sessions, invisible Turnstile, short-lived scoped
+  tokens, and rate limits at the edge, per session and per provider.
+- **Server:** reachable only through a Cloudflare Tunnel; owner tools and SSH only
+  over Tailscale; segmented networks and allowlisted egress; provider keys only in
+  the gateway.
+- **Application:** nonce-based CSP with Trusted Types, strict headers, CSRF checks and
+  sandboxed upload parsing.
+- **AI:** controls mapped to the OWASP Top 10 for LLM applications, sandboxes for SQL
+  (LB-05), the browser (LB-07) and side effects (LB-08), and a red-team golden set in
+  Eval Lab.
+- **Supply chain:** SBOMs, signed images verified before they run, and code, secret,
+  dependency and DAST scans on every pull request.
+- **Data and terms:** synthetic only. Visitor content only reaches providers that
+  don't train on inputs, and NVIDIA stays out of every visitor-facing route because
+  its trial terms forbid production use.
 
 ## Tooling and CI
 
@@ -331,10 +339,10 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 |---|---|
 | AI providers (free tiers) | $0 |
 | Vercel Hobby | $0 |
-| Cloudflare DNS, WAF, Turnstile, R2 (up to 10 GB) | $0 |
+| Cloudflare DNS, WAF, Turnstile, Tunnel, R2 (up to 10 GB) | $0 |
 | The box: Hetzner CAX21, or Oracle Always Free | about €7/month, or $0 |
 | Domain | about $10–15/year |
-| Sentry, uptime monitor, GitHub Actions (public repo) | $0 |
+| Sentry, uptime monitor, Tailscale, GitHub Actions (public repo) | $0 |
 | Optional, recommended: OpenRouter one-time credit | $10 once |
 
 ## Alternatives considered
