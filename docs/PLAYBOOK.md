@@ -68,7 +68,8 @@ A system is done when all of these are true:
 - [ ] Threat model notes and operating limits enforced by the gateway
 - [ ] Security gate green: headers, CodeQL and Semgrep, secret scan, ZAP baseline
 - [ ] Replay recordings for every sample
-- [ ] Accessibility check (axe) and performance budget passing
+- [ ] Accessibility check (axe) and performance budget passing, in the light and the
+      dark theme
 
 ## Workflow
 

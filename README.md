@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="brand/lb-mark.svg">
-  <img src="brand/lb-mark-graphite.svg" alt="LB" width="96" height="76">
+  <source media="(prefers-color-scheme: dark)" srcset="brand/lb-mark-dark.svg">
+  <img src="brand/lb-mark-light.svg" alt="LB" width="96" height="77">
 </picture>
 
 # Landry Bodjona · Portfolio
@@ -22,8 +22,9 @@ system runs on the site, open to any visitor, with a trace of every step it take
 | LB-09 | Meeting Recorder: action items linked to the moment they were said | Django |
 | LB-10 | Eval Lab: every prompt change gets a score | Flask (async) |
 
-Front end: Next.js, React and TypeScript (TSX). AI: free tiers from Groq, Cloudflare
-Workers AI and OpenRouter behind one gateway, with NVIDIA NIM for private experiments.
+Front end: Nuxt (Vue 3) with Pinia, in TypeScript, with light and dark themes. AI: free
+tiers from Groq, Cloudflare Workers AI and OpenRouter behind one gateway, with NVIDIA
+NIM for private experiments.
 
 - [Stack decision](docs/STACK.md)
 - [Build playbook](docs/PLAYBOOK.md)

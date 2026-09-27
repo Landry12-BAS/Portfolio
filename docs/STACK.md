@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev B · 27 Sep 2026 · Owner: Landry
+Status: accepted · Rev C · 27 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -14,18 +14,19 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 2. **Public visitors.** Anyone can run a demo, so there can be no cold starts, no
    broken demos, and no way for one visitor or bot to drain the shared quota.
 3. **Near-zero budget.** Pay only for what free tiers do badly: always-on compute.
-4. **Show range.** Django, Flask (sync and async), Node + TypeScript and React + TSX,
-   each used where it is the natural fit.
+4. **Show range.** Django, Flask (sync and async), Node + TypeScript and Nuxt (Vue 3)
+   with Pinia, each used where it is the natural fit.
 5. **One developer.** Every moving part has to earn its place.
 
 ## Summary
 
 | Layer | Choice | Why |
 |---|---|---|
-| Front end | Next.js (App Router) · React 19 · TypeScript strict (TSX) | Server components for fast datasheet pages, client islands for live demos, best-in-class hosting on Vercel |
-| Styling | Tailwind CSS v4 with CSS-variable tokens | Tokens are the single source of the datasheet palette and type; utilities keep components consistent |
-| Components | React Aria Components, wrapped in `packages/ui` | Best-in-class accessibility with no visual opinions, so the site never looks like a template |
-| Motion and data viz | Motion · visx · Vega-Lite (LB-05) · React Flow (LB-08) · react-pdf (LB-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
+| Front end | Nuxt 4 · Vue 3.5 · Pinia · TypeScript strict in single-file components (no TSX) | The owner's choice. Hybrid rendering (prerendered datasheets, server-rendered demos), Nitro server routes for the no-accounts backend, Pinia stores for live runs |
+| Styling | Tailwind CSS v4 with CSS-variable tokens, light and dark | Tokens are the single source of the datasheet palette and type, with a light and a dark value each |
+| Components | Reka UI, wrapped in `packages/ui` | Accessible headless primitives for Vue with no visual opinions, so the site never looks like a template |
+| Icons | `@lb/icons`, drawn in the logo's pattern | One SVG sprite and a Vue `<LbIcon>` component; no emoji, no third-party icon sets |
+| Motion and data viz | Motion for Vue · Unovis · Vega-Lite (LB-05) · Vue Flow (LB-08) · pdf.js (LB-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
 | AI gateway | TypeScript · Fastify 5 · OpenAI-compatible API | One door for every model call: routing, fallback, token-aware budgets, data-class rules, cache, spans. Streaming proxies are I/O-bound, which suits Node |
 | Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LB-01, LB-02, LB-09. Rich relational domains, admin, WebSockets and background jobs |
 | Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LB-03, LB-05, LB-10. Sync where work is CPU-bound, async views where one request fans out |
@@ -39,14 +40,14 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Edge | Cloudflare DNS, WAF, Turnstile, Tunnel | Hides the origin and stops bots before they spend quota |
 | Security | No accounts · zero inbound ports · least privilege · signed images | Every layer is in [`SECURITY.md`](SECURITY.md) |
 | Observability | Run spans in Postgres (Scope and measured datasheet numbers) · Sentry · uptime monitor | Product telemetry and ops telemetry kept separate |
-| Tooling | pnpm + Turborepo · uv · mise · just · Biome · Ruff · mypy · lefthook | Fast, polyglot, one command surface |
+| Tooling | pnpm + Turborepo · uv · mise · just · ESLint · vue-tsc · Ruff · mypy · lefthook | Fast, polyglot, one command surface |
 | CI/CD | GitHub Actions → GHCR → SSH deploy · Vercel previews | Free on a public repo; every PR gets a preview and the full gate |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  V[Visitor] -->|HTTPS| W[Next.js on Vercel]
+  V[Visitor] -->|HTTPS| W[Nuxt on Vercel]
   W -->|API, SSE, WebSocket| C[Cloudflare → Caddy on the box]
   C --> DJ[Django · LB-01 02 09]
   C --> FL[Flask · LB-03 05 10]
@@ -164,25 +165,41 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 ## Front end
 
-- **Next.js App Router, React 19, TypeScript strict.** Datasheet pages render on the
-  server from MDX (Content Collections gives typed frontmatter for part numbers and
-  specs). Live demos are client islands.
-- **Backend-for-frontend.** There are no accounts: no sign-up, login or logout. The
-  Next.js server issues an anonymous visitor session (signed cookie), verifies
-  Turnstile, and mints short-lived JWTs (`jose`) for direct SSE and WebSocket
-  connections to the box. Vercel functions don't hold
-  WebSockets, so live streams go straight to the API domain.
+- **Nuxt 4, Vue 3.5, TypeScript strict.** The owner chose Nuxt with Pinia over
+  Next.js. Components are single-file components with `<script setup lang="ts">`;
+  there is no TSX or JSX in the repo. Datasheet pages are prerendered from Markdown
+  with Nuxt Content, whose collections give typed frontmatter for part numbers and
+  specs. Demo pages render on the server, and heavy demo panels hydrate only when
+  they scroll into view.
+- **Backend-for-frontend.** There are no accounts: no sign-up, login or logout. Nitro
+  server routes issue an anonymous visitor session (signed cookie), verify Turnstile,
+  and mint short-lived JWTs (`jose`) for direct SSE and WebSocket connections to the
+  box. Vercel functions don't hold WebSockets, so live streams go straight to the API
+  domain.
+- **State.** Pinia setup stores hold client state: the live run and its spans, the
+  visitor's remaining quota, the reading mode (Brief or Technical) and demo inputs.
+  Page data loads with `useFetch` and `useAsyncData`, so it renders on the server and
+  hydrates without a second request. Pinia Colada caches the server data a demo
+  refetches, such as quota and run history.
 - **Streaming.** One SSE stream per run multiplexes tokens, spans and the final
-  result, which is what the Scope panel draws. LB-02 and LB-06 use WebSockets.
-- **Data.** TanStack Query for server state; `openapi-fetch` clients generated from
-  each service's OpenAPI spec; Zod at every boundary.
-- **Design system.** Tailwind v4 tokens, React Aria Components, Archivo and Martian
-  Mono through `next/font` (no layout shift), `cmdk` for the command palette,
-  `next-intl` when a second language lands. Storybook is the living component
-  catalog.
-- **Quality bars.** WCAG 2.2 AA (axe in CI), LCP under 2 s, INP under 200 ms,
-  CLS under 0.05 (Lighthouse CI budgets). Playwright covers journeys and visual
-  regressions; Vitest and Testing Library cover components.
+  result; a Pinia store consumes it, and the Scope panel draws from the store. LB-02
+  and LB-06 use WebSockets.
+- **Data.** `openapi-fetch` clients generated from each service's OpenAPI spec; Zod
+  at every boundary.
+- **Design system.** Tailwind v4 tokens with light and dark values, Reka UI
+  primitives wrapped in `packages/ui`, and icons from `@lb/icons`. Archivo and
+  Martian Mono are self-hosted through `@nuxt/fonts`, with fallback metrics so text
+  doesn't shift. A command palette built on Reka UI's combobox; `@nuxtjs/i18n` when a
+  second language lands. Storybook is the living component catalog.
+- **Themes.** Light by default, dark when the visitor's system prefers it, with a
+  toggle. `@nuxtjs/color-mode` applies the theme before first paint (its inline
+  script gets the per-request CSP nonce), and keeps the visitor's choice in
+  `localStorage`, not a cookie. The logo swaps between `lb-mark-light.svg` and
+  `lb-mark-dark.svg`.
+- **Quality bars.** WCAG 2.2 AA in both themes (axe in CI), LCP under 2 s, INP under
+  200 ms, CLS under 0.05 (Lighthouse CI budgets). Playwright covers journeys and
+  visual regressions in both themes; Vitest with Vue Test Utils and
+  `@nuxt/test-utils` covers components and stores.
 
 ## Back ends
 
@@ -229,7 +246,7 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   workflow steps (LB-08). LB-06 streams simulator events through Redis Streams.
 - **AI SDK** for tool loops, streaming and `generateObject` with Zod, pointed at the
   gateway through its OpenAI-compatible provider.
-- **LB-04:** `pdfjs-dist` on the server and `react-pdf` in the browser use the same
+- **LB-04:** pdf.js (`pdfjs-dist`) on the server and in the browser uses the same
   text layer, so quote positions line up exactly.
 - **LB-07:** Playwright and axe-core in a separate worker container with concurrency
   1, on a Docker network that can only reach the staging shop.
@@ -275,7 +292,7 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   tools, guards. Spans stream live to the Scope through Redis Streams and SSE, and
   land in `platform.run_spans` for permalinks. Datasheet numbers (p50 and p95
   latency, calls per run, pass rates) are SQL over this table.
-- **Sentry** (free plan) for errors and releases across Next.js, Python and Node.
+- **Sentry** (free plan) for errors and releases across Nuxt, Python and Node.
 - **Uptime monitor with a public status page** (Better Stack or UptimeRobot free
   tier), plus scripted Playwright journeys every 30 minutes from GitHub Actions.
 
@@ -306,11 +323,14 @@ short:
 - **Monorepo:** pnpm workspaces with Turborepo for TypeScript, a uv workspace for
   Python, mise to pin tool versions, and a root `justfile` as the one command
   surface (`just dev`, `just test`, `just lint`, `just seed`).
-- **Quality:** Biome (TypeScript lint and format), Ruff (Python lint and format),
-  `tsc --strict`, mypy with django-stubs, lefthook for pre-commit hooks.
-- **Tests:** Vitest, pytest (with pytest-django, pytest-asyncio and Hypothesis for
-  invoice arithmetic), Testcontainers for real Postgres and Redis, Playwright for end
-  to end.
+- **Quality:** ESLint with a flat config (`@nuxt/eslint` for the app,
+  typescript-eslint for services, ESLint Stylistic for formatting), Ruff (Python lint
+  and format), `vue-tsc` and `tsc` in strict mode, mypy with django-stubs, lefthook
+  for pre-commit hooks. Lint bans `v-html` (`vue/no-v-html`) and runs the Vue
+  accessibility rules.
+- **Tests:** Vitest (with Vue Test Utils and `@nuxt/test-utils` on the front end),
+  pytest (with pytest-django, pytest-asyncio and Hypothesis for invoice arithmetic),
+  Testcontainers for real Postgres and Redis, Playwright for end to end.
 - **CI gates on every PR:** lint, types, tests for changed packages, OpenAPI client
   drift check, eval gate when prompts or routes change, axe and Lighthouse budgets.
   Making the repository public keeps Actions minutes free.
@@ -318,13 +338,15 @@ short:
 ## Repository layout
 
 ```text
-apps/web/                 Next.js site and every demo UI (TSX)
+apps/web/                 Nuxt site and every demo UI (Vue single-file components)
 services/gateway/         AI gateway (TypeScript, Fastify) + routing.yaml
 services/node-systems/    LB-04, LB-06, LB-07, LB-08 (+ worker entry point)
 services/django-systems/  LB-01, LB-02, LB-09 (+ Celery worker)
 services/flask-systems/   LB-03, LB-05, LB-10
-services/staging-shop/    Deliberately buggy shop for LB-07 (Vite + React)
-packages/ui/              Design system: tokens, React Aria components, Storybook
+services/staging-shop/    Deliberately buggy shop for LB-07 (Vite + Vue)
+packages/ui/              Design system: tokens, Reka UI components, Storybook
+packages/icons/           LB icon set: SVG sources, sprite, Vue component
+brand/                    The LB mark, light and dark
 packages/contracts/       Shared Zod schemas and event types
 packages/api-clients/     TypeScript clients generated from OpenAPI
 python/lb-common/         Shared Python: gateway client, tracer, run context
@@ -357,8 +379,10 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | Gateway as a Cloudflare Worker | Rejected | Workers Free caps CPU time per request and adds a second deploy platform |
 | DRF instead of Django Ninja | Rejected | Ninja gives Pydantic schemas, async views and OpenAPI with less code |
 | Prisma instead of Drizzle | Rejected | Drizzle is SQL-first with no engine binary |
-| shadcn/ui instead of React Aria | Rejected | shadcn's default look is the generic AI-site look this design avoids |
-| ESLint + Prettier instead of Biome | Rejected | One fast tool covers both, and Next.js supports it |
+| Next.js with React and TSX | Replaced (Rev C) | The owner chose Nuxt with Pinia. Vue single-file components keep markup, logic and style together, and Nitro covers the backend-for-frontend |
+| shadcn-vue instead of Reka UI | Rejected | shadcn's default look is the generic AI-site look this design avoids |
+| Biome instead of ESLint | Rejected | ESLint carries the Vue template rules this project relies on (`vue/no-v-html`, accessibility) and is Nuxt's official setup; with ESLint Stylistic it is still one tool |
+| Font Awesome or another icon library | Rejected | The owner wants icons in the logo's own pattern; `@lb/icons` ships the same way (sprite plus component) |
 
 ## Revisit when
 

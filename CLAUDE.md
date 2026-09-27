@@ -61,14 +61,16 @@ section in the same change that scaffolds them.
 - The server opens no inbound ports (Cloudflare Tunnel). Owner tools and SSH are
   reachable only over Tailscale, never on a public hostname.
 - Every response carries the headers in `docs/SECURITY.md`: nonce-based CSP with
-  Trusted Types, no framing. Never use `dangerouslySetInnerHTML`, and never execute
-  model output.
+  Trusted Types, no framing. Never use `v-html`, and never execute model output.
 - Secrets live in SOPS-encrypted files or deploy secrets, never in code, logs or
   prompts.
 
 ## Code conventions
 
-- TypeScript: strict mode, Biome for lint and format, Zod at every boundary.
+- Front end: Nuxt with Pinia (owner's decision). Vue single-file components with
+  `<script setup lang="ts">`; no TSX or JSX anywhere in the repo.
+- TypeScript: strict mode, ESLint (flat config) for lint and format, Zod at every
+  boundary.
 - Python: 3.13, uv, Ruff for lint and format, mypy (with django-stubs), Pydantic v2.
 - Comments explain why, not what. No placeholders or pseudo-code in committed code.
 - Every change ships with tests at the right level: unit, integration
@@ -76,16 +78,19 @@ section in the same change that scaffolds them.
 
 ## Design rules
 
-- Light theme only. The look follows electronic component datasheets: part numbers,
-  spec tables, numbered figures, revision history.
-- Colors and type come from the tokens in `packages/ui`: Archivo (display and text)
-  and Martian Mono (data). No hard-coded colors, no emoji icons, and no gradients
-  outside the LB mark.
-- The green evaluation board marks live demos and nothing else.
-- The LB mark comes only from the files in `brand/`. On light surfaces use the
-  `lb-icon.svg` tile or `lb-mark-graphite.svg`; the silver `lb-mark.svg` goes on dark
-  surfaces only. Never redraw, recolour or retype it.
-- WCAG 2.2 AA, full keyboard use, `prefers-reduced-motion` respected.
+- Light theme by default; a dark theme follows the visitor's system setting, with a
+  toggle. Both follow electronic component datasheets: part numbers, spec tables,
+  numbered figures, revision history.
+- Colors and type come from the tokens in `packages/ui`, and every token has a light
+  and a dark value. Archivo (display and text) and Martian Mono (data). No hard-coded
+  colors, and no gradients outside the LB mark.
+- Signal blue, the logo's ribbon, is the one accent colour. The evaluation board, in
+  a deep shade of it, marks live demos and nothing else.
+- Icons come only from `@lb/icons`, drawn in the logo's pattern. No emoji, no
+  third-party icon sets.
+- The LB mark comes only from the files in `brand/`: `lb-mark-light.svg` in the light
+  theme, `lb-mark-dark.svg` in the dark theme. Never redraw, recolour or retype it.
+- WCAG 2.2 AA in both themes, full keyboard use, `prefers-reduced-motion` respected.
 
 ## Commands
 

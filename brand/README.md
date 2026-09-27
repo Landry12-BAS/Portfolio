@@ -1,57 +1,65 @@
 # The LB mark
 
-Rev B · 27 Sep 2026 · replaces the Rev A chip mark
+Rev C · 27 Sep 2026 · the owner's logo, traced to vector
 
-The logo of Landry Bodjona is a brushed-silver L and B joined by a blue ribbon. The
-ribbon runs from the B's middle bar down to the foot of the L. It is the only element
-in colour, and the one that ties the two letters together.
+The logo of Landry Bodjona is an L and a stemless B joined by a blue ribbon. The ribbon
+runs from the B's middle bar down to the foot of the L. The owner designed it in two
+versions: ink on white for the light theme and brushed silver on black for the dark
+theme. Both originals are in [`source/`](source).
 
-The mark is a vector recreation of the owner's reference image. It was checked
-against that image in the same composition: 97.7% shape overlap, and a mean colour
-error of 3 out of 255 inside the letters.
+The SVGs are traced from those originals with one shared geometric construction. The
+light file matches its original with 99.4% shape overlap and a mean colour error of 2
+out of 255. The dark file matches with 98.1% overlap and a mean colour error of 3 out
+of 255 inside the letters.
 
 ## Files
 
 | File | Use |
 |---|---|
-| `lb-mark.svg` | Master, full colour. Dark surfaces only |
-| `lb-mark-graphite.svg` | Light surfaces: gunmetal letters, the same blue ribbon |
-| `lb-icon.svg` | Favicon, app icon, avatar: the master on its near-black tile |
+| `lb-mark-light.svg` | Light theme: ink letters, blue ribbon, transparent background |
+| `lb-mark-dark.svg` | Dark theme: silver letters, blue ribbon, transparent background |
 | `lb-mark-mono.svg` | One colour, for print and single-ink uses. A keyline keeps the ribbon apart |
-| `lb-hero.svg` | The master composition, 878 × 515, for banners and social cards |
+| `lb-icon-light.svg` | App icon on a white tile, 512 × 512 |
+| `lb-icon-dark.svg` | App icon on a black tile, 512 × 512 |
+| `lb-favicon.svg` | Favicon. Switches to light letters when the browser is in dark mode |
+| `source/lb-owner-light.png`, `source/lb-owner-dark.png` | The owner's originals. Reference only; never serve them |
 
 ## Rules
 
+- Light theme: `lb-mark-light.svg`. Dark theme: `lb-mark-dark.svg`. Never put the
+  light file on a dark surface or the dark file on a light one.
 - Use the files. Never redraw, retype or recolour the mark: it is geometry, not text.
-- On the light site, put `lb-icon.svg` beside the wordmark in the header and use
-  `lb-mark-graphite.svg` for large placements. The silver master needs a dark surface.
-- The mark's metal and blue gradients are the only gradients in the design. The
+- The dark mark's metal and blue gradients are the only gradients in the design. The
   interface stays flat.
 - Clear space: the width of the L's stem (16% of the mark's width) on every side.
-- Minimum width: 24 px for the marks, 16 px for the icon.
-- Never on the green evaluation board, which is reserved for live demos.
+- Minimum width: 24 px for the marks, 16 px for the favicon.
 - Wordmark: LANDRY BODJONA in Archivo Expanded 800, beside the mark.
+
+## Colour
+
+| Name | Light theme | Dark theme | Where it comes from |
+|---|---|---|---|
+| Ink | `#111214` | `#F2F2F4` | The letters of the light logo; the favicon's dark-mode letters |
+| Paper | `#FFFFFF` | `#000000` | The backgrounds of the two originals |
+| Signal blue | `#045EFE` | `#1389FD` | The ribbon: flat in the light logo, its highlight in the dark one |
+
+Signal blue is the one accent colour of the whole project. On the site, the evaluation
+board that marks live demos uses a deep shade of the same blue.
 
 ## Construction
 
 Measurements are in mark units, with the origin at the top-left of the L. The mark is
-420 × 332.5.
+514.4 × 413.4.
 
 | Part | Geometry |
 |---|---|
-| L | Stem 66.5 wide. Its foot is cut along the ribbon and tucks 1.5 under it |
-| B | No stem. Bars at y 20 to 73, 145 to 199 and 277 to 332.5. Outer bowls r 79.5 and r 94; counters r 36 and r 39. The bottom bar's left end is cut parallel to the ribbon |
-| Ribbon | From the B's middle bar (x 194.3) to the foot of the L. Fold r 35.9, foot corner r 20 |
-| Gap | 1.7 between the ribbon and the middle bar |
+| L | Stem 82.3 wide, from the top down to the ribbon, which it tucks 1.5 under |
+| B | No stem. Bars at y 26.9 to 90.3, 181.0 to 245.1 and 345.0 to 413.4. Outer bowls r 98.0 and r 108.5, meeting in a sharp waist; semicircular counters r 45.3 and r 50.0. The bottom bar's left end is cut along the ribbon, with a 46.5 fillet on top |
+| Ribbon | Edges at 38.2° (upper) and 40.3° (lower), so it widens towards the foot. It folds into the top corner of the middle bar at x 239.4. The foot sits on the B's baseline, flush with the L's left edge, with corners r 26.6 and r 39.6 |
 
-Colours measured on the rendered master:
+The same pattern drives the icon set in [`../packages/icons`](../packages/icons): the
+ribbon's diagonal, flat terminals, round bowls and one blue accent per icon.
 
-| Role | Values |
-|---|---|
-| Silver | `#F4F4F5` at the top of the L, `#DDDCE1` across the B, `#585D71` at the foot of the L |
-| Signal blue | `#4F8FE5` at the fold, `#2C5BE7` mid-ribbon, `#122573` at the foot |
-| Field | `#020106`, lifting to `#0C0D12` at the top right |
-
-Each part is an opaque base gradient plus soft overlays for shade, glint and shadow,
-clipped to the part's outline, with a 1.5-unit bright rim inside every edge. The
-variants share geometry and layer order, so change them together.
+Each part of the dark mark is an opaque base gradient plus soft overlays for shade,
+glint and shadow, clipped to the part's outline, with a 1.5-unit bright rim inside
+every edge. All variants share one construction, so change them together.

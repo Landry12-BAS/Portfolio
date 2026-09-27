@@ -1,6 +1,6 @@
 # Security architecture
 
-Status: accepted · Rev A · 27 Sep 2026 · Owner: Landry
+Status: accepted · Rev B · 27 Sep 2026 · Owner: Landry
 
 The site has **no accounts**: no sign-up, no login, no logout. Every visitor is
 anonymous, and every protection below works without asking anyone who they are.
@@ -45,11 +45,13 @@ flowchart LR
 - **Anonymous session.** A random 128-bit ID in a signed cookie with the `__Host-`
   prefix, `HttpOnly`, `Secure` and `SameSite=Strict`, rotated daily. It exists only for
   quotas and abuse protection, so it is strictly necessary and needs no consent
-  banner. The site sets no other cookies and loads no trackers.
+  banner. The site sets no other cookies and loads no trackers. The visitor's theme
+  choice stays in the browser's `localStorage`.
 - **Turnstile** in invisible mode before a visitor's first AI run. People never solve
   a puzzle; bots are stopped before they spend quota.
-- **Short-lived tokens.** The Next.js server mints Ed25519-signed JWTs, valid for
-  5 minutes and scoped to one system, for SSE and WebSocket calls to the box.
+- **Short-lived tokens.** The Nuxt server's Nitro routes mint Ed25519-signed JWTs,
+  valid for 5 minutes and scoped to one system, for SSE and WebSocket calls to the
+  box.
 - **Three rate-limit layers:** Cloudflare per IP, the gateway per session, and the
   gateway per system and per provider.
 - **Private by design.** IP addresses are kept only as salted hashes, and the salt
@@ -59,7 +61,9 @@ flowchart LR
 
 - **Content Security Policy** with per-request nonces and `strict-dynamic`, plus
   Trusted Types (`require-trusted-types-for 'script'`), so injected script can't run
-  even if markup slips through.
+  even if markup slips through. `nuxt-security` sets the headers and nonces. The only
+  Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
+  markup.
 - **Headers:** `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy: same-origin`,
   `Cross-Origin-Resource-Policy: same-origin`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`,
@@ -67,8 +71,9 @@ flowchart LR
   the LB-09 page.
 - **CSRF:** `SameSite=Strict` cookies plus an `Origin` check on every state-changing
   request.
-- **Input and output:** Zod or Pydantic at every boundary. React escapes output, and
-  `dangerouslySetInnerHTML` is banned by lint.
+- **Input and output:** Zod or Pydantic at every boundary. Vue escapes everything a
+  template renders, and `v-html` is banned by lint (`vue/no-v-html`), so no visitor or
+  model text is ever parsed as markup.
 - **Uploads:** checked by magic bytes, size and page count; parsed in a worker with
   CPU, memory and time limits; stored in R2 under random keys; deleted by lifecycle
   rules.
