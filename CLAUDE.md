@@ -46,6 +46,9 @@ section in the same change that scaffolds them.
 - Demos open on curated samples whose results are cached. Custom input is the only
   path that spends provider quota.
 - Synthetic data only. Visitor uploads expire through storage lifecycle rules.
+- Visitor content only goes to providers that don't train on inputs; `routing.yaml`
+  marks each provider. The NVIDIA API catalog is for private experiments only: its
+  trial terms forbid production use.
 - One database, one schema per system. Each runtime owns its migrations: Django
   migrations, Alembic for Flask, Drizzle for Node. Never write across schemas.
 

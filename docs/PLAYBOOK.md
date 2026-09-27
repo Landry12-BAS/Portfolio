@@ -84,8 +84,8 @@ A system is done when all of these are true:
 
 Free tiers change without notice, so they get a routine:
 
-- **Weekly:** check each provider's published limits and model list. Update
-  `routing.yaml` when anything changes.
+- **Weekly:** check each provider's published limits, model list, deprecation notices
+  and terms. Update `routing.yaml` when anything changes.
 - **On any routing change:** rerun the affected golden sets in Eval Lab. A fallback
   model has to pass the same quality bar as the primary before it is allowed on
   that route.

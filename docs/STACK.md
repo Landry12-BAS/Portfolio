@@ -10,7 +10,7 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 
 1. **Free AI tiers only**: Groq, Cloudflare Workers AI, NVIDIA NIM and OpenRouter.
    Each has its own rate limits, model list and terms, and all of them change without
-   notice.
+   notice. NVIDIA's terms rule it out for visitor traffic (see below).
 2. **Public visitors.** Anyone can run a demo, so there can be no cold starts, no
    broken demos, and no way for one visitor or bot to drain the shared quota.
 3. **Near-zero budget.** Pay only for what free tiers do badly: always-on compute.
@@ -26,7 +26,7 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Styling | Tailwind CSS v4 with CSS-variable tokens | Tokens are the single source of the datasheet palette and type; utilities keep components consistent |
 | Components | React Aria Components, wrapped in `packages/ui` | Best-in-class accessibility with no visual opinions, so the site never looks like a template |
 | Motion and data viz | Motion · visx · Vega-Lite (LS-05) · React Flow (LS-08) · react-pdf (LS-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
-| AI gateway | TypeScript · Fastify 5 · OpenAI-compatible API | One door for every model call: routing, fallback, quotas, cache, spans. Streaming proxies are I/O-bound, which suits Node |
+| AI gateway | TypeScript · Fastify 5 · OpenAI-compatible API | One door for every model call: routing, fallback, token-aware budgets, data-class rules, cache, spans. Streaming proxies are I/O-bound, which suits Node |
 | Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LS-01, LS-02, LS-09. Rich relational domains, admin, WebSockets and background jobs |
 | Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LS-03, LS-05, LS-10. Sync where work is CPU-bound, async views where one request fans out |
 | Node systems | Node 24 LTS · Fastify 5 · Drizzle ORM · BullMQ · Playwright | LS-04, LS-06, LS-07, LS-08. Event streams, workflows, browser automation, shared Zod types |
@@ -53,8 +53,8 @@ flowchart LR
   DJ & FL & ND -->|every model call| GW[AI gateway]
   GW --> GQ[Groq]
   GW --> CF[Workers AI]
-  GW --> NV[NVIDIA NIM]
   GW --> OR[OpenRouter]
+  GW -.->|dev profile only| NV[NVIDIA NIM]
   GW -.->|every budget spent| RP[(Replays on R2)]
   DJ & FL & ND & GW --> PG[(Postgres + pgvector)]
   DJ & FL & ND & GW --> RD[(Redis)]
@@ -64,6 +64,102 @@ The ten systems run as three modular monoliths, one per runtime, plus the gatewa
 Each system is a module with its own API prefix, schema and tests, so any of them can
 be split into its own service later. Ten separate services would cost more to host
 and operate than they are worth for one developer.
+
+## AI providers and routing
+
+Free tiers were checked against each provider's official documentation on
+27 Sep 2026 (sources at the end of this section). They change often: the Llama models
+left Groq's free tier in August 2026. The playbook schedules a weekly re-check.
+
+| Provider | Free limit | Trains on inputs | Role here |
+|---|---|---|---|
+| Groq | Per model: 30 req/min, 1,000 req/day, 8K tokens/min, 200K tokens/day. Whisper: 480 audio minutes/day. Prompt Guard 2: 14,400 req/day | No (abuse logs kept up to 30 days) | Primary for interactive chat and tool calls (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`), speech-to-text, prompt-injection checks |
+| Cloudflare Workers AI | 10,000 Neurons/day shared by all models: about 150 gpt-oss-120b calls, or about 9M embedding tokens. 300 req/min for text | No | Embeddings (`bge-m3`), reranking, vision (Llama 4 Scout, Gemma 4), moderation (Llama Guard 3), Whisper and chat fallback. The default home for visitor uploads |
+| OpenRouter | 20 req/min. 50 req/day, or 1,000 req/day for good after a one-time $10 credit purchase | Depends on the host; several free hosts may train | Last fallback, and long-context work on synthetic samples (Nemotron 3 Ultra, 1M tokens) |
+| NVIDIA API catalog | Per-model rate limits, unpublished (about 40 req/min reported) | Yes: inputs and outputs are recorded | Private model scouting and offline experiments only. Its trial terms forbid production use, so it never serves visitors |
+
+Left out on purpose: Gemini's free tier (it can't be offered to users in the EEA,
+Switzerland or the UK, and it trains on inputs), Cerebras (no permanent free tier) and
+Mistral's free mode (trains on inputs unless you opt out).
+
+### Routing rules
+
+1. **Virtual models.** Services ask for a capability alias, never a provider model.
+   Chains live in `services/gateway/routing.yaml`.
+2. **Data class.** Every request is tagged `synthetic` or `visitor`. Visitor content
+   only reaches providers that don't train on inputs (Groq, Workers AI). Synthetic
+   samples may use any provider on the chain.
+3. **Terms profile.** Production routing excludes providers whose terms forbid it
+   (NVIDIA today). A `dev` profile allows them for local experiments.
+4. **Token-aware budgets.** The gateway estimates tokens before sending and tracks
+   requests and tokens, per minute and per day, for every provider model. On Groq the
+   binding limit is tokens: 200K a day is about 65 calls of 3K tokens. Interactive
+   prompts stay under 4K tokens to fit the 8K tokens-per-minute limit.
+5. **Fallback before the first token.** A 429, timeout or 5xx moves the request to the
+   next model on its chain. Once an answer is streaming, it never switches provider.
+6. **Structured output.** Groq's strict JSON schema works only without streaming and
+   without tools. Tool loops validate arguments with Zod or Pydantic instead.
+7. **Embeddings are pinned.** Vectors from different models don't mix, so `ls-embed`
+   has no fallback. If Workers AI is down, retrieval degrades to Postgres full-text
+   search.
+8. **Guard free text.** Every visitor-typed input passes Prompt Guard 2 before it
+   reaches a model that can call tools.
+
+### Virtual models
+
+| Alias | Used by | Chain, in order |
+|---|---|---|
+| `ls-fast` | Classification, short JSON (LS-01, LS-05, LS-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
+| `ls-tools` | Chat and tool calls (LS-01, LS-02, LS-06, LS-07, LS-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter qwen3.8-27b:free (synthetic only) |
+| `ls-reason` | SQL and planning (LS-05, LS-06) | Groq gpt-oss-120b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only) |
+| `ls-long` | Long documents (LS-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
+| `ls-vision` | Invoices, screenshots (LS-03, LS-07) | Workers AI Llama 4 Scout → Workers AI Gemma 4 26B → OpenRouter Gemma 4 31B:free (synthetic only) |
+| `ls-embed` | Retrieval (LS-01, LS-02) | Workers AI bge-m3, pinned |
+| `ls-rerank` | Retrieval (LS-01) | Workers AI bge-reranker-base |
+| `ls-stt` | Fast mode (LS-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
+| `ls-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Workers AI llama-guard-3-8b |
+| `ls-judge` | Nightly evals (LS-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
+
+These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
+set in Eval Lab before it serves visitors.
+
+### Capacity
+
+| Source | Estimated daily capacity |
+|---|---|
+| Groq chat: three models × 200K tokens | about 240 calls at 2.5K tokens each |
+| Workers AI, after embeddings, moderation and vision | about 90 chat calls |
+| OpenRouter | 50 calls, or 1,000 with the one-time credit |
+| **Total** | **about 400 calls a day, or about 1,300 with the credit** |
+
+Most systems need 1 to 4 calls per run, so the free tiers carry roughly 100 live runs a
+day before replay mode takes over. That is enough for a portfolio. The three heavy
+systems are designed to be frugal:
+
+- **LS-06** keeps detection and correlation in deterministic code, and its agents
+  reason over compact summaries: 10 to 15 calls per incident.
+- **LS-07** plans the test once, runs it with Playwright, and asks the model again
+  only when a step fails: 5 to 8 calls per run.
+- **LS-10** visitor runs use 10 cases and rule-based graders, about 20 calls. The LLM
+  judge runs nightly.
+
+**Recommendation:** buy the one-time $10 OpenRouter credit. It lifts OpenRouter from
+50 to 1,000 free requests a day for good and roughly triples live capacity.
+
+Sources, checked 27 Sep 2026:
+Groq [rate limits](https://console.groq.com/docs/rate-limits),
+[models](https://console.groq.com/docs/models),
+[deprecations](https://console.groq.com/docs/deprecations),
+[structured outputs](https://console.groq.com/docs/structured-outputs),
+[data](https://console.groq.com/docs/your-data) ·
+OpenRouter [limits](https://openrouter.ai/docs/api_reference/limits),
+[FAQ](https://openrouter.ai/docs/faq),
+[provider logging](https://openrouter.ai/docs/guides/privacy/provider-logging) ·
+Cloudflare [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/),
+[limits](https://developers.cloudflare.com/workers-ai/platform/limits/),
+[data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/) ·
+NVIDIA [API trial terms](https://assets.ngc.nvidia.com/products/api-catalog/legal/NVIDIA%20API%20Trial%20Terms%20of%20Service.pdf) ·
+Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 ## Front end
 
@@ -192,8 +288,10 @@ and operate than they are worth for one developer.
   only reach the staging shop (LS-07), mock connectors for every side effect (LS-08).
 - **Supply chain:** Renovate, CodeQL, gitleaks (pre-commit and CI), Trivy image scans,
   GitHub Actions pinned by commit SHA.
-- **Data:** synthetic only. Upload screens warn visitors not to send personal data,
-  because some free AI endpoints log prompts.
+- **Data:** synthetic only. Visitor content only reaches providers that don't train
+  on inputs. Upload screens still warn visitors not to send personal data.
+- **Terms:** each provider's terms are reviewed weekly with its limits. NVIDIA's trial
+  terms forbid production use, so NVIDIA stays out of every visitor-facing route.
 
 ## Tooling and CI
 
@@ -237,6 +335,7 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | The box: Hetzner CAX21, or Oracle Always Free | about €7/month, or $0 |
 | Domain | about $10–15/year |
 | Sentry, uptime monitor, GitHub Actions (public repo) | $0 |
+| Optional, recommended: OpenRouter one-time credit | $10 once |
 
 ## Alternatives considered
 

@@ -18,7 +18,7 @@ system runs on the site, open to any visitor, with a trace of every step it take
 | LS-10 | Eval Lab: every prompt change gets a score | Flask (async) |
 
 Front end: Next.js, React and TypeScript (TSX). AI: free tiers from Groq, Cloudflare
-Workers AI, NVIDIA NIM and OpenRouter, behind one gateway.
+Workers AI and OpenRouter behind one gateway, with NVIDIA NIM for private experiments.
 
 - [Stack decision](docs/STACK.md)
 - [Build playbook](docs/PLAYBOOK.md)
