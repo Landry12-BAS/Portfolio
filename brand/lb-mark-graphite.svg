@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 332.5" width="420" height="332.5" role="img">
+  <title>LB, Landry Bodjona</title>
+  <!-- LB mark, rev B. Geometry in mark units: 420 x 332.5. Silver L and B, blue ribbon from the B's middle bar to the foot of the L. Source of truth: brand/README.md. Graphite, for light surfaces. -->
+  <defs>
+    <linearGradient id="lbg-l0" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="285">
+      <stop offset="0" stop-color="#80828A"/>
+      <stop offset="0.125" stop-color="#7E8088"/>
+      <stop offset="0.25" stop-color="#80818A"/>
+      <stop offset="0.375" stop-color="#7C7D86"/>
+      <stop offset="0.5" stop-color="#73757F"/>
+      <stop offset="0.625" stop-color="#646873"/>
+      <stop offset="0.75" stop-color="#444957"/>
+      <stop offset="0.875" stop-color="#2F313E"/>
+      <stop offset="1" stop-color="#302D34"/>
+    </linearGradient>
+    <linearGradient id="lbg-l1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="66.5" y2="0">
+      <stop offset="0" stop-color="#10121A" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#10121A" stop-opacity="0.034"/>
+      <stop offset="1" stop-color="#10121A" stop-opacity="0.037"/>
+    </linearGradient>
+    <linearGradient id="lbg-l2" gradientUnits="userSpaceOnUse" x1="8.8" y1="226.2" x2="33" y2="258.1">
+      <stop offset="0" stop-color="#103E8A" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#103E8A" stop-opacity="0.041"/>
+      <stop offset="1" stop-color="#103E8A" stop-opacity="0.126"/>
+    </linearGradient>
+    <radialGradient id="lbg-l3" gradientUnits="userSpaceOnUse" cx="65.8" cy="194.2" r="160.3">
+      <stop offset="0" stop-color="#10132C" stop-opacity="0.409"/>
+      <stop offset="0.5" stop-color="#10132C" stop-opacity="0.123"/>
+      <stop offset="1" stop-color="#10132C" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="lbg-cl">
+      <path d="M0 0H66.5V234.18L0 284.56Z"/>
+    </clipPath>
+    <linearGradient id="lbg-b0" gradientUnits="userSpaceOnUse" x1="0" y1="20" x2="0" y2="332.5">
+      <stop offset="0" stop-color="#797A83"/>
+      <stop offset="0.1" stop-color="#757781"/>
+      <stop offset="0.2" stop-color="#6F707B"/>
+      <stop offset="0.3" stop-color="#5A5A68"/>
+      <stop offset="0.4" stop-color="#4F5160"/>
+      <stop offset="0.5" stop-color="#4E505F"/>
+      <stop offset="0.6" stop-color="#63636F"/>
+      <stop offset="0.7" stop-color="#61636F"/>
+      <stop offset="0.8" stop-color="#5D5F6D"/>
+      <stop offset="0.9" stop-color="#494B5B"/>
+      <stop offset="1" stop-color="#1E2136"/>
+    </linearGradient>
+    <linearGradient id="lbg-b1" gradientUnits="userSpaceOnUse" x1="88" y1="0" x2="420" y2="0">
+      <stop offset="0" stop-color="#101229" stop-opacity="0.588"/>
+      <stop offset="0.25" stop-color="#101229" stop-opacity="0.157"/>
+      <stop offset="0.5" stop-color="#101229" stop-opacity="0.083"/>
+      <stop offset="0.75" stop-color="#101229" stop-opacity="0"/>
+      <stop offset="1" stop-color="#101229" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="lbg-b2" gradientUnits="userSpaceOnUse" cx="145.5" cy="329" r="258">
+      <stop offset="0" stop-color="#80828A" stop-opacity="0.731"/>
+      <stop offset="0.5" stop-color="#80828A" stop-opacity="0.219"/>
+      <stop offset="1" stop-color="#80828A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lbg-b3" gradientUnits="userSpaceOnUse" cx="328.9" cy="293.5" r="128.5">
+      <stop offset="0" stop-color="#10182D" stop-opacity="0.589"/>
+      <stop offset="0.5" stop-color="#10182D" stop-opacity="0.177"/>
+      <stop offset="1" stop-color="#10182D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lbg-b4" gradientUnits="userSpaceOnUse" cx="446.4" cy="121.7" r="329.8">
+      <stop offset="0" stop-color="#80828A" stop-opacity="1"/>
+      <stop offset="0.5" stop-color="#80828A" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#80828A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lbg-b5" gradientUnits="userSpaceOnUse" cx="224.7" cy="208.1" r="73.6">
+      <stop offset="0" stop-color="#101A2F" stop-opacity="0.346"/>
+      <stop offset="0.5" stop-color="#101A2F" stop-opacity="0.104"/>
+      <stop offset="1" stop-color="#101A2F" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="lbg-cb">
+      <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z"/>
+    </clipPath>
+    <linearGradient id="lbg-r0" gradientUnits="userSpaceOnUse" x1="193.1" y1="146" x2="-9" y2="307.1">
+      <stop offset="0" stop-color="#00007E"/>
+      <stop offset="0.125" stop-color="#4A83EE"/>
+      <stop offset="0.25" stop-color="#3F7DF7"/>
+      <stop offset="0.375" stop-color="#2B5CEE"/>
+      <stop offset="0.5" stop-color="#274EEC"/>
+      <stop offset="0.625" stop-color="#243AF7"/>
+      <stop offset="0.75" stop-color="#1C1DE8"/>
+      <stop offset="0.875" stop-color="#10009D"/>
+      <stop offset="1" stop-color="#02004C"/>
+    </linearGradient>
+    <linearGradient id="lbg-r1" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
+      <stop offset="0" stop-color="#77FFFF" stop-opacity="0.306"/>
+      <stop offset="0.35" stop-color="#77FFFF" stop-opacity="0.147"/>
+      <stop offset="0.7" stop-color="#77FFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#77FFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="lbg-r2" gradientUnits="userSpaceOnUse" cx="175.7" cy="155.9" r="42.4">
+      <stop offset="0" stop-color="#64B6FF" stop-opacity="1"/>
+      <stop offset="0.5" stop-color="#64B6FF" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#64B6FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lbg-r3" gradientUnits="userSpaceOnUse" cx="6.3" cy="241.5" r="104.1">
+      <stop offset="0" stop-color="#004E1C" stop-opacity="1"/>
+      <stop offset="0.5" stop-color="#004E1C" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#004E1C" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="lbg-cr">
+      <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z"/>
+    </clipPath>
+    <linearGradient id="lbg-r4" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
+      <stop offset="0" stop-color="#A0E6F5" stop-opacity="0.087"/>
+      <stop offset="1" stop-color="#A0E6F5" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#lbg-cl)">
+    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbg-l0)"/>
+    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbg-l1)"/>
+    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbg-l2)"/>
+    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbg-l3)"/>
+    <path d="M0 0H66.5V234.18L0 284.56Z" fill="none" stroke="#80828A" stroke-opacity="0.3" stroke-width="3"/>
+  </g>
+  <g clip-path="url(#lbg-cb)">
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b0)"/>
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b1)"/>
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b2)"/>
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b3)"/>
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b4)"/>
+    <rect x="86" y="19" width="336" height="315" fill="url(#lbg-b5)"/>
+    <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z" fill="none" stroke="#80828A" stroke-opacity="0.3" stroke-width="3"/>
+  </g>
+  <g clip-path="url(#lbg-cr)">
+    <rect x="-1" y="144" width="197" height="190" fill="url(#lbg-r0)"/>
+    <rect x="-1" y="144" width="197" height="190" fill="url(#lbg-r1)"/>
+    <rect x="-1" y="144" width="197" height="190" fill="url(#lbg-r2)"/>
+    <rect x="-1" y="144" width="197" height="190" fill="url(#lbg-r3)"/>
+    <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z" fill="none" stroke="url(#lbg-r4)" stroke-width="3"/>
+  </g>
+</svg>

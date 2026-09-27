@@ -79,10 +79,12 @@ section in the same change that scaffolds them.
 - Light theme only. The look follows electronic component datasheets: part numbers,
   spec tables, numbered figures, revision history.
 - Colors and type come from the tokens in `packages/ui`: Archivo (display and text)
-  and Martian Mono (data). No hard-coded colors, no emoji icons, no gradients.
+  and Martian Mono (data). No hard-coded colors, no emoji icons, and no gradients
+  outside the LB mark.
 - The green evaluation board marks live demos and nothing else.
-- The LB mark is ink on white: `brand/lb-mark.svg` from 28 px up, the compact file
-  below. Never retype it as text.
+- The LB mark comes only from the files in `brand/`. On light surfaces use the
+  `lb-icon.svg` tile or `lb-mark-graphite.svg`; the silver `lb-mark.svg` goes on dark
+  surfaces only. Never redraw, recolour or retype it.
 - WCAG 2.2 AA, full keyboard use, `prefers-reduced-motion` respected.
 
 ## Commands

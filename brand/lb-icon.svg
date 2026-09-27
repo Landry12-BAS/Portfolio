@@ -1,8 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 332.5" width="420" height="332.5" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img">
   <title>LB, Landry Bodjona</title>
-  <!-- LB mark, rev B. Geometry in mark units: 420 x 332.5. Silver L and B, blue ribbon from the B's middle bar to the foot of the L. Source of truth: brand/README.md. Full colour, for dark surfaces. -->
+  <!-- LB mark, rev B. Geometry in mark units: 420 x 332.5. Silver L and B, blue ribbon from the B's middle bar to the foot of the L. Source of truth: brand/README.md. App icon, favicon and avatar tile, 512 x 512. -->
   <defs>
-    <linearGradient id="lbm-l0" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="285">
+    <linearGradient id="lbi-g0" gradientUnits="userSpaceOnUse" x1="0" y1="515" x2="878" y2="0">
+      <stop offset="0" stop-color="#000004"/>
+      <stop offset="0.5" stop-color="#030207"/>
+      <stop offset="1" stop-color="#010206"/>
+    </linearGradient>
+    <radialGradient id="lbi-g1" gradientUnits="userSpaceOnUse" cx="2738.1" cy="-1559.1" r="2868.5">
+      <stop offset="0" stop-color="#D5DBFF" stop-opacity="0.602"/>
+      <stop offset="0.5" stop-color="#D5DBFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#D5DBFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lbi-l0" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="285">
       <stop offset="0" stop-color="#FFFFFF"/>
       <stop offset="0.125" stop-color="#F9F9FB"/>
       <stop offset="0.25" stop-color="#FEFDFE"/>
@@ -13,25 +23,25 @@
       <stop offset="0.875" stop-color="#464652"/>
       <stop offset="1" stop-color="#483D3B"/>
     </linearGradient>
-    <linearGradient id="lbm-l1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="66.5" y2="0">
+    <linearGradient id="lbi-l1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="66.5" y2="0">
       <stop offset="0" stop-color="#000000" stop-opacity="0"/>
       <stop offset="0.5" stop-color="#000000" stop-opacity="0.034"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0.037"/>
     </linearGradient>
-    <linearGradient id="lbm-l2" gradientUnits="userSpaceOnUse" x1="8.8" y1="226.2" x2="33" y2="258.1">
+    <linearGradient id="lbi-l2" gradientUnits="userSpaceOnUse" x1="8.8" y1="226.2" x2="33" y2="258.1">
       <stop offset="0" stop-color="#0065FF" stop-opacity="0"/>
       <stop offset="0.6" stop-color="#0065FF" stop-opacity="0.041"/>
       <stop offset="1" stop-color="#0065FF" stop-opacity="0.126"/>
     </linearGradient>
-    <radialGradient id="lbm-l3" gradientUnits="userSpaceOnUse" cx="65.8" cy="194.2" r="160.3">
+    <radialGradient id="lbi-l3" gradientUnits="userSpaceOnUse" cx="65.8" cy="194.2" r="160.3">
       <stop offset="0" stop-color="#00032A" stop-opacity="0.409"/>
       <stop offset="0.5" stop-color="#00032A" stop-opacity="0.123"/>
       <stop offset="1" stop-color="#00032A" stop-opacity="0"/>
     </radialGradient>
-    <clipPath id="lbm-cl">
+    <clipPath id="lbi-cl">
       <path d="M0 0H66.5V234.18L0 284.56Z"/>
     </clipPath>
-    <linearGradient id="lbm-b0" gradientUnits="userSpaceOnUse" x1="0" y1="20" x2="0" y2="332.5">
+    <linearGradient id="lbi-b0" gradientUnits="userSpaceOnUse" x1="0" y1="20" x2="0" y2="332.5">
       <stop offset="0" stop-color="#EEEDEF"/>
       <stop offset="0.1" stop-color="#E6E6E9"/>
       <stop offset="0.2" stop-color="#D7D6DC"/>
@@ -44,37 +54,37 @@
       <stop offset="0.9" stop-color="#828294"/>
       <stop offset="1" stop-color="#20233F"/>
     </linearGradient>
-    <linearGradient id="lbm-b1" gradientUnits="userSpaceOnUse" x1="88" y1="0" x2="420" y2="0">
+    <linearGradient id="lbi-b1" gradientUnits="userSpaceOnUse" x1="88" y1="0" x2="420" y2="0">
       <stop offset="0" stop-color="#000022" stop-opacity="0.588"/>
       <stop offset="0.25" stop-color="#000022" stop-opacity="0.157"/>
       <stop offset="0.5" stop-color="#000022" stop-opacity="0.083"/>
       <stop offset="0.75" stop-color="#000022" stop-opacity="0"/>
       <stop offset="1" stop-color="#000022" stop-opacity="0"/>
     </linearGradient>
-    <radialGradient id="lbm-b2" gradientUnits="userSpaceOnUse" cx="145.5" cy="329" r="258">
+    <radialGradient id="lbi-b2" gradientUnits="userSpaceOnUse" cx="145.5" cy="329" r="258">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.731"/>
       <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.219"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lbm-b3" gradientUnits="userSpaceOnUse" cx="328.9" cy="293.5" r="128.5">
+    <radialGradient id="lbi-b3" gradientUnits="userSpaceOnUse" cx="328.9" cy="293.5" r="128.5">
       <stop offset="0" stop-color="#000D2B" stop-opacity="0.589"/>
       <stop offset="0.5" stop-color="#000D2B" stop-opacity="0.177"/>
       <stop offset="1" stop-color="#000D2B" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lbm-b4" gradientUnits="userSpaceOnUse" cx="446.4" cy="121.7" r="329.8">
+    <radialGradient id="lbi-b4" gradientUnits="userSpaceOnUse" cx="446.4" cy="121.7" r="329.8">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/>
       <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.3"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lbm-b5" gradientUnits="userSpaceOnUse" cx="224.7" cy="208.1" r="73.6">
+    <radialGradient id="lbi-b5" gradientUnits="userSpaceOnUse" cx="224.7" cy="208.1" r="73.6">
       <stop offset="0" stop-color="#001230" stop-opacity="0.346"/>
       <stop offset="0.5" stop-color="#001230" stop-opacity="0.104"/>
       <stop offset="1" stop-color="#001230" stop-opacity="0"/>
     </radialGradient>
-    <clipPath id="lbm-cb">
+    <clipPath id="lbi-cb">
       <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z"/>
     </clipPath>
-    <linearGradient id="lbm-r0" gradientUnits="userSpaceOnUse" x1="193.1" y1="146" x2="-9" y2="307.1">
+    <linearGradient id="lbi-r0" gradientUnits="userSpaceOnUse" x1="193.1" y1="146" x2="-9" y2="307.1">
       <stop offset="0" stop-color="#00007E"/>
       <stop offset="0.125" stop-color="#4A83EE"/>
       <stop offset="0.25" stop-color="#3F7DF7"/>
@@ -85,51 +95,62 @@
       <stop offset="0.875" stop-color="#10009D"/>
       <stop offset="1" stop-color="#02004C"/>
     </linearGradient>
-    <linearGradient id="lbm-r1" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
+    <linearGradient id="lbi-r1" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
       <stop offset="0" stop-color="#77FFFF" stop-opacity="0.306"/>
       <stop offset="0.35" stop-color="#77FFFF" stop-opacity="0.147"/>
       <stop offset="0.7" stop-color="#77FFFF" stop-opacity="0"/>
       <stop offset="1" stop-color="#77FFFF" stop-opacity="0"/>
     </linearGradient>
-    <radialGradient id="lbm-r2" gradientUnits="userSpaceOnUse" cx="175.7" cy="155.9" r="42.4">
+    <radialGradient id="lbi-r2" gradientUnits="userSpaceOnUse" cx="175.7" cy="155.9" r="42.4">
       <stop offset="0" stop-color="#64B6FF" stop-opacity="1"/>
       <stop offset="0.5" stop-color="#64B6FF" stop-opacity="0.3"/>
       <stop offset="1" stop-color="#64B6FF" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lbm-r3" gradientUnits="userSpaceOnUse" cx="6.3" cy="241.5" r="104.1">
+    <radialGradient id="lbi-r3" gradientUnits="userSpaceOnUse" cx="6.3" cy="241.5" r="104.1">
       <stop offset="0" stop-color="#004E1C" stop-opacity="1"/>
       <stop offset="0.5" stop-color="#004E1C" stop-opacity="0.3"/>
       <stop offset="1" stop-color="#004E1C" stop-opacity="0"/>
     </radialGradient>
-    <clipPath id="lbm-cr">
+    <clipPath id="lbi-cr">
       <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z"/>
     </clipPath>
-    <linearGradient id="lbm-r4" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
+    <linearGradient id="lbi-r4" gradientUnits="userSpaceOnUse" x1="119.4" y1="264.4" x2="82.5" y2="218.1">
       <stop offset="0" stop-color="#A0E6F5" stop-opacity="0.087"/>
       <stop offset="1" stop-color="#A0E6F5" stop-opacity="0.35"/>
     </linearGradient>
+    <clipPath id="lbi-tile">
+      <rect width="512" height="512" rx="112"/>
+    </clipPath>
   </defs>
-  <g clip-path="url(#lbm-cl)">
-    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbm-l0)"/>
-    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbm-l1)"/>
-    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbm-l2)"/>
-    <rect x="-1" y="-1" width="69" height="287" fill="url(#lbm-l3)"/>
-    <path d="M0 0H66.5V234.18L0 284.56Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="3"/>
+  <g clip-path="url(#lbi-tile)">
+    <g transform="scale(0.58314 0.99417)">
+      <rect width="878" height="515" fill="url(#lbi-g0)"/>
+      <rect width="878" height="515" fill="url(#lbi-g1)"/>
+    </g>
   </g>
-  <g clip-path="url(#lbm-cb)">
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b0)"/>
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b1)"/>
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b2)"/>
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b3)"/>
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b4)"/>
-    <rect x="86" y="19" width="336" height="315" fill="url(#lbm-b5)"/>
-    <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="3"/>
-  </g>
-  <g clip-path="url(#lbm-cr)">
-    <rect x="-1" y="144" width="197" height="190" fill="url(#lbm-r0)"/>
-    <rect x="-1" y="144" width="197" height="190" fill="url(#lbm-r1)"/>
-    <rect x="-1" y="144" width="197" height="190" fill="url(#lbm-r2)"/>
-    <rect x="-1" y="144" width="197" height="190" fill="url(#lbm-r3)"/>
-    <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z" fill="none" stroke="url(#lbm-r4)" stroke-width="3"/>
+  <g transform="translate(88 123) scale(0.8)">
+    <g clip-path="url(#lbi-cl)">
+      <rect x="-1" y="-1" width="69" height="287" fill="url(#lbi-l0)"/>
+      <rect x="-1" y="-1" width="69" height="287" fill="url(#lbi-l1)"/>
+      <rect x="-1" y="-1" width="69" height="287" fill="url(#lbi-l2)"/>
+      <rect x="-1" y="-1" width="69" height="287" fill="url(#lbi-l3)"/>
+      <path d="M0 0H66.5V234.18L0 284.56Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="3"/>
+    </g>
+    <g clip-path="url(#lbi-cb)">
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b0)"/>
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b1)"/>
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b2)"/>
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b3)"/>
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b4)"/>
+      <rect x="86" y="19" width="336" height="315" fill="url(#lbi-b5)"/>
+      <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="3"/>
+    </g>
+    <g clip-path="url(#lbi-cr)">
+      <rect x="-1" y="144" width="197" height="190" fill="url(#lbi-r0)"/>
+      <rect x="-1" y="144" width="197" height="190" fill="url(#lbi-r1)"/>
+      <rect x="-1" y="144" width="197" height="190" fill="url(#lbi-r2)"/>
+      <rect x="-1" y="144" width="197" height="190" fill="url(#lbi-r3)"/>
+      <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z" fill="none" stroke="url(#lbi-r4)" stroke-width="3"/>
+    </g>
   </g>
 </svg>

@@ -1,4 +1,7 @@
-<img src="brand/lb-mark.svg" alt="LB" width="72" height="72">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/lb-mark.svg">
+  <img src="brand/lb-mark-graphite.svg" alt="LB" width="96" height="76">
+</picture>
 
 # Landry Bodjona · Portfolio
 Where real-world work meets AI, agentic intelligence, and powerful tools.

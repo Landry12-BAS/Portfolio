@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 332.5" width="420" height="332.5" role="img">
+  <title>LB, Landry Bodjona</title>
+  <!-- LB mark, rev B. Geometry in mark units: 420 x 332.5. Silver L and B, blue ribbon from the B's middle bar to the foot of the L. Source of truth: brand/README.md. One colour: a 6-unit keyline keeps the ribbon apart from the L and B. -->
+  <defs>
+    <mask id="lbo-k" maskUnits="userSpaceOnUse" x="-10" y="-10" width="440" height="353">
+      <rect x="-10" y="-10" width="440" height="353" fill="#FFFFFF"/>
+      <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z" fill="#000000" stroke="#000000" stroke-width="12" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g fill="#0F1419">
+    <g mask="url(#lbo-k)">
+      <path d="M0 0H66.5V234.18L0 284.56Z"/>
+      <path d="M153 20H321A79.5 79.5 0 0 1 375.04 157.81A94 94 0 0 1 420 238C420 294.7 383 332.5 327.5 332.5H87.95L155.66 277H319A39 39 0 0 0 358 238A39 39 0 0 0 319 199H196V145H301A36 36 0 0 0 337 109A36 36 0 0 0 301 73H153Z"/>
+    </g>
+    <path d="M172.63 152.28A35.9 35.9 0 0 1 194.3 145V199.23L37.11 331.1A6 6 0 0 1 33.26 332.5H20A20 20 0 0 1 0 312.5V283.06Z"/>
+  </g>
+</svg>
