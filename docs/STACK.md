@@ -25,16 +25,16 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Front end | Next.js (App Router) · React 19 · TypeScript strict (TSX) | Server components for fast datasheet pages, client islands for live demos, best-in-class hosting on Vercel |
 | Styling | Tailwind CSS v4 with CSS-variable tokens | Tokens are the single source of the datasheet palette and type; utilities keep components consistent |
 | Components | React Aria Components, wrapped in `packages/ui` | Best-in-class accessibility with no visual opinions, so the site never looks like a template |
-| Motion and data viz | Motion · visx · Vega-Lite (LS-05) · React Flow (LS-08) · react-pdf (LS-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
+| Motion and data viz | Motion · visx · Vega-Lite (LB-05) · React Flow (LB-08) · react-pdf (LB-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
 | AI gateway | TypeScript · Fastify 5 · OpenAI-compatible API | One door for every model call: routing, fallback, token-aware budgets, data-class rules, cache, spans. Streaming proxies are I/O-bound, which suits Node |
-| Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LS-01, LS-02, LS-09. Rich relational domains, admin, WebSockets and background jobs |
-| Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LS-03, LS-05, LS-10. Sync where work is CPU-bound, async views where one request fans out |
-| Node systems | Node 24 LTS · Fastify 5 · Drizzle ORM · BullMQ · Playwright | LS-04, LS-06, LS-07, LS-08. Event streams, workflows, browser automation, shared Zod types |
+| Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LB-01, LB-02, LB-09. Rich relational domains, admin, WebSockets and background jobs |
+| Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LB-03, LB-05, LB-10. Sync where work is CPU-bound, async views where one request fans out |
+| Node systems | Node 24 LTS · Fastify 5 · Drizzle ORM · BullMQ · Playwright | LB-04, LB-06, LB-07, LB-08. Event streams, workflows, browser automation, shared Zod types |
 | Model clients | AI SDK (TypeScript) · `openai` SDK + instructor (Python) | Both point at the gateway; typed structured output with validation and repair |
 | Database | PostgreSQL 17 + pgvector, one schema per system | One stateful store for relational data, vectors and job state; synthetic data rebuilt from seed |
 | Cache and queues | Redis 8 on the box | Celery, Channels and BullMQ poll constantly, which would exhaust a command-metered free tier |
 | Files | Cloudflare R2 with lifecycle rules | Visitor uploads expire by storage policy, not by a cron job; replay recordings live here too |
-| Analytics data | DuckDB over Parquet (LS-05) | Millions of synthetic orders queried in-process, read-only, with no database load |
+| Analytics data | DuckDB over Parquet (LB-05) | Millions of synthetic orders queried in-process, read-only, with no database load |
 | Hosting | Vercel Hobby (front end) · one ARM64 box with Docker Compose behind Caddy and Cloudflare | Always on, no cold starts, identical in development and production |
 | Edge | Cloudflare DNS, proxy, WAF, Turnstile | Hides the origin, stops bots before they spend quota |
 | Observability | Run spans in Postgres (Scope and measured datasheet numbers) · Sentry · uptime monitor | Product telemetry and ops telemetry kept separate |
@@ -47,9 +47,9 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 flowchart LR
   V[Visitor] -->|HTTPS| W[Next.js on Vercel]
   W -->|API, SSE, WebSocket| C[Cloudflare → Caddy on the box]
-  C --> DJ[Django · LS-01 02 09]
-  C --> FL[Flask · LS-03 05 10]
-  C --> ND[Node · LS-04 06 07 08]
+  C --> DJ[Django · LB-01 02 09]
+  C --> FL[Flask · LB-03 05 10]
+  C --> ND[Node · LB-04 06 07 08]
   DJ & FL & ND -->|every model call| GW[AI gateway]
   GW --> GQ[Groq]
   GW --> CF[Workers AI]
@@ -99,7 +99,7 @@ Mistral's free mode (trains on inputs unless you opt out).
    next model on its chain. Once an answer is streaming, it never switches provider.
 6. **Structured output.** Groq's strict JSON schema works only without streaming and
    without tools. Tool loops validate arguments with Zod or Pydantic instead.
-7. **Embeddings are pinned.** Vectors from different models don't mix, so `ls-embed`
+7. **Embeddings are pinned.** Vectors from different models don't mix, so `lb-embed`
    has no fallback. If Workers AI is down, retrieval degrades to Postgres full-text
    search.
 8. **Guard free text.** Every visitor-typed input passes Prompt Guard 2 before it
@@ -109,16 +109,16 @@ Mistral's free mode (trains on inputs unless you opt out).
 
 | Alias | Used by | Chain, in order |
 |---|---|---|
-| `ls-fast` | Classification, short JSON (LS-01, LS-05, LS-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
-| `ls-tools` | Chat and tool calls (LS-01, LS-02, LS-06, LS-07, LS-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter qwen3.8-27b:free (synthetic only) |
-| `ls-reason` | SQL and planning (LS-05, LS-06) | Groq gpt-oss-120b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only) |
-| `ls-long` | Long documents (LS-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
-| `ls-vision` | Invoices, screenshots (LS-03, LS-07) | Workers AI Llama 4 Scout → Workers AI Gemma 4 26B → OpenRouter Gemma 4 31B:free (synthetic only) |
-| `ls-embed` | Retrieval (LS-01, LS-02) | Workers AI bge-m3, pinned |
-| `ls-rerank` | Retrieval (LS-01) | Workers AI bge-reranker-base |
-| `ls-stt` | Fast mode (LS-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
-| `ls-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Workers AI llama-guard-3-8b |
-| `ls-judge` | Nightly evals (LS-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
+| `lb-fast` | Classification, short JSON (LB-01, LB-05, LB-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
+| `lb-tools` | Chat and tool calls (LB-01, LB-02, LB-06, LB-07, LB-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter qwen3.8-27b:free (synthetic only) |
+| `lb-reason` | SQL and planning (LB-05, LB-06) | Groq gpt-oss-120b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only) |
+| `lb-long` | Long documents (LB-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
+| `lb-vision` | Invoices, screenshots (LB-03, LB-07) | Workers AI Llama 4 Scout → Workers AI Gemma 4 26B → OpenRouter Gemma 4 31B:free (synthetic only) |
+| `lb-embed` | Retrieval (LB-01, LB-02) | Workers AI bge-m3, pinned |
+| `lb-rerank` | Retrieval (LB-01) | Workers AI bge-reranker-base |
+| `lb-stt` | Fast mode (LB-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
+| `lb-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Workers AI llama-guard-3-8b |
+| `lb-judge` | Nightly evals (LB-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
 
 These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
 set in Eval Lab before it serves visitors.
@@ -136,11 +136,11 @@ Most systems need 1 to 4 calls per run, so the free tiers carry roughly 100 live
 day before replay mode takes over. That is enough for a portfolio. The three heavy
 systems are designed to be frugal:
 
-- **LS-06** keeps detection and correlation in deterministic code, and its agents
+- **LB-06** keeps detection and correlation in deterministic code, and its agents
   reason over compact summaries: 10 to 15 calls per incident.
-- **LS-07** plans the test once, runs it with Playwright, and asks the model again
+- **LB-07** plans the test once, runs it with Playwright, and asks the model again
   only when a step fails: 5 to 8 calls per run.
-- **LS-10** visitor runs use 10 cases and rule-based graders, about 20 calls. The LLM
+- **LB-10** visitor runs use 10 cases and rule-based graders, about 20 calls. The LLM
   judge runs nightly.
 
 **Recommendation:** buy the one-time $10 OpenRouter credit. It lifts OpenRouter from
@@ -171,7 +171,7 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   direct SSE and WebSocket connections to the box. Vercel functions don't hold
   WebSockets, so live streams go straight to the API domain.
 - **Streaming.** One SSE stream per run multiplexes tokens, spans and the final
-  result, which is what the Scope panel draws. LS-02 and LS-06 use WebSockets.
+  result, which is what the Scope panel draws. LB-02 and LB-06 use WebSockets.
 - **Data.** TanStack Query for server state; `openapi-fetch` clients generated from
   each service's OpenAPI spec; Zod at every boundary.
 - **Design system.** Tailwind v4 tokens, React Aria Components, Archivo and Martian
@@ -184,52 +184,52 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 ## Back ends
 
-### Django systems (LS-01 Support Desk, LS-02 Booking Concierge, LS-09 Meeting Recorder)
+### Django systems (LB-01 Support Desk, LB-02 Booking Concierge, LB-09 Meeting Recorder)
 
 - **Django 5.2 LTS**, supported until April 2028, over the newest feature release.
 - **Django Ninja** for APIs: Pydantic schemas (the same style as the Flask side),
   native async views, and OpenAPI with little code. DRF is the common alternative;
   Ninja is lighter and typed.
-- **Channels 4** served by uvicorn for WebSockets (LS-02 live calendar), with a
+- **Channels 4** served by uvicorn for WebSockets (LB-02 live calendar), with a
   Redis channel layer.
 - **Celery 5** with Redis for jobs and Celery beat for schedules (nightly calendar
   reset, retention sweeps).
-- **Postgres specifics.** LS-02 prevents double booking with an exclusion constraint
-  on time ranges. LS-01 stores embeddings in pgvector and combines them with Postgres
+- **Postgres specifics.** LB-02 prevents double booking with an exclusion constraint
+  on time ranges. LB-01 stores embeddings in pgvector and combines them with Postgres
   full-text search for hybrid retrieval.
-- **Speech (LS-09).** Groq Whisper in fast mode, faster-whisper on the box in private
+- **Speech (LB-09).** Groq Whisper in fast mode, faster-whisper on the box in private
   mode.
 
-### Flask systems (LS-03 Invoice Reader, LS-05 Data Analyst, LS-10 Eval Lab)
+### Flask systems (LB-03 Invoice Reader, LB-05 Data Analyst, LB-10 Eval Lab)
 
 - **Flask 3.1** with **flask-openapi3** (Pydantic models become OpenAPI 3.1) and
   **SQLAlchemy 2** with Alembic migrations.
-- **Served by gunicorn with threaded workers.** LS-05 is synchronous on purpose: its
+- **Served by gunicorn with threaded workers.** LB-05 is synchronous on purpose: its
   queries are short and CPU-bound, threads cover the model wait, and the code stays
   simple.
-- **Async views where one request fans out.** LS-03 runs OCR and extraction
-  concurrently; LS-10 fans out evaluation calls with `asyncio.gather` under a
+- **Async views where one request fans out.** LB-03 runs OCR and extraction
+  concurrently; LB-10 fans out evaluation calls with `asyncio.gather` under a
   semaphore. Flask async views give concurrency inside a request, not more
   concurrent requests. If a Flask system ever needs many long-lived connections, it
   moves to Quart, the ASGI version of Flask.
-- **LS-03:** RapidOCR (ONNX, runs on CPU) for word boxes, a vision model through the
+- **LB-03:** RapidOCR (ONNX, runs on CPU) for word boxes, a vision model through the
   gateway for fields, instructor + Pydantic for typed extraction with validation
   retries, and deterministic arithmetic checks.
-- **LS-05:** DuckDB over Parquet, sqlglot to parse and allowlist every query, a
+- **LB-05:** DuckDB over Parquet, sqlglot to parse and allowlist every query, a
   read-only connection, a forced row limit and a timeout.
 
-### Node systems (LS-04 Contract Radar, LS-06 Incident Commander, LS-07 QA Engineer, LS-08 Automation Studio)
+### Node systems (LB-04 Contract Radar, LB-06 Incident Commander, LB-07 QA Engineer, LB-08 Automation Studio)
 
 - **Node 24 LTS, Fastify 5** with the Zod type provider (one schema for validation,
   types and OpenAPI), `@fastify/websocket`, and pino logging.
 - **Drizzle ORM** for Postgres: SQL-first, no binary engine, one schema per system.
-- **BullMQ** for jobs: contract parsing (LS-04), browser runs (LS-07), durable
-  workflow steps (LS-08). LS-06 streams simulator events through Redis Streams.
+- **BullMQ** for jobs: contract parsing (LB-04), browser runs (LB-07), durable
+  workflow steps (LB-08). LB-06 streams simulator events through Redis Streams.
 - **AI SDK** for tool loops, streaming and `generateObject` with Zod, pointed at the
   gateway through its OpenAI-compatible provider.
-- **LS-04:** `pdfjs-dist` on the server and `react-pdf` in the browser use the same
+- **LB-04:** `pdfjs-dist` on the server and `react-pdf` in the browser use the same
   text layer, so quote positions line up exactly.
-- **LS-07:** Playwright and axe-core in a separate worker container with concurrency
+- **LB-07:** Playwright and axe-core in a separate worker container with concurrency
   1, on a Docker network that can only reach the staging shop.
 
 ## Data
@@ -245,7 +245,7 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   response cache.
 - **Cloudflare R2** for uploads (lifecycle rules delete them after 1 to 24 hours,
   depending on the system) and for replay recordings.
-- **DuckDB + Parquet** for LS-05's two million synthetic orders.
+- **DuckDB + Parquet** for LB-05's two million synthetic orders.
 
 ## Infrastructure and hosting
 
@@ -284,8 +284,8 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 - **Untrusted content:** tickets, uploads and web pages stay out of instruction
   slots. Tools with side effects need human approval. Free-text input passes a
   moderation model first.
-- **Sandboxes:** read-only SQL with a parse-tree allowlist (LS-05), a browser that can
-  only reach the staging shop (LS-07), mock connectors for every side effect (LS-08).
+- **Sandboxes:** read-only SQL with a parse-tree allowlist (LB-05), a browser that can
+  only reach the staging shop (LB-07), mock connectors for every side effect (LB-08).
 - **Supply chain:** Renovate, CodeQL, gitleaks (pre-commit and CI), Trivy image scans,
   GitHub Actions pinned by commit SHA.
 - **Data:** synthetic only. Visitor content only reaches providers that don't train
@@ -312,14 +312,14 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 ```text
 apps/web/                 Next.js site and every demo UI (TSX)
 services/gateway/         AI gateway (TypeScript, Fastify) + routing.yaml
-services/node-systems/    LS-04, LS-06, LS-07, LS-08 (+ worker entry point)
-services/django-systems/  LS-01, LS-02, LS-09 (+ Celery worker)
-services/flask-systems/   LS-03, LS-05, LS-10
-services/staging-shop/    Deliberately buggy shop for LS-07 (Vite + React)
+services/node-systems/    LB-04, LB-06, LB-07, LB-08 (+ worker entry point)
+services/django-systems/  LB-01, LB-02, LB-09 (+ Celery worker)
+services/flask-systems/   LB-03, LB-05, LB-10
+services/staging-shop/    Deliberately buggy shop for LB-07 (Vite + React)
 packages/ui/              Design system: tokens, React Aria components, Storybook
 packages/contracts/       Shared Zod schemas and event types
 packages/api-clients/     TypeScript clients generated from OpenAPI
-python/ls-common/         Shared Python: gateway client, tracer, run context
+python/lb-common/         Shared Python: gateway client, tracer, run context
 data/seed/                Deterministic synthetic data for Basalt & Bean
 infra/                    docker-compose.yml, Caddyfile, deploy scripts
 docs/                     STACK.md, PLAYBOOK.md, decision records

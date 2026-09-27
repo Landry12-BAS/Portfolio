@@ -20,11 +20,11 @@ demo, and what "done" means. The stack itself is in [`STACK.md`](STACK.md).
 
 | Phase | Systems | Why this order |
 |---|---|---|
-| 1. Foundation | LS-00 Platform, LS-01 Support Desk (Django), LS-08 Automation Studio (Node), LS-05 Data Analyst (Flask sync) | Covers all three back ends, the gateway, tracing, quotas and the eval harness. Everything after reuses them. |
-| 2. Breadth | LS-02 Booking Concierge, LS-03 Invoice Reader (Flask async), LS-04 Contract Radar, LS-07 QA Engineer | Adds real-time chat, vision, long documents and browser automation on a stable base. |
-| 3. Showpieces | LS-06 Incident Commander, LS-09 Meeting Recorder, LS-10 Eval Lab | The most complex builds, on the most mature platform. Eval Lab inherits golden sets grown since Phase 1. |
+| 1. Foundation | LB-00 Platform, LB-01 Support Desk (Django), LB-08 Automation Studio (Node), LB-05 Data Analyst (Flask sync) | Covers all three back ends, the gateway, tracing, quotas and the eval harness. Everything after reuses them. |
+| 2. Breadth | LB-02 Booking Concierge, LB-03 Invoice Reader (Flask async), LB-04 Contract Radar, LB-07 QA Engineer | Adds real-time chat, vision, long documents and browser automation on a stable base. |
+| 3. Showpieces | LB-06 Incident Commander, LB-09 Meeting Recorder, LB-10 Eval Lab | The most complex builds, on the most mature platform. Eval Lab inherits golden sets grown since Phase 1. |
 
-Start with LS-00 and LS-01 together: the support desk exercises every platform piece
+Start with LB-00 and LB-01 together: the support desk exercises every platform piece
 (gateway, quotas, traces, streaming, evals, human review) with the least domain risk.
 
 Relative size for one developer: M is about 1 to 2 weeks, L about 2 to 4 weeks, XL
@@ -72,7 +72,7 @@ A system is done when all of these are true:
 ## Workflow
 
 - **Branches.** Short-lived branches off `main`, merged by squash with a Conventional
-  Commit title (`feat(ls-01): cite policy chunks in drafts`).
+  Commit title (`feat(lb-01): cite policy chunks in drafts`).
 - **Pull requests.** Every PR gets a Vercel preview. CI must pass: lint, types, tests,
   API client drift check, eval gate (when prompts change), axe and Lighthouse budgets.
 - **Commits.** Owner identity only. See the git rules in [`../CLAUDE.md`](../CLAUDE.md).

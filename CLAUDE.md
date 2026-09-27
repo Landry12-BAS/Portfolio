@@ -4,13 +4,15 @@ Guidance for Claude Code sessions working in this repository.
 
 ## Project
 
-A live AI portfolio: ten AI systems (LS-01 to LS-10) built for one fictional company,
-Basalt & Bean Coffee Co., on a shared platform (LS-00). Every system runs live on the
+A live AI portfolio: ten AI systems (LB-01 to LB-10) built for one fictional company,
+Basalt & Bean Coffee Co., on a shared platform (LB-00). Every system runs live on the
 main site and any visitor can try it, inspect its trace, and try to break it.
 
 - Stack and the reasons behind it: [`docs/STACK.md`](docs/STACK.md)
 - How each system is built and shipped: [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md)
 - Visual proposal (private to the owner): https://claude.ai/artifact/GJi1aeCdsYB6UDwDuD6WgC
+- Brand: Landry Bodjona, logo mark LB ([`brand/`](brand/README.md)). Part numbers and
+  internal names use the LB prefix (`LB-01`, `lb-fast`).
 
 Status: planning. Nothing is scaffolded yet. Add the real commands to the Commands
 section in the same change that scaffolds them.
@@ -37,7 +39,7 @@ section in the same change that scaffolds them.
 ## Architecture rules
 
 - Every model call goes through the AI gateway (`services/gateway`) using a virtual
-  model alias such as `ls-fast` or `ls-tools`. Services never call a provider directly
+  model alias such as `lb-fast` or `lb-tools`. Services never call a provider directly
   and never hold provider keys.
 - Treat model output as untrusted input: validate structured output against its
   schema (Zod or Pydantic) and repair or reject, never pass it through unchecked.
@@ -67,6 +69,8 @@ section in the same change that scaffolds them.
 - Colors and type come from the tokens in `packages/ui`: Archivo (display and text)
   and Martian Mono (data). No hard-coded colors, no emoji icons, no gradients.
 - The green evaluation board marks live demos and nothing else.
+- The LB mark is ink on white: `brand/lb-mark.svg` from 28 px up, the compact file
+  below. Never retype it as text.
 - WCAG 2.2 AA, full keyboard use, `prefers-reduced-motion` respected.
 
 ## Commands
