@@ -1,6 +1,6 @@
 # Security architecture
 
-Status: accepted · Rev D · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev E · 28 Sep 2026 · Owner: Landry
 
 The site has **no accounts**: no sign-up, no login, no logout. Every visitor is
 anonymous, and every protection below works without asking anyone who they are.
@@ -86,7 +86,7 @@ Mapped to the OWASP Top 10 for LLM applications:
 
 | Risk | Control |
 |---|---|
-| Prompt injection | Prompt Guard 2 on visitor text; untrusted content kept out of instruction slots; tools scoped per step |
+| Prompt injection | Prompt Guard 2 on visitor text, read in overlapping segments so nothing hides past its window, and failing closed without a verdict; untrusted content kept out of instruction slots; tools scoped per step |
 | Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code |
 | Excessive agency | No real side effects: sandboxed connectors, and a human click before any action |
 | Sensitive data disclosure | Synthetic data; visitor content routed only to providers that don't train on inputs |
@@ -107,9 +107,11 @@ attempts. Every prompt change must pass it.
   Sentry, and nothing else leaves the box except the tunnel.
 - **Service tokens.** Each service signs short-lived JWTs (EdDSA) with its own private
   key; the gateway holds only the public keys, refuses tokens older than 10 minutes,
-  ties each system to one service, and rejects everything else. Provider keys exist
-  only in the gateway. Without Redis the gateway can't check a budget, so it fails
-  closed.
+  ties each system to one service, and rejects everything else. A service refuses a
+  key file other users could read, and its gateway client never follows a redirect or
+  a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
+  exist only in the gateway. Without Redis the gateway can't check a budget, so it
+  fails closed.
 - **Postgres:** one role per system, granted only its own schema; the gateway's role
   sees only `platform`.
 - **Redis:** one ACL user per service, limited to its key prefix, with dangerous

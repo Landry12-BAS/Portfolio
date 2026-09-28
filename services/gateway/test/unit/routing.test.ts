@@ -42,13 +42,36 @@ function issuesOf(text: string, env: Record<string, string> = allKeys): readonly
 describe('the committed routing table', () => {
   const routing: Routing = loadRouting(committed, allKeys)
 
-  it('loads and fills the account ID into the Workers AI URL', () => {
-    expect(routing.providers.get('workers-ai')?.baseUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/v1')
-    expect([...routing.aliases.keys()]).toEqual(['lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed'])
+  it('loads and fills the account ID into both Workers AI URLs', () => {
+    const workers = routing.providers.get('workers-ai')
+    expect(workers?.baseUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/v1')
+    expect(workers?.runUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/run')
+    expect([...routing.aliases.keys()]).toEqual([
+      'lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed', 'lb-rerank', 'lb-guard',
+    ])
   })
 
   it('reaches every provider over HTTPS', () => {
-    for (const provider of routing.providers.values()) expect(provider.baseUrl).toMatch(/^https:\/\//)
+    for (const provider of routing.providers.values()) {
+      expect(provider.baseUrl).toMatch(/^https:\/\//)
+      if (provider.runUrl !== undefined) expect(provider.runUrl).toMatch(/^https:\/\//)
+    }
+  })
+
+  it('guards visitor text with Prompt Guard only, flagging at 0.9', () => {
+    const guard = routing.aliases.get('lb-guard')!
+    expect(guard.threshold).toBe(0.9)
+    expect(guard.chain.map(model => model.ref)).toEqual(['groq/llama-prompt-guard-2-86m', 'groq/llama-prompt-guard-2-22m'])
+  })
+
+  it('reranks with Workers AI\'s reranker, whose logits the gateway maps to 0 to 1', () => {
+    const [reranker] = routing.aliases.get('lb-rerank')!.chain
+    expect(reranker?.ref).toBe('workers-ai/bge-reranker-base')
+    expect(reranker?.scores).toBe('logits')
+  })
+
+  it('gives LB-01 every alias its ticket pipeline needs', () => {
+    expect(routing.systems.get('lb-01')?.aliases).toEqual(['lb-fast', 'lb-tools', 'lb-embed', 'lb-rerank', 'lb-guard'])
   })
 
   it('keeps NVIDIA off every chain in production, whatever the data', () => {
@@ -147,6 +170,39 @@ describe('mistakes the loader catches', () => {
     expect(issuesOf(edited((doc) => {
       doc.providers.groq.baseUrl = 'http://127.0.0.1:8081/v1'
     }))).toEqual([])
+  })
+
+  it('refuses a reranker without its provider\'s own endpoint or a score format', () => {
+    const issues = issuesOf(edited((doc) => {
+      delete doc.providers['workers-ai'].runUrl
+      delete doc.providers['workers-ai'].models['bge-reranker-base'].scores
+    }))
+    expect(issues).toEqual([
+      'workers-ai/bge-reranker-base reranks, so providers.workers-ai needs a runUrl',
+      'workers-ai/bge-reranker-base reranks, so it needs scores: logits or probabilities',
+    ])
+  })
+
+  it('refuses a score format on a model that doesn\'t rerank', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.providers['workers-ai'].models['bge-m3'].scores = 'logits'
+    }))
+    expect(issues).toEqual(['workers-ai/bge-m3: scores only applies to rerankers'])
+  })
+
+  it('refuses a guard without a threshold, and a threshold anywhere else', () => {
+    const issues = issuesOf(edited((doc) => {
+      delete doc.aliases['lb-guard'].threshold
+      doc.aliases['lb-fast'].threshold = 0.5
+    }))
+    expect(issues).toEqual(['aliases.lb-fast: only guard aliases have a threshold', 'aliases.lb-guard: guard aliases need a threshold'])
+  })
+
+  it('refuses plain HTTP to a provider\'s own endpoint too', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.providers['workers-ai'].runUrl = 'http://api.cloudflare.com/ai/run'
+    }))
+    expect(issues).toContain('providers.workers-ai.runUrl must use https')
   })
 
   it('refuses a visitor quota above the system\'s daily quota', () => {

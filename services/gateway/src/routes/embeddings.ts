@@ -38,18 +38,18 @@ export function registerEmbeddings(app: FastifyInstance, ctx: GatewayContext): v
     const call = new ModelCall(ctx, meta, alias, plan, { input, output: 0 }, false)
     await call.admit()
     const served = await call.run(jsonAttempt(
-      '/embeddings',
+      'embeddings',
       model => ({ model: model.id, input: body.input }),
       (json) => {
         // One vector per input, or the caller would pair texts with the wrong vectors.
         const parsed = embeddingsResponseSchema.safeParse(json)
-        return parsed.success && parsed.data.data.length === inputs.length
+        return parsed.success && parsed.data.data.length === inputs.length ? parsed.data : undefined
       },
       MAX_EMBEDDINGS_BYTES,
       watchClient(reply.raw),
       ctx.now,
     ))
-    await call.finish(served, readUsage(served.value.json), { ok: true })
+    await call.finish(served, readUsage(served.value.parsed), { ok: true })
     return reply.headers(call.headers(served.model)).type('application/json').send(served.value.text)
   })
 }

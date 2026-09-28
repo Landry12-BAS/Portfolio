@@ -1,0 +1,20 @@
+# lb-common: the Python every system shares. The AI gateway client, service tokens, and
+# the run context and tracer behind the Scope.
+[project]
+name = "lb-common"
+version = "0.1.0"
+description = "Shared Python for the LB systems: the AI gateway client, service tokens, run context and tracer."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cryptography>=50.0.1",
+    "httpx2>=2.13.1",
+    "openai>=3.20.0",
+    "pydantic>=2.13.5",
+    "pyjwt>=2.15.1",
+    "redis>=8.1.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"

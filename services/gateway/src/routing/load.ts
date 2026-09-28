@@ -5,7 +5,7 @@
 import { parse } from 'yaml'
 
 import { routingSchema } from './schema.ts'
-import type { Capability, Limits, ProviderConfig, RoutingFile, SystemConfig, Timeouts } from './schema.ts'
+import type { AliasKind, Capability, Limits, ProviderConfig, RoutingFile, SystemConfig, Timeouts } from './schema.ts'
 
 /** A model provider as the gateway uses it, with its URL and key resolved from the environment. */
 export interface Provider {
@@ -13,8 +13,10 @@ export interface Provider {
   name: string
   // Undefined when the URL needs an environment variable that isn't set.
   baseUrl: string | undefined
+  // The provider's own model endpoint, when it has one (Workers AI's /ai/run).
+  runUrl: string | undefined
   apiKey: string | undefined
-  // True when both the URL and the key are present, so calls can go out.
+  // True when the key and every URL the provider declares are present, so calls can go out.
   configured: boolean
   trainsOnInputs: boolean
   terms: ProviderConfig['terms']
@@ -35,15 +37,19 @@ export interface Model {
   capabilities: ReadonlySet<Capability>
   limits: Limits | undefined
   neurons: { input: number, output: number } | undefined
+  // Rerankers only: whether their scores are raw logits or already probabilities.
+  scores: 'logits' | 'probabilities' | undefined
 }
 
 /** A virtual model such as `lb-tools`: its limits, timeouts and chain of real models. */
 export interface Alias {
   name: string
   description: string
-  kind: 'chat' | 'embedding'
+  kind: AliasKind
   maxInputTokens: number
   maxOutputTokens: number
+  // Guards only: the injection probability at which a text is flagged.
+  threshold: number | undefined
   timeouts: Timeouts
   chain: readonly Model[]
 }
@@ -90,11 +96,11 @@ function isAllowedUrl(url: URL): boolean {
 }
 
 /**
- * Fills ${NAME} placeholders in a provider's base URL from the environment and checks
- * the result. Returns undefined when a variable is missing (the provider stays off),
- * and records an issue when the URL is malformed or not HTTPS.
+ * Fills ${NAME} placeholders in one of a provider's URLs (`baseUrl` or `runUrl`) from the
+ * environment and checks the result. Returns undefined when a variable is missing (the
+ * provider stays off), and records an issue when the URL is malformed or not HTTPS.
  */
-function resolveBaseUrl(key: string, template: string, env: Env, issues: string[]): string | undefined {
+function resolveUrl(key: string, field: 'baseUrl' | 'runUrl', template: string, env: Env, issues: string[]): string | undefined {
   let missing = false
   // Values come from deploy configuration, as trusted as this file, so they are
   // inserted as written: an account ID in a path, or a whole URL in the tests.
@@ -109,11 +115,11 @@ function resolveBaseUrl(key: string, template: string, env: Env, issues: string[
     url = new URL(value)
   }
   catch {
-    issues.push(`providers.${key}.baseUrl is not a URL`)
+    issues.push(`providers.${key}.${field} is not a URL`)
     return undefined
   }
   if (!isAllowedUrl(url)) {
-    issues.push(`providers.${key}.baseUrl must use https`)
+    issues.push(`providers.${key}.${field} must use https`)
     return undefined
   }
   return value.replace(/\/+$/, '')
@@ -145,14 +151,16 @@ export function loadRouting(text: string, env: Env): Routing {
   const providers = new Map<string, Provider>()
   const models = new Map<string, Model>()
   for (const [key, config] of Object.entries(file.providers)) {
-    const baseUrl = resolveBaseUrl(key, config.baseUrl, env, issues)
+    const baseUrl = resolveUrl(key, 'baseUrl', config.baseUrl, env, issues)
+    const runUrl = config.runUrl === undefined ? undefined : resolveUrl(key, 'runUrl', config.runUrl, env, issues)
     const apiKey = env[config.keyEnv]?.trim() || undefined
     const provider: Provider = {
       key,
       name: config.name,
       baseUrl,
+      runUrl,
       apiKey,
-      configured: Boolean(baseUrl && apiKey),
+      configured: Boolean(baseUrl && apiKey && (config.runUrl === undefined || runUrl)),
       trainsOnInputs: config.trainsOnInputs,
       terms: config.terms,
       maxTokensParam: config.maxTokensParam,
@@ -168,6 +176,12 @@ export function loadRouting(text: string, env: Env): Routing {
       if (meteredInNeurons && !modelConfig.neurons) {
         issues.push(`${ref} is metered in Neurons but has no neurons rates`)
       }
+      // Rerankers are called on the provider's own endpoint, and their scores must be
+      // mapped to 0 to 1 the same way every time.
+      const reranks = modelConfig.capabilities.includes('rerank')
+      if (reranks && config.runUrl === undefined) issues.push(`${ref} reranks, so providers.${key} needs a runUrl`)
+      if (reranks && !modelConfig.scores) issues.push(`${ref} reranks, so it needs scores: logits or probabilities`)
+      if (!reranks && modelConfig.scores) issues.push(`${ref}: scores only applies to rerankers`)
       models.set(ref, {
         ref,
         provider,
@@ -176,6 +190,7 @@ export function loadRouting(text: string, env: Env): Routing {
         capabilities: new Set(modelConfig.capabilities),
         limits: modelConfig.limits,
         neurons: modelConfig.neurons,
+        scores: modelConfig.scores,
       })
     }
   }
@@ -201,13 +216,20 @@ export function loadRouting(text: string, env: Env): Routing {
     if (config.kind === 'embedding' && config.chain.length !== 1) {
       issues.push(`aliases.${name}: embedding aliases are pinned to one model, since vectors from different models don't mix`)
     }
+    if (config.kind === 'guard' && config.threshold === undefined) {
+      issues.push(`aliases.${name}: guard aliases need a threshold`)
+    }
+    if (config.kind !== 'guard' && config.threshold !== undefined) {
+      issues.push(`aliases.${name}: only guard aliases have a threshold`)
+    }
 
     // The biggest call the alias allows must fit every model's context window and
-    // tokens-per-minute budget, or that model could never serve it.
+    // tokens-per-minute budget, or that model could never serve it. A guard reads its
+    // text in segments sized to the model, so only the minute budget applies to it.
     const maxOutputTokens = config.maxOutputTokens ?? 0
     const largestCall = config.maxInputTokens + maxOutputTokens
     for (const model of chain) {
-      if (model.context < largestCall) {
+      if (config.kind !== 'guard' && model.context < largestCall) {
         issues.push(`aliases.${name}: ${model.ref} holds ${model.context} tokens, less than the alias maximum of ${largestCall}`)
       }
       for (const tokens of [minuteTokens(model.limits), minuteTokens(model.provider.limits)]) {
@@ -229,6 +251,7 @@ export function loadRouting(text: string, env: Env): Routing {
       kind: config.kind,
       maxInputTokens: config.maxInputTokens,
       maxOutputTokens,
+      threshold: config.threshold,
       timeouts: { ...file.timeouts, ...config.timeouts },
       chain,
     })

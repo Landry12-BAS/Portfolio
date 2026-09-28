@@ -4,7 +4,7 @@ import { Readable } from 'node:stream'
 
 import type { FastifyInstance } from 'fastify'
 
-import { jsonAttempt, relay, streamAttempt, watchClient } from '../attempts.ts'
+import { jsonAttempt, matching, relay, streamAttempt, watchClient } from '../attempts.ts'
 import { estimateChatInput } from '../budget/estimate.ts'
 import { assertPlannable, ModelCall, readCallMeta, resolveAlias } from '../call.ts'
 import type { GatewayContext } from '../call.ts'
@@ -94,14 +94,14 @@ export function registerChat(app: FastifyInstance, ctx: GatewayContext): void {
     // 3a. A JSON answer: wait for it, settle the budget, relay it as the provider sent it.
     if (!stream) {
       const served = await call.run(jsonAttempt(
-        '/chat/completions',
+        'chat',
         model => upstreamChatBody(body, model, maxOutput, false),
-        json => chatCompletionSchema.safeParse(json).success,
+        matching(chatCompletionSchema),
         MAX_COMPLETION_BYTES,
         clientGone,
         ctx.now,
       ))
-      await call.finish(served, readUsage(served.value.json), { ok: true })
+      await call.finish(served, readUsage(served.value.parsed), { ok: true })
       return reply.headers(call.headers(served.model)).type('application/json').send(served.value.text)
     }
 

@@ -5,13 +5,14 @@
 import type { ServerResponse } from 'node:http'
 
 import { ParseError } from 'eventsource-parser'
+import type { z } from 'zod'
 
 import { ClientGoneError } from './call.ts'
 import type { Attempt, AttemptResult, GatewayContext, ModelCall, Served } from './call.ts'
 import type { TokenEstimate } from './budget/estimate.ts'
 import type { Model } from './routing/load.ts'
 import { classifyStatus, readCapped, ResponseTooLargeError, sendUpstream } from './upstream/client.ts'
-import type { FailureReason, UpstreamPath } from './upstream/client.ts'
+import type { Endpoint, FailureReason } from './upstream/client.ts'
 import { sseData } from './upstream/sse.ts'
 import { readUsage } from './upstream/usage.ts'
 
@@ -70,49 +71,116 @@ export function watchClient(response: ServerResponse): AbortSignal {
   return controller.signal
 }
 
-/** A complete JSON answer from a provider: its raw text, relayed as sent, and its parsed form. */
-export interface JsonAnswer {
+/** A provider's complete JSON answer: its raw text, relayed as sent, and what the route read from it. */
+export interface JsonAnswer<T> {
   text: string
-  json: unknown
+  parsed: T
+}
+
+/**
+ * Reads what a route needs from a provider's JSON answer. Undefined means the answer is
+ * unusable: the attempt fails, and the next model on the chain can try.
+ */
+export type AnswerReader<T> = (json: unknown, model: Model) => T | undefined
+
+/** Makes an answer reader that accepts any answer matching `schema`, and nothing else. */
+export function matching<T>(schema: z.ZodType<T>): AnswerReader<T> {
+  return (json) => {
+    const parsed = schema.safeParse(json)
+    return parsed.success ? parsed.data : undefined
+  }
+}
+
+/**
+ * Runs one attempt's requests under the attempt's clocks: they are aborted when the
+ * attempt times out or the client leaves, and a thrown error becomes the attempt's
+ * outcome (see `thrownReason`).
+ */
+async function underAttemptClock<T>(
+  clientGone: AbortSignal,
+  timeoutMs: number,
+  send: (signal: AbortSignal) => Promise<AttemptResult<T>>,
+): Promise<AttemptResult<T>> {
+  const controller = new AbortController()
+  const onClientGone = () => controller.abort(CLIENT_GONE)
+  clientGone.addEventListener('abort', onClientGone, { once: true })
+  const timer = setTimeout(() => controller.abort(TIMED_OUT), timeoutMs)
+  try {
+    return await send(controller.signal)
+  }
+  catch (error) {
+    return thrownReason(controller, error)
+  }
+  finally {
+    clearTimeout(timer)
+    clientGone.removeEventListener('abort', onClientGone)
+    controller.abort()
+  }
+}
+
+/**
+ * Sends one JSON request and reads the complete answer with `read`. An HTTP failure
+ * comes back as a failed result; network errors and aborts are thrown.
+ */
+async function sendJson<T>(
+  model: Model,
+  endpoint: Endpoint,
+  body: Record<string, unknown>,
+  read: AnswerReader<T>,
+  maxBytes: number,
+  signal: AbortSignal,
+  now: () => number,
+): Promise<AttemptResult<JsonAnswer<T>>> {
+  const response = await sendUpstream(model, endpoint, body, false, signal)
+  if (!response.ok) {
+    const text = await readCapped(response, ERROR_BODY_LIMIT).catch(() => '')
+    return { ok: false, failure: classifyStatus(response.status, response.headers, text, now()) }
+  }
+  const text = await readCapped(response, maxBytes)
+  const json = parseJson(text)
+  if (json === undefined || isErrorPayload(json)) return retry('bad_response', response.status)
+  const parsed = read(json, model)
+  if (parsed === undefined) return retry('bad_response', response.status)
+  return { ok: true, value: { text, parsed } }
 }
 
 /**
  * Makes an attempt that sends a JSON request and waits for the complete JSON answer,
- * which must pass `valid` before it counts as a success.
+ * which `read` must accept before it counts as a success.
  */
-export function jsonAttempt(
-  path: UpstreamPath,
+export function jsonAttempt<T>(
+  endpoint: Endpoint,
   body: (model: Model) => Record<string, unknown>,
-  valid: (json: unknown) => boolean,
+  read: AnswerReader<T>,
   maxBytes: number,
   clientGone: AbortSignal,
   now: () => number,
-): Attempt<JsonAnswer> {
-  return async (model, timeoutMs) => {
-    const controller = new AbortController()
-    const onClientGone = () => controller.abort(CLIENT_GONE)
-    clientGone.addEventListener('abort', onClientGone, { once: true })
-    const timer = setTimeout(() => controller.abort(TIMED_OUT), timeoutMs)
-    try {
-      const response = await sendUpstream(model, path, body(model), false, controller.signal)
-      if (!response.ok) {
-        const text = await readCapped(response, ERROR_BODY_LIMIT).catch(() => '')
-        return { ok: false, failure: classifyStatus(response.status, response.headers, text, now()) }
-      }
-      const text = await readCapped(response, maxBytes)
-      const json = parseJson(text)
-      if (json === undefined || isErrorPayload(json) || !valid(json)) return retry('bad_response', response.status)
-      return { ok: true, value: { text, json } }
+): Attempt<JsonAnswer<T>> {
+  return (model, timeoutMs) => underAttemptClock(clientGone, timeoutMs, signal => sendJson(model, endpoint, body(model), read, maxBytes, signal, now))
+}
+
+/**
+ * Makes an attempt that sends several JSON requests to the same model at once. It
+ * succeeds only when `read` accepts every answer; otherwise it fails like the first
+ * request that failed. The guard uses it to read a text in segments.
+ */
+export function jsonBatchAttempt<T>(
+  endpoint: Endpoint,
+  bodies: (model: Model) => Record<string, unknown>[],
+  read: AnswerReader<T>,
+  maxBytes: number,
+  clientGone: AbortSignal,
+  now: () => number,
+): Attempt<JsonAnswer<T>[]> {
+  return (model, timeoutMs) => underAttemptClock(clientGone, timeoutMs, async (signal) => {
+    const results = await Promise.all(bodies(model).map(body => sendJson(model, endpoint, body, read, maxBytes, signal, now)))
+    const answers: JsonAnswer<T>[] = []
+    for (const result of results) {
+      if (!result.ok) return result
+      answers.push(result.value)
     }
-    catch (error) {
-      return thrownReason(controller, error)
-    }
-    finally {
-      clearTimeout(timer)
-      clientGone.removeEventListener('abort', onClientGone)
-      controller.abort()
-    }
-  }
+    return { ok: true, value: answers }
+  })
 }
 
 /** A provider stream that has delivered its first event: the call is committed to it. */
@@ -140,7 +208,7 @@ export function streamAttempt(body: (model: Model) => Record<string, unknown>, c
     const timer = setTimeout(() => controller.abort(TIMED_OUT), timeoutMs)
     let committed = false
     try {
-      const response = await sendUpstream(model, '/chat/completions', body(model), true, controller.signal)
+      const response = await sendUpstream(model, 'chat', body(model), true, controller.signal)
       if (!response.ok) {
         const text = await readCapped(response, ERROR_BODY_LIMIT).catch(() => '')
         return { ok: false, failure: classifyStatus(response.status, response.headers, text, now()) }

@@ -1,8 +1,11 @@
-// Unit tests for provider answers: Retry-After, failure classification, error messages
-// and token usage.
+// Unit tests for talking to providers: endpoints, Retry-After, failure classification,
+// error messages and token usage.
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
-import { classifyStatus, parseRetryAfter, upstreamMessage } from '../../src/upstream/client.ts'
+import { loadRouting } from '../../src/routing/load.ts'
+import { classifyStatus, endpointUrl, parseRetryAfter, upstreamMessage } from '../../src/upstream/client.ts'
 import { readUsage } from '../../src/upstream/usage.ts'
 
 const now = Date.UTC(2026, 8, 28, 12)
@@ -38,10 +41,28 @@ describe('classifying provider failures', () => {
       .toEqual({ kind: 'reject', status: 400, message: 'tools[0] is invalid' })
   })
 
+  it('reads Cloudflare\'s error list as well as the OpenAI envelope', () => {
+    expect(upstreamMessage('{"success":false,"errors":[{"code":5006,"message":"contexts must not be empty"}]}')).toBe('contexts must not be empty')
+  })
+
   it('cleans up the provider\'s message before passing it on', () => {
     expect(upstreamMessage('{"error":"bad\\u0000input"}')).toBe('bad input')
     expect(upstreamMessage(`{"message":"${'x'.repeat(500)}"}`)).toHaveLength(300)
     expect(upstreamMessage('<html>Bad Gateway</html>')).toBe('The provider rejected the request.')
+  })
+})
+
+describe('provider endpoints', () => {
+  const routing = loadRouting(readFileSync(new URL('../../routing.yaml', import.meta.url), 'utf8'), {
+    GROQ_API_KEY: 'k', CLOUDFLARE_API_TOKEN: 'k', CLOUDFLARE_ACCOUNT_ID: 'acc',
+  })
+
+  it('calls OpenAI-compatible endpoints under the base URL, and Workers AI\'s own endpoint with the model ID', () => {
+    const groq = routing.models.get('groq/llama-prompt-guard-2-86m')!
+    const reranker = routing.models.get('workers-ai/bge-reranker-base')!
+    expect(endpointUrl(groq, 'chat')).toBe('https://api.groq.com/openai/v1/chat/completions')
+    expect(endpointUrl(routing.models.get('workers-ai/bge-m3')!, 'embeddings')).toBe('https://api.cloudflare.com/client/v4/accounts/acc/ai/v1/embeddings')
+    expect(endpointUrl(reranker, 'run')).toBe('https://api.cloudflare.com/client/v4/accounts/acc/ai/run/@cf/baai/bge-reranker-base')
   })
 })
 

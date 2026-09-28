@@ -3,9 +3,10 @@
 default:
     @just --list
 
-# Install every workspace dependency.
+# Install every workspace dependency: pnpm for TypeScript, uv for Python.
 install:
     pnpm install
+    uv sync
 
 # Run the site with hot reload on http://localhost:3000.
 dev:
@@ -23,18 +24,33 @@ gateway:
 gateway-token *args:
     pnpm --silent --filter @lb/gateway token {{args}}
 
-# Lint every TypeScript and Vue package.
+# Lint every TypeScript, Vue and Python package, and check every Python docstring.
 lint:
     pnpm lint
+    uv run ruff check python scripts
+    uv run ruff format --check python scripts
+    uv run python scripts/check_docstrings.py
 
-# Type-check every package.
+# Format the Python code with Ruff and apply its safe fixes.
+format:
+    uv run ruff format python scripts
+    uv run ruff check --fix python scripts
+
+# Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
+    uv run mypy python/lb-common scripts
 
-# Run every unit and integration test suite. Integration tests start Redis with
-# Docker, or use LB_TEST_REDIS_URL when it is set.
+# Integration tests start Redis with Docker, or use LB_TEST_REDIS_URL when it is set.
+# Run every unit, integration and contract test suite, TypeScript and Python.
 test:
     pnpm test
+    uv run pytest
+
+# Check every dependency, npm and Python, against known vulnerabilities.
+audit:
+    pnpm audit --audit-level high
+    uv audit --preview-features audit-command
 
 # Build the site, then run the end-to-end, accessibility and security-header tests.
 e2e: build

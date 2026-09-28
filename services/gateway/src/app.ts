@@ -19,7 +19,9 @@ import type { Routing } from './routing/load.ts'
 import type { Profile } from './routing/plan.ts'
 import { registerChat } from './routes/chat.ts'
 import { registerEmbeddings } from './routes/embeddings.ts'
+import { registerGuard } from './routes/guard.ts'
 import { registerHealth, registerInfo } from './routes/info.ts'
+import { registerRerank } from './routes/rerank.ts'
 import { RedisSpanSink } from './spans.ts'
 
 declare module 'fastify' {
@@ -50,7 +52,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
   const now = options.now ?? Date.now
   const app = Fastify({
     logger: options.logger ?? false,
-    // 1 MB by default; the chat and embeddings routes set their own limits.
+    // 1 MB by default; the model routes set their own limits.
     bodyLimit: 1_048_576,
     genReqId: () => randomUUID(),
     // Only services on the internal network call the gateway, with no proxy between.
@@ -111,6 +113,8 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     })
     registerChat(v1, ctx)
     registerEmbeddings(v1, ctx)
+    registerRerank(v1, ctx)
+    registerGuard(v1, ctx)
     registerInfo(v1, ctx)
   }, { prefix: '/v1' })
 

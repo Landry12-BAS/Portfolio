@@ -10,7 +10,7 @@ const positive = z.number().positive()
 const milliseconds = z.int().min(100).max(600_000)
 
 /** Everything a model can be asked to do; an alias only routes to models that can do it. */
-export const capabilities = ['chat', 'tools', 'json_schema', 'reasoning', 'vision', 'embedding'] as const
+export const capabilities = ['chat', 'tools', 'json_schema', 'reasoning', 'vision', 'embedding', 'rerank', 'guard'] as const
 /** One model capability, such as `tools` or `vision`. */
 export type Capability = (typeof capabilities)[number]
 
@@ -40,6 +40,9 @@ const model = z.strictObject({
   limits: limits.optional(),
   // Workers AI bills in Neurons: how many each 1,000 input and output tokens cost.
   neurons: z.strictObject({ input: z.number().min(0), output: z.number().min(0) }).optional(),
+  // Rerankers only: whether scores come as raw logits (the gateway maps them to 0 to 1)
+  // or already as probabilities.
+  scores: z.enum(['logits', 'probabilities']).optional(),
 })
 
 // One provider: where it lives, how to call it, its terms and its models.
@@ -47,6 +50,9 @@ const provider = z.strictObject({
   name: z.string().min(1),
   // May reference environment variables as ${NAME}, for account IDs in the path.
   baseUrl: z.string().min(1),
+  // The provider's own model endpoint, for tasks its OpenAI-compatible API doesn't
+  // cover (Workers AI's /ai/run, for reranking). Model IDs are appended to it.
+  runUrl: z.string().min(1).optional(),
   keyEnv: envName,
   trainsOnInputs: z.boolean(),
   terms: z.enum(['production', 'dev-only']),
@@ -67,12 +73,21 @@ const timeouts = z.strictObject({
   deadlineMs: milliseconds,
 })
 
+/** The jobs an alias can do, and so the route that serves it. */
+export const aliasKinds = ['chat', 'embedding', 'rerank', 'guard'] as const
+/** One alias kind, such as `chat` or `guard`. */
+export type AliasKind = (typeof aliasKinds)[number]
+
 // A virtual model such as `lb-tools`.
 const alias = z.strictObject({
   description: z.string().min(1),
-  kind: z.enum(['chat', 'embedding']),
+  kind: z.enum(aliasKinds),
+  // Chat and embeddings: the whole prompt. Rerank: one query and one document together.
+  // Guard: the whole text, which is checked in segments.
   maxInputTokens: z.int().min(1),
   maxOutputTokens: z.int().min(1).optional(),
+  // Guards only: the injection probability, from 0 to 1, at which a text is flagged.
+  threshold: z.number().gt(0).max(1).optional(),
   timeouts: timeouts.partial().optional(),
   chain: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9.-]+$/, 'provider/model')).min(1),
 })

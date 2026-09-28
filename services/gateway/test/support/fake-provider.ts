@@ -77,6 +77,13 @@ export class FakeProvider {
     this.#fallback = script
   }
 
+  /** Forgets queued scripts and recorded requests, so the next test starts clean. */
+  reset(): void {
+    this.#queue.length = 0
+    this.requests.length = 0
+    this.abandoned = 0
+  }
+
   /** Plays one script on one response. */
   async #respond(script: Script, response: ServerResponse): Promise<void> {
     if (script.kind === 'hang') return
@@ -141,3 +148,22 @@ export function embeddings(count: number, usage = { prompt_tokens: 12 }): Record
 
 /** A script that answers with a successful chat completion. */
 export const answer = (content = 'Your order ships Monday.'): Script => ({ kind: 'json', body: completion(content) })
+
+/**
+ * Builds a Workers AI rerank answer: raw scores for the contexts, listed in the order
+ * given as [index, score] pairs, inside Cloudflare's success envelope.
+ */
+export function reranked(scores: [number, number][]): Record<string, unknown> {
+  return {
+    result: { response: scores.map(([id, score]) => ({ id, score })) },
+    success: true,
+    errors: [],
+    messages: [],
+  }
+}
+
+/** A script that answers a guard request with the classifier's text, such as `0.0002` or `MALICIOUS`. */
+export const guardAnswer = (content: string, promptTokens = 40): Script => ({
+  kind: 'json',
+  body: completion(content, { prompt_tokens: promptTokens, completion_tokens: 2 }),
+})

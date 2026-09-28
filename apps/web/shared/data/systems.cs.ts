@@ -14,18 +14,18 @@ export const systemsCs = {
     tryIt: 'Založte požadavek jako zákazník, třeba kvůli protrženému sáčku. Přepněte se do konzole agenta, přečtěte si návrh odpovědi s citacemi a pak ho schvalte, upravte, nebo předejte dál. Počítadla vyřízených dotazů a přesnosti se průběžně aktualizují.',
     proves: 'Vyhledávání, které lze zpětně ověřit, návrh s člověkem ve smyčce a Django do hloubky produkčního nasazení.',
     tags: ['RAG', 'Volání nástrojů', 'Citace', 'Člověk ve smyčce'],
-    chain: ['skrytí osobních údajů', 'klasifikace', 'hybridní vyhledávání', 'dohledání objednávky', 'návrh s citacemi', 'kontrola tvrzení', 'směrování'],
+    chain: ['skrytí osobních údajů', 'kontrola podvržených pokynů', 'klasifikace', 'hybridní vyhledávání', 'přeřazení výsledků', 'dohledání objednávky', 'návrh s citacemi', 'kontrola tvrzení', 'směrování'],
     stack: ['Django 5.2', 'Django Ninja', 'Celery', 'Postgres + pgvector', 'konzole agenta ve Vue', 'SSE'],
     highlights: [
       'Odpověď může odejít automaticky jen tehdy, když každé její tvrzení cituje pasáž z pravidel nebo výsledek nástroje.',
       'Hybridní vyhledávání podle klíčových slov i vektorů, jehož úplnost se měří v CI na označené sadě.',
-      'Korpus pravidel se převede na embeddingy jednou při sestavení, takže jeden požadavek stojí jeden embedding dotazu a dvě volání modelu.',
+      'Korpus pravidel se převede na embeddingy jednou při sestavení, takže jeden požadavek stojí jednu kontrolu podvržených pokynů, jeden embedding dotazu, jedno přeřazení výsledků a nejvýš tři volání modelu.',
     ],
     limits: [
       { label: 'Požadavků na návštěvníka za den', value: '20' },
       { label: 'Uchování dat návštěvníka', value: '24 h' },
       { label: 'Automatické odeslání pro návštěvníky', value: 'Vypnuto' },
-      { label: 'Volání modelu na požadavek (odhad)', value: '3' },
+      { label: 'Volání modelu na požadavek (odhad)', value: '6' },
     ],
   },
   'lb-02': {

@@ -49,6 +49,17 @@ describe('what a call reserves', () => {
     ])
   })
 
+  it('reserves one request per segment when a guard check sends several', () => {
+    const guard = routing.models.get('groq/llama-prompt-guard-2-86m')!
+    const meters = modelMeters(routing, guard, { input: 400, output: 24, requests: 3 }, 'lb:', noon)
+    expect(meters.map(meter => [meter.window, meter.unit, meter.amount])).toEqual([
+      ['minute', 'requests', 3],
+      ['minute', 'tokens', 424],
+      ['day', 'requests', 3],
+      ['day', 'tokens', 424],
+    ])
+  })
+
   it('reserves Neurons on Workers AI\'s shared pool at the model\'s rates', () => {
     const model = routing.models.get('workers-ai/gpt-oss-120b')!
     const meters = modelMeters(routing, model, { input: 1000, output: 1000 }, 'lb:', noon)
@@ -62,9 +73,9 @@ describe('what a call reserves', () => {
     const system = routing.systems.get('lb-01')!
     const meters = quotaMeters(system, 'session-abc', 'run-1', 'lb:', noon)
     expect(meters.map(meter => [meter.scope, meter.window, meter.limit])).toEqual([
-      ['system:lb-01', 'day', 300],
-      ['run:lb-01:run-1', 'run', 6],
-      ['session:lb-01:session-abc', 'day', 120],
+      ['system:lb-01', 'day', 350],
+      ['run:lb-01:run-1', 'run', 7],
+      ['session:lb-01:session-abc', 'day', 140],
     ])
     expect(quotaMeters(system, undefined, 'run-1', 'lb:', noon)).toHaveLength(2)
   })

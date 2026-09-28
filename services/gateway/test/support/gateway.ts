@@ -51,7 +51,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
   }
   const env = {
     ALPHA_URL: providers.alpha.url, ALPHA_KEY: 'alpha-key',
-    BETA_URL: providers.beta.url, BETA_KEY: 'beta-key',
+    BETA_URL: providers.beta.url, BETA_RUN_URL: providers.beta.url.replace(/\/v1$/, '/ai/run'), BETA_KEY: 'beta-key',
     GAMMA_URL: providers.gamma.url, GAMMA_KEY: 'gamma-key',
     DELTA_URL: providers.delta.url, DELTA_KEY: 'delta-key',
   }

@@ -62,10 +62,32 @@ providers:
         limits:
           minute: { requests: 30, tokens: 8000 }
           day: { requests: 1000, tokens: 200000 }
+      # Prompt-injection classifiers (Llama Prompt Guard 2), read 512 tokens at a time.
+      # Both are Groq preview models that can be withdrawn at short notice, and no free
+      # tier offers a production-grade one, so lb-guard fails closed when neither
+      # answers. The 86M model reads eight languages; the 22M one is English-first.
+      # Groq doesn't document their answer format: the gateway accepts a probability
+      # or a BENIGN / MALICIOUS label, and refuses anything else.
+      llama-prompt-guard-2-86m:
+        id: meta-llama/llama-prompt-guard-2-86m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
+      llama-prompt-guard-2-22m:
+        id: meta-llama/llama-prompt-guard-2-22m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
 
   workers-ai:
     name: Cloudflare Workers AI
     baseUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
+    # Workers AI's own endpoint, for the reranker its OpenAI-compatible API doesn't cover.
+    runUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run
     keyEnv: CLOUDFLARE_API_TOKEN
     trainsOnInputs: false
     terms: production
@@ -105,6 +127,14 @@ providers:
         context: 60000
         capabilities: [embedding]
         neurons: { input: 1.075, output: 0 }
+      # The only reranker Workers AI offers. It reads English and Chinese, so callers
+      # rerank in English. Its scores are raw logits; the gateway maps them to 0 to 1.
+      bge-reranker-base:
+        id: '@cf/baai/bge-reranker-base'
+        context: 512
+        capabilities: [rerank]
+        neurons: { input: 0.283, output: 0 }
+        scores: logits
 
   openrouter:
     name: OpenRouter
@@ -237,6 +267,30 @@ aliases:
     chain:
       - workers-ai/bge-m3
 
+  lb-rerank:
+    description: Relevance scores for retrieval
+    kind: rerank
+    # Per query and document together: the reranker reads 512 tokens at a time.
+    maxInputTokens: 480
+    timeouts: { responseMs: 15000 }
+    # When it fails, the calling system keeps the hybrid search's own order.
+    chain:
+      - workers-ai/bge-reranker-base
+
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    # The whole text. The gateway reads it in overlapping segments that fit the
+    # classifier's window, one request each.
+    maxInputTokens: 800
+    # Flag at an injection probability of 0.9, the block threshold of Meta's own
+    # LlamaFirewall. Eval Lab's red-team golden set will tune it.
+    threshold: 0.9
+    timeouts: { responseMs: 10000 }
+    chain:
+      - groq/llama-prompt-guard-2-86m
+      - groq/llama-prompt-guard-2-22m
+
 # The systems allowed to spend model calls, the service that calls for each, and
 # their quotas. A system joins this list in the same change that builds it
 # (docs/PLAYBOOK.md, Building one system, step 4).
@@ -244,12 +298,14 @@ systems:
   lb-01:
     name: Support Desk Agent
     service: django-systems
-    aliases: [lb-fast, lb-tools, lb-embed]
-    # A ticket costs one query embedding and two model calls; the cap leaves room for
-    # one tool round trip and a repair.
-    maxCallsPerRun: 6
-    # 20 tickets per visitor per day (the LB-01 datasheet), at up to 6 calls each.
-    sessionDailyCalls: 120
-    # LB-01's share of the roughly 400 calls a day the free tiers carry
-    # (docs/STACK.md, Capacity), rebalanced as each system ships.
-    dailyCalls: 300
+    aliases: [lb-fast, lb-tools, lb-embed, lb-rerank, lb-guard]
+    # A ticket costs a guard check, a query embedding, a rerank and two model calls
+    # (classify, draft), plus a third when the draft looks up an order. The cap leaves
+    # room for one repair of a malformed answer.
+    maxCallsPerRun: 7
+    # 20 tickets per visitor per day (the LB-01 datasheet), at up to 7 calls each.
+    sessionDailyCalls: 140
+    # 50 custom tickets a day. The guard, embedding and rerank calls run on budgets of
+    # their own; the chat calls stay within LB-01's share of the roughly 400 a day the
+    # free tiers carry (docs/STACK.md, Capacity), rebalanced as each system ships.
+    dailyCalls: 350

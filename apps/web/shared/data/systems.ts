@@ -22,18 +22,18 @@ export const systems = [
     tryIt: 'File a ticket as a customer, for example a torn bag. Switch to the agent console, read the cited draft, then approve, edit or escalate it. Deflection and accuracy counters update as you work.',
     proves: 'Retrieval you can audit, human-in-the-loop design, and Django at production depth.',
     tags: ['RAG', 'Tool use', 'Citations', 'Human in the loop'],
-    chain: ['redact PII', 'classify', 'hybrid search', 'look up order', 'draft with citations', 'check claims', 'route'],
+    chain: ['redact PII', 'screen for injection', 'classify', 'hybrid search', 'rerank', 'look up order', 'draft with citations', 'check claims', 'route'],
     stack: ['Django 5.2', 'Django Ninja', 'Celery', 'Postgres + pgvector', 'Vue agent console', 'SSE'],
     highlights: [
       'A reply can go out automatically only when every claim in it cites a policy passage or a tool result.',
       'Hybrid keyword and vector search, with recall measured on a labelled set in CI.',
-      'The policy corpus is embedded once at build time, so a ticket costs one query embedding and two model calls.',
+      'The policy corpus is embedded once at build time, so a ticket costs one injection check, one query embedding, one rerank and at most three model calls.',
     ],
     limits: [
       { label: 'Tickets per visitor per day', value: '20' },
       { label: 'Visitor data kept', value: '24 h' },
       { label: 'Auto-send for visitors', value: 'Off' },
-      { label: 'Model calls per ticket (est.)', value: '3' },
+      { label: 'Model calls per ticket (est.)', value: '6' },
     ],
   },
   {

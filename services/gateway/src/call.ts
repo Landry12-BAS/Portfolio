@@ -88,7 +88,7 @@ export function readCallMeta(request: FastifyRequest, routing: Routing): CallMet
 export function resolveAlias(routing: Routing, system: System, name: string, kind: Alias['kind']): Alias {
   const alias = routing.aliases.get(name)
   if (!alias || alias.kind !== kind) {
-    throw new GatewayError(404, 'model_not_found', `There is no ${kind === 'chat' ? 'chat' : 'embedding'} model called ${name}. Ask for an lb- alias.`)
+    throw new GatewayError(404, 'model_not_found', `There is no ${kind} model called ${name}. Ask for an lb- alias.`)
   }
   if (!system.aliases.includes(alias.name)) {
     throw new GatewayError(403, 'alias_not_allowed', `${system.key} may not use ${alias.name}.`)
@@ -146,10 +146,11 @@ const refundable = new Set(['rate_limited', 'server_error', 'unavailable', 'bad_
 // Below this, there is no point starting another attempt before the deadline.
 const MIN_ATTEMPT_MS = 250
 
-/** How a call ended, for its span. */
+/** How a call ended, for its span, with any details the route adds (such as a guard's verdict). */
 export interface Finish {
   ok: boolean
   error?: string
+  attrs?: Span['attrs']
 }
 
 /**
@@ -384,6 +385,7 @@ export class ModelCall {
       attrs.outputTokens = usage.output
     }
     if (outcome.error) attrs.error = outcome.error
+    Object.assign(attrs, outcome.attrs)
     this.#span('gateway.call', this.#alias.name, outcome.ok ? 'ok' : 'error', this.startedAt, attrs, this.#meta.parentSpanId)
     await this.#flush()
   }

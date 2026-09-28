@@ -44,10 +44,23 @@ providers:
         # 2 x 0.95 leaves room for exactly one call a day.
         limits:
           day: { requests: 2 }
+      # Prompt Guard-like classifiers. 10 x 0.95 leaves the first one room for nine
+      # segments a day.
+      guard:
+        id: alpha/guard-model
+        context: 512
+        capabilities: [guard]
+        limits:
+          day: { requests: 10 }
+      guard-small:
+        id: alpha/guard-small-model
+        context: 512
+        capabilities: [guard]
 
   beta:
     name: Beta
     baseUrl: ${BETA_URL}
+    runUrl: ${BETA_RUN_URL}
     keyEnv: BETA_KEY
     trainsOnInputs: false
     terms: production
@@ -75,6 +88,12 @@ providers:
         context: 8192
         capabilities: [embedding]
         neurons: { input: 1, output: 0 }
+      rerank:
+        id: '@beta/rerank-model'
+        context: 512
+        capabilities: [rerank]
+        neurons: { input: 1, output: 0 }
+        scores: logits
 
   gamma:
     name: Gamma
@@ -140,11 +159,24 @@ aliases:
     maxInputTokens: 2000
     chain: [beta/embed]
 
+  lb-rerank:
+    description: Reranking
+    kind: rerank
+    maxInputTokens: 400
+    chain: [beta/rerank]
+
+  lb-guard:
+    description: Injection check
+    kind: guard
+    maxInputTokens: 800
+    threshold: 0.9
+    chain: [alpha/guard, alpha/guard-small]
+
 systems:
   lb-01:
     name: Support Desk Agent
     service: django-systems
-    aliases: [lb-fast, lb-tools, lb-tiny, lb-vision, lb-embed]
+    aliases: [lb-fast, lb-tools, lb-tiny, lb-vision, lb-embed, lb-rerank, lb-guard]
     maxCallsPerRun: 4
     sessionDailyCalls: 6
     dailyCalls: 50

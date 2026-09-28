@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev G · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev H · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -110,7 +110,10 @@ Mistral's free mode (trains on inputs unless you opt out).
    has no fallback. If Workers AI is down, retrieval degrades to Postgres full-text
    search.
 8. **Guard free text.** Every visitor-typed input passes Prompt Guard 2 before it
-   reaches a model that can call tools.
+   reaches a model that can call tools. The classifier reads 512 tokens at a time, so
+   the gateway reads a long text in overlapping segments, and flags it when any
+   segment scores at or above the threshold. The guard fails closed: without a
+   readable verdict, the text counts as unchecked.
 
 ### Virtual models
 
@@ -122,23 +125,26 @@ Mistral's free mode (trains on inputs unless you opt out).
 | `lb-long` | Long documents (LB-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
 | `lb-vision` | Invoices, screenshots (LB-03, LB-07) | Workers AI Llama 4 Scout → Workers AI Gemma 4 26B → OpenRouter Gemma 4 31B:free (synthetic only) |
 | `lb-embed` | Retrieval (LB-01, LB-02) | Workers AI bge-m3, pinned |
-| `lb-rerank` | Retrieval (LB-01) | Workers AI bge-reranker-base |
+| `lb-rerank` | Retrieval (LB-01) | Workers AI bge-reranker-base, the only reranker on the free tiers. It reads English and Chinese, so queries are reranked in English |
 | `lb-stt` | Fast mode (LB-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
-| `lb-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Workers AI llama-guard-3-8b |
+| `lb-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Groq llama-prompt-guard-2-22m. Both are Groq previews, and nothing else checks for injection, so the guard fails closed |
 | `lb-judge` | Nightly evals (LB-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
 
 These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
 set in Eval Lab before it serves visitors. The exact provider model IDs, context sizes,
 capabilities and limits live in `services/gateway/routing.yaml`, which CI validates.
-`lb-rerank` and `lb-guard` join the gateway with LB-01, and `lb-stt` with LB-09: each
-needs its own endpoint (rerank scores, a normalised guard verdict, audio).
+`lb-rerank` and `lb-guard` joined the gateway for LB-01, each with an endpoint of its
+own (`/v1/rerank` for scores from 0 to 1, `/v1/guard` for a normalised verdict);
+`lb-stt` joins with LB-09. Llama Guard 3 is no fallback for the guard: it scores
+content safety (hazard categories S1 to S14), not injection, and Workers AI offers no
+injection classifier.
 
 ### Capacity
 
 | Source | Estimated daily capacity |
 |---|---|
 | Groq chat: three models × 200K tokens | about 240 calls at 2.5K tokens each |
-| Workers AI, after embeddings, moderation and vision | about 90 chat calls |
+| Workers AI, after embeddings, reranking and vision | about 90 chat calls |
 | OpenRouter | 50 calls, or 1,000 with the one-time credit |
 | **Total** | **about 400 calls a day, or about 1,300 with the credit** |
 

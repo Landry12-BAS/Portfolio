@@ -16,10 +16,12 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 
 Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
 `packages/ui` (the design system as a Nuxt layer), `apps/web` (the site in English and
-Czech: catalog, datasheets, themes, security headers) and `services/gateway` (the LB-00 AI gateway:
-routing, fallback, budgets, quotas, service tokens and run spans; see its
-[README](services/gateway/README.md)). Add each new command to the Commands section in
-the change that introduces it.
+Czech: catalog, datasheets, themes, security headers), `services/gateway` (the LB-00 AI
+gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
+prompt-injection guard; see its [README](services/gateway/README.md)) and
+`python/lb-common` (the Python gateway client, service tokens, run context and tracer;
+see its [README](python/lb-common/README.md)). Next: the LB-01 Django service. Add each
+new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
 
@@ -75,19 +77,21 @@ the change that introduces it.
   `<script setup lang="ts">`; no TSX or JSX anywhere in the repo.
 - TypeScript: strict mode, ESLint (flat config) for lint and format, Zod at every
   boundary.
-- Python: 3.13, uv, Ruff for lint and format, mypy (with django-stubs), Pydantic v2.
+- Python: 3.13, one uv workspace (root `pyproject.toml`), Ruff for lint and format,
+  strict mypy (with django-stubs), Pydantic v2, pytest. Model calls go through
+  `lb_common.gateway` inside a `run_scope`, never straight to a provider.
 - Humanized code (owner's instruction): plain names, small functions, no clever
   one-liners. Code should read like a clear explanation of what it does.
 - Every function, class, method, interface and type alias carries a doc comment that
   says what it does (`/** … */` in TypeScript, a docstring in Python), plus why when
   that isn't obvious. Every file opens with a comment saying what it holds, and every
   Vue component's `<script setup>` opens with one saying what the component is. Lint
-  enforces the doc comments (`jsdoc/require-jsdoc`); Ruff's pydocstyle rules will do the
-  same for Python.
+  enforces the doc comments (`jsdoc/require-jsdoc`); for Python, Ruff's pydocstyle rules
+  cover public names and `scripts/check_docstrings.py` covers everything else.
 - Security first: validate every input at the boundary, fail closed, grant the least
   privilege, and never build code, markup, SQL or regexes from strings. Lint runs
-  eslint-plugin-security and eslint-plugin-regexp (catastrophic backtracking), and CI
-  runs `pnpm audit`.
+  eslint-plugin-security, eslint-plugin-regexp (catastrophic backtracking) and Ruff's
+  bandit rules, and CI runs `pnpm audit` and `uv audit`.
 - No placeholders or pseudo-code in committed code.
 - Every change ships with tests at the right level: unit, integration
   (Testcontainers), or end to end (Playwright). Prompt changes pass the eval gate.
@@ -122,25 +126,31 @@ the change that introduces it.
 
 ## Commands
 
-Everything runs through the root `justfile`, which wraps the pnpm scripts (Node 22.18
-or later, pnpm 10; `.mise.toml` pins Node 24 for CI).
+Everything runs through the root `justfile`, which wraps the pnpm scripts and uv (Node
+22.18 or later, pnpm 10, uv 0.12 with Python 3.13; `.mise.toml` pins the versions CI uses).
 
 | Command | What it does |
 |---|---|
-| `just install` (`pnpm install`) | Install every workspace dependency |
+| `just install` | Install every workspace dependency (`pnpm install`, then `uv sync`) |
 | `just dev` | Run the site with hot reload on http://localhost:3000 |
 | `just build` | Build the site for production (`apps/web/.output`) |
 | `just gateway` | Run the AI gateway with reload on http://127.0.0.1:8080 (settings in `services/gateway/.env`, from `.env.example`) |
 | `just gateway-token keygen\|mint <service> <key-file>` | Make a service key pair, or mint a service token for local gateway calls |
-| `just lint` (`pnpm lint`) | ESLint on every TypeScript and Vue package |
-| `just typecheck` (`pnpm typecheck`) | Strict type-check with `vue-tsc` and `tsc` |
-| `just test` (`pnpm test`) | Every Vitest suite, unit and integration |
+| `just lint` | ESLint on every TypeScript and Vue package; Ruff and the docstring check on Python |
+| `just format` | Format the Python code with Ruff and apply its safe fixes (ESLint formats TypeScript) |
+| `just typecheck` | Strict type-check with `vue-tsc` and `tsc`, and mypy for Python |
+| `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
+| `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. The gateway's integration tests start Redis with Testcontainers; where
-Docker isn't available, set `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` to use a local
-Redis instead. `just seed` arrives with the seed data.
+Playwright's own. Integration tests (gateway and Python) start Redis with
+Testcontainers; where Docker isn't available, set `LB_TEST_REDIS_URL=redis://127.0.0.1:6379`
+to use a local Redis instead. The Python contract tests also need Node, since they start
+the real gateway (`services/gateway/test/support/contract-server.ts`). In a cloud
+session without a Docker daemon, `dockerd` can usually be started; if Docker Hub's
+anonymous pull limit bites, pull `mirror.gcr.io/library/redis:8.10-alpine` and tag it
+`redis:8.10-alpine`. `just seed` arrives with the seed data.

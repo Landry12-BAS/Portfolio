@@ -12,10 +12,10 @@ routing. Threat model: [`docs/SECURITY.md`](../../docs/SECURITY.md), sections 4 
 
 | Parameter | Value |
 |---|---|
-| API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `GET /v1/models` |
+| API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
 | Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers) |
 | Providers | Groq, Cloudflare Workers AI, OpenRouter; NVIDIA in the `dev` profile only |
-| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed` |
+| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard` |
 | Routing table | [`routing.yaml`](routing.yaml), validated in CI by `pnpm check` |
 | Callers | Services with an Ed25519-signed token, 10 minutes at most |
 | State | Redis: budgets and quotas (atomic Lua), run spans (streams) |
@@ -48,8 +48,52 @@ const gateway = createOpenAICompatible({
 const { text } = await generateText({ model: gateway('lb-tools'), prompt })
 ```
 
+A Python system uses `lb-common` ([`python/lb-common`](../../python/lb-common/README.md)),
+which signs the tokens and adds the call headers for the current run:
+
+```python
+gateway = Gateway.from_env()  # LB_GATEWAY_URL, LB_SERVICE_NAME, LB_SERVICE_KEY_FILE
+with run_scope(Run(system="lb-01", run_id=new_run_id(), session=session_key)):
+    verdict = gateway.guard(ticket_text)
+    reply = gateway.openai.chat.completions.create(model="lb-fast", messages=messages)
+```
+
 Responses carry `x-lb-provider`, `x-lb-model` (for example `groq/gpt-oss-120b`),
 `x-lb-attempts` and `x-lb-span-id`.
+
+## Reranking and the guard
+
+Two endpoints have no OpenAI equivalent, so the gateway defines them and maps them to
+each provider.
+
+**`POST /v1/rerank`** takes `{"model": "lb-rerank", "query": "…", "documents": ["…"],
+"top_n": 5}` (1 to 64 documents) and answers `{"object": "list", "model": "lb-rerank",
+"results": [{"index": 2, "relevance_score": 0.91}, …]}`, best first.
+
+- Workers AI scores every document on its own `/ai/run` endpoint. The gateway checks
+  that the answer covers each document exactly once, maps the reranker's logits to 0
+  to 1, sorts (ties keep the request's order) and cuts to `top_n`.
+- Each document must fit the reranker together with the query (`maxInputTokens` is
+  per pair). A longer one gets 413, since the reranker would quietly read only its
+  opening.
+- The reranker reads English and Chinese, so rerank in English.
+
+**`POST /v1/guard`** takes `{"model": "lb-guard", "input": "…"}` and answers
+`{"object": "guard.verdict", "model": "lb-guard", "flagged": false, "score": 0.0003,
+"threshold": 0.9, "segments": 1}`.
+
+- `score` is the highest injection probability found anywhere in the text, and
+  `flagged` means it reached the alias's threshold.
+- Prompt Guard 2 reads 512 tokens at a time and may cut the rest without saying so.
+  The gateway reads the text in overlapping segments of 480 characters, sized for the
+  worst case of one token per character, and sends each to the same model. The check
+  counts once against the run's quotas, and each segment counts as one provider
+  request.
+- It fails closed. Groq doesn't document the classifier's answer, so only a
+  probability or a `BENIGN` / `MALICIOUS` label is accepted, and an answer that filled
+  the whole window is refused. When no model gives a readable verdict, the call fails
+  (502, 503 or 504), and the caller must treat the text as unchecked: skip the steps
+  that can call tools, or serve a replay.
 
 ## How a call is routed
 
@@ -149,7 +193,7 @@ curl -N localhost:8080/v1/chat/completions \
 `pnpm --filter @lb/gateway test` runs the unit tests and the integration tests. The
 integration tests use a real Redis from Testcontainers and scripted fake providers on
 local ports, and cover fallback, streaming, budgets, quotas, data classes, access
-control and a client disconnecting mid-stream. Without Docker, point them at any Redis:
+control, a client disconnecting mid-stream, reranking and the guard's segments. Without Docker, point them at any Redis:
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379 pnpm --filter @lb/gateway test`. Each test
 uses its own key prefix and removes its keys afterwards.
 
@@ -157,8 +201,6 @@ uses its own key prefix and removes its keys afterwards.
 
 These arrive with the system that first needs them:
 
-- `lb-rerank` (Workers AI's native rerank endpoint) and `lb-guard` (a normalised
-  prompt-injection verdict from Prompt Guard 2 or Llama Guard), with LB-01.
 - `lb-stt` (speech to text), with LB-09.
 - A response cache for synthetic samples, and the persister that drains the span
   stream into `platform.run_spans`, with the Scope.

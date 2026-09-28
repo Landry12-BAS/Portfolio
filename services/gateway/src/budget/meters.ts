@@ -93,9 +93,9 @@ export function neuronsFor(model: Model, tokens: TokenEstimate): number {
   return (tokens.input * model.neurons.input + tokens.output * model.neurons.output) / 1000
 }
 
-/** What one call adds to a meter of this unit: one request, its tokens, or its Neurons. */
+/** What one call adds to a meter of this unit: its requests, its tokens, or its Neurons. */
 function amountFor(unit: Unit, model: Model, tokens: TokenEstimate): number {
-  if (unit === 'requests') return 1
+  if (unit === 'requests') return tokens.requests ?? 1
   if (unit === 'tokens') return tokens.input + tokens.output
   return neuronsFor(model, tokens)
 }

@@ -16,6 +16,9 @@ const IMAGE_TOKENS = 1600
 export interface TokenEstimate {
   input: number
   output: number
+  // Requests the call sends to the provider: one, unless said otherwise. The guard
+  // sends one per segment of its text.
+  requests?: number
 }
 
 /** Estimates how many tokens a piece of text becomes, erring on the high side. */
@@ -57,4 +60,17 @@ export function estimateChatInput(request: ChatRequest): number {
 /** Estimates the tokens in a batch of texts to embed. */
 export function estimateEmbeddingInput(inputs: readonly string[]): number {
   return inputs.reduce((total, input) => total + textTokens(input), 0)
+}
+
+/** Estimates the prompt tokens of a guard check: one single-message request per segment. */
+export function estimateGuardInput(segments: readonly string[]): number {
+  return segments.reduce((total, segment) => total + REPLY_PRIMING + MESSAGE_OVERHEAD + textTokens(segment), 0)
+}
+
+/**
+ * Estimates the tokens a rerank reads. A reranker scores each document paired with the
+ * query, so the query is counted once per document.
+ */
+export function estimateRerankInput(query: string, documents: readonly string[]): number {
+  return documents.reduce((total, document) => total + textTokens(query) + textTokens(document), 0)
 }
