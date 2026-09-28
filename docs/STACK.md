@@ -3,8 +3,8 @@
 Status: accepted · Rev I · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
-process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
-[`../CLAUDE.md`](../CLAUDE.md).
+process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for coding agents are in
+[`../AGENTS.md`](../AGENTS.md).
 
 ## Constraints that shaped it
 

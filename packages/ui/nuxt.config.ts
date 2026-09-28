@@ -18,7 +18,7 @@ export default defineNuxtConfig({
     storageKey: 'lb-theme',
   },
   alias: {
-    // The mark comes only from the brand files (CLAUDE.md, design rules).
+    // The mark comes only from the brand files (AGENTS.md, design rules).
     '#brand': here('../../brand'),
   },
   build: {

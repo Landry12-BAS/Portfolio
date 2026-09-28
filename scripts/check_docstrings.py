@@ -1,6 +1,6 @@
 """Check that every Python module, class and function in the repository has a docstring.
 
-Ruff's pydocstyle rules cover public names only. The owner's rule (CLAUDE.md, Code
+Ruff's pydocstyle rules cover public names only. The owner's rule (AGENTS.md, Code
 conventions) covers everything, private helpers and nested functions included, so this
 walks the Python sources and lists whatever lacks a docstring. `just lint` runs it.
 

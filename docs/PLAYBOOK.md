@@ -77,7 +77,7 @@ A system is done when all of these are true:
   Commit title (`feat(lb-01): cite policy chunks in drafts`).
 - **Pull requests.** Every PR gets a Vercel preview. CI must pass: lint, types, tests,
   API client drift check, eval gate (when prompts change), axe and Lighthouse budgets.
-- **Commits.** Owner identity only. See the git rules in [`../CLAUDE.md`](../CLAUDE.md).
+- **Commits.** Owner identity only. See the git rules in [`../AGENTS.md`](../AGENTS.md).
 - **Deploys.** Merging to `main` builds multi-arch images, pushes them to GHCR, and
   deploys the box over SSH with health checks. Roll back by redeploying the previous
   image tag.

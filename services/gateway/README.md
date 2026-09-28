@@ -164,7 +164,7 @@ Keys live only in the gateway's environment, under the names routing.yaml gives 
 `NVIDIA_API_KEY`). Never paste a key into code, a chat, an issue or a log.
 
 - **Local runs:** `services/gateway/.env`, which git ignores.
-- **Claude Code cloud sessions:** an environment variable of the same name in the
+- **Cloud coding sessions:** an environment variable of the same name in the
   environment's settings; a new session picks it up.
 - **Production:** the SOPS-encrypted secrets file, decrypted only on the box at deploy.
 

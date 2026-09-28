@@ -40,4 +40,4 @@ visitor quotas, run spans, reranking and a prompt-injection guard
 run tracer. The Support Desk (LB-01) is in build.
 
 Run it with Node 22.18 or later, pnpm 10 and uv: `just install`, then `just dev`. The
-commands are listed in [`CLAUDE.md`](CLAUDE.md#commands).
+commands are listed in [`AGENTS.md`](AGENTS.md#commands).

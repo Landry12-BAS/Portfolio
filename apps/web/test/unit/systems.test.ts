@@ -35,7 +35,7 @@ describe('the English datasheets', () => {
     expect(systems.filter(system => system.phase === 1).map(system => system.part)).toEqual(['LB-01', 'LB-05', 'LB-08'])
   })
 
-  it('states model calls per run for every system (CLAUDE.md: budgets are design inputs)', () => {
+  it('states model calls per run for every system (AGENTS.md: budgets are design inputs)', () => {
     expect(systems.every(system => system.limits.some(limit => limit.label.startsWith('Model calls per')))).toBe(true)
   })
 })
