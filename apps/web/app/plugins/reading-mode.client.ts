@@ -1,12 +1,15 @@
+// Remembers the visitor's reading mode between visits, in the browser only.
+//
+// The reading mode is a per-visitor convenience, so it lives in localStorage. It is
+// restored only once hydration has finished: the server always renders Technical, and
+// switching earlier would make the client markup disagree with the server's.
 import { watch } from 'vue'
 
 import { isReadingMode, useReadingStore } from '~/stores/reading'
 
+// The localStorage key; the value is always checked before it is used.
 const KEY = 'lb-reading'
 
-// The reading mode is a per-visitor convenience, so it lives in localStorage. It is
-// restored only once hydration has finished: the server always renders Technical, and
-// switching earlier would make the client markup disagree with the server's.
 export default defineNuxtPlugin(() => {
   const reading = useReadingStore()
 

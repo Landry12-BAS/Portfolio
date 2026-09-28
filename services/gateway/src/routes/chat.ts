@@ -1,3 +1,5 @@
+// POST /v1/chat/completions: the OpenAI chat endpoint, answered by whichever model on the
+// requested alias's chain can serve the call, as one JSON answer or as a stream.
 import { Readable } from 'node:stream'
 
 import type { FastifyInstance } from 'fastify'
@@ -16,9 +18,10 @@ import { readUsage } from '../upstream/usage.ts'
 import { parseBody } from './body.ts'
 
 const MIB = 1_048_576
+// The largest non-streamed answer the gateway will buffer.
 const MAX_COMPLETION_BYTES = 8 * MIB
 
-/** What a model must support to take this request, beyond chat itself. */
+/** Works out what a model must support to take this request: tools, images or a JSON schema. */
 export function requiredCapabilities(request: ChatRequest): Set<Capability> {
   const needs = new Set<Capability>(['chat'])
   const usesTools = request.tools !== undefined
@@ -31,7 +34,10 @@ export function requiredCapabilities(request: ChatRequest): Set<Capability> {
   return needs
 }
 
-/** The answer's token cap: the caller's, which may not exceed the alias's. */
+/**
+ * Returns the answer's token cap: the caller's own, or the alias's default. A cap
+ * above the alias's limit is refused rather than quietly lowered.
+ */
 export function outputLimit(request: ChatRequest, alias: Alias): number {
   const requested = request.max_completion_tokens ?? request.max_tokens
   if (requested !== undefined && requested > alias.maxOutputTokens) {
@@ -40,7 +46,11 @@ export function outputLimit(request: ChatRequest, alias: Alias): number {
   return requested ?? alias.maxOutputTokens
 }
 
-/** The request as this model's provider receives it. */
+/**
+ * Rewrites the validated request for one model: the provider's model ID, the provider's
+ * name for the token cap, reasoning effort only for models that reason, and a request
+ * for token usage on streams.
+ */
 export function upstreamChatBody(request: ChatRequest, model: Model, maxOutput: number, stream: boolean): Record<string, unknown> {
   const body: Record<string, unknown> = { ...request, model: model.id }
   delete body.max_tokens
@@ -58,8 +68,11 @@ export function upstreamChatBody(request: ChatRequest, model: Model, maxOutput: 
   return body
 }
 
+/** Registers the chat completions route on the /v1 scope. */
 export function registerChat(app: FastifyInstance, ctx: GatewayContext): void {
+  // 10 MB leaves room for a few inline images.
   app.post('/chat/completions', { bodyLimit: 10 * MIB }, async (request, reply) => {
+    // 1. Check everything before spending anything: headers, body, alias, sizes.
     const meta = readCallMeta(request, ctx.routing)
     const body = parseBody(chatRequestSchema, request.body)
     const alias = resolveAlias(ctx.routing, meta.system, body.model, 'chat')
@@ -72,11 +85,13 @@ export function registerChat(app: FastifyInstance, ctx: GatewayContext): void {
     const plan = planChain(alias, meta.dataClass, ctx.profile, needs)
     assertPlannable(plan, alias, needs)
 
+    // 2. Count the call against its quotas.
     const stream = body.stream === true
     const call = new ModelCall(ctx, meta, alias, plan, { input, output: maxOutput }, stream)
     await call.admit()
     const clientGone = watchClient(reply.raw)
 
+    // 3a. A JSON answer: wait for it, settle the budget, relay it as the provider sent it.
     if (!stream) {
       const served = await call.run(jsonAttempt(
         '/chat/completions',
@@ -90,6 +105,7 @@ export function registerChat(app: FastifyInstance, ctx: GatewayContext): void {
       return reply.headers(call.headers(served.model)).type('application/json').send(served.value.text)
     }
 
+    // 3b. A stream: once a model's first event arrives, relay the rest as it comes.
     const served = await call.run(streamAttempt(model => upstreamChatBody(body, model, maxOutput, true), clientGone, ctx.now))
     return reply
       .headers(call.headers(served.model))

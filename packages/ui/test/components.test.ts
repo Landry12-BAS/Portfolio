@@ -1,3 +1,5 @@
+// Tests for the design system's base components: logo, segmented control, theme
+// toggle, spec table, section heading and pill.
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
@@ -8,8 +10,10 @@ import LbSegmented from '../app/components/LbSegmented.vue'
 import LbSpecTable from '../app/components/LbSpecTable.vue'
 import LbThemeToggle from '../app/components/LbThemeToggle.vue'
 
-// Vite inlines small assets as data URLs and emits larger ones as files, so a source
-// is either a path to the brand file or that file's own content.
+/**
+ * Returns what an <img> source points at: the brand file's path, or, when Vite inlined
+ * the small SVG as a data URL, the file's own content.
+ */
 function brandSource(src: string | undefined): string {
   if (!src?.startsWith('data:image/svg+xml;base64,')) return src ?? ''
   return Buffer.from(src.slice('data:image/svg+xml;base64,'.length), 'base64').toString('utf8')
@@ -65,6 +69,13 @@ describe('LbThemeToggle', () => {
     const buttons = mount(LbThemeToggle, { props: { modelValue: 'system' } }).findAll('button')
     expect(buttons.map(b => b.attributes('aria-label') ?? b.text())).toEqual(['Light theme', 'Dark theme', 'Auto'])
     expect(buttons[2]?.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('speaks the page\'s language when given its labels', () => {
+    const labels = { group: 'Motiv', light: 'Světlý motiv', dark: 'Tmavý motiv', system: 'Auto' }
+    const wrapper = mount(LbThemeToggle, { props: { modelValue: 'dark', labels } })
+    expect(wrapper.get('[role="group"]').attributes('aria-label')).toBe('Motiv')
+    expect(wrapper.findAll('button').map(b => b.attributes('aria-label') ?? b.text())).toEqual(['Světlý motiv', 'Tmavý motiv', 'Auto'])
   })
 
   it('switches to dark', async () => {

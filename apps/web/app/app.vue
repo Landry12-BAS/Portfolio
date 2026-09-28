@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import favicon from '#brand/lb-favicon.svg?url'
-
-useHead({
-  link: [{ rel: 'icon', type: 'image/svg+xml', href: favicon }],
-})
+// The app shell: the layout around the current page. The head every page shares (the
+// language, the favicon, the description) is set in layouts/default.vue, which error
+// pages use too.
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 # Security architecture
 
-Status: accepted · Rev C · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev D · 28 Sep 2026 · Owner: Landry
 
 The site has **no accounts**: no sign-up, no login, no logout. Every visitor is
 anonymous, and every protection below works without asking anyone who they are.
@@ -46,7 +46,8 @@ flowchart LR
   prefix, `HttpOnly`, `Secure` and `SameSite=Strict`, rotated daily. It exists only for
   quotas and abuse protection, so it is strictly necessary and needs no consent
   banner. The site sets no other cookies and loads no trackers. The visitor's theme
-  choice stays in the browser's `localStorage`.
+  choice stays in the browser's `localStorage`, and the language is part of the URL
+  (`/cs` for Czech), so choosing one stores nothing.
 - **Turnstile** in invisible mode before a visitor's first AI run. People never solve
   a puzzle; bots are stopped before they spend quota.
 - **Short-lived tokens.** The Nuxt server's Nitro routes mint Ed25519-signed JWTs,
@@ -141,6 +142,10 @@ attempts. Every prompt change must pass it.
 - **Every image** gets an SBOM (Syft), a Trivy scan, a build-provenance attestation
   and a keyless cosign signature. The box verifies the signature before it runs the
   image.
+- **Every change** is linted with eslint-plugin-security (no eval-like code, no regexes
+  built from strings, no hidden bidirectional Unicode) and eslint-plugin-regexp (no
+  regexes open to catastrophic backtracking), and CI fails on any high or critical
+  advisory from `pnpm audit`.
 - **Every pull request** runs CodeQL and Semgrep on the code, gitleaks for secrets,
   pip-audit and pnpm audit on dependencies, and an OWASP ZAP baseline scan against the
   full stack started in CI.

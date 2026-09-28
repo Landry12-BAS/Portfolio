@@ -1,3 +1,4 @@
+// End-to-end tests for datasheet pages: reading modes, the pager, and a real 404.
 import { expect, test } from './fixtures'
 
 test.describe('datasheet', () => {

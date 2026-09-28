@@ -1,20 +1,40 @@
-// The portfolio site. Security headers follow docs/SECURITY.md, section 3.
+// The portfolio site: the design system layer, Pinia, the two languages and the
+// security headers from docs/SECURITY.md, section 3.
 export default defineNuxtConfig({
   extends: ['@lb/ui'],
-  modules: ['@pinia/nuxt', 'nuxt-security'],
+  modules: ['@pinia/nuxt', '@nuxtjs/i18n', 'nuxt-security'],
   devtools: { enabled: false },
   app: {
     head: {
-      htmlAttrs: { lang: 'en' },
+      // The page language and the description come from app.vue, per language.
       titleTemplate: '%s · Landry Bodjona',
       meta: [
-        { name: 'description', content: 'Ten live AI systems, built for one fictional coffee company and open to every visitor, with a trace of every step they take.' },
         { name: 'theme-color', content: '#eceff2', media: '(prefers-color-scheme: light)' },
         { name: 'theme-color', content: '#08090b', media: '(prefers-color-scheme: dark)' },
       ],
     },
   },
   compatibilityDate: '2026-09-28',
+  i18n: {
+    // English at /, Czech at /cs (docs/STACK.md, decision D6). `language` feeds the
+    // <html lang> attribute and the hreflang links.
+    locales: [
+      { code: 'en', language: 'en', name: 'English', file: 'en.ts' },
+      { code: 'cs', language: 'cs', name: 'Čeština', file: 'cs.ts' },
+    ],
+    defaultLocale: 'en',
+    strategy: 'prefix_except_default',
+    // No redirect by browser language: it needs a cookie, and the site sets none
+    // (docs/SECURITY.md). The visitor picks a language with the switcher's links.
+    detectBrowserLanguage: false,
+    // hreflang links must be absolute. Production sets NUXT_PUBLIC_I18N_BASE_URL to the
+    // site's domain; local runs use this default.
+    baseUrl: 'http://localhost:3000',
+    compilation: {
+      // Messages are plain text: a locale file that contains HTML fails the build.
+      strictMessage: true,
+    },
+  },
   security: {
     // A fresh nonce on every response: pages render on the server per request.
     nonce: true,

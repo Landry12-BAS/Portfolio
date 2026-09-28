@@ -1,3 +1,6 @@
+// Types shared by the generated registry and the Vue component.
+
+/** One path of an icon: its shape, and how it is painted. */
 export interface IconPath {
   /** Absolute path data on the 24-unit grid. */
   readonly d: string

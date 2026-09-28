@@ -1,3 +1,5 @@
+// Vitest setup for the design system: component tests in a DOM (happy-dom), with the
+// #brand alias pointing at the brand files as it does in Nuxt.
 import { fileURLToPath } from 'node:url'
 
 import vue from '@vitejs/plugin-vue'

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// <LbIcon>: draws one icon from the LB set, inline, in the text colour with the accent in
+// signal blue. Decorative unless given a label, so screen readers skip it by default.
 import { computed } from 'vue'
 
 import { icons } from './generated/icons'
@@ -19,6 +21,7 @@ const props = withDefaults(defineProps<{
   tone: 'duo',
 })
 
+// The icon's paths, in paint order: accents last, so they sit on top.
 const paths = computed(() => icons[props.name])
 </script>
 

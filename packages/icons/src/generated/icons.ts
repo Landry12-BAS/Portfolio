@@ -2,6 +2,7 @@
 // run `pnpm --filter @lb/icons build`.
 import type { IconPath } from '../types'
 
+/** Every icon's paths, in paint order, keyed by icon name. */
 export const icons = {
   'analyst': [
     { d: 'M4 3V20H21', accent: false, fill: false },
@@ -208,6 +209,8 @@ export const icons = {
   ],
 } as const satisfies Record<string, readonly IconPath[]>
 
+/** The name of one icon in the set, such as `gateway` or `arrow-right`. */
 export type IconName = keyof typeof icons
 
+/** Every icon name, in alphabetical order. */
 export const iconNames = Object.keys(icons) as IconName[]

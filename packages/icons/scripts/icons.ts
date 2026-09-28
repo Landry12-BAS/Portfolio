@@ -1,9 +1,13 @@
+// The icon build's engine: reads the SVG sources in svg/, checks each one against the
+// house rules (one shared root line, absolute commands, a 2-unit margin, accents last),
+// and renders the typed registry and the SVG sprite from them.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { IconPath } from '../src/types.ts'
 
+// Where the sources live and where the generated files go.
 export const PACKAGE_DIR = fileURLToPath(new URL('..', import.meta.url))
 export const SOURCE_DIR = join(PACKAGE_DIR, 'svg')
 export const REGISTRY_PATH = join(PACKAGE_DIR, 'src', 'generated', 'icons.ts')
@@ -15,6 +19,7 @@ export const ACCENT = '#045EFE'
 /** Every coordinate must stay inside the live area, leaving a 2-unit margin. */
 export const LIVE_AREA = { min: 2, max: 22 }
 
+/** One parsed icon: its name (the file name) and its paths in paint order. */
 export interface Icon {
   name: string
   paths: IconPath[]
@@ -25,6 +30,7 @@ export interface Icon {
 const ROOT = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
   + 'stroke="currentColor" stroke-width="2.5" stroke-linecap="butt" stroke-linejoin="miter">'
 
+// The only path attributes a source may use, and what each one means.
 const KINDS: Record<string, Pick<IconPath, 'accent' | 'fill'>> = {
   '': { accent: false, fill: false },
   ' fill="currentColor" stroke="none"': { accent: false, fill: true },
@@ -32,15 +38,18 @@ const KINDS: Record<string, Pick<IconPath, 'accent' | 'fill'>> = {
   [` fill="${ACCENT}" stroke="none"`]: { accent: true, fill: true },
 }
 
+// File names, path lines, path-data tokens, and how many numbers each command takes.
 const NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const PATH_LINE = /^ {2}<path d="([^"]+)"(.*)\/>$/
 const TOKEN = /[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g
 const ARITY: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
 
+/** An x, y point in the 24 by 24 icon grid. */
 type Point = [number, number]
 
-/** Parse and validate one source file. Throws with the icon's name on any violation. */
+/** Parses and validates one source file. Throws with the icon's name on any violation. */
 export function parseIcon(name: string, source: string): Icon {
+  // Every rule break ends the build with the file name and the reason.
   const fail = (why: string): never => {
     throw new Error(`${name}.svg: ${why}`)
   }
@@ -70,9 +79,9 @@ export function parseIcon(name: string, source: string): Icon {
 }
 
 /**
- * Points along a path, including sampled curve and arc interiors, so bounds checks see
- * the painted extent and not just the endpoints. Only absolute commands are allowed:
- * they keep sources readable and every coordinate checkable.
+ * Lists the points along a path, including sampled curve and arc interiors, so bounds
+ * checks see the painted extent and not just the endpoints. Only absolute commands are
+ * allowed: they keep sources readable and every coordinate checkable.
  */
 export function pathPoints(name: string, d: string): Point[] {
   const tokens: string[] = d.match(TOKEN) ?? []
@@ -97,11 +106,15 @@ export function pathPoints(name: string, d: string): Point[] {
       const next = step(cmd, args, cur, points)
       if (cmd === 'M') start = next
       cur = next
-    } while (i < tokens.length && !/[A-Za-z]/.test(tokens[i] ?? ''))
+    } while (i < tokens.length && !/[a-z]/i.test(tokens[i] ?? ''))
   }
   return points
 }
 
+/**
+ * Applies one path command from the current point: adds the points it paints (control
+ * points for curves, samples for arcs) to `out`, and returns where the pen ends up.
+ */
 function step(cmd: string, a: number[], cur: Point, out: Point[]): Point {
   const n = (k: number) => a[k] ?? 0
   let end: Point
@@ -128,8 +141,10 @@ function step(cmd: string, a: number[], cur: Point, out: Point[]): Point {
   return end
 }
 
-// Endpoint-to-centre conversion from the SVG specification (implementation notes,
-// F.6.5), then sampling along the sweep.
+/**
+ * Samples 31 points along an elliptical arc, using the endpoint-to-centre conversion
+ * from the SVG specification (implementation notes, F.6.5).
+ */
 function sampleArc(p0: Point, rxIn: number, ryIn: number, rotDeg: number, large: boolean, sweep: boolean, p1: Point): Point[] {
   const phi = (rotDeg * Math.PI) / 180
   const cos = Math.cos(phi)
@@ -167,7 +182,7 @@ function sampleArc(p0: Point, rxIn: number, ryIn: number, rotDeg: number, large:
   return samples
 }
 
-/** Every icon in the source folder, sorted by name. */
+/** Loads and validates every icon in the source folder, sorted by name. */
 export function loadIcons(dir: string = SOURCE_DIR): Icon[] {
   return readdirSync(dir)
     .filter(file => file.endsWith('.svg'))
@@ -175,7 +190,7 @@ export function loadIcons(dir: string = SOURCE_DIR): Icon[] {
     .map(file => parseIcon(file.slice(0, -4), readFileSync(join(dir, file), 'utf8')))
 }
 
-/** The typed registry the Vue component draws from. */
+/** Renders the typed registry (src/generated/icons.ts) that the Vue component draws from. */
 export function renderRegistry(icons: Icon[]): string {
   const entries = icons.map(({ name, paths }) => {
     const rows = paths.map(p => `    { d: '${p.d}', accent: ${p.accent}, fill: ${p.fill} },`)
@@ -186,18 +201,21 @@ export function renderRegistry(icons: Icon[]): string {
     '// run `pnpm --filter @lb/icons build`.',
     `import type { IconPath } from '../types'`,
     '',
+    '/** Every icon\'s paths, in paint order, keyed by icon name. */',
     'export const icons = {',
     ...entries,
     '} as const satisfies Record<string, readonly IconPath[]>',
     '',
+    '/** The name of one icon in the set, such as `gateway` or `arrow-right`. */',
     'export type IconName = keyof typeof icons',
     '',
+    '/** Every icon name, in alphabetical order. */',
     'export const iconNames = Object.keys(icons) as IconName[]',
     '',
   ].join('\n')
 }
 
-/** One SVG sprite: `<use href="sprite.svg#lb-NAME">`, coloured through currentColor. */
+/** Renders the SVG sprite: one `<symbol id="lb-NAME">` per icon, coloured through currentColor. */
 export function renderSprite(icons: Icon[]): string {
   const symbols = icons.map(({ name, paths }) => {
     const body = paths.map((p) => {

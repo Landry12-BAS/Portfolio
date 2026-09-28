@@ -1,3 +1,4 @@
+// End-to-end tests for the selection guide: filtering, and opening a datasheet.
 import { expect, test } from './fixtures'
 
 test.describe('catalog', () => {

@@ -1,15 +1,20 @@
+// Read-only routes: the models a service may use, usage against every budget, and the
+// health checks the container runtime polls.
 import type { FastifyInstance } from 'fastify'
 
 import { modelMeters, quotaMeters } from '../budget/meters.ts'
 import type { Meter } from '../budget/meters.ts'
 import type { GatewayContext } from '../call.ts'
 
+// The usage report compares against the providers' own limits, not the gateway's ceilings.
 const noCeilings = { minuteCeiling: 1, dayCeiling: 1 }
 
+/** Rounds to three decimals, enough for Neurons and shares in a report. */
 function round(value: number): number {
   return Math.round(value * 1000) / 1000
 }
 
+/** Registers GET /v1/models and GET /v1/usage on the /v1 scope. */
 export function registerInfo(app: FastifyInstance, ctx: GatewayContext): void {
   // The aliases the calling service may use, in the OpenAI list format.
   app.get('/models', async (request) => {
@@ -25,7 +30,8 @@ export function registerInfo(app: FastifyInstance, ctx: GatewayContext): void {
   })
 
   // Usage against every provider limit and system quota, for the daily usage report and
-  // its alert (docs/PLAYBOOK.md, Operating on free tiers).
+  // its alert (docs/PLAYBOOK.md, Operating on free tiers). Visitor sessions and runs are
+  // left out: the report is about budgets, not about people.
   app.get('/usage', async () => {
     const now = ctx.now()
     const meters = new Map<string, Meter>()
@@ -59,11 +65,13 @@ export function registerInfo(app: FastifyInstance, ctx: GatewayContext): void {
   })
 }
 
+/** Registers the open health checks: GET /healthz (liveness) and GET /readyz (readiness). */
 export function registerHealth(app: FastifyInstance, ctx: GatewayContext, ping: () => Promise<unknown>): void {
   // Liveness: the process is up. No dependencies, so a Redis blip never restarts it.
   app.get('/healthz', async () => ({ status: 'ok' }))
 
   // Readiness: the budget store answers and at least one provider can serve traffic.
+  // It names providers only, never their keys or URLs.
   app.get('/readyz', async (_request, reply) => {
     const providers = [...ctx.routing.providers.values()]
       .filter(provider => provider.configured && (ctx.profile === 'dev' || provider.terms === 'production'))

@@ -1,7 +1,10 @@
+// End-to-end tests for the themes: following the system setting, and a pinned choice
+// that survives a reload.
 import type { Page } from '@playwright/test'
 
 import { expect, test } from './fixtures'
 
+/** Finds the toolbar's logo image for one theme. */
 const logo = (page: Page, theme: 'light' | 'dark') => page.locator(`header img.lb-logo__img--${theme}`)
 
 test.describe('themes', () => {

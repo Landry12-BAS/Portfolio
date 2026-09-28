@@ -1,3 +1,5 @@
+// The gateway's entry point (`node src/main.ts`): reads the environment and the routing
+// table, connects to Redis, starts the server, and shuts down cleanly on SIGTERM.
 import { readFileSync } from 'node:fs'
 
 import { Redis } from 'ioredis'
@@ -7,6 +9,7 @@ import { importServiceKeys } from './auth/service-token.ts'
 import { loadEnv } from './env.ts'
 import { loadRouting } from './routing/load.ts'
 
+// 1. Settings and routing: any mistake stops the process here, before it serves traffic.
 const env = loadEnv(process.env)
 const routing = loadRouting(readFileSync(env.LB_ROUTING_FILE ?? new URL('../routing.yaml', import.meta.url), 'utf8'), process.env)
 
@@ -16,6 +19,7 @@ if (usable.length === 0) {
   throw new Error('No provider is configured. Set at least one provider\'s API key (the keyEnv names in routing.yaml).')
 }
 
+// 2. Redis, for budgets, quotas and spans.
 const redis = new Redis(env.LB_REDIS_URL, {
   // Fail fast instead of queueing: a call must never wait on, or skip, its budget check.
   enableOfflineQueue: false,
@@ -24,6 +28,7 @@ const redis = new Redis(env.LB_REDIS_URL, {
 })
 await redis.connect()
 
+// 3. The server.
 const app = await buildGateway({
   routing,
   profile: env.LB_GATEWAY_PROFILE,
@@ -38,6 +43,7 @@ const app = await buildGateway({
 })
 
 await app.listen({ host: env.LB_GATEWAY_HOST, port: env.LB_GATEWAY_PORT })
+// Names only: the log never carries a key.
 app.log.info({ profile: env.LB_GATEWAY_PROFILE, providers: usable.map(provider => provider.key) }, 'gateway ready')
 
 // On shutdown, calls in flight get a few seconds to finish; then the remaining

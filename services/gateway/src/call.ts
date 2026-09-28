@@ -1,3 +1,7 @@
+// One model call from start to finish: reading the call headers, checking the alias,
+// admitting the call under its quotas, walking the alias's chain of models, settling
+// the budget and recording spans. The routes decide how to talk to a provider; this
+// decides which provider, and keeps the books.
 import type { FastifyBaseLogger, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 
@@ -14,6 +18,7 @@ import { newSpanId } from './spans.ts'
 import type { Span, SpanSink, SpanStatus } from './spans.ts'
 import type { Failure } from './upstream/client.ts'
 
+/** Everything a call needs from the running gateway, shared by every request. */
 export interface GatewayContext {
   routing: Routing
   profile: Profile
@@ -25,6 +30,7 @@ export interface GatewayContext {
   log: FastifyBaseLogger
 }
 
+/** Who a call is for, read from the caller's token and the x-lb-* headers. */
 export interface CallMeta {
   service: string
   system: System
@@ -35,7 +41,8 @@ export interface CallMeta {
 }
 
 // Every call names its system and run. Visitor calls also carry an opaque, hashed
-// session ID (never the raw cookie), so each visitor's daily quota holds.
+// session ID (never the raw cookie), so each visitor's daily quota holds. The patterns
+// allow no colons or spaces, so a header value can never reach into another Redis key.
 const metaHeaders = z.object({
   'x-lb-system': z.string().regex(/^lb-\d{2}$/, 'lb-NN'),
   'x-lb-run-id': z.string().regex(/^[\w-]{8,64}$/, '8 to 64 letters, digits, underscores or hyphens'),
@@ -45,6 +52,10 @@ const metaHeaders = z.object({
   'x-lb-parent-span': z.string().regex(/^[0-9a-f]{16}$/, '16 hex digits').optional(),
 })
 
+/**
+ * Reads and checks the x-lb-* call headers. Refuses a system the calling service
+ * doesn't own (403) and a visitor call without a session ID (400).
+ */
 export function readCallMeta(request: FastifyRequest, routing: Routing): CallMeta {
   const parsed = metaHeaders.safeParse(request.headers)
   if (!parsed.success) {
@@ -69,6 +80,11 @@ export function readCallMeta(request: FastifyRequest, routing: Routing): CallMet
   }
 }
 
+/**
+ * Finds the alias a request asked for. Answers 404 for an unknown alias or one of the
+ * wrong kind (an embedding alias on the chat route), and 403 when the system may not
+ * use it.
+ */
 export function resolveAlias(routing: Routing, system: System, name: string, kind: Alias['kind']): Alias {
   const alias = routing.aliases.get(name)
   if (!alias || alias.kind !== kind) {
@@ -80,7 +96,11 @@ export function resolveAlias(routing: Routing, system: System, name: string, kin
   return alias
 }
 
-/** Fails early when nothing on the chain can take the call. */
+/**
+ * Fails early when nothing on the chain can take the call: 400 when no allowed model
+ * supports what the request needs, 503 when the right models exist but none of their
+ * providers is configured.
+ */
 export function assertPlannable(plan: Plan, alias: Alias, needs: ReadonlySet<Capability>): void {
   if (plan.candidates.length > 0) return
   const capable = new Set(alias.chain.filter(model => [...needs].every(need => model.capabilities.has(need))))
@@ -97,9 +117,12 @@ export function assertPlannable(plan: Plan, alias: Alias, needs: ReadonlySet<Cap
   throw new GatewayError(503, 'gateway_unavailable', `No provider that may take this call on ${alias.name} is configured.`)
 }
 
+/** The outcome of one attempt: the provider's answer, or why it failed. */
 export type AttemptResult<T> = { ok: true, value: T } | { ok: false, failure: Failure }
+/** How a route talks to one model: send the request and report the outcome. */
 export type Attempt<T> = (model: Model, timeoutMs: number) => Promise<AttemptResult<T>>
 
+/** A successful attempt: the model that answered, its reserved meters and its answer. */
 export interface Served<T> {
   model: Model
   meters: Meter[]
@@ -107,7 +130,7 @@ export interface Served<T> {
   startedAt: number
 }
 
-/** The visitor's connection closed mid-call; there is no one left to answer. */
+/** Thrown when the caller's connection closed mid-call; there is no one left to answer. */
 export class ClientGoneError extends Error {
   constructor() {
     super('The client closed the connection.')
@@ -120,18 +143,19 @@ export class ClientGoneError extends Error {
 // may have run the whole prompt, so the reservation stands.
 const refundable = new Set(['rate_limited', 'server_error', 'unavailable', 'bad_response'])
 
+// Below this, there is no point starting another attempt before the deadline.
 const MIN_ATTEMPT_MS = 250
 
+/** How a call ended, for its span. */
 export interface Finish {
   ok: boolean
   error?: string
-  ttftMs?: number
 }
 
 /**
  * One model call: its quota admission, the walk down its chain, budget settlement and
- * spans. Routes decide how to talk to the provider; this decides which provider, and
- * keeps the books.
+ * spans. Create it once the request is validated, then call `admit`, `run` and
+ * `finish` in that order.
  */
 export class ModelCall {
   readonly spanId = newSpanId()
@@ -145,6 +169,7 @@ export class ModelCall {
   readonly #plan: Plan
   readonly #estimate: TokenEstimate
   readonly #stream: boolean
+  // Spans recorded but not yet written to Redis.
   #spans: Span[] = []
 
   constructor(ctx: GatewayContext, meta: CallMeta, alias: Alias, plan: Plan, estimate: TokenEstimate, stream: boolean) {
@@ -158,11 +183,12 @@ export class ModelCall {
     this.deadlineAt = this.startedAt + alias.timeouts.deadlineMs
   }
 
+  /** The alias this call asked for. */
   get alias(): Alias {
     return this.#alias
   }
 
-  /** Counts the call against the run, the visitor and the system, or refuses it. */
+  /** Counts the call against the run, the visitor and the system, or refuses it with a 429. */
   async admit(): Promise<void> {
     const { system, session, runId } = this.#meta
     const meters = quotaMeters(system, session, runId, this.#ctx.prefix, this.startedAt)
@@ -173,8 +199,13 @@ export class ModelCall {
     throw new GatewayError(429, 'quota_exceeded', `This ${which} has used its ${full.limit} model calls${full.window === 'day' ? ' for today' : ''}.`, retryAfterMs)
   }
 
-  /** Walks the chain until one model serves the call. Throws when none can. */
+  /**
+   * Walks the chain until one model serves the call, and returns that model's answer.
+   * Each model is skipped while its breaker is open or its budget is spent; a failed
+   * attempt moves on to the next model. Throws when none can serve it.
+   */
   async run<T>(attempt: Attempt<T>): Promise<Served<T>> {
+    // Models the plan ruled out (data class, terms, capability, no key) go in the trace too.
     for (const { model, reason } of this.#plan.excluded) this.#skip(model, reason)
     let nextFreeAt = Number.POSITIVE_INFINITY
     let timedOut = false
@@ -187,12 +218,15 @@ export class ModelCall {
         break
       }
 
+      // 1. The breaker: skip a model that keeps failing or asked us to wait.
       const gate = this.#ctx.breaker.admit(model.ref)
       if (!gate.ok) {
         this.#skip(model, 'breaker_open', { retryAtMs: gate.retryAtMs })
         nextFreeAt = Math.min(nextFreeAt, gate.retryAtMs)
         continue
       }
+
+      // 2. The budget: reserve this model's requests, tokens or Neurons, or skip it.
       const meters = modelMeters(this.#ctx.routing, model, this.#estimate, this.#ctx.prefix, now)
       const full = await this.#ctx.meters.reserve(meters)
       if (full) {
@@ -202,6 +236,7 @@ export class ModelCall {
         continue
       }
 
+      // 3. The attempt itself, within the per-attempt timeout and the call's deadline.
       this.attempts += 1
       const perAttempt = this.#stream ? this.#alias.timeouts.firstTokenMs : this.#alias.timeouts.responseMs
       let result: AttemptResult<T>
@@ -209,6 +244,7 @@ export class ModelCall {
         result = await attempt(model, Math.min(perAttempt, remaining))
       }
       catch (error) {
+        // The client left, or the attempt hit a bug: record it and stop the whole call.
         this.#ctx.breaker.release(model.ref)
         this.#attemptSpan(model, now, 'error', { outcome: error instanceof ClientGoneError ? 'client_closed' : 'internal_error' })
         await this.#close({ ok: false, error: error instanceof ClientGoneError ? 'client_closed' : 'internal_error' })
@@ -222,9 +258,11 @@ export class ModelCall {
         return { model, meters, value: result.value, startedAt: now }
       }
 
+      // 4. The attempt failed: settle the reservation and decide what comes next.
       const { failure } = result
       if (failure.kind === 'reject' || refundable.has(failure.reason)) await this.#ctx.meters.adjust(refund(meters))
       if (failure.kind === 'reject') {
+        // The request itself is at fault, so every other model would refuse it too.
         this.#ctx.breaker.release(model.ref)
         this.#attemptSpan(model, now, 'error', { outcome: 'rejected', httpStatus: failure.status })
         await this.#close({ ok: false, error: 'upstream_rejected' })
@@ -246,6 +284,10 @@ export class ModelCall {
     return this.#fail(timedOut, nextFreeAt)
   }
 
+  /**
+   * Ends a call no model could serve, with the error that tells the system what to do:
+   * 503 (out of budget, serve a replay), 504 (too slow) or 502 (every model failed).
+   */
   async #fail(timedOut: boolean, nextFreeAt: number): Promise<never> {
     // A call that reached no provider cost nothing, so it doesn't count against the
     // run, the visitor or the system.
@@ -271,12 +313,14 @@ export class ModelCall {
         await this.#ctx.meters.adjust(settlement(served.meters, served.model, this.#estimate, usage))
       }
       catch (error) {
+        // The answer is already on its way; a failed correction must not break it.
         this.#ctx.log.warn({ err: error, model: served.model.ref }, 'could not settle a call\'s budget')
       }
     }
     await this.#close(outcome, served.model, usage)
   }
 
+  /** The x-lb-* response headers that tell the caller which model answered. */
   headers(model: Model): Record<string, string> {
     return {
       'x-lb-provider': model.provider.key,
@@ -286,6 +330,7 @@ export class ModelCall {
     }
   }
 
+  /** Records a span for this call or one of its attempts, to be written on the next flush. */
   #span(kind: Span['kind'], name: string, status: SpanStatus, startMs: number, attrs: Span['attrs'], parentId: string | undefined): void {
     this.#spans.push({
       v: 1,
@@ -302,20 +347,24 @@ export class ModelCall {
     })
   }
 
+  /** Records a model that was passed over, and why. */
   #skip(model: Model, reason: string, extra: Span['attrs'] = {}): void {
     this.#span('gateway.attempt', model.ref, 'skipped', this.#ctx.now(), { provider: model.provider.key, model: model.ref, outcome: reason, ...extra }, this.spanId)
   }
 
+  /** Records an attempt that reached a provider, with its outcome. */
   #attemptSpan(model: Model, startMs: number, status: SpanStatus, attrs: Span['attrs']): void {
     this.#span('gateway.attempt', model.ref, status, startMs, { provider: model.provider.key, model: model.ref, modelId: model.id, ...attrs }, this.spanId)
   }
 
+  /** Writes the recorded spans to Redis, where the trace panel can read them. */
   async #flush(): Promise<void> {
     const spans = this.#spans
     this.#spans = []
     await this.#ctx.spans.emit(spans)
   }
 
+  /** Records the call's own span, with how it ended and the tokens it used, and writes it out. */
   async #close(outcome: Finish, model?: Model, usage?: TokenEstimate): Promise<void> {
     const attrs: Span['attrs'] = {
       alias: this.#alias.name,

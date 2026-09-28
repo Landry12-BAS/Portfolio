@@ -1,3 +1,4 @@
+// Integration tests for embeddings: one vector per input, and no fallback.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { embeddings } from '../support/fake-provider.ts'
@@ -14,6 +15,7 @@ afterEach(async () => {
   await gw.close()
 })
 
+/** Asks lb-embed for vectors, sending an option the gateway should drop. */
 async function embed(input: string | string[]) {
   return gw.app.inject({ method: 'POST', url: '/v1/embeddings', headers: await gw.headers(), payload: { model: 'lb-embed', input, dimensions: 256 } })
 }

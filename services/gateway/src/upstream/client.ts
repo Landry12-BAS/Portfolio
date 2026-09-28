@@ -1,9 +1,11 @@
+// The HTTP side of talking to a provider: sending a request, reading its answer safely,
+// and deciding what a failure means for the rest of the chain.
 import type { Model } from '../routing/load.ts'
 
+/** The two OpenAI-compatible endpoints the gateway calls on providers. */
 export type UpstreamPath = '/chat/completions' | '/embeddings'
 
-// Why an attempt failed. `retry` moves the call to the next model on the chain;
-// `reject` means the request itself is at fault, so no other model would do better.
+/** Why an attempt failed in a way the next model on the chain might not. */
 export type FailureReason
   = | 'rate_limited'
     | 'server_error'
@@ -13,10 +15,18 @@ export type FailureReason
     | 'bad_response'
     | 'stream_error'
 
+/**
+ * A failed attempt. `retry` moves the call to the next model on the chain; `reject`
+ * means the request itself is at fault, so no other model would do better.
+ */
 export type Failure
   = | { kind: 'retry', reason: FailureReason, status?: number, retryAfterMs?: number }
     | { kind: 'reject', status: number, message: string }
 
+/**
+ * Sends a request to a model's provider with its API key. Redirects are refused, so a
+ * compromised or misconfigured endpoint can't bounce the key to another host.
+ */
 export async function sendUpstream(model: Model, path: UpstreamPath, body: Record<string, unknown>, stream: boolean, signal: AbortSignal): Promise<Response> {
   const provider = model.provider
   return fetch(`${provider.baseUrl}${path}`, {
@@ -34,9 +44,13 @@ export async function sendUpstream(model: Model, path: UpstreamPath, body: Recor
   })
 }
 
+// A provider can't pause a model for longer than a day.
 const MAX_RETRY_AFTER_MS = 86_400_000
 
-/** Retry-After as seconds or an HTTP date, in milliseconds from now. */
+/**
+ * Reads a Retry-After header (seconds or an HTTP date) as milliseconds from now,
+ * between one second and one day. Returns undefined when it is missing or unreadable.
+ */
 export function parseRetryAfter(value: string | null, nowMs: number): number | undefined {
   if (!value) return undefined
   const seconds = Number(value)
@@ -45,9 +59,13 @@ export function parseRetryAfter(value: string | null, nowMs: number): number | u
   return Math.min(Math.max(ms, 1_000), MAX_RETRY_AFTER_MS)
 }
 
+// Provider messages are quoted to callers, so they are kept short.
 const MAX_MESSAGE = 300
 
-/** The provider's error message, cut short and stripped of control characters. */
+/**
+ * Pulls the provider's error message out of its response body, cut short and stripped
+ * of control characters, or a generic message when there isn't a usable one.
+ */
 export function upstreamMessage(text: string): string {
   let message: unknown
   try {
@@ -62,6 +80,7 @@ export function upstreamMessage(text: string): string {
   return message.replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, MAX_MESSAGE)
 }
 
+/** Decides what a provider's error status means: try the next model, or give up. */
 export function classifyStatus(status: number, headers: Headers, text: string, nowMs: number): Failure {
   if (status === 429) return { kind: 'retry', reason: 'rate_limited', status, retryAfterMs: parseRetryAfter(headers.get('retry-after'), nowMs) }
   // Malformed or unsupported input fails the same way on every model.
@@ -73,6 +92,7 @@ export function classifyStatus(status: number, headers: Headers, text: string, n
   return { kind: 'retry', reason: 'unavailable', status }
 }
 
+/** Thrown when a provider's answer is bigger than the gateway will hold in memory. */
 export class ResponseTooLargeError extends Error {
   constructor(limit: number) {
     super(`The provider's response is larger than ${limit} bytes.`)
@@ -80,7 +100,10 @@ export class ResponseTooLargeError extends Error {
   }
 }
 
-/** Reads a response body as text, refusing to buffer more than `maxBytes`. */
+/**
+ * Reads a response body as text, refusing to buffer more than `maxBytes`, so a
+ * misbehaving provider can't exhaust the gateway's memory.
+ */
 export async function readCapped(response: Response, maxBytes: number): Promise<string> {
   if (!response.body) return ''
   const reader = response.body.getReader()

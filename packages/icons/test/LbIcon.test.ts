@@ -1,3 +1,4 @@
+// Tests for <LbIcon>: accessible naming, sizing, and the duo and mono tones.
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 

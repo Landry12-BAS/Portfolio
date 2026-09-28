@@ -1,14 +1,20 @@
+// Loads routing.yaml into the structures the gateway routes with. Beyond the schema, it
+// checks the rules that span entries: every chain names real models, every alias fits
+// its models' context and minute budgets, and every alias has a model that may take
+// visitor content. Anything wrong stops the gateway (and CI) with a full list.
 import { parse } from 'yaml'
 
 import { routingSchema } from './schema.ts'
 import type { Capability, Limits, ProviderConfig, RoutingFile, SystemConfig, Timeouts } from './schema.ts'
 
+/** A model provider as the gateway uses it, with its URL and key resolved from the environment. */
 export interface Provider {
   key: string
   name: string
   // Undefined when the URL needs an environment variable that isn't set.
   baseUrl: string | undefined
   apiKey: string | undefined
+  // True when both the URL and the key are present, so calls can go out.
   configured: boolean
   trainsOnInputs: boolean
   terms: ProviderConfig['terms']
@@ -18,6 +24,7 @@ export interface Provider {
   headers: Readonly<Record<string, string>>
 }
 
+/** One model at one provider, with everything routing and budgeting need to know about it. */
 export interface Model {
   // provider/model, as written in alias chains.
   ref: string
@@ -30,6 +37,7 @@ export interface Model {
   neurons: { input: number, output: number } | undefined
 }
 
+/** A virtual model such as `lb-tools`: its limits, timeouts and chain of real models. */
 export interface Alias {
   name: string
   description: string
@@ -40,10 +48,12 @@ export interface Alias {
   chain: readonly Model[]
 }
 
+/** A system allowed to spend model calls, keyed by its part number such as `lb-01`. */
 export interface System extends SystemConfig {
   key: string
 }
 
+/** The whole routing table, ready to route with. */
 export interface Routing {
   budgets: RoutingFile['budgets']
   providers: ReadonlyMap<string, Provider>
@@ -52,6 +62,7 @@ export interface Routing {
   systems: ReadonlyMap<string, System>
 }
 
+/** Thrown when routing.yaml breaks a rule; `issues` lists every problem found. */
 export class RoutingError extends Error {
   readonly issues: readonly string[]
 
@@ -62,17 +73,27 @@ export class RoutingError extends Error {
   }
 }
 
+/** Environment variables, as the loader reads them. */
 type Env = Readonly<Record<string, string | undefined>>
 
+// ${NAME} in a base URL, filled in from the environment.
 const placeholder = /\$\{([A-Z][A-Z0-9_]*)\}/g
 
-// Provider traffic carries API keys, so it must use TLS. Plain HTTP is accepted only for
-// loopback addresses, where the tests run their fake providers.
+/**
+ * Tells whether a provider URL is safe to send an API key to. Provider traffic carries
+ * keys, so it must use TLS; plain HTTP is accepted only for loopback addresses, where
+ * the tests run their fake providers.
+ */
 function isAllowedUrl(url: URL): boolean {
   if (url.protocol === 'https:') return true
   return url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)
 }
 
+/**
+ * Fills ${NAME} placeholders in a provider's base URL from the environment and checks
+ * the result. Returns undefined when a variable is missing (the provider stays off),
+ * and records an issue when the URL is malformed or not HTTPS.
+ */
 function resolveBaseUrl(key: string, template: string, env: Env, issues: string[]): string | undefined {
   let missing = false
   // Values come from deploy configuration, as trusted as this file, so they are
@@ -98,10 +119,12 @@ function resolveBaseUrl(key: string, template: string, env: Env, issues: string[
   return value.replace(/\/+$/, '')
 }
 
+/** Tells whether a set of limits counts Neurons in either window. */
 function hasNeuronLimit(limits: Limits | undefined): boolean {
   return Boolean(limits?.minute?.neurons ?? limits?.day?.neurons)
 }
 
+/** Returns the tokens-per-minute limit in a set of limits, if there is one. */
 function minuteTokens(limits: Limits | undefined): number | undefined {
   return limits?.minute?.tokens
 }
@@ -118,6 +141,7 @@ export function loadRouting(text: string, env: Env): Routing {
   const file = parsed.data
   const issues: string[] = []
 
+  // Providers and their models, with URLs and keys resolved from the environment.
   const providers = new Map<string, Provider>()
   const models = new Map<string, Model>()
   for (const [key, config] of Object.entries(file.providers)) {
@@ -156,6 +180,7 @@ export function loadRouting(text: string, env: Env): Routing {
     }
   }
 
+  // Aliases: their chains must name real models that can do the alias's job and fit it.
   const aliases = new Map<string, Alias>()
   for (const [name, config] of Object.entries(file.aliases)) {
     const chain: Model[] = []
@@ -177,6 +202,8 @@ export function loadRouting(text: string, env: Env): Routing {
       issues.push(`aliases.${name}: embedding aliases are pinned to one model, since vectors from different models don't mix`)
     }
 
+    // The biggest call the alias allows must fit every model's context window and
+    // tokens-per-minute budget, or that model could never serve it.
     const maxOutputTokens = config.maxOutputTokens ?? 0
     const largestCall = config.maxInputTokens + maxOutputTokens
     for (const model of chain) {
@@ -207,6 +234,7 @@ export function loadRouting(text: string, env: Env): Routing {
     })
   }
 
+  // Systems: every alias they use must exist, and a visitor's share can't exceed the system's.
   const systems = new Map<string, System>()
   for (const [key, config] of Object.entries(file.systems)) {
     for (const aliasName of config.aliases) {

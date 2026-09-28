@@ -1,3 +1,5 @@
+// End-to-end tests for the security headers from docs/SECURITY.md, and for the site's
+// promise to set no cookies.
 import { expect, test } from './fixtures'
 
 test.describe('security headers (docs/SECURITY.md, section 3)', () => {
@@ -5,7 +7,7 @@ test.describe('security headers (docs/SECURITY.md, section 3)', () => {
     const [first, second] = await Promise.all([request.get('/'), request.get('/systems/lb-01')])
     const csp = first.headers()['content-security-policy'] ?? ''
 
-    expect(csp).toMatch(/script-src 'self' 'strict-dynamic' 'nonce-[A-Za-z0-9+/=_-]{16,}'/)
+    expect(csp).toMatch(/script-src 'self' 'strict-dynamic' 'nonce-[\w+/=-]{16,}'/)
     expect(csp).toContain('require-trusted-types-for \'script\'')
     expect(csp).toContain('trusted-types vue')
     expect(csp).toContain('frame-ancestors \'none\'')
@@ -27,9 +29,11 @@ test.describe('security headers (docs/SECURITY.md, section 3)', () => {
     expect(headers['x-powered-by']).toBeUndefined()
   })
 
-  test('the pages set no cookies', async ({ page, context }) => {
+  test('the pages set no cookies, in either language', async ({ page, context }) => {
     await page.goto('/')
     await page.goto('/systems/lb-03')
+    await page.goto('/cs')
+    await page.goto('/cs/systems/lb-03')
     expect(await context.cookies()).toEqual([])
   })
 })

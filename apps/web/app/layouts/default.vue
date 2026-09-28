@@ -1,9 +1,30 @@
+<script setup lang="ts">
+// The default layout, used by every page and by the error page: the head every page
+// shares, a skip link for keyboard users, the toolbar, the page on its sheet, and the
+// footer. The head lives here, not in app.vue, because Nuxt renders error pages without
+// app.vue, and a 404 still needs its language and favicon.
+import favicon from '#brand/lb-favicon.svg?url'
+
+const { t } = useI18n()
+
+// `lang` on <html> (screen readers pick their voice from it), plus hreflang alternates
+// and og:locale so search engines pair the English and Czech versions of each page.
+const localeHead = useLocaleHead({ dir: false, lang: true, seo: true })
+
+useHead(() => ({
+  htmlAttrs: { lang: localeHead.value.htmlAttrs.lang },
+  link: [{ rel: 'icon', type: 'image/svg+xml', href: favicon }, ...localeHead.value.link],
+  meta: [...localeHead.value.meta],
+}))
+useSeoMeta({ description: () => t('site.description') })
+</script>
+
 <template>
   <div class="site">
     <a
       class="skip"
       href="#main"
-    >Skip to content</a>
+    >{{ t('site.skip') }}</a>
     <SiteToolbar />
     <main
       id="main"

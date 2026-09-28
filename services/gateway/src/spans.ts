@@ -1,19 +1,23 @@
+// Run spans: the gateway's record of each model call and each attempt behind it, for
+// the Scope panel and for the measured numbers on each datasheet. They carry
+// metadata only (models, timings, token counts), never prompts or answers.
 import { randomBytes } from 'node:crypto'
 
 import type { Redis } from 'ioredis'
 
-// Run spans: the gateway's record of each model call and each attempt behind it, for
-// the Scope panel and for the measured numbers on each datasheet. They carry
-// metadata only (models, timings, token counts), never prompts or answers.
-
+/** What a span describes: a whole model call, or one attempt at one model. */
 export type SpanKind = 'gateway.call' | 'gateway.attempt'
+/** How a span ended; `skipped` marks a model the call passed over. */
 export type SpanStatus = 'ok' | 'error' | 'skipped'
 
+/** One step of a run, as the trace panel shows it. */
 export interface Span {
+  // Format version, so readers can evolve with it.
   v: 1
   runId: string
   system: string
   spanId: string
+  // The call span for attempts; the system's own span (if it sent one) for calls.
   parentId: string | undefined
   kind: SpanKind
   name: string
@@ -23,18 +27,22 @@ export interface Span {
   attrs: Record<string, string | number | boolean>
 }
 
+/** Makes a random 16-hex-digit span ID, the same size as an OpenTelemetry span ID. */
 export function newSpanId(): string {
   return randomBytes(8).toString('hex')
 }
 
+/** Somewhere spans can be written. */
 export interface SpanSink {
   emit(spans: readonly Span[]): Promise<void>
 }
 
+/** The one logging call the sink needs, so it doesn't depend on Fastify's logger type. */
 interface Logger {
   warn(details: object, message: string): void
 }
 
+// Stream caps: enough for any run, and a bounded backlog for the persister.
 const RUN_STREAM_MAXLEN = 1_000
 const RUN_STREAM_TTL_SECONDS = 86_400
 const ALL_STREAM_MAXLEN = 100_000
@@ -56,10 +64,12 @@ export class RedisSpanSink implements SpanSink {
     this.#log = log
   }
 
+  /** Returns the Redis key of a run's span stream. */
   runStream(runId: string): string {
     return `${this.#prefix}run:${runId}:spans`
   }
 
+  /** Writes spans to both streams in one round trip; never throws. */
   async emit(spans: readonly Span[]): Promise<void> {
     if (spans.length === 0) return
     const pipeline = this.#redis.pipeline()

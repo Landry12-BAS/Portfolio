@@ -1,3 +1,6 @@
+// Builds the gateway's HTTP server: shared state, security headers, error handling,
+// service-token checks on every /v1 route, and the routes themselves. `main.ts` starts
+// it for real; the tests build it with fakes around it.
 import { randomUUID } from 'node:crypto'
 
 import Fastify from 'fastify'
@@ -20,12 +23,14 @@ import { registerHealth, registerInfo } from './routes/info.ts'
 import { RedisSpanSink } from './spans.ts'
 
 declare module 'fastify' {
+  /** Fastify's request, plus the identity of the service that sent it. */
   interface FastifyRequest {
     // The service whose token signed this request.
     service: string
   }
 }
 
+/** What the gateway is built from: its routing table, keys, Redis and, in tests, a clock. */
 export interface GatewayOptions {
   routing: Routing
   profile: Profile
@@ -37,10 +42,15 @@ export interface GatewayOptions {
   breaker?: BreakerOptions
 }
 
+/**
+ * Builds the gateway app, ready to listen. Health checks are open; every /v1 route
+ * first checks the caller's service token.
+ */
 export async function buildGateway(options: GatewayOptions): Promise<FastifyInstance> {
   const now = options.now ?? Date.now
   const app = Fastify({
     logger: options.logger ?? false,
+    // 1 MB by default; the chat and embeddings routes set their own limits.
     bodyLimit: 1_048_576,
     genReqId: () => randomUUID(),
     // Only services on the internal network call the gateway, with no proxy between.
@@ -61,12 +71,15 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
 
   app.decorateRequest('service', '')
 
+  // Every response: never cached, never content-sniffed, traceable by its request ID.
   app.addHook('onSend', async (request, reply) => {
     reply.header('cache-control', 'no-store')
     reply.header('x-content-type-options', 'nosniff')
     reply.header('x-request-id', request.id)
   })
 
+  // Turns every error into the OpenAI error format. Unexpected errors are logged and
+  // answered with a generic message, so internals never leak to the caller.
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error instanceof ClientGoneError) {
       request.log.info('client closed the connection')
@@ -84,6 +97,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     return reply.code(500).send(errorBody(500, 'internal_error', 'The gateway hit an internal error.'))
   })
 
+  // Unknown routes get a JSON 404 too; the query string is left out of the message.
   app.setNotFoundHandler((request, reply) => {
     return reply.code(404).send(errorBody(404, 'not_found', `There is no ${request.method} ${request.url.split('?')[0]}.`))
   })
@@ -91,6 +105,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
   registerHealth(app, ctx, () => options.redis.ping())
 
   await app.register(async (v1) => {
+    // No valid service token, no access: this runs before every /v1 handler.
     v1.addHook('onRequest', async (request) => {
       request.service = await verifyServiceToken(request.headers.authorization, options.serviceKeys, new Date(now()))
     })

@@ -1,3 +1,5 @@
+// Unit tests for provider answers: Retry-After, failure classification, error messages
+// and token usage.
 import { describe, expect, it } from 'vitest'
 
 import { classifyStatus, parseRetryAfter, upstreamMessage } from '../../src/upstream/client.ts'

@@ -1,5 +1,6 @@
-// Validates routing.yaml for CI (`pnpm check`). Every environment variable resolves to
-// a stand-in value, so base URLs are checked for shape without real secrets.
+// Validates routing.yaml for CI (`pnpm check`) and prints what it holds. Every
+// environment variable resolves to a stand-in value, so base URLs are checked for shape
+// without any real secret in CI.
 import { readFileSync } from 'node:fs'
 
 import { loadRouting, RoutingError } from '../routing/load.ts'

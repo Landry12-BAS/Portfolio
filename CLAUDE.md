@@ -15,8 +15,8 @@ main site and any visitor can try it, inspect its trace, and try to break it.
   internal names use the LB prefix (`LB-01`, `lb-fast`).
 
 Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
-`packages/ui` (the design system as a Nuxt layer), `apps/web` (the site: catalog,
-datasheets, themes, security headers) and `services/gateway` (the LB-00 AI gateway:
+`packages/ui` (the design system as a Nuxt layer), `apps/web` (the site in English and
+Czech: catalog, datasheets, themes, security headers) and `services/gateway` (the LB-00 AI gateway:
 routing, fallback, budgets, quotas, service tokens and run spans; see its
 [README](services/gateway/README.md)). Add each new command to the Commands section in
 the change that introduces it.
@@ -76,9 +76,33 @@ the change that introduces it.
 - TypeScript: strict mode, ESLint (flat config) for lint and format, Zod at every
   boundary.
 - Python: 3.13, uv, Ruff for lint and format, mypy (with django-stubs), Pydantic v2.
-- Comments explain why, not what. No placeholders or pseudo-code in committed code.
+- Humanized code (owner's instruction): plain names, small functions, no clever
+  one-liners. Code should read like a clear explanation of what it does.
+- Every function, class, method, interface and type alias carries a doc comment that
+  says what it does (`/** … */` in TypeScript, a docstring in Python), plus why when
+  that isn't obvious. Every file opens with a comment saying what it holds, and every
+  Vue component's `<script setup>` opens with one saying what the component is. Lint
+  enforces the doc comments (`jsdoc/require-jsdoc`); Ruff's pydocstyle rules will do the
+  same for Python.
+- Security first: validate every input at the boundary, fail closed, grant the least
+  privilege, and never build code, markup, SQL or regexes from strings. Lint runs
+  eslint-plugin-security and eslint-plugin-regexp (catastrophic backtracking), and CI
+  runs `pnpm audit`.
+- No placeholders or pseudo-code in committed code.
 - Every change ships with tests at the right level: unit, integration
   (Testcontainers), or end to end (Playwright). Prompt changes pass the eval gate.
+
+## Languages
+
+- English is the default (`/`) and Czech the second language (`/cs`), decision D6.
+  Every visible string lives in `apps/web/i18n/locales/en.ts` and `cs.ts`; `cs.ts`
+  must satisfy the English shape, so a missing translation fails the type check.
+- Datasheet text: English in `apps/web/shared/data/systems.ts` (the source of truth),
+  Czech in `systems.cs.ts`. Unit tests check that the two match field by field.
+- The language lives in the URL, never in a cookie. Links use `<NuxtLinkLocale>` so a
+  visitor stays in their language.
+- Czech text is typeset with `vlna` (`shared/typography.ts`): no line may end on a
+  single-letter word.
 
 ## Design rules
 

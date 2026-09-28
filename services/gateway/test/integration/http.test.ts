@@ -1,3 +1,4 @@
+// Integration tests over a real socket: what happens when the caller goes away mid-call.
 import type { AddressInfo } from 'node:net'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -5,8 +6,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { chunk } from '../support/fake-provider.ts'
 import { chatBody, startGateway } from '../support/gateway.ts'
 import type { TestGateway } from '../support/gateway.ts'
-
-// Over a real socket: what happens when the caller goes away mid-call.
 
 let gw: TestGateway
 let base: string
@@ -21,6 +20,7 @@ afterEach(async () => {
   await gw.close()
 })
 
+/** Polls until the condition holds, failing after `timeoutMs`. */
 async function waitFor(condition: () => boolean | Promise<boolean>, timeoutMs = 2_000): Promise<void> {
   const until = Date.now() + timeoutMs
   while (!(await condition())) {

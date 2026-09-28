@@ -1,27 +1,35 @@
+// A scripted OpenAI-compatible provider on a local port, for the integration tests.
+// Each request takes the next queued script, or the default one, and is recorded so
+// tests can check exactly what the gateway sent.
 import { createServer } from 'node:http'
 import type { IncomingHttpHeaders, Server, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
-// A scripted OpenAI-compatible provider on a local port. Each request takes the next
-// queued script, or the default one, and is recorded for assertions.
-
+/** One step of a scripted stream: an event's data, an SSE comment, or a pause. */
 export type StreamStep = string | { comment: string } | { pauseMs: number }
 
+/**
+ * How the fake answers one request: a JSON response, a stream of events that can end
+ * cleanly, drop the connection or hang, or no answer at all.
+ */
 export type Script
   = | { kind: 'json', status?: number, body: unknown, headers?: Record<string, string>, delayMs?: number }
     | { kind: 'stream', steps: StreamStep[], end?: 'finish' | 'drop' | 'hang', delayMs?: number }
     | { kind: 'hang' }
 
+/** A request the fake received: its path, headers and JSON body. */
 export interface Recorded {
   path: string
   headers: IncomingHttpHeaders
   body: Record<string, unknown>
 }
 
+/** Waits for the given number of milliseconds. */
 function pause(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/** A fake provider: a local HTTP server that answers from scripts and records every request. */
 export class FakeProvider {
   readonly requests: Recorded[] = []
   // Responses the gateway walked away from before they finished.
@@ -29,6 +37,7 @@ export class FakeProvider {
   readonly #queue: Script[] = []
   readonly #server: Server
   #fallback: Script
+  // The base URL to put in the routing table, such as http://127.0.0.1:43215/v1.
   url = ''
 
   private constructor(fallback: Script) {
@@ -50,6 +59,7 @@ export class FakeProvider {
     })
   }
 
+  /** Starts a fake provider on a free local port, answering with `fallback` unless told otherwise. */
   static async start(fallback: Script): Promise<FakeProvider> {
     const provider = new FakeProvider(fallback)
     await new Promise<void>(resolve => provider.#server.listen(0, '127.0.0.1', resolve))
@@ -57,14 +67,17 @@ export class FakeProvider {
     return provider
   }
 
+  /** Queues scripts for the next requests, in order; later requests get the default again. */
   enqueue(...scripts: Script[]): void {
     this.#queue.push(...scripts)
   }
 
+  /** Changes the answer given when the queue is empty. */
   setDefault(script: Script): void {
     this.#fallback = script
   }
 
+  /** Plays one script on one response. */
   async #respond(script: Script, response: ServerResponse): Promise<void> {
     if (script.kind === 'hang') return
     if (script.delayMs) await pause(script.delayMs)
@@ -85,12 +98,14 @@ export class FakeProvider {
     else if (script.end !== 'hang') response.end()
   }
 
+  /** Stops the server, closing any connection still open. */
   async close(): Promise<void> {
     this.#server.closeAllConnections()
     await new Promise<void>(resolve => this.#server.close(() => resolve()))
   }
 }
 
+/** Builds a non-streamed chat completion with the given text and token usage. */
 export function completion(content: string, usage = { prompt_tokens: 20, completion_tokens: 8 }): Record<string, unknown> {
   return {
     id: 'chatcmpl-test',
@@ -102,6 +117,7 @@ export function completion(content: string, usage = { prompt_tokens: 20, complet
   }
 }
 
+/** Builds one streamed chunk (as JSON text) carrying a piece of the answer. */
 export function chunk(content: string, extra: Record<string, unknown> = {}): string {
   return JSON.stringify({
     id: 'chatcmpl-test',
@@ -113,6 +129,7 @@ export function chunk(content: string, extra: Record<string, unknown> = {}): str
   })
 }
 
+/** Builds an embeddings answer with one small vector per input. */
 export function embeddings(count: number, usage = { prompt_tokens: 12 }): Record<string, unknown> {
   return {
     object: 'list',
@@ -122,4 +139,5 @@ export function embeddings(count: number, usage = { prompt_tokens: 12 }): Record
   }
 }
 
+/** A script that answers with a successful chat completion. */
 export const answer = (content = 'Your order ships Monday.'): Script => ({ kind: 'json', body: completion(content) })

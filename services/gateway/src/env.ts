@@ -1,13 +1,16 @@
+// The gateway's environment variables, checked once at startup so a misconfigured
+// deploy fails fast with a clear message instead of misbehaving later.
+//
+// Provider API keys are not listed here: routing.yaml names the variable each provider
+// reads (`keyEnv`), and a provider without its key is simply left off every chain.
 import { z } from 'zod'
 
-// The gateway's environment. Provider API keys are not listed here: routing.yaml names
-// the variable each provider reads (`keyEnv`), and a provider without its key is
-// simply left off every chain.
-
+// A service name such as `django-systems`.
 const serviceName = z.string().regex(/^[a-z][a-z0-9-]{1,39}$/, 'a lowercase service name')
 // An Ed25519 public key: 32 bytes, base64url without padding (a JWK's `x`).
-const publicKey = z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'a base64url Ed25519 public key')
+const publicKey = z.string().regex(/^[\w-]{43}$/, 'a base64url Ed25519 public key')
 
+// LB_SERVICE_KEYS arrives as a JSON string; this parses it, then checks every entry.
 const serviceKeys = z.string().transform((raw, context) => {
   try {
     return JSON.parse(raw) as unknown
@@ -18,6 +21,7 @@ const serviceKeys = z.string().transform((raw, context) => {
   }
 }).pipe(z.record(serviceName, publicKey).refine(keys => Object.keys(keys).length > 0, 'needs at least one service'))
 
+/** The schema for every variable the gateway reads, with safe defaults where one exists. */
 export const envSchema = z.object({
   LB_GATEWAY_HOST: z.string().min(1).default('0.0.0.0'),
   LB_GATEWAY_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
@@ -33,8 +37,13 @@ export const envSchema = z.object({
   LB_SERVICE_KEYS: serviceKeys,
 })
 
+/** The gateway's settings after validation, with defaults filled in. */
 export type Env = z.infer<typeof envSchema>
 
+/**
+ * Validates the process environment and returns the gateway's settings. Throws one
+ * error listing every problem, so a broken deploy can be fixed in a single pass.
+ */
 export function loadEnv(source: Readonly<Record<string, string | undefined>>): Env {
   const parsed = envSchema.safeParse(source)
   if (!parsed.success) {

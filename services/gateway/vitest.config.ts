@@ -1,3 +1,5 @@
+// Vitest setup for the gateway: fast unit tests, and integration tests against a real
+// Redis and fake providers.
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({

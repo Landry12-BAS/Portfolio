@@ -1,3 +1,4 @@
+// Unit tests for service tokens: what is accepted and every way a token is refused.
 import { exportJWK, generateKeyPair, SignJWT } from 'jose'
 import type { CryptoKey } from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -22,6 +23,7 @@ beforeAll(async () => {
   })
 })
 
+/** Asserts that the header is refused with the gateway's 401. */
 async function rejects(authorization: string | undefined, at = now): Promise<void> {
   const error = await verifyServiceToken(authorization, keys, at).catch((caught: unknown) => caught)
   expect(error).toBeInstanceOf(GatewayError)

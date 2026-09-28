@@ -1,3 +1,5 @@
+// Integration tests: who may call the gateway, for which system, with which alias,
+// and how malformed calls are answered.
 import { generateKeyPair, SignJWT } from 'jose'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -14,6 +16,7 @@ afterEach(async () => {
   await gw.close()
 })
 
+/** Sends a chat call with LB-01's default headers, some overridden or removed. */
 async function chatWith(headers: Record<string, string | undefined>, body = chatBody()) {
   return gw.app.inject({ method: 'POST', url: '/v1/chat/completions', headers: await gw.headers(headers), payload: body })
 }

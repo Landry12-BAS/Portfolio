@@ -1,9 +1,10 @@
+// Playwright setup for the site's end-to-end tests. They run against the production
+// build (`pnpm build` first), so they check the real security headers and bundles.
 import { defineConfig, devices } from '@playwright/test'
 
+// The port the production server listens on during the tests.
 const port = Number(process.env.E2E_PORT ?? 3100)
 
-// End-to-end tests run against the production build (`pnpm build` first), so they
-// check the real security headers and the real bundles.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,

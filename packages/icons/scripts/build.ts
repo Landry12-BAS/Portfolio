@@ -1,5 +1,5 @@
-// Regenerates the sprite and the typed registry from svg/*.svg.
-// `--check` writes nothing and fails when a generated file is stale (CI drift check).
+// Regenerates the sprite and the typed registry from svg/*.svg (`just icons`).
+// `--check` writes nothing and fails when a generated file is stale (the CI drift check).
 import { readFileSync, writeFileSync } from 'node:fs'
 import { relative } from 'node:path'
 

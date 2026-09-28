@@ -16,6 +16,7 @@ import { MAX_TOKEN_AGE_SECONDS, signServiceToken } from '../auth/service-token.t
 
 const [command, service, keyFile, ttl] = process.argv.slice(2)
 
+/** Prints a message for the person at the terminal and exits with an error code. */
 function fail(message: string): never {
   console.error(message)
   process.exit(1)
@@ -29,13 +30,14 @@ if (command === 'keygen') {
   const { privateKey, publicKey } = await generateKeyPair('EdDSA', { crv: 'Ed25519', extractable: true })
   const { x } = await exportJWK(publicKey)
   try {
-    // `wx` refuses to overwrite an existing key.
+    // `wx` refuses to overwrite an existing key; mode 0600 keeps it readable by its owner only.
     writeFileSync(keyFile, `${JSON.stringify({ ...(await exportJWK(privateKey)), kid: service })}\n`, { mode: 0o600, flag: 'wx' })
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'EEXIST') fail(`${keyFile} already exists. Delete it first to replace the key.`)
     throw error
   }
+  // Only the public half is printed; the private key never reaches the terminal.
   console.log(`Private key written to ${keyFile}. Add this entry to LB_SERVICE_KEYS:`)
   console.log(JSON.stringify({ [service]: x }))
 }

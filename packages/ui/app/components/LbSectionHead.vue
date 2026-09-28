@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// <LbSectionHead>: a numbered section heading in the datasheet style ("3 · Build order").
 withDefaults(defineProps<{
   /** Section number, datasheet style. */
   num: string | number

@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import { systems } from '#shared/data/systems'
+// <SiteFooter>: the product folder (a link to every part's datasheet) and the note that
+// the company and its data are fictional.
+const { t } = useI18n()
+const datasheets = useDatasheets()
 </script>
 
 <template>
   <footer class="foot">
     <nav
       class="folder"
-      aria-label="All parts"
+      :aria-label="t('footer.allParts')"
     >
-      <span class="lb-label">Product folder</span>
-      <NuxtLink
-        v-for="system in systems"
+      <span class="lb-label">{{ t('footer.folder') }}</span>
+      <NuxtLinkLocale
+        v-for="system in datasheets"
         :key="system.part"
         :to="`/systems/${system.slug}`"
       >
         {{ system.part }}
-      </NuxtLink>
+      </NuxtLinkLocale>
     </nav>
-    <p>Landry Bodjona · LB. Basalt &amp; Bean Coffee Co. is fictional, and every demo runs on synthetic data.</p>
+    <p>{{ t('footer.note') }}</p>
   </footer>
 </template>
 

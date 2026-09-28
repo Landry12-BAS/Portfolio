@@ -1,3 +1,7 @@
+// How the gateway talks to a provider for one attempt. A JSON attempt succeeds with a
+// complete, validated response. A stream attempt succeeds once the first event has
+// arrived: until then the call can still move to the next model; after it, the
+// answer is streaming and never switches provider (docs/STACK.md, Routing rule 5).
 import type { ServerResponse } from 'node:http'
 
 import { ParseError } from 'eventsource-parser'
@@ -11,11 +15,7 @@ import type { FailureReason, UpstreamPath } from './upstream/client.ts'
 import { sseData } from './upstream/sse.ts'
 import { readUsage } from './upstream/usage.ts'
 
-// How the gateway talks to a provider for one attempt. A JSON attempt succeeds with a
-// complete, validated response. A stream attempt succeeds once the first event has
-// arrived: until then the call can still move to the next model; after it, the
-// answer is streaming and never switches provider (docs/STACK.md, Routing rule 5).
-
+// The most of a provider's error response the gateway reads, to quote its message.
 const ERROR_BODY_LIMIT = 65_536
 
 // Abort reasons, compared by identity to tell a timeout from a departed client.
@@ -24,10 +24,12 @@ const CLIENT_GONE = new Error('client closed the connection')
 const STREAM_IDLE = new Error('stream went idle')
 const DEADLINE = new Error('call deadline passed')
 
+/** Builds the result of an attempt that failed in a way the next model may not. */
 function retry(reason: FailureReason, status?: number): AttemptResult<never> {
   return { ok: false, failure: { kind: 'retry', reason, ...(status === undefined ? {} : { status }) } }
 }
 
+/** Parses JSON, returning undefined instead of throwing on malformed text. */
 function parseJson(text: string): unknown {
   try {
     return JSON.parse(text) as unknown
@@ -37,11 +39,18 @@ function parseJson(text: string): unknown {
   }
 }
 
-// OpenRouter and others can answer 200 with an error object, or send one mid-stream.
+/**
+ * Tells whether a provider's payload is an error object. OpenRouter and others can
+ * answer 200 with an error, or send one mid-stream.
+ */
 function isErrorPayload(payload: unknown): boolean {
   return typeof payload === 'object' && payload !== null && 'error' in payload && Boolean(payload.error)
 }
 
+/**
+ * Turns an exception from an attempt into its outcome: the client leaving stops the
+ * whole call; a timeout, an oversized or garbled answer, or a network error moves on.
+ */
 function thrownReason(controller: AbortController, error: unknown): AttemptResult<never> {
   if (controller.signal.reason === CLIENT_GONE) throw new ClientGoneError()
   if (controller.signal.reason === TIMED_OUT) return retry('timeout')
@@ -49,7 +58,10 @@ function thrownReason(controller: AbortController, error: unknown): AttemptResul
   return retry('network')
 }
 
-/** Aborts when the client disconnects before the response has been fully written. */
+/**
+ * Returns a signal that fires if the client disconnects before its response has been
+ * fully written, so the gateway can stop paying for an answer no one will read.
+ */
 export function watchClient(response: ServerResponse): AbortSignal {
   const controller = new AbortController()
   response.once('close', () => {
@@ -58,11 +70,16 @@ export function watchClient(response: ServerResponse): AbortSignal {
   return controller.signal
 }
 
+/** A complete JSON answer from a provider: its raw text, relayed as sent, and its parsed form. */
 export interface JsonAnswer {
   text: string
   json: unknown
 }
 
+/**
+ * Makes an attempt that sends a JSON request and waits for the complete JSON answer,
+ * which must pass `valid` before it counts as a success.
+ */
 export function jsonAttempt(
   path: UpstreamPath,
   body: (model: Model) => Record<string, unknown>,
@@ -98,14 +115,22 @@ export function jsonAttempt(
   }
 }
 
+/** A provider stream that has delivered its first event: the call is committed to it. */
 export interface OpenStream {
+  // Aborting it cancels the upstream request.
   controller: AbortController
+  // The remaining events' data, in order.
   events: AsyncGenerator<string, void, undefined>
   first: string
   firstJson: unknown
+  // Stops listening for the client leaving; the relay calls it when it ends.
   detach: () => void
 }
 
+/**
+ * Makes an attempt that opens a streamed chat completion and waits for its first
+ * event. Late, empty or erroring streams fail the attempt, so the next model can try.
+ */
 export function streamAttempt(body: (model: Model) => Record<string, unknown>, clientGone: AbortSignal, now: () => number): Attempt<OpenStream> {
   return async (model, timeoutMs) => {
     const controller = new AbortController()
@@ -137,6 +162,7 @@ export function streamAttempt(body: (model: Model) => Record<string, unknown>, c
     }
     finally {
       clearTimeout(timer)
+      // A stream the call didn't commit to is closed here; a committed one is the relay's.
       if (!committed) {
         detach()
         controller.abort()
@@ -145,13 +171,16 @@ export function streamAttempt(body: (model: Model) => Record<string, unknown>, c
   }
 }
 
+/** Tells whether a stream chunk carries Groq's own usage field (`x_groq.usage`). */
 function hasGroqUsage(payload: object): payload is { x_groq: { usage: unknown } } {
   return 'x_groq' in payload && typeof payload.x_groq === 'object' && payload.x_groq !== null && 'usage' in payload.x_groq
 }
 
-// Forwards an event as the provider sent it, with two exceptions: Groq's streaming
-// usage is copied into the standard `usage` field that clients read, and multi-line
-// data is re-serialised onto one line so it can't break the SSE framing.
+/**
+ * Formats one event for the client, as the provider sent it, with two exceptions:
+ * Groq's streaming usage is copied into the standard `usage` field that clients read,
+ * and multi-line data is re-serialised onto one line so it can't break the SSE framing.
+ */
 function frame(data: string, json: unknown): string {
   if (typeof json === 'object' && json !== null && !('usage' in json && json.usage) && hasGroqUsage(json)) {
     return `data: ${JSON.stringify({ ...json, usage: json.x_groq.usage })}\n\n`
@@ -159,6 +188,7 @@ function frame(data: string, json: unknown): string {
   return `data: ${data.includes('\n') ? JSON.stringify(json) : data}\n\n`
 }
 
+/** Formats the error event that ends a stream the provider couldn't finish. */
 function errorFrame(code: string, message: string): string {
   return `data: ${JSON.stringify({ error: { message, type: 'api_error', code } })}\n\n`
 }
@@ -173,6 +203,7 @@ export async function* relay(ctx: GatewayContext, call: ModelCall, served: Serve
   let usage: TokenEstimate | undefined = readUsage(firstJson)
   let ok = false
   let error: string | undefined
+  // Two clocks: silence between events, and the call's overall deadline.
   const idle = setTimeout(() => controller.abort(STREAM_IDLE), call.alias.timeouts.idleMs)
   const deadline = setTimeout(() => controller.abort(DEADLINE), Math.max(call.deadlineAt - ctx.now(), 0))
   try {

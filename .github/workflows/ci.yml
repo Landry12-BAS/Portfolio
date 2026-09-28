@@ -38,6 +38,8 @@ jobs:
           package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
+      - name: No high or critical advisories in dependencies
+        run: pnpm audit --audit-level high
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

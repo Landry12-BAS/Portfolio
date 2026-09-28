@@ -1,7 +1,9 @@
+// Unit tests for the circuit breaker: tripping, probing, backing off and cooling down.
 import { describe, expect, it } from 'vitest'
 
 import { CircuitBreaker } from '../../src/breaker.ts'
 
+/** Makes a breaker with a clock the test controls. */
 function breaker() {
   let now = 1_000_000
   const instance = new CircuitBreaker(() => now, { failureThreshold: 3, openMs: 30_000, maxOpenMs: 100_000 })

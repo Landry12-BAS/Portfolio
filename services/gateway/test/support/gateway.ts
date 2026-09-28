@@ -1,3 +1,6 @@
+// Builds a complete gateway for one integration test: the real app, a real Redis (with a
+// key prefix of its own), four fake providers, fresh service keys, and a clock the
+// test can move forward.
 import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
@@ -16,6 +19,7 @@ import { answer, FakeProvider } from './fake-provider.ts'
 
 const fixture = readFileSync(new URL('../fixtures/routing.test.yaml', import.meta.url), 'utf8')
 
+/** A running test gateway and the helpers a test needs to drive and inspect it. */
 export interface TestGateway {
   app: FastifyInstance
   redis: Redis
@@ -24,12 +28,20 @@ export interface TestGateway {
   // Moves the gateway's clock; timers still run in real time.
   advance: (ms: number) => void
   now: () => number
+  // A fresh token for a service (django-systems by default).
   token: (service?: string) => Promise<string>
+  // Valid call headers for LB-01, with any header overridden or removed (undefined).
   headers: (overrides?: Record<string, string | undefined>) => Promise<Record<string, string>>
+  // The spans recorded for a run, in order.
   runSpans: (runId: string) => Promise<Span[]>
+  // Stops everything and deletes the test's Redis keys.
   close: () => Promise<void>
 }
 
+/**
+ * Starts a gateway for one test, in the production profile unless told otherwise.
+ * Pass a `redisUrl` to point it at a different (for example, unreachable) Redis.
+ */
 export async function startGateway(options: { profile?: Profile, redisUrl?: string } = {}): Promise<TestGateway> {
   const providers = {
     alpha: await FakeProvider.start(answer('alpha answer')),
@@ -44,6 +56,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
     DELTA_URL: providers.delta.url, DELTA_KEY: 'delta-key',
   }
 
+  // A fresh key pair per service, so no test depends on a key checked into the repo.
   const services = ['django-systems', 'flask-systems']
   const privateKeys = new Map<string, CryptoKey>()
   const publicKeys: Record<string, string> = {}
@@ -53,6 +66,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
     publicKeys[service] = (await exportJWK(pair.publicKey)).x ?? ''
   }
 
+  // The clock is real time plus an offset the test controls.
   let offset = 0
   const now = () => Date.now() + offset
   const prefix = `lbtest-${randomBytes(6).toString('hex')}:`
@@ -68,6 +82,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
     now,
   })
 
+  // Signs a token for the service, dated by the test's clock.
   const token = async (service = 'django-systems') => {
     const key = privateKeys.get(service)
     if (!key) throw new Error(`no key for ${service}`)
@@ -113,6 +128,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
   }
 }
 
+/** Builds a small LB-01 chat request, with any field overridden. */
 export function chatBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     model: 'lb-fast',
@@ -124,7 +140,7 @@ export function chatBody(overrides: Record<string, unknown> = {}): Record<string
   }
 }
 
-/** The data payloads of an SSE response body. */
+/** Splits an SSE response body into the data payload of each event. */
 export function sseEvents(body: string): string[] {
   return body.split('\n\n').filter(Boolean).map(block => block.replace(/^data: /, ''))
 }

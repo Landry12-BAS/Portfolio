@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// <LbLogo>: the LB mark from brand/, never redrawn. Both theme versions are in the page
+// and CSS shows the right one, so the logo is correct before any script runs.
 import { computed } from 'vue'
 
 import dark from '#brand/lb-mark-dark.svg?url'
@@ -17,6 +19,7 @@ const props = withDefaults(defineProps<{
   label: 'LB, Landry Bodjona',
 })
 
+// The width that keeps the mark in proportion, to one decimal place.
 const width = computed(() => Math.round(props.height * RATIO * 10) / 10)
 </script>
 

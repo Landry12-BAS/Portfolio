@@ -1,3 +1,5 @@
+// Integration tests for chat completions: serving, fallback, streaming, the data-class
+// and terms rules, capability routing and the spans a call leaves behind.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { chunk, completion } from '../support/fake-provider.ts'
@@ -14,6 +16,7 @@ afterEach(async () => {
   await gw.close()
 })
 
+/** Sends a chat call with LB-01's default headers, some overridden or removed. */
 async function chat(body: Record<string, unknown>, overrides: Record<string, string | undefined> = {}) {
   return gw.app.inject({ method: 'POST', url: '/v1/chat/completions', headers: await gw.headers(overrides), payload: body })
 }
@@ -110,6 +113,7 @@ describe('fallback', () => {
 })
 
 describe('data class and terms', () => {
+  /** Makes the two providers that never train on inputs fail every call. */
   function failEverywhereButGammaAndDelta() {
     gw.providers.alpha.setDefault({ kind: 'json', status: 500, body: { error: { message: 'down' } } })
     gw.providers.beta.setDefault({ kind: 'json', status: 500, body: { error: { message: 'down' } } })

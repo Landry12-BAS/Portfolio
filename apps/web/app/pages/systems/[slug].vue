@@ -1,16 +1,23 @@
 <script setup lang="ts">
+// A system's datasheet page (/systems/lb-01, /cs/systems/lb-01): identity, the Brief or
+// Technical reading, the operating limits, its build status, and links to the parts
+// before and after it. An unknown part number answers a real 404.
 import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 
-import { findSystem, systems } from '#shared/data/systems'
+import { findSystemIn } from '#shared/data/datasheets'
 import type { ReadingMode } from '~/stores/reading'
 import { useReadingStore } from '~/stores/reading'
 
-// Key the page by path so moving between parts builds a fresh page for each one.
+// Key the page by path so moving between parts, or languages, builds a fresh page.
 definePageMeta({ key: route => route.path })
 
+const { t } = useI18n()
 const route = useRoute()
-const system = findSystem(String(route.params.slug))
+const locale = useLocaleCode()
+const datasheets = useDatasheets()
+
+const system = findSystemIn(String(route.params.slug), locale.value)
 if (!system) {
   throw createError({ statusCode: 404, statusMessage: 'Part not found' })
 }
@@ -20,15 +27,17 @@ useSeoMeta({
   description: system.function,
 })
 
+// The reading mode is shared with every datasheet, and remembered between visits.
 const { mode } = storeToRefs(useReadingStore())
-const readingOptions: { value: ReadingMode, label: string }[] = [
-  { value: 'technical', label: 'Technical' },
-  { value: 'brief', label: 'Brief' },
-]
+const readingOptions = computed<{ value: ReadingMode, label: string }[]>(() => [
+  { value: 'technical', label: t('datasheet.technical') },
+  { value: 'brief', label: t('datasheet.brief') },
+])
 
-const index = systems.findIndex(item => item.slug === system.slug)
-const previous = systems[index - 1]
-const next = systems[index + 1]
+// The parts before and after this one, for the pager at the bottom.
+const index = datasheets.value.findIndex(item => item.slug === system.slug)
+const previous = datasheets.value[index - 1]
+const next = datasheets.value[index + 1]
 const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed' : 'outline'
 </script>
 
@@ -53,9 +62,9 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
       </div>
       <div class="meta">
         <LbPill :variant="phaseVariant">
-          Phase {{ system.phase }}
+          {{ t('datasheet.phase', { n: system.phase }) }}
         </LbPill>
-        <span class="meta-line">{{ system.runtime }} · Size {{ system.size }}</span>
+        <span class="meta-line">{{ system.runtime }} · {{ t('datasheet.size', { size: system.size }) }}</span>
       </div>
     </header>
 
@@ -63,11 +72,11 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
       <span
         class="lb-label"
         aria-hidden="true"
-      >Reading mode</span>
+      >{{ t('datasheet.readingMode') }}</span>
       <LbSegmented
         v-model="mode"
         :options="readingOptions"
-        label="Reading mode"
+        :label="t('datasheet.readingMode')"
       />
     </div>
 
@@ -77,20 +86,20 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
     >
       <div class="col">
         <div class="fld">
-          <h2>Problem</h2>
+          <h2>{{ t('datasheet.problem') }}</h2>
           <p>{{ system.problem }}</p>
         </div>
         <div class="fld">
-          <h2>Try it live</h2>
+          <h2>{{ t('datasheet.tryIt') }}</h2>
           <p>{{ system.tryIt }}</p>
         </div>
         <div class="fld">
-          <h2>Proves</h2>
+          <h2>{{ t('datasheet.proves') }}</h2>
           <p>{{ system.proves }}</p>
         </div>
         <ul
           class="tags"
-          aria-label="Techniques"
+          :aria-label="t('datasheet.techniques')"
         >
           <li
             v-for="tag in system.tags"
@@ -105,7 +114,7 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
         class="col"
       >
         <div class="fld">
-          <h2>Signal chain</h2>
+          <h2>{{ t('datasheet.chain') }}</h2>
           <ol class="chain">
             <li
               v-for="step in system.chain"
@@ -116,13 +125,13 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
           </ol>
         </div>
         <div class="fld">
-          <h2>Stack</h2>
+          <h2>{{ t('datasheet.stack') }}</h2>
           <p class="stackline">
             {{ system.stack.join(' · ') }}
           </p>
         </div>
         <div class="fld">
-          <h2>Engineering highlights</h2>
+          <h2>{{ t('datasheet.highlights') }}</h2>
           <ul class="hl">
             <li
               v-for="line in system.highlights"
@@ -133,23 +142,22 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
           </ul>
         </div>
         <LbSpecTable
-          :columns="['Operating limit', 'Value']"
+          :columns="[t('datasheet.limit'), t('datasheet.value')]"
           :rows="[...system.limits]"
         />
       </div>
     </div>
 
     <p class="status">
-      <span class="lb-label">Status</span>
-      In build, Phase {{ system.phase }}. The live demo, its evaluation board and the Scope
-      open here when this part ships.
+      <span class="lb-label">{{ t('datasheet.status') }}</span>
+      {{ t('datasheet.statusText', { n: system.phase }) }}
     </p>
 
     <nav
       class="pager"
-      aria-label="Other parts"
+      :aria-label="t('datasheet.otherParts')"
     >
-      <NuxtLink
+      <NuxtLinkLocale
         v-if="previous"
         :to="`/systems/${previous.slug}`"
         class="pager-link"
@@ -159,14 +167,14 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
           :size="16"
         />
         {{ previous.part }} {{ previous.name }}
-      </NuxtLink>
-      <NuxtLink
-        to="/#systems"
+      </NuxtLinkLocale>
+      <NuxtLinkLocale
+        :to="{ path: '/', hash: '#systems' }"
         class="pager-link"
       >
-        All systems
-      </NuxtLink>
-      <NuxtLink
+        {{ t('datasheet.allSystems') }}
+      </NuxtLinkLocale>
+      <NuxtLinkLocale
         v-if="next"
         :to="`/systems/${next.slug}`"
         class="pager-link"
@@ -176,7 +184,7 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
           name="arrow-right"
           :size="16"
         />
-      </NuxtLink>
+      </NuxtLinkLocale>
     </nav>
   </article>
 </template>

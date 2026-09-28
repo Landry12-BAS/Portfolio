@@ -113,6 +113,23 @@ minute limit and 95% of a day limit, and `/v1/usage` flags any daily budget past
 - **Provider traffic** is HTTPS only, never follows redirects, and response bodies and
   SSE events are size-capped.
 
+## Provider keys
+
+Keys live only in the gateway's environment, under the names routing.yaml gives them
+(`GROQ_API_KEY`, `CLOUDFLARE_API_TOKEN` with `CLOUDFLARE_ACCOUNT_ID`, `OPENROUTER_API_KEY`,
+`NVIDIA_API_KEY`). Never paste a key into code, a chat, an issue or a log.
+
+- **Local runs:** `services/gateway/.env`, which git ignores.
+- **Claude Code cloud sessions:** an environment variable of the same name in the
+  environment's settings; a new session picks it up.
+- **Production:** the SOPS-encrypted secrets file, decrypted only on the box at deploy.
+
+For OpenRouter, create a key used only by this gateway and give it a small credit limit.
+The gateway only calls free (`:free`) models, and those cost nothing, so a leaked key
+can't spend the account's balance. The free-model day limit is 50 requests, or 1,000
+once the account has bought $10 of credit: set `providers.openrouter.limits.day` in
+routing.yaml to match.
+
 ## Local use
 
 ```sh

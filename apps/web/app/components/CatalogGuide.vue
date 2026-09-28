@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// <CatalogGuide>: the selection guide on the home page. Visitors filter the ten systems
+// by back end and technique, like a parts distributor's search, and open a datasheet
+// from the table. Filter buttons report their state with aria-pressed, and the count
+// is announced politely when it changes.
 import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 
@@ -6,17 +10,33 @@ import type { Backend, Technique } from '#shared/catalog'
 import { BACKENDS, TECHNIQUES } from '#shared/catalog'
 import { useCatalogStore } from '~/stores/catalog'
 
+const { t } = useI18n()
 const catalog = useCatalogStore()
-const { backend, technique, visible, filtered } = storeToRefs(catalog)
+const { backend, technique, filtered } = storeToRefs(catalog)
+const datasheets = useDatasheets()
 
-const entries = <K extends string>(labels: Record<K, string>) =>
-  Object.entries(labels) as [K, string][]
+// The systems that pass the filters, in the visitor's language.
+const visible = computed(() => catalog.visibleIn(datasheets.value))
 
-const backendOptions: [Backend | 'all', string][] = [['all', 'All'], ...entries(BACKENDS)]
-const techniqueOptions: [Technique | 'all', string][] = [['all', 'All'], ...entries(TECHNIQUES)]
+// Each filter's buttons: "All" first, then every key with its label in this language.
+const backendOptions = computed<[Backend | 'all', string][]>(() => [
+  ['all', t('catalog.all')],
+  ...BACKENDS.map((key): [Backend, string] => [key, t(`catalog.backends.${key}`)]),
+])
+const techniqueOptions = computed<[Technique | 'all', string][]>(() => [
+  ['all', t('catalog.all')],
+  ...TECHNIQUES.map((key): [Technique, string] => [key, t(`catalog.techniqueNames.${key}`)]),
+])
 
-const phaseVariant = (phase: 1 | 2 | 3) => (phase === 1 ? 'solid' : phase === 3 ? 'dashed' : 'outline')
-const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES[key]).join(' · ')
+/** Returns the pill style for a build phase: solid now, outline next, dashed last. */
+function phaseVariant(phase: 1 | 2 | 3) {
+  return phase === 1 ? 'solid' : phase === 3 ? 'dashed' : 'outline'
+}
+
+/** Returns a system's techniques as one line of labels in this language. */
+function techniqueList(keys: readonly Technique[]) {
+  return keys.map(key => t(`catalog.techniqueNames.${key}`)).join(' · ')
+}
 </script>
 
 <template>
@@ -25,12 +45,12 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
       <div
         class="fgroup"
         role="group"
-        aria-label="Filter by back end"
+        :aria-label="t('catalog.filterBackend')"
       >
         <span
           class="lb-label flabel"
           aria-hidden="true"
-        >Back end</span>
+        >{{ t('catalog.backend') }}</span>
         <button
           v-for="[value, label] in backendOptions"
           :key="value"
@@ -45,12 +65,12 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
       <div
         class="fgroup"
         role="group"
-        aria-label="Filter by technique"
+        :aria-label="t('catalog.filterTechnique')"
       >
         <span
           class="lb-label flabel"
           aria-hidden="true"
-        >Technique</span>
+        >{{ t('catalog.technique') }}</span>
         <button
           v-for="[value, label] in techniqueOptions"
           :key="value"
@@ -66,14 +86,14 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
         <span
           class="fcount"
           aria-live="polite"
-        >Showing {{ visible.length }} of {{ catalog.total }} systems</span>
+        >{{ t('catalog.showing', { visible: visible.length, total: datasheets.length }) }}</span>
         <button
           v-if="filtered"
           type="button"
           class="clear"
           @click="catalog.clear()"
         >
-          Clear filters
+          {{ t('catalog.clear') }}
         </button>
       </div>
     </div>
@@ -81,31 +101,31 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
       class="table-scroll"
       tabindex="0"
       role="region"
-      aria-label="Systems"
+      :aria-label="t('catalog.region')"
     >
       <table>
         <caption class="lb-sr-only">
-          The ten systems with their back end, techniques and build phase
+          {{ t('catalog.caption') }}
         </caption>
         <thead>
           <tr>
             <th scope="col">
-              Part
+              {{ t('catalog.part') }}
             </th>
             <th scope="col">
-              System
+              {{ t('catalog.system') }}
             </th>
             <th scope="col">
-              What a visitor does
+              {{ t('catalog.visitorAction') }}
             </th>
             <th scope="col">
-              Back end
+              {{ t('catalog.backend') }}
             </th>
             <th scope="col">
-              Techniques
+              {{ t('catalog.techniques') }}
             </th>
             <th scope="col">
-              Phase
+              {{ t('catalog.phase') }}
             </th>
           </tr>
         </thead>
@@ -115,9 +135,9 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
             :key="system.part"
           >
             <td class="pn">
-              <NuxtLink :to="`/systems/${system.slug}`">
+              <NuxtLinkLocale :to="`/systems/${system.slug}`">
                 {{ system.part }}
-              </NuxtLink>
+              </NuxtLinkLocale>
             </td>
             <td class="sys">
               <LbIcon
@@ -144,7 +164,7 @@ const techniqueList = (keys: readonly Technique[]) => keys.map(key => TECHNIQUES
               colspan="6"
               class="empty"
             >
-              No system matches both filters. Clear one of them to see more.
+              {{ t('catalog.empty') }}
             </td>
           </tr>
         </tbody>

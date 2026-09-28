@@ -1,12 +1,17 @@
+// Unit tests for the selection guide's filters and store, and the reading-mode guard.
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { filterSystems } from '#shared/catalog'
+import { systemsIn } from '#shared/data/datasheets'
 import { systems } from '#shared/data/systems'
 import { useCatalogStore } from '~/stores/catalog'
 import { isReadingMode } from '~/stores/reading'
 
-const parts = (list: readonly { part: string }[]) => list.map(system => system.part)
+/** Lists the part numbers of some systems, for short assertions. */
+function parts(list: readonly { part: string }[]) {
+  return list.map(system => system.part)
+}
 
 describe('filterSystems', () => {
   it('keeps everything when no filter is set', () => {
@@ -33,18 +38,19 @@ describe('catalog store', () => {
 
   it('starts unfiltered', () => {
     const catalog = useCatalogStore()
-    expect(catalog.visible).toHaveLength(catalog.total)
+    expect(catalog.visibleIn(systems)).toHaveLength(10)
     expect(catalog.filtered).toBe(false)
   })
 
-  it('narrows the list and clears back to all ten', () => {
+  it('narrows the list in any language and clears back to all ten', () => {
     const catalog = useCatalogStore()
     catalog.backend = 'node'
     catalog.technique = 'browser'
-    expect(parts(catalog.visible)).toEqual(['LB-07'])
+    expect(parts(catalog.visibleIn(systems))).toEqual(['LB-07'])
+    expect(catalog.visibleIn(systemsIn('cs')).map(system => system.name)).toEqual(['QA inženýr'])
     expect(catalog.filtered).toBe(true)
     catalog.clear()
-    expect(catalog.visible).toHaveLength(10)
+    expect(catalog.visibleIn(systems)).toHaveLength(10)
     expect(catalog.filtered).toBe(false)
   })
 })

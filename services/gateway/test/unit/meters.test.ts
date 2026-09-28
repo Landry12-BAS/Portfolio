@@ -1,3 +1,4 @@
+// Unit tests for meters: windows, what a call reserves, settlement and refunds.
 import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'

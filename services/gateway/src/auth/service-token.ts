@@ -1,3 +1,6 @@
+// Service tokens (docs/SECURITY.md, section 5): each service signs short-lived JWTs with
+// its own Ed25519 key, and the gateway holds only the public halves. A leaked gateway
+// config can't mint tokens, and a leaked token expires within minutes.
 import { randomUUID } from 'node:crypto'
 
 import { importJWK, jwtVerify, SignJWT } from 'jose'
@@ -5,18 +8,23 @@ import type { CryptoKey } from 'jose'
 
 import { GatewayError } from '../errors.ts'
 
-// Service tokens (docs/SECURITY.md, section 5): each service signs short-lived JWTs with
-// its own Ed25519 key, and the gateway holds only the public halves. A leaked gateway
-// config can't mint tokens, and a leaked token expires within minutes.
-
+/** The audience every service token must name, so a token for another system is refused. */
 export const GATEWAY_AUDIENCE = 'lb-gateway'
-// Tokens older than this are refused whatever their `exp` says, so a service can't
-// hand out long-lived tokens by mistake.
+/**
+ * The oldest token accepted, in seconds, whatever its `exp` says, so a service can't
+ * hand out long-lived tokens by mistake.
+ */
 export const MAX_TOKEN_AGE_SECONDS = 600
+// Allowed clock drift between a service and the gateway.
 const CLOCK_TOLERANCE_SECONDS = 30
 
+/** The public key of each service allowed to call, keyed by service name. */
 export type ServiceKeys = ReadonlyMap<string, CryptoKey>
 
+/**
+ * Turns the LB_SERVICE_KEYS entries (service name to the base64url `x` of an Ed25519
+ * public key) into keys the verifier can use.
+ */
 export async function importServiceKeys(publicKeys: Readonly<Record<string, string>>): Promise<ServiceKeys> {
   const keys = new Map<string, CryptoKey>()
   for (const [service, x] of Object.entries(publicKeys)) {
@@ -25,19 +33,26 @@ export async function importServiceKeys(publicKeys: Readonly<Record<string, stri
   return keys
 }
 
+// "Bearer" followed by exactly three base64url segments, the shape of a compact JWT.
 const bearer = /^Bearer ([\w-]+\.[\w-]+\.[\w-]+)$/
 
-/** Returns the name of the service that signed the token, or throws a 401. */
+/**
+ * Checks the Authorization header and returns the name of the service that signed the
+ * token. Throws a 401 for a missing, malformed, expired or foreign token. Every failure
+ * gets the same message, so a caller can't probe which check failed.
+ */
 export async function verifyServiceToken(authorization: string | undefined, keys: ServiceKeys, now: Date): Promise<string> {
   const token = bearer.exec(authorization ?? '')?.[1]
   if (!token) throw new GatewayError(401, 'invalid_service_token', 'Send a service token in the Authorization header as a Bearer token.')
 
   try {
     const { payload, protectedHeader } = await jwtVerify(token, (header) => {
+      // The key ID names the service; an unknown service has no key to check against.
       const key = header.kid === undefined ? undefined : keys.get(header.kid)
       if (!key) throw new Error('unknown key id')
       return key
     }, {
+      // Only Ed25519 signatures: no `none`, and no shared-secret HMAC a leak could forge.
       algorithms: ['EdDSA'],
       audience: GATEWAY_AUDIENCE,
       clockTolerance: CLOCK_TOLERANCE_SECONDS,
@@ -56,7 +71,11 @@ export async function verifyServiceToken(authorization: string | undefined, keys
   }
 }
 
-/** Mints a token the way every calling service must: used by Node services, the CLI and tests. */
+/**
+ * Mints a service token the way every calling service must: EdDSA, the service's name
+ * as key ID and issuer, the gateway as audience, and a short lifetime. Used by Node
+ * services, the local CLI and the tests.
+ */
 export async function signServiceToken(service: string, privateKey: CryptoKey, now: Date, ttlSeconds = 300): Promise<string> {
   const issuedAt = Math.floor(now.getTime() / 1000)
   return new SignJWT({})

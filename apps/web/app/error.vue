@@ -1,14 +1,19 @@
 <script setup lang="ts">
+// The error page, in the visitor's language: "Part not found" for an unknown part
+// number (a real 404), and a generic message with a way back for anything else.
 import type { NuxtError } from '#app'
 
 const props = defineProps<{ error: NuxtError }>()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 const notFound = computed(() => props.error.statusCode === 404)
 
-useSeoMeta({ title: () => (notFound.value ? 'Part not found' : 'Something went wrong') })
+useSeoMeta({ title: () => (notFound.value ? t('error.notFound') : t('error.generic')) })
 
+/** Clears the error and returns to the catalog, in the visitor's language. */
 function backToCatalog() {
-  clearError({ redirect: '/' })
+  clearError({ redirect: localePath('/') })
 }
 </script>
 
@@ -16,21 +21,21 @@ function backToCatalog() {
   <NuxtLayout>
     <section class="error">
       <p class="lb-label">
-        Error {{ error.statusCode }}
+        {{ t('error.code', { code: error.statusCode }) }}
       </p>
-      <h1>{{ notFound ? 'Part not found' : 'Something went wrong' }}</h1>
+      <h1>{{ notFound ? t('error.notFound') : t('error.generic') }}</h1>
       <p v-if="notFound">
-        No part in this catalog has that number. The ten systems run from LB-01 to LB-10.
+        {{ t('error.notFoundText') }}
       </p>
       <p v-else>
-        The page could not be shown. Reload it, or go back to the catalog.
+        {{ t('error.genericText') }}
       </p>
       <button
         type="button"
         class="back"
         @click="backToCatalog"
       >
-        Back to the catalog
+        {{ t('error.back') }}
       </button>
     </section>
   </NuxtLayout>

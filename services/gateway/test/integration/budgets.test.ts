@@ -1,3 +1,5 @@
+// Integration tests: provider budgets, the day reset, Neuron metering, refunds, the
+// run and visitor quotas, and failing closed when Redis is down.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { chatBody, startGateway } from '../support/gateway.ts'
@@ -13,10 +15,12 @@ afterEach(async () => {
   await gw.close()
 })
 
+/** Sends a chat call with LB-01's default headers, some overridden or removed. */
 async function chat(body: Record<string, unknown>, headers: Record<string, string | undefined> = {}) {
   return gw.app.inject({ method: 'POST', url: '/v1/chat/completions', headers: await gw.headers(headers), payload: body })
 }
 
+/** One row of the /v1/usage report. */
 interface UsageMeter {
   scope: string
   unit: string
@@ -28,11 +32,13 @@ interface UsageMeter {
   alert: boolean
 }
 
+/** Reads the /v1/usage report. */
 async function usage(): Promise<UsageMeter[]> {
   const response = await gw.app.inject({ method: 'GET', url: '/v1/usage', headers: { authorization: `Bearer ${await gw.token()}` } })
   return response.json<{ meters: UsageMeter[] }>().meters
 }
 
+/** Milliseconds from `now` to the next 00:00 UTC, when day budgets reset. */
 function msUntilUtcMidnight(now: number): number {
   return 86_400_000 - (now % 86_400_000)
 }

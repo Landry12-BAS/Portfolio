@@ -1,19 +1,32 @@
 <script setup lang="ts">
-type Preference = 'light' | 'dark' | 'system'
+// <SiteToolbar>: the sticky bar at the top of every page, with the brand, the section
+// links, and the language and theme switches.
+import type { ColorPreference } from '@lb/ui/types'
 
+const { t } = useI18n()
 const colorMode = useColorMode()
 
-const preference = computed<Preference>({
-  get: () => (['light', 'dark'].includes(colorMode.preference) ? colorMode.preference : 'system') as Preference,
+// The theme switch's value: the visitor's own choice, or `system` when they left it to
+// the operating system. Writing it saves the choice (in localStorage, never a cookie).
+const preference = computed<ColorPreference>({
+  get: () => (['light', 'dark'].includes(colorMode.preference) ? colorMode.preference : 'system') as ColorPreference,
   set: (value) => {
     colorMode.preference = value
   },
 })
+
+// The theme switch's text, in the page's language.
+const themeLabels = computed(() => ({
+  group: t('toolbar.theme.group'),
+  light: t('toolbar.theme.light'),
+  dark: t('toolbar.theme.dark'),
+  system: t('toolbar.theme.system'),
+}))
 </script>
 
 <template>
   <header class="toolbar">
-    <NuxtLink
+    <NuxtLinkLocale
       to="/"
       class="brand"
     >
@@ -22,29 +35,35 @@ const preference = computed<Preference>({
         label=""
       />
       <span class="wordmark">Landry Bodjona</span>
-    </NuxtLink>
+    </NuxtLinkLocale>
     <nav
       class="nav"
-      aria-label="Sections"
+      :aria-label="t('toolbar.sections')"
     >
-      <NuxtLink to="/#systems">
-        Systems
-      </NuxtLink>
-      <NuxtLink to="/#build">
-        Build order
-      </NuxtLink>
+      <NuxtLinkLocale :to="{ path: '/', hash: '#systems' }">
+        {{ t('toolbar.systems') }}
+      </NuxtLinkLocale>
+      <NuxtLinkLocale :to="{ path: '/', hash: '#build' }">
+        {{ t('toolbar.build') }}
+      </NuxtLinkLocale>
     </nav>
-    <!-- The saved theme is only known in the browser, so the toggle renders there;
-         the slot keeps its width so nothing shifts when it appears. -->
-    <ClientOnly>
-      <LbThemeToggle v-model="preference" />
-      <template #fallback>
-        <span
-          class="toggle-slot"
-          aria-hidden="true"
+    <div class="controls">
+      <LanguageSwitch />
+      <!-- The saved theme is only known in the browser, so the toggle renders there;
+           the slot keeps its width so nothing shifts when it appears. -->
+      <ClientOnly>
+        <LbThemeToggle
+          v-model="preference"
+          :labels="themeLabels"
         />
-      </template>
-    </ClientOnly>
+        <template #fallback>
+          <span
+            class="toggle-slot"
+            aria-hidden="true"
+          />
+        </template>
+      </ClientOnly>
+    </div>
   </header>
 </template>
 
@@ -97,6 +116,12 @@ const preference = computed<Preference>({
   border-bottom-color: var(--lb-ink);
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .toggle-slot {
   display: inline-block;
   width: 128px;
@@ -108,12 +133,25 @@ const preference = computed<Preference>({
     display: none;
   }
 
-  .toolbar > :last-child {
+  .controls {
     margin-left: auto;
   }
 
   .wordmark {
     font-size: 12px;
+  }
+}
+
+/* On the narrowest phones the language and theme switches need the room, so the
+   wordmark is hidden from sight but still names the home link for screen readers. */
+@media (max-width: 480px) {
+  .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 </style>

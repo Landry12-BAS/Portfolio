@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { systems } from '#shared/data/systems'
+// The home page: the masthead with a quick reference, the selection guide (section 1),
+// what every system page shows (section 2), and the build order (section 3).
+const { t } = useI18n()
+const datasheets = useDatasheets()
 
-useSeoMeta({ title: 'Ten live AI systems' })
+useSeoMeta({ title: () => t('home.title') })
 
-const phases = [
-  { phase: 1 as const, title: 'Foundation', text: 'These touch all three back ends, the gateway, tracing, quotas and the eval harness. Everything after reuses them.' },
-  { phase: 2 as const, title: 'Breadth', text: 'Real-time chat, vision, long documents and browser automation, on a stable base.' },
-  { phase: 3 as const, title: 'Showpieces', text: 'The most complex builds come last. Eval Lab arrives with golden sets that have been growing since Phase 1.' },
-]
-const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === phase)
+// The three build phases, with their names and descriptions in this language.
+const phases = computed(() => [
+  { phase: 1 as const, title: t('home.build.foundation'), text: t('home.build.foundationText') },
+  { phase: 2 as const, title: t('home.build.breadth'), text: t('home.build.breadthText') },
+  { phase: 3 as const, title: t('home.build.showpieces'), text: t('home.build.showpiecesText') },
+])
+
+/** Returns the systems built in a phase, in catalog order. */
+function inPhase(phase: 1 | 2 | 3) {
+  return datasheets.value.filter(system => system.phase === phase)
+}
 </script>
 
 <template>
@@ -16,33 +24,33 @@ const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === 
     <header class="masthead">
       <div class="intro">
         <p class="kicker">
-          Ten live AI systems · One fictional company
+          {{ t('home.kicker') }}
         </p>
-        <h1>A portfolio you can operate</h1>
+        <h1>{{ t('home.heading') }}</h1>
         <p class="lede">
-          Ten production-grade AI systems, built for one fictional coffee company and open to
-          every visitor. Each one runs live on this site, shows every step it takes, and invites
-          people to try to break it.
+          {{ t('home.lede') }}
         </p>
       </div>
       <aside
         class="quickref"
-        aria-label="Quick reference"
+        :aria-label="t('home.quickref.label')"
       >
-        <span class="stamp">Phase 1 in build</span>
+        <span class="stamp">{{ t('home.quickref.stamp') }}</span>
         <dl>
-          <dt>Owner</dt>
+          <dt>{{ t('home.quickref.owner') }}</dt>
           <dd>Landry Bodjona</dd>
-          <dt>Systems</dt>
-          <dd>10, on one shared platform (LB-00)</dd>
-          <dt>Back ends</dt>
-          <dd>Django, Flask (sync and async), Node + TypeScript</dd>
-          <dt>Front end</dt>
-          <dd>Nuxt (Vue 3) + Pinia, in TypeScript</dd>
-          <dt>AI</dt>
-          <dd>Free tiers from Groq, Workers AI and OpenRouter, behind one gateway</dd>
-          <dt>Accounts</dt>
-          <dd>None. Visitors stay anonymous</dd>
+          <dt>{{ t('home.quickref.systems') }}</dt>
+          <dd>{{ t('home.quickref.systemsValue') }}</dd>
+          <dt>{{ t('home.quickref.backends') }}</dt>
+          <dd>{{ t('home.quickref.backendsValue') }}</dd>
+          <dt>{{ t('home.quickref.frontend') }}</dt>
+          <dd>{{ t('home.quickref.frontendValue') }}</dd>
+          <dt>{{ t('home.quickref.ai') }}</dt>
+          <dd>{{ t('home.quickref.aiValue') }}</dd>
+          <dt>{{ t('home.quickref.languages') }}</dt>
+          <dd>{{ t('home.quickref.languagesValue') }}</dd>
+          <dt>{{ t('home.quickref.accounts') }}</dt>
+          <dd>{{ t('home.quickref.accountsValue') }}</dd>
         </dl>
       </aside>
     </header>
@@ -50,11 +58,10 @@ const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === 
     <section id="systems">
       <LbSectionHead
         num="1"
-        title="Selection guide"
+        :title="t('home.guide.title')"
       />
       <p class="sec-intro">
-        Filter the ten systems by back end or technique, the way engineers search a parts
-        distributor. Select a part number to open its datasheet.
+        {{ t('home.guide.intro') }}
       </p>
       <CatalogGuide />
     </section>
@@ -62,20 +69,20 @@ const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === 
     <section id="anatomy">
       <LbSectionHead
         num="2"
-        title="What every system page shows"
+        :title="t('home.anatomy.title')"
       />
       <dl class="points">
         <div>
-          <dt>The datasheet</dt>
-          <dd>What the system does, the problem it solves and its operating limits, in a 30-second Brief or the full Technical version.</dd>
+          <dt>{{ t('home.anatomy.datasheet') }}</dt>
+          <dd>{{ t('home.anatomy.datasheetText') }}</dd>
         </div>
         <div>
-          <dt>The evaluation board</dt>
-          <dd>The live demo. It opens on curated samples with cached results, and custom input runs for real within the visitor’s daily quota.</dd>
+          <dt>{{ t('home.anatomy.board') }}</dt>
+          <dd>{{ t('home.anatomy.boardText') }}</dd>
         </div>
         <div>
-          <dt>The Scope</dt>
-          <dd>A trace of every run: each step, tool call, token and model, with its latency and the provider that answered.</dd>
+          <dt>{{ t('home.anatomy.scope') }}</dt>
+          <dd>{{ t('home.anatomy.scopeText') }}</dd>
         </div>
       </dl>
     </section>
@@ -83,7 +90,7 @@ const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === 
     <section id="build">
       <LbSectionHead
         num="3"
-        title="Build order"
+        :title="t('home.build.title')"
       />
       <ol class="phases">
         <li
@@ -93,24 +100,24 @@ const inPhase = (phase: 1 | 2 | 3) => systems.filter(system => system.phase === 
         >
           <div class="ph-top">
             <LbPill :variant="item.phase === 1 ? 'solid' : item.phase === 3 ? 'dashed' : 'outline'">
-              Phase {{ item.phase }}
+              {{ t('home.build.phase', { n: item.phase }) }}
             </LbPill>
             <h3>{{ item.title }}</h3>
           </div>
           <ul class="ph-list">
             <li v-if="item.phase === 1">
-              <span class="ph-part">LB-00</span>Platform
+              <span class="ph-part">LB-00</span>{{ t('home.build.platform') }}
             </li>
             <li
               v-for="system in inPhase(item.phase)"
               :key="system.part"
             >
-              <NuxtLink
+              <NuxtLinkLocale
                 class="ph-part"
                 :to="`/systems/${system.slug}`"
               >
                 {{ system.part }}
-              </NuxtLink>{{ system.name }}
+              </NuxtLinkLocale>{{ system.name }}
             </li>
           </ul>
           <p>{{ item.text }}</p>

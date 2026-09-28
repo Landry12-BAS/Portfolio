@@ -1,3 +1,5 @@
+// Unit tests for the routing table: the committed routing.yaml, the mistakes the loader
+// catches, and how a chain is planned.
 import { readFileSync } from 'node:fs'
 
 import { parse, stringify } from 'yaml'
@@ -17,6 +19,7 @@ const chat: ReadonlySet<Capability> = new Set(['chat'])
 // The edits break the file on purpose, in ways its schema type would forbid, so the
 // parsed document is deliberately untyped here.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/** Returns the committed routing.yaml with one deliberate change applied. */
 function edited(change: (doc: Record<string, any>) => void): string {
   const doc = parse(committed) as Record<string, any>
   change(doc)
@@ -24,6 +27,7 @@ function edited(change: (doc: Record<string, any>) => void): string {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+/** Loads a routing document and returns the problems found (none when it is valid). */
 function issuesOf(text: string, env: Record<string, string> = allKeys): readonly string[] {
   try {
     loadRouting(text, env)

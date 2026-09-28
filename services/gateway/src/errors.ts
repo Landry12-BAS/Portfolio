@@ -1,6 +1,8 @@
-// Errors in the OpenAI envelope, so the AI SDK and the openai Python client surface
-// them as ordinary API errors. `code` is the stable, documented part.
+// Gateway errors, sent in the OpenAI error envelope so the AI SDK and the openai
+// Python client surface them as ordinary API errors. `code` is the stable part that
+// callers branch on; the message is for people.
 
+/** Every error code the gateway can answer with. The README lists what each one means. */
 export type ErrorCode
   = | 'invalid_request'
     | 'unsupported_request'
@@ -18,6 +20,7 @@ export type ErrorCode
     | 'not_found'
     | 'internal_error'
 
+// The OpenAI `type` field for each HTTP status; anything else is an `api_error`.
 const errorTypes: Record<number, string> = {
   400: 'invalid_request_error',
   401: 'authentication_error',
@@ -27,14 +30,20 @@ const errorTypes: Record<number, string> = {
   429: 'rate_limit_error',
 }
 
+/** The JSON body of every error response: `{ "error": { message, type, code } }`. */
 export interface ErrorBody {
   error: { message: string, type: string, code: string }
 }
 
+/** Builds an error body in the OpenAI format for a status, a code and a message. */
 export function errorBody(status: number, code: string, message: string): ErrorBody {
   return { error: { message, type: errorTypes[status] ?? 'api_error', code } }
 }
 
+/**
+ * An error the gateway answers on purpose, with its HTTP status and stable code.
+ * Route handlers throw it; the app's error handler turns it into the response.
+ */
 export class GatewayError extends Error {
   readonly status: number
   readonly code: ErrorCode
@@ -49,6 +58,7 @@ export class GatewayError extends Error {
     this.retryAfterMs = retryAfterMs
   }
 
+  /** Returns this error as the JSON body the caller receives. */
   toBody(): ErrorBody {
     return errorBody(this.status, this.code, this.message)
   }

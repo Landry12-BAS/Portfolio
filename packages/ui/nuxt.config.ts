@@ -1,9 +1,10 @@
-import { fileURLToPath } from 'node:url'
-
-const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
-
 // The LB design system as a Nuxt layer. Apps extend it to get the tokens, the fonts,
 // the theme switching and the base components in one line.
+import { fileURLToPath } from 'node:url'
+
+/** Resolves a path relative to this layer, wherever the app that extends it lives. */
+const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
 export default defineNuxtConfig({
   modules: ['@nuxtjs/color-mode'],
   css: [here('./app/assets/css/main.css')],

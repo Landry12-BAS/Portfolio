@@ -1,7 +1,10 @@
+// The ten datasheets in English, the source of truth for every language. Other
+// languages translate only their text (see systems.cs.ts); everything else comes from
+// here. Figures marked "est." are build targets; measured values replace them when each
+// system ships (docs/PLAYBOOK.md, principle 3).
 import type { System } from '../schema/system'
 
-// The ten datasheets. Figures marked "est." are build targets; measured values replace
-// them when each system ships (docs/PLAYBOOK.md, principle 3).
+/** Every datasheet, LB-01 to LB-10, in catalog order. */
 export const systems = [
   {
     part: 'LB-01',
@@ -305,9 +308,5 @@ export const systems = [
   },
 ] as const satisfies readonly System[]
 
+/** One English datasheet record, with its exact literal values. */
 export type SystemRecord = (typeof systems)[number]
-
-export function findSystem(slug: string): SystemRecord | undefined {
-  const key = slug.toLowerCase()
-  return systems.find(system => system.slug === key)
-}

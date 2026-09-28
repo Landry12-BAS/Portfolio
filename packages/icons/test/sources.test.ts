@@ -1,5 +1,7 @@
 // @vitest-environment node
-// The build script reads the file system, so these tests run in Node, not the DOM.
+// Tests for the icon sources and the build: every source follows the house rules, and
+// the generated registry and sprite match the sources. The build script reads the file
+// system, so these tests run in Node, not the DOM.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

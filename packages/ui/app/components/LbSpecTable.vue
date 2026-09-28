@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// <LbSpecTable>: a two-column datasheet table (parameter, value) with row headers, so
+// screen readers announce each value with its parameter.
 import type { SpecRow } from '../types/components'
 
 defineProps<{

@@ -1,3 +1,5 @@
+// Unit tests for request handling: the chat schema, the upstream body, token estimates
+// and the environment.
 import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
@@ -13,6 +15,7 @@ const routing = loadRouting(readFileSync(new URL('../../routing.yaml', import.me
   GROQ_API_KEY: 'k', CLOUDFLARE_API_TOKEN: 'k', CLOUDFLARE_ACCOUNT_ID: 'acc', OPENROUTER_API_KEY: 'k',
 })
 
+/** Builds a validated chat request, with any field overridden. */
 function request(overrides: Record<string, unknown> = {}): ChatRequest {
   return chatRequestSchema.parse({ model: 'lb-tools', messages: [{ role: 'user', content: 'Where is my order?' }], ...overrides })
 }

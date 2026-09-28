@@ -1,11 +1,15 @@
+// The shared Playwright fixture: every end-to-end test fails if the page breaks the
+// security policy, throws, or logs an error, not just when its own assertions fail.
 import { test as base, expect } from '@playwright/test'
 
+/** What went wrong on a page while a test ran. */
 interface PageProblems {
   violations: string[]
   errors: string[]
 }
 
 declare global {
+  /** The page's window, plus the CSP violations the fixture collects. */
   interface Window {
     __cspViolations: string[]
   }

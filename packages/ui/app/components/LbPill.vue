@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// <LbPill>: a small status label, such as a system's phase or its back end.
 withDefaults(defineProps<{
   /** `solid` marks the current or most important state, `dashed` a later one. */
   variant?: 'outline' | 'solid' | 'dashed'

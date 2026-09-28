@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev F · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev G · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -198,17 +198,25 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   dark values, the base components, and theme switching. Reka UI primitives join it as
   demos need them, and icons come from `@lb/icons`. Archivo and Martian Mono are
   self-hosted variable fonts (Fontsource) with the width axis the expanded headings
-  use. A command palette built on Reka UI's combobox; `@nuxtjs/i18n` when a second
-  language lands. Storybook is the living component catalog.
+  use (both include the Latin Extended letters Czech needs). A command palette built
+  on Reka UI's combobox. Storybook is the living component catalog.
+- **Languages (decision D6).** English by default at `/`, Czech at `/cs`, with
+  `@nuxtjs/i18n`. Interface text lives in typed locale files, where the Czech file must
+  match the English shape, so a missing translation fails the type check. Datasheets
+  keep English as the source and overlay the Czech text, checked field by field in the
+  unit tests. There is no redirect by browser language, because it would need a
+  cookie; the language switch is a pair of plain links. Every page sets `<html lang>`
+  and hreflang links, and Czech text is typeset so no line ends on a single-letter
+  word.
 - **Themes.** Light by default, dark when the visitor's system prefers it, with a
   toggle. `@nuxtjs/color-mode` applies the theme before first paint (its inline
   script gets the per-request CSP nonce), and keeps the visitor's choice in
   `localStorage`, not a cookie. The logo swaps between `lb-mark-light.svg` and
   `lb-mark-dark.svg`.
-- **Quality bars.** WCAG 2.2 AA in both themes (axe in CI), LCP under 2 s, INP under
-  200 ms, CLS under 0.05 (Lighthouse CI budgets). Playwright covers journeys and
-  visual regressions in both themes; Vitest with Vue Test Utils and
-  `@nuxt/test-utils` covers components and stores.
+- **Quality bars.** WCAG 2.2 AA in both themes and both languages (axe in CI), LCP
+  under 2 s, INP under 200 ms, CLS under 0.05 (Lighthouse CI budgets). Playwright
+  covers journeys and visual regressions in both themes; Vitest with Vue Test Utils
+  and `@nuxt/test-utils` covers components and stores.
 
 ## Back ends
 

@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="V extends string">
+// <LbSegmented>: a row of toggle buttons where exactly one is on, such as Technical and
+// Brief. Each button reports its state with aria-pressed, and the group has a name.
 import { LbIcon } from '@lb/icons'
 
 import type { SegmentOption } from '../types/components'
@@ -9,6 +11,7 @@ defineProps<{
   label: string
 }>()
 
+// The selected value, two-way bound with v-model.
 const model = defineModel<V>({ required: true })
 </script>
 
