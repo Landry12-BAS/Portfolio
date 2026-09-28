@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+  - services/*
+
+# unrs-resolver (used by the ESLint import rules) ships prebuilt binaries; its install
+# script only rebuilds from source, which this repo never needs.
+ignoredBuiltDependencies:
+  - unrs-resolver

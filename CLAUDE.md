@@ -14,8 +14,8 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 - Brand: Landry Bodjona, logo mark LB ([`brand/`](brand/README.md)). Part numbers and
   internal names use the LB prefix (`LB-01`, `lb-fast`).
 
-Status: planning. Nothing is scaffolded yet. Add the real commands to the Commands
-section in the same change that scaffolds them.
+Status: planning. Only the workspace root and `packages/icons` are scaffolded. Add
+each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
 
@@ -94,6 +94,16 @@ section in the same change that scaffolds them.
 
 ## Commands
 
-Not scaffolded yet. The planned single entry point is a root `justfile`
-(`just dev`, `just test`, `just lint`, `just seed`). Document each command here when it
-exists.
+Everything runs through the root `justfile`, which wraps the pnpm scripts (Node 22.18
+or later, pnpm 10; `.mise.toml` pins Node 24 for CI).
+
+| Command | What it does |
+|---|---|
+| `just install` (`pnpm install`) | Install every workspace dependency |
+| `just lint` (`pnpm lint`) | ESLint on every TypeScript and Vue package |
+| `just typecheck` (`pnpm typecheck`) | Strict type-check with `vue-tsc` |
+| `just test` (`pnpm test`) | Every Vitest suite |
+| `just check` (`pnpm check`) | Fail when a generated file is stale (the CI drift check) |
+| `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
+
+`just dev` and `just seed` arrive with the Nuxt app and the seed data.

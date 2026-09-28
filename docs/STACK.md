@@ -327,7 +327,8 @@ short:
   typescript-eslint for services, ESLint Stylistic for formatting), Ruff (Python lint
   and format), `vue-tsc` and `tsc` in strict mode, mypy with django-stubs, lefthook
   for pre-commit hooks. Lint bans `v-html` (`vue/no-v-html`) and runs the Vue
-  accessibility rules.
+  accessibility rules. TypeScript stays on 6.0 until `vue-tsc` supports TypeScript 7,
+  whose native compiler ships without the JavaScript API `vue-tsc` builds on.
 - **Tests:** Vitest (with Vue Test Utils and `@nuxt/test-utils` on the front end),
   pytest (with pytest-django, pytest-asyncio and Hypothesis for invoice arithmetic),
   Testcontainers for real Postgres and Redis, Playwright for end to end.

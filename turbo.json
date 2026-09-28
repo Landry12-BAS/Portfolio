@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["svg/**", "scripts/**"],
+      "outputs": ["sprite.svg", "src/generated/**"]
+    },
+    "check": {},
+    "lint": {},
+    "test": {},
+    "typecheck": {}
+  }
+}

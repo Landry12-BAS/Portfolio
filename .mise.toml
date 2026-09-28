@@ -1,0 +1,4 @@
+# Tool versions for every contributor and CI (docs/STACK.md, Tooling).
+[tools]
+node = "24"
+pnpm = "10.33.0"
