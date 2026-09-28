@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev D · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev E · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -24,7 +24,7 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Layer | Choice | Why |
 |---|---|---|
 | Front end | Nuxt 4 · Vue 3.5 · Pinia · TypeScript strict in single-file components (no TSX) | The owner's choice. Hybrid rendering (prerendered datasheets, server-rendered demos), Nitro server routes for the no-accounts backend, Pinia stores for live runs |
-| Styling | Tailwind CSS v4 with CSS-variable tokens, light and dark | Tokens are the single source of the datasheet palette and type, with a light and a dark value each |
+| Styling | CSS-variable tokens in `packages/ui`, light and dark, and scoped styles in each single-file component | Tokens are the single source of the palette and type; the datasheet look is bespoke, so scoped CSS beats a utility framework |
 | Components | Reka UI, wrapped in `packages/ui` | Accessible headless primitives for Vue with no visual opinions, so the site never looks like a template |
 | Icons | `@lb/icons`, drawn in the logo's pattern | One SVG sprite and a Vue `<LbIcon>` component; no emoji, no third-party icon sets |
 | Motion and data viz | Motion for Vue · Unovis · Vega-Lite (LB-05) · Vue Flow (LB-08) · pdf.js (LB-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
@@ -168,10 +168,10 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 - **Nuxt 4, Vue 3.5, TypeScript strict.** The owner chose Nuxt with Pinia over
   Next.js. Components are single-file components with `<script setup lang="ts">`;
-  there is no TSX or JSX in the repo. Datasheet pages are prerendered from Markdown
-  with Nuxt Content, whose collections give typed frontmatter for part numbers and
-  specs. Demo pages render on the server, and heavy demo panels hydrate only when
-  they scroll into view.
+  there is no TSX or JSX in the repo. Pages render on the server for every request,
+  so each response carries a fresh CSP nonce. The ten datasheets are typed data
+  (`apps/web/shared/data/systems.ts`) checked against a Zod schema in the unit tests.
+  Heavy demo panels will hydrate only when they scroll into view.
 - **Backend-for-frontend.** There are no accounts: no sign-up, login or logout. Nitro
   server routes issue an anonymous visitor session (signed cookie), verify Turnstile,
   and mint short-lived JWTs (`jose`) for direct SSE and WebSocket connections to the
@@ -187,11 +187,12 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   and LB-06 use WebSockets.
 - **Data.** `openapi-fetch` clients generated from each service's OpenAPI spec; Zod
   at every boundary.
-- **Design system.** Tailwind v4 tokens with light and dark values, Reka UI
-  primitives wrapped in `packages/ui`, and icons from `@lb/icons`. Archivo and
-  Martian Mono are self-hosted through `@nuxt/fonts`, with fallback metrics so text
-  doesn't shift. A command palette built on Reka UI's combobox; `@nuxtjs/i18n` when a
-  second language lands. Storybook is the living component catalog.
+- **Design system.** `packages/ui` is a Nuxt layer: the colour tokens with light and
+  dark values, the base components, and theme switching. Reka UI primitives join it as
+  demos need them, and icons come from `@lb/icons`. Archivo and Martian Mono are
+  self-hosted variable fonts (Fontsource) with the width axis the expanded headings
+  use. A command palette built on Reka UI's combobox; `@nuxtjs/i18n` when a second
+  language lands. Storybook is the living component catalog.
 - **Themes.** Light by default, dark when the visitor's system prefers it, with a
   toggle. `@nuxtjs/color-mode` applies the theme before first paint (its inline
   script gets the per-request CSP nonce), and keeps the visitor's choice in
@@ -407,6 +408,8 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | shadcn-vue instead of Reka UI | Rejected | shadcn's default look is the generic AI-site look this design avoids |
 | Biome instead of ESLint | Rejected | ESLint carries the Vue template rules this project relies on (`vue/no-v-html`, accessibility) and is Nuxt's official setup; with ESLint Stylistic it is still one tool |
 | Font Awesome or another icon library | Rejected | The owner wants icons in the logo's own pattern; `@lb/icons` ships the same way (sprite plus component) |
+| Tailwind CSS | Dropped at scaffold (Rev E) | The look is bespoke and component-shaped; tokens plus scoped styles are simpler and ship only the CSS each page uses |
+| Nuxt Content for the datasheets | Not now | Ten structured records are simpler and safer as typed data with a Zod check; revisit when prose pages arrive |
 
 ## Revisit when
 

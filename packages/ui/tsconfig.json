@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "#brand/*": ["../../brand/*"]
+    }
+  },
+  "include": ["app/**/*.ts", "app/**/*.vue", "test", "vitest.config.ts"]
+}

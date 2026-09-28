@@ -7,3 +7,7 @@ packages:
 # script only rebuilds from source, which this repo never needs.
 ignoredBuiltDependencies:
   - unrs-resolver
+
+# esbuild's install script only verifies its prebuilt binary for this platform.
+onlyBuiltDependencies:
+  - esbuild

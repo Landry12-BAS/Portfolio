@@ -8,6 +8,10 @@ export default createConfigForNuxt({
     stylistic: true,
     typescript: true,
   },
+  dirs: {
+    // Nuxt apps and layers, so pages, layouts and error pages get Nuxt's naming rules.
+    src: ['apps/web/app', 'packages/ui/app'],
+  },
 })
   .append(vueA11y.configs['flat/recommended'])
   .append({

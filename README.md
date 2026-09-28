@@ -31,4 +31,9 @@ NIM for private experiments.
 - [Security design](docs/SECURITY.md): no accounts, no login, zero inbound ports
 - [The LB mark](brand/README.md)
 
-Status: planning. Build starts with the shared platform (LB-00) and LB-01.
+Status: Phase 1 in build. The site runs: the catalog, a datasheet for every system,
+light and dark themes, and the security headers from the design. Next come the AI
+gateway (LB-00) and the Support Desk (LB-01).
+
+Run it with Node 22.18 or later and pnpm 10: `just install`, then `just dev`. The
+commands are listed in [`CLAUDE.md`](CLAUDE.md#commands).
