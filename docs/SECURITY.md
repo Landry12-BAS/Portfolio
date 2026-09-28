@@ -1,6 +1,6 @@
 # Security architecture
 
-Status: accepted · Rev B · 27 Sep 2026 · Owner: Landry
+Status: accepted · Rev C · 28 Sep 2026 · Owner: Landry
 
 The site has **no accounts**: no sign-up, no login, no logout. Every visitor is
 anonymous, and every protection below works without asking anyone who they are.
@@ -89,7 +89,7 @@ Mapped to the OWASP Top 10 for LLM applications:
 | Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code |
 | Excessive agency | No real side effects: sandboxed connectors, and a human click before any action |
 | Sensitive data disclosure | Synthetic data; visitor content routed only to providers that don't train on inputs |
-| Model denial of service | Per-visitor quotas, token-aware provider budgets, replay mode |
+| Model denial of service | Per-run call caps, per-visitor and per-system quotas, token-aware provider budgets, replay mode |
 | Supply chain | Model IDs pinned in `routing.yaml`; the eval gate runs before any change |
 | System prompt leakage | No secrets or internal URLs in prompts |
 
@@ -104,8 +104,11 @@ attempts. Every prompt change must pass it.
 - **Allowlisted egress.** Outbound traffic goes through an egress proxy with a domain
   allowlist: the gateway may reach the model providers, the systems may reach R2 and
   Sentry, and nothing else leaves the box except the tunnel.
-- **Service tokens.** Each service calls the gateway with its own signed token; the
-  gateway rejects everything else. Provider keys exist only in the gateway.
+- **Service tokens.** Each service signs short-lived JWTs (EdDSA) with its own private
+  key; the gateway holds only the public keys, refuses tokens older than 10 minutes,
+  ties each system to one service, and rejects everything else. Provider keys exist
+  only in the gateway. Without Redis the gateway can't check a budget, so it fails
+  closed.
 - **Postgres:** one role per system, granted only its own schema; the gateway's role
   sees only `platform`.
 - **Redis:** one ACL user per service, limited to its key prefix, with dangerous

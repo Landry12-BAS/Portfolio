@@ -15,6 +15,14 @@ dev:
 build:
     pnpm --filter @lb/web build
 
+# Run the AI gateway with reload on http://127.0.0.1:8080 (settings in services/gateway/.env).
+gateway:
+    pnpm --filter @lb/gateway dev
+
+# Make a service key pair or mint a service token for local gateway calls.
+gateway-token *args:
+    pnpm --silent --filter @lb/gateway token {{args}}
+
 # Lint every TypeScript and Vue package.
 lint:
     pnpm lint
@@ -23,7 +31,8 @@ lint:
 typecheck:
     pnpm typecheck
 
-# Run every unit test suite.
+# Run every unit and integration test suite. Integration tests start Redis with
+# Docker, or use LB_TEST_REDIS_URL when it is set.
 test:
     pnpm test
 

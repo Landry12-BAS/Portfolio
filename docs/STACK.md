@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev E · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev F · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -95,9 +95,13 @@ Mistral's free mode (trains on inputs unless you opt out).
 3. **Terms profile.** Production routing excludes providers whose terms forbid it
    (NVIDIA today). A `dev` profile allows them for local experiments.
 4. **Token-aware budgets.** The gateway estimates tokens before sending and tracks
-   requests and tokens, per minute and per day, for every provider model. On Groq the
-   binding limit is tokens: 200K a day is about 65 calls of 3K tokens. Interactive
-   prompts stay under 4K tokens to fit the 8K tokens-per-minute limit.
+   requests and tokens, per minute and per day, for every provider model, and Neurons
+   for Workers AI's shared daily pool. Minute windows slide; day windows reset at
+   00:00 UTC, as the providers' do. The provider's own token count corrects each
+   estimate after the call. On Groq the binding limit is tokens: 200K a day is about
+   65 calls of 3K tokens. Interactive prompts stay under 4K tokens to fit the 8K
+   tokens-per-minute limit, and CI checks every alias against it. Budgets live in
+   Redis; if Redis is down, the gateway refuses calls rather than spend unmetered.
 5. **Fallback before the first token.** A 429, timeout or 5xx moves the request to the
    next model on its chain. Once an answer is streaming, it never switches provider.
 6. **Structured output.** Groq's strict JSON schema works only without streaming and
@@ -124,7 +128,10 @@ Mistral's free mode (trains on inputs unless you opt out).
 | `lb-judge` | Nightly evals (LB-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
 
 These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
-set in Eval Lab before it serves visitors.
+set in Eval Lab before it serves visitors. The exact provider model IDs, context sizes,
+capabilities and limits live in `services/gateway/routing.yaml`, which CI validates.
+`lb-rerank` and `lb-guard` join the gateway with LB-01, and `lb-stt` with LB-09: each
+needs its own endpoint (rerank scores, a normalised guard verdict, audio).
 
 ### Capacity
 

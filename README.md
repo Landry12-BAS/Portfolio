@@ -32,8 +32,10 @@ NIM for private experiments.
 - [The LB mark](brand/README.md)
 
 Status: Phase 1 in build. The site runs: the catalog, a datasheet for every system,
-light and dark themes, and the security headers from the design. Next come the AI
-gateway (LB-00) and the Support Desk (LB-01).
+light and dark themes, and the security headers from the design. The AI gateway
+(LB-00) runs too: one OpenAI-compatible door for every model call, with fallback,
+free-tier budgets, visitor quotas and run spans ([how it works](services/gateway/README.md)).
+Next comes the Support Desk (LB-01).
 
 Run it with Node 22.18 or later and pnpm 10: `just install`, then `just dev`. The
 commands are listed in [`CLAUDE.md`](CLAUDE.md#commands).

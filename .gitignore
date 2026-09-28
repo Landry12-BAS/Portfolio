@@ -6,6 +6,9 @@ coverage/
 .output/
 .env
 .env.*
+!.env.example
+# Service private keys made with `just gateway-token keygen`.
+*.jwk.json
 *.log
 .DS_Store
 test-results/

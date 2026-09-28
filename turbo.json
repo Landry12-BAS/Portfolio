@@ -8,7 +8,9 @@
     },
     "check": {},
     "lint": {},
-    "test": {},
+    "test": {
+      "passThroughEnv": ["LB_TEST_REDIS_URL", "DOCKER_*", "TESTCONTAINERS_*"]
+    },
     "typecheck": {}
   }
 }

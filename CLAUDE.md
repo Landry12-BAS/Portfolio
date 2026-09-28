@@ -14,9 +14,11 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 - Brand: Landry Bodjona, logo mark LB ([`brand/`](brand/README.md)). Part numbers and
   internal names use the LB prefix (`LB-01`, `lb-fast`).
 
-Status: Phase 1 in build. Scaffolded: the workspace root, `packages/icons`,
-`packages/ui` (the design system as a Nuxt layer) and `apps/web` (the site: catalog,
-datasheets, themes, security headers). Add each new command to the Commands section in
+Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
+`packages/ui` (the design system as a Nuxt layer), `apps/web` (the site: catalog,
+datasheets, themes, security headers) and `services/gateway` (the LB-00 AI gateway:
+routing, fallback, budgets, quotas, service tokens and run spans; see its
+[README](services/gateway/README.md)). Add each new command to the Commands section in
 the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -104,13 +106,17 @@ or later, pnpm 10; `.mise.toml` pins Node 24 for CI).
 | `just install` (`pnpm install`) | Install every workspace dependency |
 | `just dev` | Run the site with hot reload on http://localhost:3000 |
 | `just build` | Build the site for production (`apps/web/.output`) |
+| `just gateway` | Run the AI gateway with reload on http://127.0.0.1:8080 (settings in `services/gateway/.env`, from `.env.example`) |
+| `just gateway-token keygen\|mint <service> <key-file>` | Make a service key pair, or mint a service token for local gateway calls |
 | `just lint` (`pnpm lint`) | ESLint on every TypeScript and Vue package |
-| `just typecheck` (`pnpm typecheck`) | Strict type-check with `vue-tsc` |
-| `just test` (`pnpm test`) | Every Vitest suite |
+| `just typecheck` (`pnpm typecheck`) | Strict type-check with `vue-tsc` and `tsc` |
+| `just test` (`pnpm test`) | Every Vitest suite, unit and integration |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
-| `just check` (`pnpm check`) | Fail when a generated file is stale (the CI drift check) |
+| `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. `just seed` arrives with the seed data.
+Playwright's own. The gateway's integration tests start Redis with Testcontainers; where
+Docker isn't available, set `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` to use a local
+Redis instead. `just seed` arrives with the seed data.

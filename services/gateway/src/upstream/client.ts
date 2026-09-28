@@ -1,0 +1,100 @@
+import type { Model } from '../routing/load.ts'
+
+export type UpstreamPath = '/chat/completions' | '/embeddings'
+
+// Why an attempt failed. `retry` moves the call to the next model on the chain;
+// `reject` means the request itself is at fault, so no other model would do better.
+export type FailureReason
+  = | 'rate_limited'
+    | 'server_error'
+    | 'unavailable'
+    | 'timeout'
+    | 'network'
+    | 'bad_response'
+    | 'stream_error'
+
+export type Failure
+  = | { kind: 'retry', reason: FailureReason, status?: number, retryAfterMs?: number }
+    | { kind: 'reject', status: number, message: string }
+
+export async function sendUpstream(model: Model, path: UpstreamPath, body: Record<string, unknown>, stream: boolean, signal: AbortSignal): Promise<Response> {
+  const provider = model.provider
+  return fetch(`${provider.baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      // Provider extras first, so they can never replace the credentials or the type.
+      ...provider.headers,
+      'authorization': `Bearer ${provider.apiKey}`,
+      'content-type': 'application/json',
+      'accept': stream ? 'text/event-stream' : 'application/json',
+    },
+    body: JSON.stringify(body),
+    redirect: 'error',
+    signal,
+  })
+}
+
+const MAX_RETRY_AFTER_MS = 86_400_000
+
+/** Retry-After as seconds or an HTTP date, in milliseconds from now. */
+export function parseRetryAfter(value: string | null, nowMs: number): number | undefined {
+  if (!value) return undefined
+  const seconds = Number(value)
+  const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - nowMs
+  if (!Number.isFinite(ms)) return undefined
+  return Math.min(Math.max(ms, 1_000), MAX_RETRY_AFTER_MS)
+}
+
+const MAX_MESSAGE = 300
+
+/** The provider's error message, cut short and stripped of control characters. */
+export function upstreamMessage(text: string): string {
+  let message: unknown
+  try {
+    const body = JSON.parse(text) as { error?: { message?: unknown } | string, message?: unknown }
+    message = typeof body.error === 'string' ? body.error : body.error?.message ?? body.message
+  }
+  catch {
+    message = undefined
+  }
+  if (typeof message !== 'string' || message.trim() === '') return 'The provider rejected the request.'
+  // eslint-disable-next-line no-control-regex -- stripping control characters is the point
+  return message.replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, MAX_MESSAGE)
+}
+
+export function classifyStatus(status: number, headers: Headers, text: string, nowMs: number): Failure {
+  if (status === 429) return { kind: 'retry', reason: 'rate_limited', status, retryAfterMs: parseRetryAfter(headers.get('retry-after'), nowMs) }
+  // Malformed or unsupported input fails the same way on every model.
+  if (status === 400 || status === 422) return { kind: 'reject', status, message: upstreamMessage(text) }
+  if (status >= 500) return { kind: 'retry', reason: 'server_error', status }
+  // 401, 402, 403, 404, 408, 413 and the rest: this provider or model can't serve the
+  // call right now (a revoked key, a withdrawn free model, a smaller context), but the
+  // next one may.
+  return { kind: 'retry', reason: 'unavailable', status }
+}
+
+export class ResponseTooLargeError extends Error {
+  constructor(limit: number) {
+    super(`The provider's response is larger than ${limit} bytes.`)
+    this.name = 'ResponseTooLargeError'
+  }
+}
+
+/** Reads a response body as text, refusing to buffer more than `maxBytes`. */
+export async function readCapped(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return ''
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > maxBytes) {
+      await reader.cancel()
+      throw new ResponseTooLargeError(maxBytes)
+    }
+    chunks.push(value)
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
