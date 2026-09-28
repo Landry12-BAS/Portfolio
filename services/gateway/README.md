@@ -168,11 +168,14 @@ Keys live only in the gateway's environment, under the names routing.yaml gives 
   environment's settings; a new session picks it up.
 - **Production:** the SOPS-encrypted secrets file, decrypted only on the box at deploy.
 
-For OpenRouter, create a key used only by this gateway and give it a small credit limit.
-The gateway only calls free (`:free`) models, and those cost nothing, so a leaked key
-can't spend the account's balance. The free-model day limit is 50 requests, or 1,000
-once the account has bought $10 of credit: set `providers.openrouter.limits.day` in
-routing.yaml to match.
+For OpenRouter, create a key used only by this gateway and give it a small credit
+limit, such as $1. The gateway only calls free (`:free`) models, which cost nothing and
+don't draw on the limit, but the account now holds a $10 balance (decision D9), and the
+limit is what stops a leaked key from spending it on paid models. That one-time credit
+lifts the free-model day limit from 50 to 1,000 requests for good, as
+`providers.openrouter.limits.day` in routing.yaml says. Keep the balance above zero:
+OpenRouter refuses even free models on a negative balance, and the gateway then falls
+back past it.
 
 ## Local use
 

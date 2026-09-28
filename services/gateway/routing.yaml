@@ -144,11 +144,12 @@ providers:
     # so visitor content never comes here: synthetic samples only.
     trainsOnInputs: true
     terms: production
-    # Free-model limits for the whole account. The day limit rises to 1,000 after a
-    # one-time $10 credit purchase (open decision D9); resets at 00:00 UTC.
+    # Free-model limits for the whole account. The one-time $10 credit is bought
+    # (decision D9), which lifts the day limit from 50 to 1,000 for good: the tier
+    # follows credits ever purchased, not the balance. Resets at 00:00 UTC.
     limits:
       minute: { requests: 20 }
-      day: { requests: 50 }
+      day: { requests: 1000 }
     headers:
       X-Title: Landry Bodjona portfolio
     models:
@@ -306,6 +307,7 @@ systems:
     # 20 tickets per visitor per day (the LB-01 datasheet), at up to 7 calls each.
     sessionDailyCalls: 140
     # 50 custom tickets a day. The guard, embedding and rerank calls run on budgets of
-    # their own; the chat calls stay within LB-01's share of the roughly 400 a day the
-    # free tiers carry (docs/STACK.md, Capacity), rebalanced as each system ships.
+    # their own; the chat calls stay within LB-01's share of the roughly 330 visitor
+    # calls a day Groq and Workers AI carry (docs/STACK.md, Capacity), rebalanced as
+    # each system ships.
     dailyCalls: 350

@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev H · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev I · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -77,8 +77,8 @@ left Groq's free tier in August 2026. The playbook schedules a weekly re-check.
 | Provider | Free limit | Trains on inputs | Role here |
 |---|---|---|---|
 | Groq | Per model: 30 req/min, 1,000 req/day, 8K tokens/min, 200K tokens/day. Whisper: 480 audio minutes/day. Prompt Guard 2: 14,400 req/day | No (abuse logs kept up to 30 days) | Primary for interactive chat and tool calls (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`), speech-to-text, prompt-injection checks |
-| Cloudflare Workers AI | 10,000 Neurons/day shared by all models: about 150 gpt-oss-120b calls, or about 9M embedding tokens. 300 req/min for text | No | Embeddings (`bge-m3`), reranking, vision (Llama 4 Scout, Gemma 4), moderation (Llama Guard 3), Whisper and chat fallback. The default home for visitor uploads |
-| OpenRouter | 20 req/min. 50 req/day, or 1,000 req/day for good after a one-time $10 credit purchase | Depends on the host; several free hosts may train | Last fallback, and long-context work on synthetic samples (Nemotron 3 Ultra, 1M tokens) |
+| Cloudflare Workers AI | 10,000 Neurons/day shared by all models: about 150 gpt-oss-120b calls, or about 9M embedding tokens. 300 req/min for text | No | Embeddings (`bge-m3`), reranking (`bge-reranker-base`), vision (Llama 4 Scout, Gemma 4), Whisper and chat fallback. The default home for visitor uploads |
+| OpenRouter | 20 req/min, 1,000 req/day: the one-time $10 credit is bought (D9), and the tier follows credits ever purchased, not the balance | Depends on the host; several free hosts may train | Last fallback, and long-context work on synthetic samples (Nemotron 3 Ultra, 1M tokens) |
 | NVIDIA API catalog | Per-model rate limits, unpublished (about 40 req/min reported) | Yes: inputs and outputs are recorded | Private model scouting and offline experiments only. Its trial terms forbid production use, so it never serves visitors |
 
 Left out on purpose: Gemini's free tier (it can't be offered to users in the EEA,
@@ -145,12 +145,12 @@ injection classifier.
 |---|---|
 | Groq chat: three models × 200K tokens | about 240 calls at 2.5K tokens each |
 | Workers AI, after embeddings, reranking and vision | about 90 chat calls |
-| OpenRouter | 50 calls, or 1,000 with the one-time credit |
-| **Total** | **about 400 calls a day, or about 1,300 with the credit** |
+| OpenRouter, synthetic content only | 1,000 calls |
+| **Total** | **about 1,330 calls a day: about 330 for visitors' own input, 1,000 more for samples, replays and evals** |
 
-Most systems need 1 to 4 calls per run, so the free tiers carry roughly 100 live runs a
-day before replay mode takes over. That is enough for a portfolio. The three heavy
-systems are designed to be frugal:
+Most systems need 1 to 4 calls per run, so Groq and Workers AI carry roughly 100
+visitor runs a day before replay mode takes over. That is enough for a portfolio. The
+three heavy systems are designed to be frugal:
 
 - **LB-06** keeps detection and correlation in deterministic code, and its agents
   reason over compact summaries: 10 to 15 calls per incident.
@@ -159,8 +159,11 @@ systems are designed to be frugal:
 - **LB-10** visitor runs use 10 cases and rule-based graders, about 20 calls. The LLM
   judge runs nightly.
 
-**Recommendation:** buy the one-time $10 OpenRouter credit. It lifts OpenRouter from
-50 to 1,000 free requests a day for good and roughly triples live capacity.
+**Decision D9, taken:** the one-time $10 OpenRouter credit is bought. It lifts
+OpenRouter from 50 to 1,000 free requests a day for good. OpenRouter never sees
+visitor content, so that capacity goes to curated samples, replay recordings and
+evals, which leaves Groq and Workers AI to visitors' own input. The balance must stay
+above zero: OpenRouter refuses even free models on a negative balance.
 
 Sources, checked 27 Sep 2026:
 Groq [rate limits](https://console.groq.com/docs/rate-limits),
@@ -411,7 +414,7 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | Fallback only, if Oracle withdraws the free VM: Hetzner CAX21 | about €7/month |
 | Domain | about $10–15/year |
 | Sentry, uptime monitor, Tailscale, GitHub Actions (public repo) | $0 |
-| Optional, recommended: OpenRouter one-time credit | $10 once |
+| OpenRouter one-time credit (bought, D9) | $10 once |
 
 ## Alternatives considered
 
