@@ -1,0 +1,65 @@
+# One command surface for the monorepo. Run `just` to list the recipes.
+
+default:
+    @just --list
+
+# Install every workspace dependency: pnpm for TypeScript, uv for Python.
+install:
+    pnpm install
+    uv sync
+
+# Run the site with hot reload on http://localhost:3000.
+dev:
+    pnpm --filter @lb/web dev
+
+# Build the site for production.
+build:
+    pnpm --filter @lb/web build
+
+# Run the AI gateway with reload on http://127.0.0.1:8080 (settings in services/gateway/.env).
+gateway:
+    pnpm --filter @lb/gateway dev
+
+# Make a service key pair or mint a service token for local gateway calls.
+gateway-token *args:
+    pnpm --silent --filter @lb/gateway token {{args}}
+
+# Lint every TypeScript, Vue and Python package, and check every Python docstring.
+lint:
+    pnpm lint
+    uv run ruff check python scripts
+    uv run ruff format --check python scripts
+    uv run python scripts/check_docstrings.py
+
+# Format the Python code with Ruff and apply its safe fixes.
+format:
+    uv run ruff format python scripts
+    uv run ruff check --fix python scripts
+
+# Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
+typecheck:
+    pnpm typecheck
+    uv run mypy python/lb-common scripts
+
+# Integration tests start Redis with Docker, or use LB_TEST_REDIS_URL when it is set.
+# Run every unit, integration and contract test suite, TypeScript and Python.
+test:
+    pnpm test
+    uv run pytest
+
+# Check every dependency, npm and Python, against known vulnerabilities.
+audit:
+    pnpm audit --audit-level high
+    uv audit --preview-features audit-command
+
+# Build the site, then run the end-to-end, accessibility and security-header tests.
+e2e: build
+    pnpm --filter @lb/web e2e
+
+# Fail if any generated file is stale (the CI drift check).
+check:
+    pnpm check
+
+# Regenerate the icon sprite and registry after editing packages/icons/svg.
+icons:
+    pnpm --filter @lb/icons build

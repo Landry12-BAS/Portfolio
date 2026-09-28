@@ -1,0 +1,189 @@
+# Routing for the integration tests: four fake providers that mirror the real ones
+# (a Groq-like one, a Workers AI-like one metered in Neurons, an OpenRouter-like one
+# that may train on inputs, and a dev-only one like NVIDIA), with small limits and
+# short timeouts so every rule can be exercised in milliseconds.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 400
+  responseMs: 600
+  idleMs: 400
+  deadlineMs: 4000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      small:
+        id: alpha/small-model
+        context: 32768
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      big:
+        id: alpha/big-model
+        context: 32768
+        capabilities: [chat, tools]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+      tiny:
+        id: alpha/tiny-model
+        context: 32768
+        capabilities: [chat]
+        # 2 x 0.95 leaves room for exactly one call a day.
+        limits:
+          day: { requests: 2 }
+      # Prompt Guard-like classifiers. 10 x 0.95 leaves the first one room for nine
+      # segments a day.
+      guard:
+        id: alpha/guard-model
+        context: 512
+        capabilities: [guard]
+        limits:
+          day: { requests: 10 }
+      guard-small:
+        id: alpha/guard-small-model
+        context: 512
+        capabilities: [guard]
+
+  beta:
+    name: Beta
+    baseUrl: ${BETA_URL}
+    runUrl: ${BETA_RUN_URL}
+    keyEnv: BETA_KEY
+    trainsOnInputs: false
+    terms: production
+    limits:
+      minute: { requests: 300 }
+      day: { neurons: 10000 }
+    models:
+      small:
+        id: '@beta/small-model'
+        context: 32768
+        capabilities: [chat, tools]
+        neurons: { input: 10, output: 20 }
+      big:
+        id: '@beta/big-model'
+        context: 32768
+        capabilities: [chat, tools]
+        neurons: { input: 30, output: 60 }
+      vision:
+        id: '@beta/vision-model'
+        context: 32768
+        capabilities: [chat, vision]
+        neurons: { input: 25, output: 75 }
+      embed:
+        id: '@beta/embed-model'
+        context: 8192
+        capabilities: [embedding]
+        neurons: { input: 1, output: 0 }
+      rerank:
+        id: '@beta/rerank-model'
+        context: 512
+        capabilities: [rerank]
+        neurons: { input: 1, output: 0 }
+        scores: logits
+
+  gamma:
+    name: Gamma
+    baseUrl: ${GAMMA_URL}
+    keyEnv: GAMMA_KEY
+    trainsOnInputs: true
+    terms: production
+    limits:
+      minute: { requests: 20 }
+      day: { requests: 50 }
+    headers:
+      X-Title: LB tests
+    models:
+      big:
+        id: gamma/big-model:free
+        context: 65536
+        capabilities: [chat, tools, vision]
+
+  delta:
+    name: Delta
+    baseUrl: ${DELTA_URL}
+    keyEnv: DELTA_KEY
+    trainsOnInputs: true
+    terms: dev-only
+    models:
+      big:
+        id: delta/big-model
+        context: 65536
+        capabilities: [chat, tools]
+
+aliases:
+  lb-fast:
+    description: Classification
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 512
+    chain: [alpha/small, beta/small]
+
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 1024
+    chain: [alpha/big, beta/big, gamma/big, delta/big]
+
+  lb-tiny:
+    description: One call a day
+    kind: chat
+    maxInputTokens: 1000
+    maxOutputTokens: 256
+    chain: [alpha/tiny]
+
+  lb-vision:
+    description: Images
+    kind: chat
+    maxInputTokens: 6000
+    maxOutputTokens: 512
+    chain: [beta/vision, gamma/big]
+
+  lb-embed:
+    description: Embeddings
+    kind: embedding
+    maxInputTokens: 2000
+    chain: [beta/embed]
+
+  lb-rerank:
+    description: Reranking
+    kind: rerank
+    maxInputTokens: 400
+    chain: [beta/rerank]
+
+  lb-guard:
+    description: Injection check
+    kind: guard
+    maxInputTokens: 800
+    threshold: 0.9
+    chain: [alpha/guard, alpha/guard-small]
+
+systems:
+  lb-01:
+    name: Support Desk Agent
+    service: django-systems
+    aliases: [lb-fast, lb-tools, lb-tiny, lb-vision, lb-embed, lb-rerank, lb-guard]
+    maxCallsPerRun: 4
+    sessionDailyCalls: 6
+    dailyCalls: 50
+  lb-05:
+    name: Data Analyst
+    service: flask-systems
+    aliases: [lb-fast]
+    maxCallsPerRun: 4
+    sessionDailyCalls: 20
+    dailyCalls: 50

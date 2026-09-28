@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+  - services/*
+
+# Install scripts this repo never needs:
+# - unrs-resolver (ESLint import rules) ships prebuilt binaries; its script only
+#   rebuilds from source.
+# - ssh2 and cpu-features (pulled in by Testcontainers) only compile optional native
+#   crypto speed-ups; ssh2 falls back to JavaScript, and tests never use SSH.
+# - protobufjs only runs a version notice for its CLI.
+ignoredBuiltDependencies:
+  - cpu-features
+  - protobufjs
+  - ssh2
+  - unrs-resolver
+
+# esbuild's install script only verifies its prebuilt binary for this platform.
+onlyBuiltDependencies:
+  - esbuild

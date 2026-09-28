@@ -1,0 +1,55 @@
+/* LB design tokens. Every colour has a light and a dark value; components use only
+   these variables. The dark values apply when @nuxtjs/color-mode puts `dark` on <html>. */
+:root {
+  --lb-desk: #eceff2;
+  --lb-sheet: #ffffff;
+  --lb-ink: #111214;
+  --lb-ink-hover: #2a2d33;
+  --lb-graphite: #4f5b67;
+  --lb-rule: #d5dbe1;
+  --lb-shade: #f4f6f8;
+  /* Signal blue is the logo's ribbon: links, focus, icon accents. */
+  --lb-signal: #045efe;
+  /* The evaluation board, a deep shade of the ribbon, marks live demos only. */
+  --lb-board: #0a2a6e;
+  --lb-board-deep: #061b4a;
+  --lb-board-tint: #e8eeff;
+  --lb-silk: #f2f5ff;
+  --lb-gold: #c9a43b;
+  --lb-marker: #ffe45c;
+  /* Scope channels: model, tool, retrieval, guard. */
+  --lb-ch1: #b08800;
+  --lb-ch2: #0a8fb0;
+  --lb-ch3: #b32c8c;
+  --lb-ch4: #2f5bd6;
+  --lb-icon-accent: var(--lb-signal);
+  --lb-show-light: inline;
+  --lb-show-dark: none;
+  --lb-font-sans: "Archivo Variable", "Helvetica Neue", Arial, sans-serif;
+  --lb-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --lb-gutter: 16px;
+  color-scheme: light;
+}
+
+html.dark {
+  --lb-desk: #08090b;
+  --lb-sheet: #101216;
+  --lb-ink: #f2f2f4;
+  --lb-ink-hover: #d5d7de;
+  --lb-graphite: #9ba4af;
+  --lb-rule: #2a2f37;
+  --lb-shade: #171a20;
+  --lb-signal: #1389fd;
+  --lb-board: #0b2463;
+  --lb-board-deep: #040f2e;
+  --lb-board-tint: #0e1d45;
+  --lb-silk: #e3eaff;
+  --lb-marker: #5a4e12;
+  --lb-ch1: #d6a915;
+  --lb-ch2: #27b3d6;
+  --lb-ch3: #db4fb0;
+  --lb-ch4: #6d95ff;
+  --lb-show-light: none;
+  --lb-show-dark: inline;
+  color-scheme: dark;
+}

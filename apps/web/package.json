@@ -1,0 +1,38 @@
+{
+  "name": "@lb/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The portfolio site: the systems catalog, the datasheets and, as each system ships, its live demo.",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@lb/icons": "workspace:*",
+    "@lb/ui": "workspace:*",
+    "@nuxtjs/i18n": "^10.6.0",
+    "@pinia/nuxt": "^1.0.2",
+    "nuxt": "^4.5.2",
+    "nuxt-security": "^2.6.0",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^20.14.5",
+    "vitest": "^5.0.2",
+    "vue-tsc": "^3.3.11",
+    "zod": "^4.6.5"
+  }
+}

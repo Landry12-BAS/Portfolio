@@ -1,0 +1,313 @@
+# LB-00 routing table: every provider, model, budget and virtual model the gateway
+# serves. The rules behind it are in docs/STACK.md (AI providers and routing).
+#
+# Provider limits were checked against each provider's documentation on 28 Sep 2026.
+# Free tiers change without notice: the weekly check in docs/PLAYBOOK.md updates this
+# file, and every model must pass its route's golden set before it serves visitors.
+#
+# Validate after editing: `pnpm --filter @lb/gateway check` (also part of `just check`).
+
+version: 1
+
+budgets:
+  # Share of each provider limit the gateway spends. Token counts are estimated before
+  # a call and corrected after it, so the minute ceiling leaves room for the estimate
+  # being low. At the day ceiling the route answers `budget_exhausted` and the system
+  # switches to replay mode (docs/PLAYBOOK.md, Operating on free tiers).
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  # `/v1/usage` flags a daily budget from this share, for the daily usage alert.
+  alertAt: 0.7
+
+timeouts:
+  # Streams: time to the first event, per attempt. Past it, the next model is tried.
+  firstTokenMs: 10000
+  # Non-streamed calls: time to the complete response, per attempt.
+  responseMs: 30000
+  # Streams: the longest silence allowed once the answer is streaming.
+  idleMs: 20000
+  # The whole call, across every attempt and the full stream.
+  deadlineMs: 90000
+
+providers:
+  groq:
+    name: Groq
+    baseUrl: https://api.groq.com/openai/v1
+    keyEnv: GROQ_API_KEY
+    # Groq keeps abuse logs for up to 30 days and does not train on inputs.
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      gpt-oss-120b:
+        id: openai/gpt-oss-120b
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      gpt-oss-20b:
+        id: openai/gpt-oss-20b
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      # A Groq preview model: it can be withdrawn at short notice, so it is never first
+      # on a chain.
+      qwen3.8-27b:
+        id: qwen/qwen3.8-27b
+        context: 131072
+        capabilities: [chat, tools]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      # Prompt-injection classifiers (Llama Prompt Guard 2), read 512 tokens at a time.
+      # Both are Groq preview models that can be withdrawn at short notice, and no free
+      # tier offers a production-grade one, so lb-guard fails closed when neither
+      # answers. The 86M model reads eight languages; the 22M one is English-first.
+      # Groq doesn't document their answer format: the gateway accepts a probability
+      # or a BENIGN / MALICIOUS label, and refuses anything else.
+      llama-prompt-guard-2-86m:
+        id: meta-llama/llama-prompt-guard-2-86m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
+      llama-prompt-guard-2-22m:
+        id: meta-llama/llama-prompt-guard-2-22m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
+
+  workers-ai:
+    name: Cloudflare Workers AI
+    baseUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
+    # Workers AI's own endpoint, for the reranker its OpenAI-compatible API doesn't cover.
+    runUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run
+    keyEnv: CLOUDFLARE_API_TOKEN
+    trainsOnInputs: false
+    terms: production
+    # One free pool for every model: 10,000 Neurons a day, reset at 00:00 UTC. Each
+    # model below converts its tokens to Neurons at Cloudflare's published rates.
+    limits:
+      minute: { requests: 300 }
+      day: { neurons: 10000 }
+    models:
+      gpt-oss-120b:
+        id: '@cf/openai/gpt-oss-120b'
+        context: 128000
+        capabilities: [chat, tools]
+        neurons: { input: 31.818, output: 68.182 }
+      gpt-oss-20b:
+        id: '@cf/openai/gpt-oss-20b'
+        context: 128000
+        capabilities: [chat, tools]
+        neurons: { input: 18.182, output: 27.273 }
+      glm-4.7-flash:
+        id: '@cf/zai-org/glm-4.7-flash'
+        context: 131072
+        capabilities: [chat, tools]
+        neurons: { input: 5.5, output: 36.4 }
+      llama-4-scout:
+        id: '@cf/meta/llama-4-scout-17b-16e-instruct'
+        context: 131000
+        capabilities: [chat, tools, vision]
+        neurons: { input: 24.545, output: 77.273 }
+      gemma-4-26b:
+        id: '@cf/google/gemma-4-26b-a4b-it'
+        context: 256000
+        capabilities: [chat, tools, vision]
+        neurons: { input: 9.091, output: 27.273 }
+      bge-m3:
+        id: '@cf/baai/bge-m3'
+        context: 60000
+        capabilities: [embedding]
+        neurons: { input: 1.075, output: 0 }
+      # The only reranker Workers AI offers. It reads English and Chinese, so callers
+      # rerank in English. Its scores are raw logits; the gateway maps them to 0 to 1.
+      bge-reranker-base:
+        id: '@cf/baai/bge-reranker-base'
+        context: 512
+        capabilities: [rerank]
+        neurons: { input: 0.283, output: 0 }
+        scores: logits
+
+  openrouter:
+    name: OpenRouter
+    baseUrl: https://openrouter.ai/api/v1
+    keyEnv: OPENROUTER_API_KEY
+    # Free models are served by several hosts, and some of them may train on inputs,
+    # so visitor content never comes here: synthetic samples only.
+    trainsOnInputs: true
+    terms: production
+    # Free-model limits for the whole account. The one-time $10 credit is bought
+    # (decision D9), which lifts the day limit from 50 to 1,000 for good: the tier
+    # follows credits ever purchased, not the balance. Resets at 00:00 UTC.
+    limits:
+      minute: { requests: 20 }
+      day: { requests: 1000 }
+    headers:
+      X-Title: Landry Bodjona portfolio
+    models:
+      qwen3.8-27b:
+        id: qwen/qwen3.8-27b:free
+        context: 262144
+        capabilities: [chat, tools, json_schema, reasoning, vision]
+      nemotron-3-super:
+        id: nvidia/nemotron-3-super-120b-a12b:free
+        context: 262144
+        capabilities: [chat, tools, json_schema, reasoning]
+      nemotron-3-ultra:
+        id: nvidia/nemotron-3-ultra-550b-a55b:free
+        context: 1000000
+        capabilities: [chat, tools, reasoning]
+      gemma-4-31b:
+        id: google/gemma-4-31b-it:free
+        context: 262144
+        capabilities: [chat, tools, vision]
+
+  nvidia:
+    name: NVIDIA API catalog
+    baseUrl: https://integrate.api.nvidia.com/v1
+    keyEnv: NVIDIA_API_KEY
+    # The trial terms record inputs and outputs and forbid production use: private
+    # experiments in the dev profile only, never visitor traffic.
+    trainsOnInputs: true
+    terms: dev-only
+    limits:
+      minute: { requests: 40 }
+    models:
+      nemotron-3-super:
+        id: nvidia/nemotron-3-super-120b-a12b
+        context: 131072
+        capabilities: [chat, tools]
+
+# Virtual models. Services ask for an alias; the gateway walks its chain in order,
+# skipping any model the request's data class, the terms profile, the budgets or the
+# circuit breaker rules out.
+aliases:
+  lb-fast:
+    description: Classification and short JSON
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 1024
+    timeouts: { firstTokenMs: 6000, responseMs: 15000 }
+    chain:
+      - groq/gpt-oss-20b
+      - workers-ai/gpt-oss-20b
+      - workers-ai/glm-4.7-flash
+
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    # Prompt plus answer stays under Groq's 8K tokens-per-minute limit.
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    chain:
+      - groq/gpt-oss-120b
+      - groq/qwen3.8-27b
+      - workers-ai/gpt-oss-120b
+      - openrouter/qwen3.8-27b
+      - nvidia/nemotron-3-super
+
+  lb-reason:
+    description: SQL and planning
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 3072
+    timeouts: { responseMs: 45000 }
+    chain:
+      - groq/gpt-oss-120b
+      - workers-ai/gpt-oss-120b
+      - openrouter/nemotron-3-super
+      - nvidia/nemotron-3-super
+
+  lb-long:
+    description: Long documents
+    kind: chat
+    maxInputTokens: 60000
+    maxOutputTokens: 4096
+    timeouts: { firstTokenMs: 30000, responseMs: 90000, deadlineMs: 180000 }
+    # Synthetic samples use the 1M-token context first; visitor uploads can only reach
+    # Workers AI.
+    chain:
+      - openrouter/nemotron-3-ultra
+      - workers-ai/gpt-oss-120b
+
+  lb-vision:
+    description: Invoices and screenshots
+    kind: chat
+    maxInputTokens: 8000
+    maxOutputTokens: 2048
+    timeouts: { firstTokenMs: 15000, responseMs: 45000 }
+    chain:
+      - workers-ai/llama-4-scout
+      - workers-ai/gemma-4-26b
+      - openrouter/gemma-4-31b
+
+  lb-judge:
+    description: Nightly evaluation grading
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 1024
+    chain:
+      - groq/gpt-oss-120b
+      - workers-ai/gpt-oss-120b
+
+  lb-embed:
+    description: Retrieval embeddings
+    kind: embedding
+    maxInputTokens: 8000
+    timeouts: { responseMs: 15000 }
+    # Pinned: vectors from different models don't mix. When it fails, retrieval falls
+    # back to Postgres full-text search in the calling system.
+    chain:
+      - workers-ai/bge-m3
+
+  lb-rerank:
+    description: Relevance scores for retrieval
+    kind: rerank
+    # Per query and document together: the reranker reads 512 tokens at a time.
+    maxInputTokens: 480
+    timeouts: { responseMs: 15000 }
+    # When it fails, the calling system keeps the hybrid search's own order.
+    chain:
+      - workers-ai/bge-reranker-base
+
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    # The whole text. The gateway reads it in overlapping segments that fit the
+    # classifier's window, one request each.
+    maxInputTokens: 800
+    # Flag at an injection probability of 0.9, the block threshold of Meta's own
+    # LlamaFirewall. Eval Lab's red-team golden set will tune it.
+    threshold: 0.9
+    timeouts: { responseMs: 10000 }
+    chain:
+      - groq/llama-prompt-guard-2-86m
+      - groq/llama-prompt-guard-2-22m
+
+# The systems allowed to spend model calls, the service that calls for each, and
+# their quotas. A system joins this list in the same change that builds it
+# (docs/PLAYBOOK.md, Building one system, step 4).
+systems:
+  lb-01:
+    name: Support Desk Agent
+    service: django-systems
+    aliases: [lb-fast, lb-tools, lb-embed, lb-rerank, lb-guard]
+    # A ticket costs a guard check, a query embedding, a rerank and two model calls
+    # (classify, draft), plus a third when the draft looks up an order. The cap leaves
+    # room for one repair of a malformed answer.
+    maxCallsPerRun: 7
+    # 20 tickets per visitor per day (the LB-01 datasheet), at up to 7 calls each.
+    sessionDailyCalls: 140
+    # 50 custom tickets a day. The guard, embedding and rerank calls run on budgets of
+    # their own; the chat calls stay within LB-01's share of the roughly 330 visitor
+    # calls a day Groq and Workers AI carry (docs/STACK.md, Capacity), rebalanced as
+    # each system ships.
+    dailyCalls: 350

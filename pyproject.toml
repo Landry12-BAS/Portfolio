@@ -1,0 +1,85 @@
+# The Python half of the monorepo: one uv workspace for the shared library and the
+# Django and Flask services, and the lint, type-check and test settings they share.
+# Run it through the root justfile: `just lint`, `just typecheck` and `just test` cover
+# Python and TypeScript together.
+
+[tool.uv]
+required-version = ">=0.12.19"
+
+[tool.uv.workspace]
+members = ["python/*"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.9",
+    "testcontainers[redis]>=4.15.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "A",    # no shadowing of built-in names
+    "ARG",  # no unused arguments
+    "B",    # bugbear: likely bugs and design problems
+    "BLE",  # no blind `except Exception`
+    "C4",   # clear comprehensions
+    "D",    # docstrings on every module, class and function (the owner's rule)
+    "DTZ",  # no naive datetimes
+    "E",    # pycodestyle errors
+    "ERA",  # no commented-out code
+    "F",    # pyflakes
+    "G",    # logging calls with arguments, not formatted strings
+    "I",    # sorted imports
+    "LOG",  # logging mistakes
+    "N",    # PEP 8 names
+    "PIE",  # unnecessary code
+    "PT",   # pytest style
+    "PTH",  # pathlib over os.path
+    "RET",  # clear returns
+    "RUF",  # Ruff's own checks
+    "S",    # bandit: security problems
+    "SIM",  # simpler code
+    "T20",  # no print() left behind
+    "UP",   # modern Python syntax
+    "W",    # pycodestyle warnings
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert, and their fixtures use fixed, obviously fake secrets.
+"**/tests/**" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lb_common"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# Testcontainers ships no type information.
+module = ["testcontainers.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config"]
+testpaths = ["python"]
+markers = [
+    "integration: needs a real Redis, and Node for the gateway contract tests",
+]
+xfail_strict = true
+filterwarnings = ["error"]

@@ -1,0 +1,34 @@
+{
+  "name": "@lb/icons",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The LB icon set: icons drawn in the pattern of the LB logo, as an SVG sprite and a Vue component.",
+  "type": "module",
+  "sideEffects": [
+    "*.vue"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./sprite.svg": "./sprite.svg",
+    "./svg/*": "./svg/*"
+  },
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "check": "node scripts/build.ts --check",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^20.14.5",
+    "vitest": "^5.0.2",
+    "vue": "^3.5.43",
+    "vue-tsc": "^3.3.11"
+  }
+}
