@@ -120,8 +120,11 @@ attempts. Every prompt change must pass it.
   limits.
 - **Browser sandbox:** the LB-07 Playwright worker runs under gVisor, and its network
   reaches only the staging shop.
-- **Host:** Ubuntu LTS with unattended security upgrades, no password logins, and SSH
-  reachable only over Tailscale.
+- **Host:** an Oracle Cloud Always Free VM running Ubuntu LTS, with unattended
+  security upgrades, no password logins, and SSH reachable only over Tailscale.
+  Oracle's default VCN security list opens SSH (port 22) to the internet. That rule is
+  deleted once Tailscale is up, so the security list admits no inbound traffic and the
+  host firewall drops anything that doesn't arrive over Tailscale.
 - **Owner tools** (Django admin, dashboards) listen only on the Tailscale network. The
   public internet has no admin page and no login page.
 

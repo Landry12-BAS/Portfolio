@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev C · 27 Sep 2026 · Owner: Landry
+Status: accepted · Rev D · 28 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
@@ -13,7 +13,8 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
    notice. NVIDIA's terms rule it out for visitor traffic (see below).
 2. **Public visitors.** Anyone can run a demo, so there can be no cold starts, no
    broken demos, and no way for one visitor or bot to drain the shared quota.
-3. **Near-zero budget.** Pay only for what free tiers do badly: always-on compute.
+3. **Near-zero budget.** Free tiers everywhere, including the always-on server. The
+   only fixed cost is the domain.
 4. **Show range.** Django, Flask (sync and async), Node + TypeScript and Nuxt (Vue 3)
    with Pinia, each used where it is the natural fit.
 5. **One developer.** Every moving part has to earn its place.
@@ -36,7 +37,7 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for Claude are in
 | Cache and queues | Redis 8 on the box | Celery, Channels and BullMQ poll constantly, which would exhaust a command-metered free tier |
 | Files | Cloudflare R2 with lifecycle rules | Visitor uploads expire by storage policy, not by a cron job; replay recordings live here too |
 | Analytics data | DuckDB over Parquet (LB-05) | Millions of synthetic orders queried in-process, read-only, with no database load |
-| Hosting | Vercel Hobby (front end) · one ARM64 box with Docker Compose, reachable only through a Cloudflare Tunnel | Always on, no cold starts, zero inbound ports, identical in development and production |
+| Hosting | Vercel Hobby (front end) · one Oracle Cloud Always Free ARM64 VM (2 OCPUs, 12 GB) with Docker Compose, reachable only through a Cloudflare Tunnel | Always on at $0, no cold starts, zero inbound ports, identical in development and production |
 | Edge | Cloudflare DNS, WAF, Turnstile, Tunnel | Hides the origin and stops bots before they spend quota |
 | Security | No accounts · zero inbound ports · least privilege · signed images | Every layer is in [`SECURITY.md`](SECURITY.md) |
 | Observability | Run spans in Postgres (Scope and measured datasheet numbers) · Sentry · uptime monitor | Product telemetry and ops telemetry kept separate |
@@ -270,12 +271,33 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 
 - **Front end:** Vercel Hobby. The portfolio is personal and non-commercial, which
   the Hobby plan allows. Every pull request gets a preview.
-- **The box:** one ARM64 VM running Docker Compose: `cloudflared`, Caddy, the gateway,
-  the three system apps, their workers, the staging shop, Postgres and Redis.
-  - Recommended: Hetzner CAX21 (4 vCPU, 8 GB RAM, about €7 a month). Predictable
-    and never reclaimed.
-  - Zero-cost option: Oracle Cloud Always Free (Ampere A1, 4 OCPU, 24 GB RAM). Upgrade
-    the account to pay-as-you-go (still $0) so idle instances are not reclaimed.
+- **The box:** one Oracle Cloud Always Free VM (the owner's choice): Ampere A1, ARM64,
+  2 OCPUs and 12 GB of RAM, running Ubuntu LTS and Docker Compose. It hosts
+  `cloudflared`, Caddy, the gateway, the three system apps, their workers, the staging
+  shop, Postgres and Redis, for $0.
+  - **Limits.** Oracle halved the Always Free Arm allowance on 15 June 2026, to
+    1,500 OCPU hours and 9,000 GB hours a month: one VM with 2 OCPUs and 12 GB,
+    running all month. Also free: 200 GB of block storage (boot volume included),
+    20 GB of object storage and 10 TB of outbound data a month. The VM is sized exactly
+    at the limit.
+  - **Two cores.** CPU-heavy jobs (LB-07 browser runs, LB-09 private transcription,
+    LB-03 OCR) run one at a time from their queues, and replay mode covers bursts.
+    12 GB of RAM holds every service with headroom, and each container has a memory
+    limit.
+  - **Staying free.** Oracle reclaims an Always Free VM only when CPU, network and
+    memory all stay under 20% for 7 days. With every service resident, memory stays
+    well above 20%, and the launch checklist confirms it in the OCI metrics. The
+    tenancy stays on Always Free: pay-as-you-go adds billing risk, and Oracle documents
+    the same free allowance for every tenancy.
+  - **Home region.** Always Free compute must run in the tenancy's home region, which
+    can't be changed later. An "out of host capacity" error means a temporary
+    shortage there; retry.
+  - **No SLA.** The box can be rebuilt anywhere from the signed images, the seed and
+    the encrypted backups on R2. Fallback: Hetzner CAX21 (4 vCPU, 8 GB, about €7 a
+    month) runs the same images unchanged.
+  - Sources, checked 28 Sep 2026: Oracle
+    [Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm),
+    InfoQ on [the June 2026 cut](https://www.infoq.com/news/2026/07/oracle-cloud-free-tier-limits/).
 - **Edge:** the box runs `cloudflared` and opens no inbound ports. Cloudflare adds WAF
   rules, DDoS protection and Turnstile. SSH and owner tools are reachable only over
   Tailscale.
@@ -363,7 +385,8 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | AI providers (free tiers) | $0 |
 | Vercel Hobby | $0 |
 | Cloudflare DNS, WAF, Turnstile, Tunnel, R2 (up to 10 GB) | $0 |
-| The box: Hetzner CAX21, or Oracle Always Free | about €7/month, or $0 |
+| The box: Oracle Cloud Always Free (Ampere A1, 2 OCPUs, 12 GB) | $0 |
+| Fallback only, if Oracle withdraws the free VM: Hetzner CAX21 | about €7/month |
 | Domain | about $10–15/year |
 | Sentry, uptime monitor, Tailscale, GitHub Actions (public repo) | $0 |
 | Optional, recommended: OpenRouter one-time credit | $10 once |
@@ -390,3 +413,5 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 - A free tier shrinks or disappears: update `routing.yaml` and revalidate in Eval Lab.
 - Traffic outgrows the free budgets: move the busiest route to a paid tier first.
 - The site becomes commercial: move to Vercel Pro and review every provider's terms.
+- Oracle cuts or withdraws the free VM, or two cores become the bottleneck: move the
+  same images to Hetzner CAX21.
