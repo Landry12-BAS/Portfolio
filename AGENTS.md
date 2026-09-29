@@ -22,8 +22,8 @@ prompt-injection guard; see its [README](services/gateway/README.md)) and
 see its [README](python/lb-common/README.md)). In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
 (`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
-API and Celery worker so far; next come the recorded sample runs and LB-01's demo on
-the site.
+API and Celery worker so far (see its [README](services/django-systems/README.md)); next
+come the recorded sample runs and LB-01's demo on the site.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
