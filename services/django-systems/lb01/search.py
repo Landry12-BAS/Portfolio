@@ -90,21 +90,9 @@ class SearchResult:
     used_vectors: bool
     reranked: bool
 
-    def keys(self) -> list[str]:
+    def passage_keys(self) -> list[str]:
         """Return the keys of the passages found, best first."""
         return [hit.key for hit in self.hits]
-
-
-def search_policies(query: str, models: SearchModels, limit: int = FINALISTS) -> SearchResult:
-    """Find the passages that best answer an English query, using every part of search that works."""
-    if keyword_query(query) is None:
-        return SearchResult(hits=[], used_vectors=False, reranked=False)
-    vector = embed_query(query, models)
-    found = hybrid_search(query, vector, limit=RERANK_CANDIDATES)
-    reranked = rerank_hits(query, found.hits, models)
-    if reranked is None:
-        return replace(found, hits=found.hits[:limit])
-    return SearchResult(hits=reranked[:limit], used_vectors=found.used_vectors, reranked=True)
 
 
 def hybrid_search(query: str, vector: Sequence[float] | None, limit: int = FINALISTS) -> SearchResult:
@@ -171,13 +159,22 @@ def fuse(rankings: Sequence[Sequence[str]], k: int = RRF_K) -> list[tuple[str, f
     return sorted(scores.items(), key=lambda item: (-item[1], item[0]))
 
 
+def finalists(found: SearchResult, reranked: list[Hit] | None, limit: int = FINALISTS) -> SearchResult:
+    """Keep the best `limit` hits: in the reranker's order when it worked, else in the fused order."""
+    if reranked is None:
+        return replace(found, hits=found.hits[:limit])
+    return SearchResult(hits=reranked[:limit], used_vectors=found.used_vectors, reranked=True)
+
+
 def rank_of(key: str, ranking: Sequence[str]) -> int | None:
     """Return a key's rank in a ranking, from 1, or None when the ranking doesn't hold it."""
     return ranking.index(key) + 1 if key in ranking else None
 
 
 def embed_query(query: str, models: SearchModels) -> list[float] | None:
-    """Embed the query, or return None when lb-embed fails, so search goes on with keywords alone."""
+    """Embed the query, or return None when it has no words or lb-embed fails, so search goes on by keywords."""
+    if keyword_query(query) is None:
+        return None
     try:
         vectors = models.embed([query])
     except OpenAIError:

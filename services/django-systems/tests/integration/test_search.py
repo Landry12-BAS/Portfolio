@@ -16,9 +16,11 @@ from lb01.models import PolicyPassage
 from lb01.search import (
     FINALISTS,
     RERANK_CANDIDATES,
+    embed_query,
+    finalists,
     hybrid_search,
     keyword_ranking,
-    search_policies,
+    rerank_hits,
     vector_ranking,
 )
 from lb01.seed import seed
@@ -117,7 +119,7 @@ def test_hybrid_search_finds_by_meaning_what_keywords_cant(corpus: list[str]) ->
     """A Czech query shares no English words with its passage, and its vector finds it anyway."""
     result = hybrid_search("Ve které dny pražíte?", pointing_at(corpus, "shipping.roast-days"))
 
-    assert result.keys()[0] == "shipping.roast-days"
+    assert result.passage_keys()[0] == "shipping.roast-days"
     assert (result.hits[0].keyword_rank, result.hits[0].vector_rank) == (None, 1)
     assert result.used_vectors
     assert not result.reranked
@@ -128,7 +130,7 @@ def test_hybrid_search_without_a_vector_is_keyword_search() -> None:
     """Without a query vector, search runs on keywords and says so."""
     result = hybrid_search("bags arriving torn", None)
 
-    assert result.keys()[0] == "damaged.torn-bags"
+    assert result.passage_keys()[0] == "damaged.torn-bags"
     assert not result.used_vectors
 
 
@@ -140,56 +142,55 @@ def test_a_passage_both_halves_agree_on_comes_first(corpus: list[str]) -> None:
     assert (top.key, top.keyword_rank, top.vector_rank) == ("damaged.torn-bags", 1, 1)
 
 
-def test_search_reranks_the_fused_candidates(corpus: list[str]) -> None:
-    """The reranker reads the fused candidates, English title and text, and its order decides."""
+def test_the_reranker_reads_the_fused_candidates_and_its_order_decides(corpus: list[str]) -> None:
+    """The reranker reads each candidate's English title and text, and the finalists follow its scores."""
     models = FakeModels(vector=pointing_at(corpus, "damaged.torn-bags"))
+    found = hybrid_search("bags arriving torn", pointing_at(corpus, "damaged.torn-bags"), limit=RERANK_CANDIDATES)
 
-    result = search_policies("bags arriving torn", models)
+    reranked = rerank_hits("bags arriving torn", found.hits, models)
+    result = finalists(found, reranked)
 
     query, documents = models.reranked[0]
     assert query == "bags arriving torn"
     assert len(documents) == RERANK_CANDIDATES
     assert documents[0].startswith("Torn or crushed bags. If a bag arrives torn")
     assert result.reranked
-    assert result.used_vectors
     assert len(result.hits) == FINALISTS
     relevances = [hit.relevance for hit in result.hits if hit.relevance is not None]
     assert len(relevances) == FINALISTS
     assert relevances == sorted(relevances, reverse=True)
-    assert result.keys()[0] != "damaged.torn-bags"
+    assert result.passage_keys()[0] != "damaged.torn-bags"
 
 
 @pytest.mark.usefixtures("corpus")
-def test_search_goes_on_by_keywords_when_embedding_fails() -> None:
-    """lb-embed has no fallback, so its failure leaves keywords and the reranker to do the work."""
-    models = FakeModels(embed_fails=True)
+def test_a_failed_embedding_leaves_search_to_keywords() -> None:
+    """lb-embed has no fallback, so its failure gives no vector, and search runs by keywords."""
+    vector = embed_query("bags arriving torn", FakeModels(embed_fails=True))
 
-    result = search_policies("bags arriving torn", models)
+    result = hybrid_search("bags arriving torn", vector)
 
-    _, documents = models.reranked[0]
-    assert documents[0].startswith("Torn or crushed bags.")
+    assert vector is None
     assert not result.used_vectors
-    assert result.reranked
+    assert result.passage_keys()[0] == "damaged.torn-bags"
 
 
-def test_search_keeps_the_fused_order_when_reranking_fails(corpus: list[str]) -> None:
+def test_a_failed_rerank_keeps_the_fused_order(corpus: list[str]) -> None:
     """Without the reranker, the fused order stands and no relevance is claimed."""
-    models = FakeModels(vector=pointing_at(corpus, "damaged.torn-bags"), rerank_fails=True)
+    models = FakeModels(rerank_fails=True)
+    found = hybrid_search("bags arriving torn", pointing_at(corpus, "damaged.torn-bags"), limit=RERANK_CANDIDATES)
 
-    result = search_policies("bags arriving torn", models)
+    result = finalists(found, rerank_hits("bags arriving torn", found.hits, models))
 
     assert not result.reranked
-    assert result.keys()[0] == "damaged.torn-bags"
-    assert len(result.hits) == FINALISTS
+    assert result.passage_keys() == found.passage_keys()[:FINALISTS]
     assert all(hit.relevance is None for hit in result.hits)
 
 
 @pytest.mark.usefixtures("corpus")
-def test_a_query_without_words_calls_no_model() -> None:
-    """Nothing is searched, and no quota is spent, for a query of punctuation."""
+def test_no_model_is_called_for_nothing() -> None:
+    """A query of punctuation isn't embedded, and an empty candidate list isn't reranked."""
     models = FakeModels(vector=one_hot(0))
 
-    result = search_policies(" ?! ", models)
-
-    assert result.hits == []
+    assert embed_query(" ?! ", models) is None
+    assert rerank_hits("bags", [], models) == []
     assert (models.embedded, models.reranked) == ([], [])

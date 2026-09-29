@@ -13,8 +13,9 @@ from django.conf import settings
 from pydantic import ValidationError
 
 from core.data_files import read_data_file
-from lb01.golden import Expectation, GoldenSet, numbers_and_codes, read_golden_set
+from lb01.golden import Expectation, GoldenSet, read_golden_set
 from lb01.models import Ticket
+from lb01.numbers import numbers_and_codes
 from lb01.seed import CustomerFile, OrderEntry, OrderFile, PolicyFile
 
 # Passages that decide a route rather than appear in a reply, so no draft cites them.
@@ -172,10 +173,3 @@ def test_the_set_refuses_repeated_ids_and_one_language_samples(golden: GoldenSet
     english_samples_only = [{**case, "sample": case["sample"] and case["language"] == "en"} for case in cases]
     with pytest.raises(ValidationError, match="in English and in Czech"):
         GoldenSet.model_validate({"cases": english_samples_only})
-
-
-def test_numbers_and_codes_read_both_languages_number_styles() -> None:
-    """1,000 and 1 000 read as 1000, codes stay whole, and digits inside words still count."""
-    found = numbers_and_codes("Free from 1,000 CZK (1\u00a0000 Kč). Order BB-1041, VP481937721CZ, a 24-month warranty.")
-
-    assert found == {"1000", "BB-1041", "VP481937721CZ", "24"}

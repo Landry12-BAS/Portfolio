@@ -69,6 +69,11 @@ embed *args:
 eval-search:
     uv run --directory services/django-systems --env-file .env python manage.py eval_lb01_search
 
+# Needs the gateway with provider keys, and costs about five calls a case: `--samples` or `--case ID` run fewer.
+# Run LB-01's golden set through the live pipeline and grade it by rules.
+eval-lb01 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py eval_lb01 {{args}}
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

@@ -300,9 +300,10 @@ systems:
     name: Support Desk Agent
     service: django-systems
     aliases: [lb-fast, lb-tools, lb-embed, lb-rerank, lb-guard]
-    # A ticket costs a guard check, a query embedding, a rerank and two model calls
-    # (classify, draft), plus a third when the draft looks up an order. The cap leaves
-    # room for one repair of a malformed answer.
+    # A ticket costs a guard check, a query embedding, a rerank and two chat calls
+    # (classify, draft), plus a third when a malformed answer gets its one repair. The
+    # order lookup is a tool the pipeline runs on its own database, with no model call.
+    # The cap leaves one call spare.
     maxCallsPerRun: 7
     # 20 tickets per visitor per day (the LB-01 datasheet), at up to 7 calls each.
     sessionDailyCalls: 140

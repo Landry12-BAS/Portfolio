@@ -248,14 +248,14 @@ class Draft(models.Model):
     """The reply the pipeline drafted for a ticket, sentence by sentence, with each sentence's sources.
 
     `sentences` holds `{"text": ..., "citations": ["passage:<key>", "order:BB-1042"]}` items.
-    A draft may be sent only when every sentence cites a source the pipeline actually
-    gave the model (`claims_supported`).
+    A draft could go out on its own only when every sentence passes the claim check
+    (`claims_supported`); for visitors, a person approves every draft anyway.
     """
 
     ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE, related_name="draft")
     sentences = models.JSONField()
     claims_supported = models.BooleanField()
-    # Indexes of the sentences whose citations failed the check.
+    # The sentences the claim check failed, as {"sentence": index, "reason": ...} items.
     unsupported = models.JSONField(default=list)
     model = models.CharField(max_length=120, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

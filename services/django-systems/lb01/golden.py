@@ -16,7 +16,6 @@ before the classifier runs, so it expects nothing but its route; an escalation h
 draft, so it expects no citations.
 """
 
-import re
 from pathlib import Path
 from typing import Annotated, Literal, Self
 
@@ -44,11 +43,6 @@ TicketText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=
 EXPECTED_REASONS = frozenset(
     {Ticket.EscalationReason.INJECTION, Ticket.EscalationReason.SENIOR_AGENT, Ticket.EscalationReason.NO_POLICY}
 )
-
-# A thousands separator inside a number: the comma in 1,000, or the space in 1 000.
-THOUSANDS_SEPARATOR = re.compile(r"(?<=\d)[,\u00a0\u202f ](?=\d{3}(?!\d))")
-# Numbers, and the order and tracking codes a reply may quote.
-NUMBER_OR_CODE = re.compile(r"BB-\d{4}|VP\d{9}CZ|KC-\d{5}|\d+")
 
 
 class Expectation(StrictEntry):
@@ -145,11 +139,6 @@ def check_draft_expectations(expected: Expectation) -> None:
     graded_retrieval = bool(expected.cites) or expected.reason == Ticket.EscalationReason.NO_POLICY
     if graded_retrieval and expected.query is None:
         raise ValueError("a case that grades retrieval needs the English query to search with")
-
-
-def numbers_and_codes(text: str) -> set[str]:
-    """Collect the numbers and order or tracking codes in a text, reading 1,000 and 1 000 as 1000."""
-    return set(NUMBER_OR_CODE.findall(THOUSANDS_SEPARATOR.sub("", text)))
 
 
 def read_golden_set(path: Path | None = None) -> GoldenSet:

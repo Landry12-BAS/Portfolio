@@ -1,6 +1,6 @@
 # Stack decision
 
-Status: accepted · Rev I · 28 Sep 2026 · Owner: Landry
+Status: accepted · Rev J · 29 Sep 2026 · Owner: Landry
 
 This is the stack for the portfolio and the reasons behind each choice. The build
 process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for coding agents are in
@@ -32,7 +32,7 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for coding agents are 
 | Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LB-01, LB-02, LB-09. Rich relational domains, admin, WebSockets and background jobs |
 | Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LB-03, LB-05, LB-10. Sync where work is CPU-bound, async views where one request fans out |
 | Node systems | Node 24 LTS · Fastify 5 · Drizzle ORM · BullMQ · Playwright | LB-04, LB-06, LB-07, LB-08. Event streams, workflows, browser automation, shared Zod types |
-| Model clients | AI SDK (TypeScript) · `openai` SDK + instructor (Python) | Both point at the gateway; typed structured output with validation and repair |
+| Model clients | AI SDK (TypeScript) · `openai` SDK (Python), with a small JSON-and-repair helper in the Django systems | Both point at the gateway; typed structured output with validation and one repair |
 | Database | PostgreSQL 17 + pgvector, one schema per system | One stateful store for relational data, vectors and job state; synthetic data rebuilt from seed |
 | Cache and queues | Redis 8 on the box | Celery, Channels and BullMQ poll constantly, which would exhaust a command-metered free tier |
 | Files | Cloudflare R2 with lifecycle rules | Visitor uploads expire by storage policy, not by a cron job; replay recordings live here too |
@@ -433,6 +433,7 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | shadcn-vue instead of Reka UI | Rejected | shadcn's default look is the generic AI-site look this design avoids |
 | Biome instead of ESLint | Rejected | ESLint carries the Vue template rules this project relies on (`vue/no-v-html`, accessibility) and is Nuxt's official setup; with ESLint Stylistic it is still one tool |
 | Font Awesome or another icon library | Rejected | The owner wants icons in the logo's own pattern; `@lb/icons` ships the same way (sprite plus component) |
+| instructor in the Django systems | Replaced (Rev J) | `core/structured.py` does the one job needed in a few dozen lines: no `response_format`, which the fallback chains' providers treat differently, a Pydantic check, and one repair request quoting the errors |
 | Tailwind CSS | Dropped at scaffold (Rev E) | The look is bespoke and component-shaped; tokens plus scoped styles are simpler and ship only the CSS each page uses |
 | Nuxt Content for the datasheets | Not now | Ten structured records are simpler and safer as typed data with a Zod check; revisit when prose pages arrive |
 

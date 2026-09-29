@@ -20,8 +20,9 @@ gateway: routing, fallback, budgets, quotas, service tokens, run spans, rerankin
 prompt-injection guard; see its [README](services/gateway/README.md)) and
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
 see its [README](python/lb-common/README.md)). In build: `services/django-systems`, the
-Django project for LB-01, LB-02 and LB-09, with LB-01's schema and its synthetic data in
-`data/seed/lb01` so far; next come its golden set, hybrid search and ticket pipeline.
+Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
+(`data/seed/lb01`), golden set (`evals/lb01`), hybrid search and ticket pipeline so far;
+next come its visitor API and the Celery worker.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -151,6 +152,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed`; `--today` pins the day relative order dates count from |
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
 | `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
+| `just eval-lb01 [--samples] [--case ID]` | Run LB-01's golden set through the live pipeline and grade it by rules (about five gateway calls a case; run it when prompts or routes change) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |

@@ -187,7 +187,7 @@ def recorded_vectors(
 
 def search_keys(text: str, vector: list[float] | None) -> list[str]:
     """Search for a text, by keywords alone or fused with its vector, and return the keys found."""
-    return hybrid_search(text, vector, limit=RERANK_DEPTH).keys()
+    return hybrid_search(text, vector, limit=RERANK_DEPTH).passage_keys()
 
 
 def read_query_vectors(path: Path | None = None) -> EmbeddingFile | None:
