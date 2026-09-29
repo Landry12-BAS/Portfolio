@@ -9,6 +9,8 @@ service answers JSON to the site, and visitors are identified by signed tokens.
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from config.environment import read_environment
 from core.databases import system_databases
 
@@ -62,8 +64,27 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 65_536
 REDIS_URL = ENVIRONMENT.redis_url
 REDIS_PREFIX = ENVIRONMENT.redis_prefix
 
+# Celery: Redis carries the queue under the platform's key prefix, messages are JSON
+# only (never pickle), and nothing stores task results.
+CELERY_BROKER_URL = REDIS_URL
+CELERY_BROKER_TRANSPORT_OPTIONS = {"global_keyprefix": f"{REDIS_PREFIX}celery:"}
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    # Visitor data lives 24 hours (the LB-01 datasheet); the sweep keeps that promise.
+    "lb01-sweep-expired-tickets": {"task": "lb01.sweep_expired_tickets", "schedule": 15 * 60},
+    # A new day moves the orders' relative dates on.
+    "lb01-reseed": {"task": "lb01.reseed", "schedule": crontab(hour=3, minute=7)},
+}
+
 # The synthetic data the seed commands load: one folder per system, such as data/seed/lb01.
 SEED_DIR = Path(ENVIRONMENT.seed_dir) if ENVIRONMENT.seed_dir else BASE_DIR.parents[1] / "data" / "seed"
+# The site's Ed25519 public key, which visitor tokens must be signed with (core/visitors.py).
+WEB_TOKEN_KEY = ENVIRONMENT.web_token_key
+
 # The golden sets the evals grade against, such as evals/lb01/golden.yaml. They are read
 # in development and CI only, never by the deployed service.
 EVALS_DIR = BASE_DIR.parents[1] / "evals"

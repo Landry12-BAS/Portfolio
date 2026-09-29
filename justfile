@@ -52,6 +52,18 @@ test:
     uv run pytest
     uv run --directory services/django-systems pytest
 
+# Run the Django systems' API with reload on http://127.0.0.1:8001 (settings in services/django-systems/.env).
+django:
+    uv run --directory services/django-systems --env-file .env uvicorn config.asgi:application --reload --port 8001
+
+# Run the Celery worker with its scheduler (the ticket pipeline, the 24-hour sweep, the nightly reseed).
+worker:
+    uv run --directory services/django-systems --env-file .env celery -A config worker --beat --loglevel INFO
+
+# Write the Django systems' OpenAPI schema to services/django-systems/openapi.json, for the site's typed client.
+openapi:
+    uv run --directory services/django-systems --env-file .env python manage.py export_openapi
+
 # Create or update every Django system's schema (settings in services/django-systems/.env).
 migrate:
     uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb01

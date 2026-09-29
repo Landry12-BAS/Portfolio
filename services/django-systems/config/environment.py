@@ -11,6 +11,8 @@ from collections.abc import Mapping
 from django.core.exceptions import ImproperlyConfigured
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from core.visitors import load_public_key
+
 # The gateway's rule for LB_REDIS_PREFIX, so spans written here land beside its own.
 REDIS_PREFIX = re.compile(r"[a-z0-9-]{1,24}:")
 
@@ -24,6 +26,7 @@ VARIABLES = {
     "LB_REDIS_URL": "redis_url",
     "LB_REDIS_PREFIX": "redis_prefix",
     "LB_SEED_DIR": "seed_dir",
+    "LB_WEB_TOKEN_KEY": "web_token_key",
 }
 
 
@@ -33,6 +36,8 @@ class Environment(BaseModel):
     `lb01_database_url` is optional: in production it logs LB-01 in as a role granted
     only the lb01 schema; without it, LB-01 uses the shared `database_url`. `seed_dir`
     is where the synthetic data lives; without it, the repository's data/seed.
+    `web_token_key` is the site's Ed25519 public key, which visitor tokens are checked
+    against (core/visitors.py); without it, every visitor call is refused.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -45,6 +50,7 @@ class Environment(BaseModel):
     redis_url: str
     redis_prefix: str = "lb:"
     seed_dir: str | None = None
+    web_token_key: str | None = None
 
     @field_validator("database_url", "lb01_database_url")
     @classmethod
@@ -61,6 +67,14 @@ class Environment(BaseModel):
         if not url.startswith(("redis://", "rediss://")):
             raise ValueError("must be a redis:// or rediss:// URL")
         return url
+
+    @field_validator("web_token_key")
+    @classmethod
+    def _check_web_token_key(cls, key: str | None) -> str | None:
+        """Accept only a base64url Ed25519 public key."""
+        if key is not None:
+            load_public_key(key)
+        return key
 
     @field_validator("redis_prefix")
     @classmethod

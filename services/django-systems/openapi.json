@@ -1,0 +1,769 @@
+{
+  "components": {
+    "schemas": {
+      "CustomerOut": {
+        "description": "A synthetic customer a visitor can file a ticket as.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "language"
+        ],
+        "title": "CustomerOut",
+        "type": "object"
+      },
+      "DecisionIn": {
+        "description": "What the person at the agent console does with a draft. Only an edit carries its own text.",
+        "properties": {
+          "action": {
+            "enum": [
+              "approve",
+              "edit",
+              "escalate"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "DecisionIn",
+        "type": "object"
+      },
+      "DecisionOut": {
+        "description": "What the person decided, and the reply that was sent, if any.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "final_text": {
+            "title": "Final Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "final_text",
+          "decided_at"
+        ],
+        "title": "DecisionOut",
+        "type": "object"
+      },
+      "DraftOut": {
+        "description": "A cited draft waiting for, or past, a person's decision.",
+        "properties": {
+          "claims_supported": {
+            "title": "Claims Supported",
+            "type": "boolean"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/SentenceOut"
+            },
+            "title": "Sentences",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sentences",
+          "claims_supported",
+          "model",
+          "sources"
+        ],
+        "title": "DraftOut",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "What went wrong, as a stable code and a sentence for people.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorOut": {
+        "description": "The error shape the whole platform answers with.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorOut",
+        "type": "object"
+      },
+      "SentenceOut": {
+        "description": "One sentence of a draft, its citations, and why the claim check failed it, if it did.",
+        "properties": {
+          "citations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "supported": {
+            "title": "Supported",
+            "type": "boolean"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "citations",
+          "supported",
+          "problem"
+        ],
+        "title": "SentenceOut",
+        "type": "object"
+      },
+      "SourceOut": {
+        "description": "A source a draft cites: a policy passage, or what the order tool reported, in the ticket's language.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
+      "StatsOut": {
+        "description": "The counters the demo shows as the visitor works.\n\n`deflection` is the share of decided tickets answered by the draft (approved or\nedited) rather than escalated; `accuracy` is the share of sent replies approved\nwithout an edit. Both are null until there is something to count.",
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "awaiting_approval": {
+            "title": "Awaiting Approval",
+            "type": "integer"
+          },
+          "deflection": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deflection"
+          },
+          "escalated": {
+            "title": "Escalated",
+            "type": "integer"
+          },
+          "sent": {
+            "title": "Sent",
+            "type": "integer"
+          },
+          "sent_unedited": {
+            "title": "Sent Unedited",
+            "type": "integer"
+          },
+          "tickets": {
+            "title": "Tickets",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tickets",
+          "awaiting_approval",
+          "sent",
+          "sent_unedited",
+          "escalated",
+          "deflection",
+          "accuracy"
+        ],
+        "title": "StatsOut",
+        "type": "object"
+      },
+      "TicketIn": {
+        "description": "A new ticket: who files it, in which language the reply should be, and what it says.",
+        "properties": {
+          "body": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "customer": {
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "title": "Customer",
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "en",
+              "cs"
+            ],
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer",
+          "language",
+          "body"
+        ],
+        "title": "TicketIn",
+        "type": "object"
+      },
+      "TicketOut": {
+        "description": "A ticket in full: what the customer wrote, what the pipeline decided, the draft and the decision.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerOut"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "escalation_reason": {
+            "title": "Escalation Reason",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customer",
+          "language",
+          "status",
+          "category",
+          "created_at",
+          "body",
+          "order_number",
+          "escalation_reason",
+          "run_id",
+          "expires_at",
+          "draft",
+          "decision"
+        ],
+        "title": "TicketOut",
+        "type": "object"
+      },
+      "TicketSummary": {
+        "description": "A ticket as the agent console's queue lists it.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerOut"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customer",
+          "language",
+          "status",
+          "category",
+          "created_at"
+        ],
+        "title": "TicketSummary",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "VisitorBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "The API behind the LB systems built on Django.",
+    "title": "LB Django systems",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/healthz": {
+      "get": {
+        "description": "Report that the process is up. It checks nothing else, so a database blip never restarts it.",
+        "operationId": "config_api_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/lb01/customers": {
+      "get": {
+        "description": "List the synthetic customers a visitor can file a ticket as.",
+        "operationId": "lb01_api_list_customers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Customers",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/stats": {
+      "get": {
+        "description": "Count the visitor's tickets and decisions, for the demo's deflection and accuracy counters.",
+        "operationId": "lb01_api_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Stats",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets": {
+      "get": {
+        "description": "List the visitor's own tickets, newest first, for the agent console's queue.",
+        "operationId": "lb01_api_list_tickets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TicketSummary"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Tickets",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      },
+      "post": {
+        "description": "File a ticket as one of the synthetic customers, and queue it for the pipeline.",
+        "operationId": "lb01_api_file_ticket",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "File Ticket",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets/{ticket_id}": {
+      "get": {
+        "description": "Show one of the visitor's tickets in full, with its cited draft and the decision.",
+        "operationId": "lb01_api_get_ticket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Ticket",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets/{ticket_id}/decision": {
+      "post": {
+        "description": "Approve, edit or escalate a draft that waits for a person, once.",
+        "operationId": "lb01_api_decide",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Decide",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/readyz": {
+      "get": {
+        "description": "Report whether every system can reach its schema, for the container's readiness check.",
+        "operationId": "config_api_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "servers": []
+}

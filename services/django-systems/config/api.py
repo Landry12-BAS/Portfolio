@@ -5,10 +5,13 @@ served at /api/openapi.json for generating the site's typed client.
 """
 
 from django.db import connections
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI, Status
+from ninja.errors import AuthenticationError, ValidationError
 
 from core.databases import SYSTEM_SCHEMAS
+from core.views import error_body
+from lb01.api import router as lb01_router
 
 api = NinjaAPI(
     title="LB Django systems",
@@ -17,6 +20,23 @@ api = NinjaAPI(
     docs_url=None,
     openapi_url="/openapi.json",
 )
+api.add_router("/lb01/", lb01_router)
+
+
+@api.exception_handler(AuthenticationError)
+def unauthorized(request: HttpRequest, exception: AuthenticationError) -> HttpResponse:  # noqa: ARG001 - Ninja's signature
+    """Answer a missing or invalid visitor token in the platform's error shape."""
+    body = error_body("unauthorized", "This route needs a valid visitor token for its system.")
+    return api.create_response(request, body, status=401)
+
+
+@api.exception_handler(ValidationError)
+def invalid_request(request: HttpRequest, exception: ValidationError) -> HttpResponse:
+    """Answer a malformed request in the platform's error shape, naming the fields but never echoing their values."""
+    fields = sorted({".".join(str(part) for part in issue["loc"]) for issue in exception.errors})
+    body = error_body("invalid_request", "The request doesn't have the expected form.")
+    body["error"]["fields"] = ", ".join(fields)
+    return api.create_response(request, body, status=422)
 
 
 @api.get("/healthz", tags=["health"])

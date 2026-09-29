@@ -52,7 +52,9 @@ flowchart LR
   a puzzle; bots are stopped before they spend quota.
 - **Short-lived tokens.** The Nuxt server's Nitro routes mint Ed25519-signed JWTs,
   valid for 5 minutes and scoped to one system, for SSE and WebSocket calls to the
-  box.
+  box. Their subject is a keyed hash of the session, never the cookie itself. The
+  systems check each one against the site's public key and fail closed without it;
+  `services/django-systems/core/visitors.py` specifies the claims.
 - **Three rate-limit layers:** Cloudflare per IP, the gateway per session, and the
   gateway per system and per provider.
 - **Private by design.** IP addresses are kept only as salted hashes, and the salt

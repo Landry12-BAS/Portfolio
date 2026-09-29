@@ -21,8 +21,9 @@ prompt-injection guard; see its [README](services/gateway/README.md)) and
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
 see its [README](python/lb-common/README.md)). In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
-(`data/seed/lb01`), golden set (`evals/lb01`), hybrid search and ticket pipeline so far;
-next come its visitor API and the Celery worker.
+(`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
+API and Celery worker so far; next come the recorded sample runs and LB-01's demo on
+the site.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -148,6 +149,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just format` | Format the Python code with Ruff and apply its safe fixes (ESLint formats TypeScript) |
 | `just typecheck` | Strict type-check with `vue-tsc` and `tsc`, and mypy for Python |
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
+| `just django` | Run the Django systems' API with reload on http://127.0.0.1:8001 (settings in `services/django-systems/.env`, from `.env.example`) |
+| `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweep and the nightly reseed |
+| `just openapi` | Regenerate `services/django-systems/openapi.json` after an API change (a test fails while it is stale) |
 | `just migrate` | Create or update each Django system's schema (settings in `services/django-systems/.env`, from `.env.example`) |
 | `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed`; `--today` pins the day relative order dates count from |
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
