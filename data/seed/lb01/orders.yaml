@@ -1,0 +1,251 @@
+# The synthetic orders LB-01's order-lookup tool reads, one support scenario each.
+#
+# Dates are days relative to the day the seed runs: 0 is today, -3 three days before.
+# That keeps a demo current (a "late" parcel stays late), and `seed_lb01 --today` pins
+# the day, so evals see the same dates on every run. Prices are whole crowns (CZK), and
+# the seed checks every total and delivery cost against the policies in policies.yaml.
+orders:
+  - number: BB-1040
+    note: A delivered bag that arrived torn.
+    customer: cus-0001
+    status: delivered
+    country: CZ
+    placed: -9
+    roasted: -7
+    shipped: -6
+    delivered: -3
+    carrier: Vltava Post
+    tracking_number: VP481920337CZ
+    items:
+      - {kind: coffee, product: Basalt Blend, grind: whole-bean, grams: 250, quantity: 2, price_czk: 289}
+    shipping_czk: 89
+    total_czk: 667
+
+  - number: BB-1041
+    note: Shipped ten days ago and still not delivered, so it is late.
+    customer: cus-0001
+    status: shipped
+    country: CZ
+    placed: -14
+    roasted: -12
+    shipped: -10
+    carrier: Vltava Post
+    tracking_number: VP481937721CZ
+    items:
+      - {kind: coffee, product: Ethiopia Guji, grind: filter, grams: 250, quantity: 1, price_czk: 349}
+      - {kind: coffee, product: Colombia Huila, grind: filter, grams: 250, quantity: 1, price_czk: 319}
+    shipping_czk: 89
+    total_czk: 757
+
+  - number: BB-1042
+    note: Not roasted yet, so it can still be changed or cancelled.
+    customer: cus-0002
+    status: processing
+    country: CZ
+    placed: 0
+    carrier: Vltava Post
+    items:
+      - {kind: coffee, product: Kenya Nyeri, grind: whole-bean, grams: 250, quantity: 2, price_czk: 379}
+    shipping_czk: 89
+    total_czk: 847
+
+  - number: BB-1043
+    note: Delivered 25 days ago, past the 14-day window for returns.
+    customer: cus-0002
+    status: delivered
+    country: CZ
+    placed: -30
+    roasted: -28
+    shipped: -27
+    delivered: -25
+    carrier: Vltava Post
+    tracking_number: VP481910224CZ
+    items:
+      - {kind: coffee, product: Basalt Blend, grind: espresso, grams: 1000, quantity: 1, price_czk: 990}
+    shipping_czk: 89
+    total_czk: 1079
+
+  - number: BB-1044
+    note: Ordered for espresso; the customer received a different grind.
+    customer: cus-0003
+    status: delivered
+    country: CZ
+    placed: -8
+    roasted: -7
+    shipped: -6
+    delivered: -5
+    carrier: Vltava Post
+    tracking_number: VP481945590CZ
+    items:
+      - {kind: coffee, product: Colombia Huila, grind: espresso, grams: 250, quantity: 1, price_czk: 319}
+      - {kind: coffee, product: Lava Decaf, grind: espresso, grams: 250, quantity: 1, price_czk: 299}
+    shipping_czk: 89
+    total_czk: 707
+
+  - number: BB-1045
+    note: The carrier has confirmed the parcel lost.
+    customer: cus-0003
+    status: lost
+    country: CZ
+    placed: -20
+    roasted: -19
+    shipped: -18
+    carrier: Vltava Post
+    tracking_number: VP481928873CZ
+    items:
+      - {kind: equipment, product: Basalt Hand Grinder, quantity: 1, price_czk: 1490}
+      - {kind: coffee, product: Basalt Blend, grind: whole-bean, grams: 250, quantity: 1, price_czk: 289}
+    shipping_czk: 0
+    total_czk: 1779
+
+  - number: BB-1046
+    note: Decaf packed from old stock, delivered 35 days after its roast date.
+    customer: cus-0004
+    status: delivered
+    country: CZ
+    placed: -6
+    roasted: -38
+    shipped: -5
+    delivered: -3
+    carrier: Vltava Post
+    tracking_number: VP481950061CZ
+    items:
+      - {kind: coffee, product: Lava Decaf, grind: moka, grams: 250, quantity: 2, price_czk: 299}
+    shipping_czk: 89
+    total_czk: 687
+
+  - number: BB-1047
+    note: Roasted and labelled, so the address can no longer be changed.
+    customer: cus-0004
+    status: roasted
+    country: CZ
+    placed: -2
+    roasted: -1
+    carrier: Vltava Post
+    tracking_number: VP481961142CZ
+    items:
+      - {kind: coffee, product: Ethiopia Guji, grind: whole-bean, grams: 250, quantity: 1, price_czk: 349}
+      - {kind: equipment, product: Gooseneck Kettle, quantity: 1, price_czk: 1190}
+    shipping_czk: 0
+    total_czk: 1539
+
+  - number: BB-1048
+    note: Shipped yesterday, well within the delivery time.
+    customer: cus-0005
+    status: shipped
+    country: CZ
+    placed: -3
+    roasted: -2
+    shipped: -1
+    carrier: Vltava Post
+    tracking_number: VP481970038CZ
+    items:
+      - {kind: coffee, product: Colombia Huila, grind: french-press, grams: 250, quantity: 1, price_czk: 319}
+    shipping_czk: 89
+    total_czk: 408
+
+  - number: BB-1049
+    note: A grinder delivered two months ago, still under warranty.
+    customer: cus-0005
+    status: delivered
+    country: CZ
+    placed: -60
+    shipped: -58
+    delivered: -57
+    carrier: Kolo Courier
+    tracking_number: KC-58213
+    items:
+      - {kind: equipment, product: Basalt Hand Grinder, quantity: 1, price_czk: 1490}
+    shipping_czk: 149
+    total_czk: 1639
+
+  - number: BB-1050
+    note: Cancelled before roasting, so the payment was refunded.
+    customer: cus-0006
+    status: cancelled
+    country: CZ
+    placed: -15
+    carrier: Vltava Post
+    items:
+      - {kind: coffee, product: Kenya Nyeri, grind: whole-bean, grams: 1000, quantity: 1, price_czk: 1290}
+    shipping_czk: 0
+    total_czk: 1290
+
+  - number: BB-1051
+    note: Delivered and opened; the customer doesn't enjoy one of the coffees.
+    customer: cus-0006
+    status: delivered
+    country: CZ
+    placed: -12
+    roasted: -11
+    shipped: -10
+    delivered: -8
+    carrier: Vltava Post
+    tracking_number: VP481983317CZ
+    items:
+      - {kind: coffee, product: Kenya Nyeri, grind: filter, grams: 250, quantity: 1, price_czk: 379}
+      - {kind: coffee, product: Ethiopia Guji, grind: filter, grams: 250, quantity: 1, price_czk: 349}
+    shipping_czk: 89
+    total_czk: 817
+
+  - number: BB-1052
+    note: Not roasted yet, by courier; it can still be cancelled for free.
+    customer: cus-0006
+    status: processing
+    country: CZ
+    placed: 0
+    carrier: Kolo Courier
+    items:
+      - {kind: coffee, product: Basalt Blend, grind: espresso, grams: 250, quantity: 3, price_czk: 289}
+    shipping_czk: 149
+    total_czk: 1016
+
+  - number: BB-1053
+    note: An older delivered order, part of the customer's history.
+    customer: cus-0001
+    status: delivered
+    country: CZ
+    placed: -45
+    roasted: -44
+    shipped: -43
+    delivered: -41
+    carrier: Vltava Post
+    tracking_number: VP481899025CZ
+    items:
+      - {kind: coffee, product: Lava Decaf, grind: whole-bean, grams: 250, quantity: 1, price_czk: 299}
+      - {kind: coffee, product: Basalt Blend, grind: whole-bean, grams: 250, quantity: 1, price_czk: 289}
+    shipping_czk: 89
+    total_czk: 677
+
+  - number: BB-1054
+    note: Shipped to Slovakia a week ago; slower than usual, but not late yet.
+    customer: cus-0002
+    status: shipped
+    country: SK
+    placed: -9
+    roasted: -8
+    shipped: -7
+    carrier: Vltava Post
+    tracking_number: VP481974009CZ
+    items:
+      - {kind: coffee, product: Ethiopia Guji, grind: whole-bean, grams: 250, quantity: 2, price_czk: 349}
+    shipping_czk: 159
+    total_czk: 857
+
+  - number: BB-1055
+    note: Delivered yesterday with one of its three coffees missing.
+    customer: cus-0005
+    status: delivered
+    country: CZ
+    placed: -5
+    roasted: -4
+    shipped: -3
+    delivered: -1
+    carrier: Vltava Post
+    tracking_number: VP481990552CZ
+    items:
+      - {kind: coffee, product: Basalt Blend, grind: whole-bean, grams: 250, quantity: 1, price_czk: 289}
+      - {kind: coffee, product: Colombia Huila, grind: whole-bean, grams: 250, quantity: 1, price_czk: 319}
+      - {kind: coffee, product: Kenya Nyeri, grind: whole-bean, grams: 250, quantity: 1, price_czk: 379}
+    shipping_czk: 89
+    total_czk: 1076

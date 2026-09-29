@@ -1,0 +1,357 @@
+# Basalt & Bean's customer policies: the passages LB-01 searches and cites.
+#
+# English is the text search runs on; Czech is what a Czech visitor reads. A draft cites
+# a passage by its key, so keep keys stable when editing a text. The company, its
+# carriers (Vltava Post, Kolo Courier) and every rule here are fictional.
+# `manage.py seed_lb01` checks this file against lb01/seed.py before loading it.
+policies:
+  - key: shipping
+    title: {en: Shipping and delivery, cs: Doprava a doručení}
+    passages:
+      - key: shipping.roast-days
+        title: {en: Roast and dispatch days, cs: Dny pražení a odeslání}
+        text:
+          en: >-
+            We roast on Mondays, Wednesdays and Fridays and send every order within one
+            working day of roasting it. Orders placed by 10:00 on a roast day are roasted
+            that same day.
+          cs: >-
+            Pražíme v pondělí, ve středu a v pátek a každou objednávku odešleme do jednoho
+            pracovního dne od upražení. Objednávky přijaté do 10:00 v den pražení upražíme
+            ještě týž den.
+      - key: shipping.delivery-times
+        title: {en: Delivery times, cs: Doba doručení}
+        text:
+          en: >-
+            Within the Czech Republic, standard delivery by Vltava Post takes 1 to 3
+            working days after dispatch. Kolo Courier delivers in Prague and Brno on the
+            next working day. Parcels to Slovakia take 2 to 4 working days, and to other
+            EU countries 3 to 7.
+          cs: >-
+            V rámci Česka trvá standardní doručení službou Vltava Post 1 až 3 pracovní dny
+            od odeslání. Kolo Courier doručuje v Praze a v Brně následující pracovní den.
+            Zásilky na Slovensko doručujeme za 2 až 4 pracovní dny, do ostatních zemí EU
+            za 3 až 7.
+      - key: shipping.costs
+        title: {en: Delivery costs, cs: Cena dopravy}
+        text:
+          en: >-
+            Standard delivery within the Czech Republic costs 89 CZK and is free for
+            orders of 1,000 CZK or more. Courier delivery costs 149 CZK. Delivery to
+            Slovakia costs 159 CZK, and to other EU countries 290 CZK.
+          cs: >-
+            Standardní doručení v rámci Česka stojí 89 Kč a u objednávek od 1000 Kč je
+            zdarma. Doručení kurýrem stojí 149 Kč. Doprava na Slovensko stojí 159 Kč,
+            do ostatních zemí EU 290 Kč.
+      - key: shipping.late-parcels
+        title: {en: Late parcels, cs: Opožděné zásilky}
+        text:
+          en: >-
+            If a parcel within the Czech Republic has not arrived 5 working days after
+            dispatch, or 10 working days for the rest of the EU, send us the order number.
+            We open an investigation with the carrier the same day and update you within
+            2 working days.
+          cs: >-
+            Pokud zásilka v rámci Česka nedorazí do 5 pracovních dnů od odeslání (do
+            ostatních zemí EU do 10 pracovních dnů), pošlete nám číslo objednávky. Ještě
+            týž den zahájíme šetření u dopravce a do 2 pracovních dnů se vám ozveme.
+      - key: shipping.lost-parcels
+        title: {en: Lost parcels, cs: Ztracené zásilky}
+        text:
+          en: >-
+            When the carrier confirms that a parcel is lost, or its investigation takes
+            longer than 10 working days, we send a replacement at our cost or refund the
+            order in full, whichever you prefer. You never have to wait for the carrier's
+            claim to close.
+          cs: >-
+            Jakmile dopravce potvrdí ztrátu zásilky, nebo když jeho šetření trvá déle než
+            10 pracovních dnů, pošleme vám na naše náklady náhradu, nebo vám vrátíme celou
+            cenu objednávky, podle toho, co si vyberete. Na uzavření reklamace u dopravce
+            nikdy čekat nemusíte.
+      - key: shipping.address-changes
+        title: {en: Changing the delivery address, cs: Změna doručovací adresy}
+        text:
+          en: >-
+            We can change the delivery address until the order is roasted. After that,
+            the parcel is packed and labelled, and only the carrier can redirect it,
+            through the link in your dispatch email.
+          cs: >-
+            Doručovací adresu můžeme změnit, dokud objednávka není upražená. Potom už je
+            zásilka zabalená a označená štítkem a přesměrovat ji může jen dopravce, přes
+            odkaz v e-mailu o odeslání.
+
+  - key: damaged
+    title: {en: "Damaged, stale or wrong items", cs: "Poškozené, staré nebo chybné zboží"}
+    passages:
+      - key: damaged.torn-bags
+        title: {en: Torn or crushed bags, cs: Roztržené nebo zmačkané sáčky}
+        text:
+          en: >-
+            If a bag arrives torn, punctured or crushed, send us a photo of the bag and the
+            outer box within 14 days of delivery. We send a replacement free of charge, and
+            you don't need to return the damaged bag.
+          cs: >-
+            Pokud sáček dorazí roztržený, propíchnutý nebo zmačkaný, pošlete nám do 14 dnů
+            od doručení fotku sáčku a přepravní krabice. Zdarma vám pošleme náhradu
+            a poškozený sáček nemusíte vracet.
+      - key: damaged.stale-coffee
+        title: {en: Stale coffee, cs: Stará káva}
+        text:
+          en: >-
+            Every bag shows its roast date. If a bag reaches you more than 30 days after
+            its roast date, tell us within 14 days of delivery and we replace it or refund
+            it, whichever you prefer.
+          cs: >-
+            Na každém sáčku je datum pražení. Pokud k vám sáček dorazí více než 30 dnů po
+            datu pražení, dejte nám vědět do 14 dnů od doručení a my ho vyměníme, nebo vám
+            vrátíme peníze, podle toho, co si vyberete.
+      - key: damaged.wrong-items
+        title: {en: Wrong items, cs: Chybné zboží}
+        text:
+          en: >-
+            If you receive a different coffee, grind or bag size from the one you ordered,
+            we send the right item free of charge, with a prepaid label for returning the
+            wrong one. If you have already opened the wrong item, keep it; we won't charge
+            you for it.
+          cs: >-
+            Pokud dostanete jinou kávu, jiné namletí nebo jinou velikost balení, než jste
+            objednali, zdarma vám pošleme správné zboží i předplacený štítek pro vrácení
+            toho chybného. Pokud jste chybné zboží už otevřeli, nechte si ho, platit za
+            něj nebudete.
+      - key: damaged.missing-items
+        title: {en: Missing items, cs: Chybějící zboží}
+        text:
+          en: >-
+            If an item is missing from your parcel, tell us within 14 days of delivery. We
+            check the packing record and send the missing item within 2 working days.
+          cs: >-
+            Pokud vám v zásilce něco chybí, dejte nám vědět do 14 dnů od doručení.
+            Zkontrolujeme záznam z balení a chybějící zboží pošleme do 2 pracovních dnů.
+      - key: damaged.equipment-faults
+        title: {en: Faulty equipment, cs: Vadné vybavení}
+        text:
+          en: >-
+            Grinders, kettles and other equipment we sell carry the statutory 24-month
+            warranty from delivery. Describe the fault, add a photo or a short video if you
+            can, and we arrange a repair, a replacement or a refund.
+          cs: >-
+            Na mlýnky, konvice a další vybavení, které prodáváme, platí zákonná záruka
+            24 měsíců od doručení. Popište vadu, a pokud můžete, přidejte fotku nebo
+            krátké video. Zařídíme opravu, výměnu nebo vrácení peněz.
+
+  - key: returns
+    title: {en: Returns and refunds, cs: Vrácení zboží a peněz}
+    passages:
+      - key: returns.withdrawal
+        title: {en: Returning an order within 14 days, cs: Vrácení objednávky do 14 dnů}
+        text:
+          en: >-
+            You can withdraw from a purchase within 14 days of delivery without giving a
+            reason. Tell us through the support desk, then send the items back within 14
+            days of telling us. This covers unopened coffee and unused equipment.
+          cs: >-
+            Od nákupu můžete odstoupit do 14 dnů od doručení bez udání důvodu. Dejte nám
+            vědět přes zákaznickou podporu a zboží nám pošlete zpět do 14 dnů od
+            oznámení. Týká se to neotevřené kávy a nepoužitého vybavení.
+      - key: returns.opened-coffee
+        title: {en: Opened coffee, cs: Otevřená káva}
+        text:
+          en: >-
+            For hygiene reasons we can't take back opened coffee, unless it was damaged,
+            stale or not what you ordered. If you simply don't enjoy a coffee, write to us:
+            once a year we exchange an opened bag for a different coffee as a goodwill
+            gesture.
+          cs: >-
+            Z hygienických důvodů nemůžeme otevřenou kávu vzít zpět, pokud nebyla
+            poškozená, stará nebo jiná, než jste objednali. Pokud vám káva prostě
+            nechutná, napište nám: jednou za rok vám otevřený sáček ze vstřícnosti
+            vyměníme za jinou kávu.
+      - key: returns.refund-timing
+        title: {en: When refunds arrive, cs: Kdy přijdou peníze zpět}
+        text:
+          en: >-
+            We refund you within 14 days of receiving your withdrawal, to the original
+            payment method. We may wait until the items reach us, or until you send proof
+            that you have posted them.
+          cs: >-
+            Peníze vám vrátíme do 14 dnů od chvíle, kdy obdržíme vaše odstoupení, a to
+            stejným způsobem, jakým jste platili. Můžeme počkat, než k nám zboží dorazí,
+            nebo než nám pošlete doklad o jeho odeslání.
+      - key: returns.refund-amounts
+        title: {en: What a refund covers, cs: Co zahrnuje vrácení peněz}
+        text:
+          en: >-
+            When you withdraw from a whole order, we refund the items and the standard
+            delivery cost. The extra cost of courier delivery is not refunded, and you pay
+            for sending the items back.
+          cs: >-
+            Když odstoupíte od celé objednávky, vrátíme vám cenu zboží i cenu standardní
+            dopravy. Příplatek za doručení kurýrem nevracíme a poštovné za vrácení zboží
+            hradíte vy.
+      - key: returns.prepaid-labels
+        title: {en: Prepaid return labels, cs: Předplacené štítky pro vrácení}
+        text:
+          en: >-
+            For damaged, stale or wrong items, returns are on us: we email you a prepaid
+            label, and sending the items back costs you nothing.
+          cs: >-
+            U poškozeného, starého nebo chybného zboží hradíme vrácení my: pošleme vám
+            e-mailem předplacený štítek a vrácení vás nic nestojí.
+
+  - key: subscriptions
+    title: {en: Coffee subscriptions, cs: Předplatné kávy}
+    passages:
+      - key: subscriptions.billing
+        title: {en: How billing works, cs: Jak funguje platba}
+        text:
+          en: >-
+            A subscription sends you freshly roasted coffee every week, every 2 weeks or
+            every 4 weeks. We charge your card 2 days before each roast, and email you the
+            day before we charge it.
+          cs: >-
+            Předplatné vám posílá čerstvě praženou kávu každý týden, každé 2 týdny nebo
+            každé 4 týdny. Platbu strhneme z karty 2 dny před každým pražením a den předem
+            vás na ni upozorníme e-mailem.
+      - key: subscriptions.skip-and-pause
+        title: {en: Skipping and pausing, cs: Vynechání a pozastavení}
+        text:
+          en: >-
+            You can skip a delivery, or pause your subscription for up to 3 months, at any
+            time before the next charge. A change made after the charge applies from the
+            delivery after it.
+          cs: >-
+            Kdykoli před další platbou můžete jednu dodávku vynechat nebo předplatné
+            pozastavit až na 3 měsíce. Změna provedená po platbě platí až od následující
+            dodávky.
+      - key: subscriptions.changes
+        title: {en: "Changing coffee, grind or frequency", cs: "Změna kávy, namletí nebo frekvence"}
+        text:
+          en: >-
+            You can change the coffee, grind, bag size or delivery frequency before the
+            next charge. The new price applies from the next delivery.
+          cs: >-
+            Kávu, namletí, velikost balení i frekvenci dodávek můžete změnit před další
+            platbou. Nová cena platí od příští dodávky.
+      - key: subscriptions.cancelling
+        title: {en: Cancelling a subscription, cs: Zrušení předplatného}
+        text:
+          en: >-
+            You can cancel a subscription at any time, free of charge. Cancelling before
+            the next charge stops that delivery; a delivery that has already been charged
+            is still roasted and sent.
+          cs: >-
+            Předplatné můžete kdykoli zdarma zrušit. Zrušení před další platbou tuto
+            dodávku zastaví; dodávku, která už je zaplacená, ještě upražíme a odešleme.
+      - key: subscriptions.failed-payments
+        title: {en: Failed payments, cs: Neúspěšné platby}
+        text:
+          en: >-
+            If a charge fails, we try again 2 days later and email you. After 3 failed
+            attempts the subscription is paused, and nothing is sent until the card is
+            updated.
+          cs: >-
+            Když platba neprojde, zkusíme ji znovu o 2 dny později a pošleme vám e-mail.
+            Po 3 neúspěšných pokusech předplatné pozastavíme a nic neodešleme, dokud kartu
+            neaktualizujete.
+
+  - key: orders
+    title: {en: Changing or cancelling an order, cs: Změna nebo zrušení objednávky}
+    passages:
+      - key: orders.before-roasting
+        title: {en: Before roasting, cs: Před pražením}
+        text:
+          en: >-
+            You can change or cancel an order free of charge until it is roasted. Until
+            then, its status shows as Processing.
+          cs: >-
+            Objednávku můžete zdarma změnit nebo zrušit, dokud není upražená. Do té doby
+            má stav „Zpracovává se“.
+      - key: orders.after-roasting
+        title: {en: After roasting, cs: Po pražení}
+        text:
+          en: >-
+            Once an order is roasted, it can't be cancelled, because the coffee was
+            roasted for you. You can still withdraw from the purchase after delivery if the
+            bags stay unopened.
+          cs: >-
+            Upraženou objednávku už zrušit nejde, protože káva byla upražena přímo pro
+            vás. Po doručení ale můžete od nákupu odstoupit, pokud sáčky zůstanou
+            neotevřené.
+      - key: orders.cancelled-refunds
+        title: {en: Refunds for cancelled orders, cs: Vrácení peněz za zrušené objednávky}
+        text:
+          en: >-
+            When an order is cancelled before roasting, we release or refund the full
+            payment within 3 working days.
+          cs: >-
+            Když objednávku zrušíte před pražením, celou platbu uvolníme nebo vrátíme do
+            3 pracovních dnů.
+
+  - key: coffee
+    title: {en: Our coffee, cs: Naše káva}
+    passages:
+      - key: coffee.grinds
+        title: {en: Grind options, cs: Možnosti namletí}
+        text:
+          en: >-
+            Every coffee comes as whole beans or ground for espresso, moka pot, filter,
+            French press or cold brew. Whole beans stay fresh longest; ground coffee is
+            best within 2 weeks of opening.
+          cs: >-
+            Každou kávu nabízíme zrnkovou nebo namletou na espresso, moka konvičku, filtr,
+            french press nebo cold brew. Zrnková káva zůstává čerstvá nejdéle; mletou je
+            nejlepší spotřebovat do 2 týdnů od otevření.
+      - key: coffee.freshness
+        title: {en: Freshness, cs: Čerstvost}
+        text:
+          en: >-
+            Whole-bean coffee tastes best from 7 to 45 days after its roast date. Coffee
+            roasted for espresso needs about a week of rest before it reaches its best.
+          cs: >-
+            Zrnková káva chutná nejlépe 7 až 45 dnů po datu pražení. Káva pražená na
+            espresso potřebuje zhruba týden odležet, než se plně rozvine.
+      - key: coffee.storage
+        title: {en: Storing coffee, cs: Skladování kávy}
+        text:
+          en: >-
+            Keep coffee in its resealable bag, away from light, heat and moisture. Don't
+            keep it in the fridge. Unopened bags you won't open within a month can go in
+            the freezer.
+          cs: >-
+            Kávu skladujte v jejím uzavíratelném sáčku, mimo světlo, teplo a vlhkost. Do
+            lednice ji nedávejte. Neotevřené sáčky, které během měsíce nespotřebujete,
+            můžete dát do mrazáku.
+
+  - key: support
+    title: {en: How support works, cs: Jak funguje podpora}
+    passages:
+      - key: support.response-times
+        title: {en: Response times, cs: Doba odpovědi}
+        text:
+          en: >-
+            We answer every ticket within 1 working day, Monday to Friday from 8:00 to
+            17:00 Czech time.
+          cs: >-
+            Na každý požadavek odpovídáme do 1 pracovního dne, od pondělí do pátku od 8:00
+            do 17:00 českého času.
+      - key: support.senior-agents
+        title: {en: What goes to a senior agent, cs: Co řeší vedoucí podpory}
+        text:
+          en: >-
+            Legal claims, allergic reactions, suspected fraud and requests about personal
+            data go straight to a senior agent, who replies within 1 working day.
+          cs: >-
+            Právní nároky, alergické reakce, podezření na podvod a žádosti týkající se
+            osobních údajů předáváme rovnou vedoucímu podpory, který odpoví do 1
+            pracovního dne.
+      - key: support.personal-data
+        title: {en: Your personal data, cs: Vaše osobní údaje}
+        text:
+          en: >-
+            You can ask for a copy of your personal data, or for it to be corrected or
+            deleted. Our data protection officer answers within one month. Support agents
+            can't change account details from a ticket.
+          cs: >-
+            Můžete požádat o kopii svých osobních údajů, o jejich opravu nebo výmaz. Náš
+            pověřenec pro ochranu osobních údajů odpoví do jednoho měsíce. Pracovníci
+            podpory nemohou měnit údaje účtu na základě požadavku.

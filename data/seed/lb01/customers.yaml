@@ -1,0 +1,10 @@
+# The synthetic customers a visitor files LB-01 tickets as. The names are invented, and
+# every address uses the reserved .test domain, so none of them can reach a real person.
+# `manage.py seed_lb01` checks this file against lb01/seed.py before loading it.
+customers:
+  - {key: cus-0001, name: Sam Carter, email: sam.carter@example.test, language: en}
+  - {key: cus-0002, name: Priya Nair, email: priya.nair@example.test, language: en}
+  - {key: cus-0003, name: Tom Okafor, email: tom.okafor@example.test, language: en}
+  - {key: cus-0004, name: Eva Nováková, email: eva.novakova@example.test, language: cs}
+  - {key: cus-0005, name: Jan Dvořák, email: jan.dvorak@example.test, language: cs}
+  - {key: cus-0006, name: Petra Svobodová, email: petra.svobodova@example.test, language: cs}

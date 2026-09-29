@@ -19,8 +19,10 @@ Czech: catalog, datasheets, themes, security headers), `services/gateway` (the L
 gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
 prompt-injection guard; see its [README](services/gateway/README.md)) and
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
-see its [README](python/lb-common/README.md)). Next: the LB-01 Django service. Add each
-new command to the Commands section in the change that introduces it.
+see its [README](python/lb-common/README.md)). In build: `services/django-systems`, the
+Django project for LB-01, LB-02 and LB-09, with LB-01's schema and its synthetic data in
+`data/seed/lb01` so far; next come its golden set, hybrid search and ticket pipeline.
+Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
 
@@ -145,6 +147,8 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just format` | Format the Python code with Ruff and apply its safe fixes (ESLint formats TypeScript) |
 | `just typecheck` | Strict type-check with `vue-tsc` and `tsc`, and mypy for Python |
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
+| `just migrate` | Create or update each Django system's schema (settings in `services/django-systems/.env`, from `.env.example`) |
+| `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed`; `--today` pins the day relative order dates count from |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
@@ -152,10 +156,13 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. Integration tests (gateway and Python) start Redis with
-Testcontainers; where Docker isn't available, set `LB_TEST_REDIS_URL=redis://127.0.0.1:6379`
-to use a local Redis instead. The Python contract tests also need Node, since they start
-the real gateway (`services/gateway/test/support/contract-server.ts`). In a cloud
-session without a Docker daemon, `dockerd` can usually be started; if Docker Hub's
-anonymous pull limit bites, pull `mirror.gcr.io/library/redis:8.10-alpine` and tag it
-`redis:8.10-alpine`. `just seed` arrives with the seed data.
+Playwright's own. Integration tests start Redis (gateway and Python) and Postgres with
+pgvector (Django) with Testcontainers; where Docker isn't available, set
+`LB_TEST_REDIS_URL=redis://127.0.0.1:6379` and
+`LB_TEST_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb` to use local servers instead
+(the Postgres user needs the right to create databases). The Python contract tests also
+need Node, since they start the real gateway
+(`services/gateway/test/support/contract-server.ts`). In a cloud session without a Docker
+daemon, `dockerd` can usually be started; if Docker Hub's anonymous pull limit bites,
+pull the image through `mirror.gcr.io` (such as `mirror.gcr.io/library/redis:8.10-alpine`)
+and tag it with its Docker Hub name.

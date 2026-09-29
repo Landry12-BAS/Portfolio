@@ -27,25 +27,38 @@ gateway-token *args:
 # Lint every TypeScript, Vue and Python package, and check every Python docstring.
 lint:
     pnpm lint
-    uv run ruff check python scripts
-    uv run ruff format --check python scripts
+    uv run ruff check python scripts services/django-systems
+    uv run ruff format --check python scripts services/django-systems
     uv run python scripts/check_docstrings.py
 
 # Format the Python code with Ruff and apply its safe fixes.
 format:
-    uv run ruff format python scripts
-    uv run ruff check --fix python scripts
+    uv run ruff format python scripts services/django-systems
+    uv run ruff check --fix python scripts services/django-systems
 
+# The Django service runs mypy from its own folder, where its settings and the Django
+# plugin live.
 # Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
     uv run mypy python/lb-common scripts
+    uv run --directory services/django-systems mypy .
 
-# Integration tests start Redis with Docker, or use LB_TEST_REDIS_URL when it is set.
+# Integration tests start Redis and Postgres with Docker, or use LB_TEST_REDIS_URL and
+# LB_TEST_DATABASE_URL when they are set.
 # Run every unit, integration and contract test suite, TypeScript and Python.
 test:
     pnpm test
     uv run pytest
+    uv run --directory services/django-systems pytest
+
+# Create or update every Django system's schema (settings in services/django-systems/.env).
+migrate:
+    uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb01
+
+# Load the synthetic Basalt & Bean data into every system, replacing what the files no longer hold.
+seed *args:
+    uv run --directory services/django-systems --env-file .env python manage.py seed_lb01 {{args}}
 
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:

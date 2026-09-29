@@ -7,14 +7,18 @@
 required-version = ">=0.12.19"
 
 [tool.uv.workspace]
-members = ["python/*"]
+members = ["python/*", "services/django-systems"]
 
 [dependency-groups]
 dev = [
+    "celery-types>=0.26.0",
+    "django-stubs[compatible-mypy]>=6.0.9,<6.1",
     "mypy>=2.3.1",
     "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
     "ruff>=0.16.9",
-    "testcontainers[redis]>=4.15.0",
+    "testcontainers[postgres,redis]>=4.15.0",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [tool.ruff]
@@ -49,12 +53,19 @@ select = [
     "W",    # pycodestyle warnings
 ]
 
+[tool.ruff.lint.flake8-unused-arguments]
+# Framework hooks (Django routers and signals, management commands) take *args and
+# **kwargs they may not need; a variadic parameter is never a forgotten leftover.
+ignore-variadic-names = true
+
 [tool.ruff.lint.per-file-ignores]
 # Tests assert, and their fixtures use fixed, obviously fake secrets.
 "**/tests/**" = ["S101", "S105", "S106"]
+# Django writes migrations; they are reviewed, not hand-formatted.
+"**/migrations/**" = ["D", "E501", "RUF012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lb_common"]
+known-first-party = ["lb_common", "config", "core", "lb01"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
