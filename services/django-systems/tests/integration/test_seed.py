@@ -14,7 +14,15 @@ from django.conf import settings
 from django.core.management import CommandError, call_command
 
 from core.data_files import read_data_file
-from lb01.models import Customer, Order, Policy, PolicyPassage, Ticket
+from lb01.embeddings import (
+    EmbeddingFile,
+    RecordedVector,
+    encode_vector,
+    passage_text,
+    text_sha256,
+    write_embedding_file,
+)
+from lb01.models import EMBEDDING_DIMENSIONS, Customer, Order, Policy, PolicyPassage, Ticket
 from lb01.seed import CustomerFile, OrderFile, PolicyFile, SeedError, seed
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb01"])]
@@ -89,10 +97,45 @@ def test_passages_keep_their_policy_and_order() -> None:
     assert [passage.position for passage in stored] == list(range(1, len(first_policy.passages) + 1))
 
 
-def test_changing_the_english_text_clears_only_that_embedding(seed_copy: Path) -> None:
-    """An embedding is dropped when its English text changes, and kept when only the Czech text does."""
+def record_vectors_for(folder: Path) -> None:
+    """Write an embeddings.json in `folder`, with a distinct vector for each passage's current text."""
+    policies = read_data_file(folder / "policies.yaml", PolicyFile).policies
+    passages = [passage for policy in policies for passage in policy.passages]
+    vectors = {}
+    for number, passage in enumerate(passages):
+        vector = [0.0] * EMBEDDING_DIMENSIONS
+        vector[number] = 1.0
+        vectors[passage.key] = RecordedVector(
+            text_sha256=text_sha256(passage_text(passage.title.en, passage.text.en)), vector=encode_vector(vector)
+        )
+    write_embedding_file(folder / "embeddings.json", EmbeddingFile(vectors=vectors))
+
+
+def test_passages_get_the_vectors_recorded_for_their_text(seed_copy: Path) -> None:
+    """With a vector recorded for every passage, search can use all of them."""
+    record_vectors_for(seed_copy)
+
+    report = seed(seed_copy, TODAY)
+
+    assert report.passages_waiting == 0
+    assert report.vectors_changed == PolicyPassage.objects.count()
+    assert not PolicyPassage.objects.filter(embedding__isnull=True).exists()
+
+
+def test_without_recorded_vectors_every_passage_waits(seed_copy: Path) -> None:
+    """Before the first `just embed`, passages are stored without vectors and found by keywords."""
+    (seed_copy / "embeddings.json").unlink(missing_ok=True)
+
+    report = seed(seed_copy, TODAY)
+
+    assert report.passages_waiting == PolicyPassage.objects.count()
+    assert not PolicyPassage.objects.filter(embedding__isnull=False).exists()
+
+
+def test_a_passage_whose_english_text_changed_waits_for_a_new_vector(seed_copy: Path) -> None:
+    """An edit to the English text retires its vector; an edit to the Czech text keeps it."""
+    record_vectors_for(seed_copy)
     seed(seed_copy, TODAY)
-    PolicyPassage.objects.update(embedding=[0.1] * 1024)
     reworded: list[str] = []
 
     def reword(content: dict[str, Any]) -> None:
@@ -105,8 +148,8 @@ def test_changing_the_english_text_clears_only_that_embedding(seed_copy: Path) -
     edit(seed_copy / "policies.yaml", reword)
     report = seed(seed_copy, TODAY)
 
-    assert report.embeddings_cleared == 1
     assert report.passages.updated == 2
+    assert (report.vectors_changed, report.passages_waiting) == (1, 1)
     assert list(PolicyPassage.objects.filter(embedding__isnull=True).values_list("key", flat=True)) == reworded
 
 

@@ -60,6 +60,15 @@ migrate:
 seed *args:
     uv run --directory services/django-systems --env-file .env python manage.py seed_lb01 {{args}}
 
+# Needs the gateway running with a Workers AI key; commit the two files it writes.
+# Record the vectors LB-01's search needs, for the passages and golden-set texts that changed.
+embed *args:
+    uv run --directory services/django-systems --env-file .env python manage.py embed_lb01 {{args}}
+
+# Measure LB-01's search recall on the golden set against its gate (run `just seed` first).
+eval-search:
+    uv run --directory services/django-systems --env-file .env python manage.py eval_lb01_search
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

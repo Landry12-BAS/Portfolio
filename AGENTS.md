@@ -149,6 +149,8 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
 | `just migrate` | Create or update each Django system's schema (settings in `services/django-systems/.env`, from `.env.example`) |
 | `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed`; `--today` pins the day relative order dates count from |
+| `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
+| `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |

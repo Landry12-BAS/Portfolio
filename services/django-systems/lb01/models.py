@@ -9,6 +9,7 @@ for 24 hours (`Ticket.expires_at`) and then swept away.
 
 import secrets
 from datetime import datetime, timedelta
+from typing import Final
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
@@ -20,7 +21,7 @@ from django.utils import timezone
 from pgvector.django import HnswIndex, VectorField
 
 # bge-m3, the model behind lb-embed, returns vectors of this many dimensions.
-EMBEDDING_DIMENSIONS = 1024
+EMBEDDING_DIMENSIONS: Final = 1024
 # How long a visitor's ticket, draft and decision are kept (the LB-01 datasheet).
 VISITOR_DATA_LIFETIME = timedelta(hours=24)
 # The longest ticket a visitor may file, in characters.

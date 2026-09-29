@@ -21,6 +21,7 @@ from django.db.models import ProtectedError
 from pydantic import Field, StringConstraints, model_validator
 
 from core.data_files import Key, StrictEntry, Text, read_data_file
+from lb01.embeddings import EmbeddingFile, passage_text, read_embedding_file
 from lb01.models import Customer, Order, Policy, PolicyPassage
 
 # A policy title or passage, trimmed, never empty, and short enough to cite precisely.
@@ -325,14 +326,16 @@ class SeedReport:
     passages: TableChanges = field(default_factory=TableChanges)
     customers: TableChanges = field(default_factory=TableChanges)
     orders: TableChanges = field(default_factory=TableChanges)
-    # Passages whose English text changed, so their old embedding no longer matches.
-    embeddings_cleared: int = 0
+    # Passages whose vector was set, replaced or removed, and those still without one.
+    vectors_changed: int = 0
+    passages_waiting: int = 0
 
     def lines(self) -> list[str]:
         """Describe the run, one table per line, for the seed command to print."""
         return [
             f"Policies: {self.policies.describe()}",
-            f"Passages: {self.passages.describe()} ({self.embeddings_cleared} to embed again)",
+            f"Passages: {self.passages.describe()}",
+            f"Passage vectors: {self.vectors_changed} changed, {self.passages_waiting} waiting for `just embed`",
             f"Customers: {self.customers.describe()}",
             f"Orders: {self.orders.describe()}",
         ]
@@ -341,19 +344,23 @@ class SeedReport:
 def seed(directory: Path, today: date) -> SeedReport:
     """Check the seed files in `directory`, then make the lb01 tables match them in one transaction.
 
-    `today` is the day the orders' relative dates count from. A file that doesn't follow
-    its schema raises core.data_files.DataFileError; files that contradict each other,
-    or a customer removed while their tickets remain, raise SeedError.
+    `today` is the day the orders' relative dates count from. The passages' vectors come
+    from embeddings.json, when it has one for a passage's current text. A file that
+    doesn't follow its schema raises core.data_files.DataFileError; files that
+    contradict each other, or a customer removed while their tickets remain, raise
+    SeedError.
     """
     policy_file = read_data_file(directory / "policies.yaml", PolicyFile)
     customer_file = read_data_file(directory / "customers.yaml", CustomerFile)
     order_file = read_data_file(directory / "orders.yaml", OrderFile)
+    recorded_vectors = read_embedding_file(directory / "embeddings.json")
     check_order_customers(order_file, customer_file)
 
     report = SeedReport()
     try:
         with transaction.atomic(using="lb01"):
             sync_policies(policy_file, report)
+            sync_passage_vectors(recorded_vectors, report)
             customer_ids = sync_customers(customer_file, report)
             sync_orders(order_file, customer_ids, today, report)
             delete_missing_customers(customer_file, report)
@@ -372,11 +379,7 @@ def check_order_customers(order_file: OrderFile, customer_file: CustomerFile) ->
 
 
 def sync_policies(policy_file: PolicyFile, report: SeedReport) -> None:
-    """Make the policies and their passages match the file, clearing embeddings whose text changed."""
-    embedded_text = {
-        row.key: (row.title_en, row.text_en) for row in PolicyPassage.objects.only("key", "title_en", "text_en")
-    }
-    changed_text: list[str] = []
+    """Make the policies and their passages match the file."""
     for policy_position, policy_entry in enumerate(policy_file.policies, start=1):
         change, policy = upsert(
             Policy,
@@ -385,8 +388,6 @@ def sync_policies(policy_file: PolicyFile, report: SeedReport) -> None:
         )
         report.policies.count(change)
         for position, entry in enumerate(policy_entry.passages, start=1):
-            if entry.key in embedded_text and embedded_text[entry.key] != (entry.title.en, entry.text.en):
-                changed_text.append(entry.key)
             change, _ = upsert(
                 PolicyPassage,
                 {"key": entry.key},
@@ -400,14 +401,29 @@ def sync_policies(policy_file: PolicyFile, report: SeedReport) -> None:
                 },
             )
             report.passages.count(change)
-    report.embeddings_cleared = PolicyPassage.objects.filter(key__in=changed_text, embedding__isnull=False).update(
-        embedding=None
-    )
     wanted_passages = [passage.key for policy in policy_file.policies for passage in policy.passages]
     report.passages.deleted = delete_rows_except(PolicyPassage.objects.all(), "key", wanted_passages)
     report.policies.deleted = delete_rows_except(
         Policy.objects.all(), "key", [policy.key for policy in policy_file.policies]
     )
+
+
+def sync_passage_vectors(recorded: EmbeddingFile | None, report: SeedReport) -> None:
+    """Give each passage the recorded vector made from its current English text, or none until one is recorded.
+
+    A passage without a vector is still found by its keywords; `just embed` records the
+    vectors that are missing.
+    """
+    for passage in PolicyPassage.objects.only("key", "title_en", "text_en", "embedding"):
+        text = passage_text(passage.title_en, passage.text_en)
+        wanted = recorded.vector_for(passage.key, text) if recorded is not None else None
+        current = None if passage.embedding is None else [float(value) for value in passage.embedding]
+        if current != wanted:
+            passage.embedding = wanted
+            passage.save(update_fields=["embedding"])
+            report.vectors_changed += 1
+        if wanted is None:
+            report.passages_waiting += 1
 
 
 def sync_customers(customer_file: CustomerFile, report: SeedReport) -> dict[str, int]:
