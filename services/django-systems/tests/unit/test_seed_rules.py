@@ -6,13 +6,13 @@ None of these touch the database: the checks run before anything is written.
 import re
 from copy import deepcopy
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 import pytest
 from django.conf import settings
 from pydantic import ValidationError
 
+from core.data_files import read_data_file
 from lb01.models import Draft
 from lb01.seed import (
     CustomerFile,
@@ -22,7 +22,6 @@ from lb01.seed import (
     SeedError,
     check_order_customers,
     day_from,
-    read_seed_file,
 )
 
 # A valid order to vary: two 250 g bags of Basalt Blend, delivered in Czechia.
@@ -77,9 +76,9 @@ def test_the_seed_files_follow_every_rule() -> None:
     """The committed seed files pass every check, including the references between them."""
     folder = settings.SEED_DIR / "lb01"
 
-    policies = read_seed_file(folder / "policies.yaml", PolicyFile)
-    customers = read_seed_file(folder / "customers.yaml", CustomerFile)
-    orders = read_seed_file(folder / "orders.yaml", OrderFile)
+    policies = read_data_file(folder / "policies.yaml", PolicyFile)
+    customers = read_data_file(folder / "customers.yaml", CustomerFile)
+    orders = read_data_file(folder / "orders.yaml", OrderFile)
     check_order_customers(orders, customers)
 
     assert policies.policies
@@ -227,38 +226,6 @@ def test_an_order_for_an_unknown_customer_is_refused() -> None:
 
     with pytest.raises(SeedError, match=re.escape("BB-2001 belongs to cus-0001, who isn't in customers.yaml")):
         check_order_customers(OrderFile.model_validate({"orders": [order()]}), customers)
-
-
-def test_reading_names_the_file_and_the_field(tmp_path: Path) -> None:
-    """A broken file is reported with its path and the path of the bad field inside it."""
-    path = tmp_path / "orders.yaml"
-    path.write_text("orders:\n  - number: BB-1\n", encoding="utf-8")
-
-    with pytest.raises(SeedError) as error:
-        read_seed_file(path, OrderFile)
-
-    assert str(path) in str(error.value)
-    assert "orders.0.number" in str(error.value)
-
-
-def test_reading_refuses_broken_yaml_and_missing_files(tmp_path: Path) -> None:
-    """Unparseable YAML and a missing file both stop the seed with a clear message."""
-    broken = tmp_path / "orders.yaml"
-    broken.write_text("orders: [unclosed\n", encoding="utf-8")
-
-    with pytest.raises(SeedError, match="isn't valid YAML"):
-        read_seed_file(broken, OrderFile)
-    with pytest.raises(SeedError, match="can't be read"):
-        read_seed_file(tmp_path / "missing.yaml", OrderFile)
-
-
-def test_reading_never_builds_python_objects_from_yaml(tmp_path: Path) -> None:
-    """YAML tags that would construct Python objects are refused, not executed."""
-    path = tmp_path / "orders.yaml"
-    path.write_text("orders: !!python/object/apply:os.system ['true']\n", encoding="utf-8")
-
-    with pytest.raises(SeedError, match="isn't valid YAML"):
-        read_seed_file(path, OrderFile)
 
 
 def test_relative_days_become_dates() -> None:

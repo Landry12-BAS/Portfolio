@@ -186,16 +186,25 @@ class Ticket(models.Model):
         FAILED = "failed", "The pipeline couldn't finish"
 
     class Category(models.TextChoices):
-        """What the ticket is about, as the classifier reads it."""
+        """What the ticket is about, as the classifier reads it. How it is handled is the route's business."""
 
-        DAMAGED = "damaged", "Damaged or stale coffee"
+        DAMAGED = "damaged", "Damaged, stale or faulty item"
         LATE = "late", "Late or lost delivery"
-        WRONG_ITEM = "wrong_item", "Wrong item"
+        WRONG_ITEM = "wrong_item", "Wrong or missing item"
         RETURN = "return", "Return or refund"
-        SUBSCRIPTION = "subscription", "Subscription change"
+        SUBSCRIPTION = "subscription", "Subscription question or change"
         ORDER_CHANGE = "order_change", "Change or cancel an order"
         PRODUCT = "product", "Product question"
         OTHER = "other", "Something else"
+
+    class EscalationReason(models.TextChoices):
+        """Why the pipeline handed a ticket to a person without drafting a reply."""
+
+        INJECTION = "injection", "The injection screen flagged the ticket"
+        UNCHECKED = "unchecked", "The injection screen couldn't check the ticket"
+        SENIOR_AGENT = "senior_agent", "A senior agent's matter: a legal claim, an allergy, fraud or personal data"
+        NO_POLICY = "no_policy", "No policy passage covers the question"
+        PIPELINE_ERROR = "pipeline_error", "A step failed, so a person takes over"
 
     public_id = models.CharField(max_length=24, unique=True, default=new_public_id, editable=False)
     # A keyed hash of the visitor's signed session, never the session token itself.
@@ -209,8 +218,7 @@ class Ticket(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECEIVED)
     category = models.CharField(max_length=20, choices=Category.choices, blank=True)
     order_number = models.CharField(max_length=7, blank=True, validators=[order_number_validator])
-    # Why the pipeline sent the ticket to a person without a usable draft, if it did.
-    escalation_reason = models.CharField(max_length=40, blank=True)
+    escalation_reason = models.CharField(max_length=20, choices=EscalationReason.choices, blank=True)
     run_id = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

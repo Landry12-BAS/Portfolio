@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from core.data_files import DataFileError
 from lb01.seed import SeedError, seed
 
 
@@ -37,7 +38,7 @@ class Command(BaseCommand):
         today = options["today"] if isinstance(options["today"], date) else timezone.localdate()
         try:
             report = seed(data, today)
-        except SeedError as error:
+        except (DataFileError, SeedError) as error:
             raise CommandError(str(error)) from None
         for line in report.lines():
             self.stdout.write(line)

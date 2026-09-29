@@ -16,17 +16,15 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
-import yaml
 from django.db import models, transaction
 from django.db.models import ProtectedError
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, model_validator
+from pydantic import Field, StringConstraints, model_validator
 
+from core.data_files import Key, StrictEntry, Text, read_data_file
 from lb01.models import Customer, Order, Policy, PolicyPassage
 
-# Stable names such as `returns.withdrawal` or `cus-0001`, as lb01.models.key_validator checks.
-Key = Annotated[str, StringConstraints(pattern=r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$", max_length=80)]
-# A title or a passage of text, trimmed, never empty.
-Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1_200)]
+# A policy title or passage, trimmed, never empty, and short enough to cite precisely.
+PolicyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1_200)]
 # A day relative to the seed's "today": 0 is today, -3 three days before. Never in the future.
 RelativeDay = Annotated[int, Field(ge=-365, le=0)]
 # The grinds Basalt & Bean sells (the coffee.grinds passage).
@@ -71,23 +69,17 @@ SENT_STATUSES = frozenset({Order.Status.SHIPPED, Order.Status.DELIVERED, Order.S
 
 
 class SeedError(Exception):
-    """A seed file is missing or unreadable, or it breaks one of the rules below."""
+    """The seed files contradict each other, or seeding would lose a visitor's data."""
 
 
-class SeedEntry(BaseModel):
-    """The base of every seed schema: an unknown field is an error, never silently dropped."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class Translated(SeedEntry):
+class Translated(StrictEntry):
     """A text in both of the site's languages."""
 
-    en: Text
-    cs: Text
+    en: PolicyText
+    cs: PolicyText
 
 
-class PassageEntry(SeedEntry):
+class PassageEntry(StrictEntry):
     """One citable passage, as policies.yaml writes it."""
 
     key: Key
@@ -95,7 +87,7 @@ class PassageEntry(SeedEntry):
     text: Translated
 
 
-class PolicyEntry(SeedEntry):
+class PolicyEntry(StrictEntry):
     """One policy and its passages, in the order the policy page shows them."""
 
     key: Key
@@ -111,7 +103,7 @@ class PolicyEntry(SeedEntry):
         return self
 
 
-class PolicyFile(SeedEntry):
+class PolicyFile(StrictEntry):
     """The whole of policies.yaml."""
 
     policies: list[PolicyEntry] = Field(min_length=1)
@@ -124,7 +116,7 @@ class PolicyFile(SeedEntry):
         return self
 
 
-class CustomerEntry(SeedEntry):
+class CustomerEntry(StrictEntry):
     """One synthetic customer."""
 
     key: Key
@@ -134,7 +126,7 @@ class CustomerEntry(SeedEntry):
     language: Literal["en", "cs"]
 
 
-class CustomerFile(SeedEntry):
+class CustomerFile(StrictEntry):
     """The whole of customers.yaml."""
 
     customers: list[CustomerEntry] = Field(min_length=1)
@@ -147,7 +139,7 @@ class CustomerFile(SeedEntry):
         return self
 
 
-class CoffeeLine(SeedEntry):
+class CoffeeLine(StrictEntry):
     """An order line for coffee: which one, how it is ground, and the bag size."""
 
     kind: Literal["coffee"]
@@ -158,7 +150,7 @@ class CoffeeLine(SeedEntry):
     price_czk: int = Field(ge=1)
 
 
-class EquipmentLine(SeedEntry):
+class EquipmentLine(StrictEntry):
     """An order line for brewing equipment."""
 
     kind: Literal["equipment"]
@@ -171,7 +163,7 @@ class EquipmentLine(SeedEntry):
 OrderLine = Annotated[CoffeeLine | EquipmentLine, Field(discriminator="kind")]
 
 
-class OrderEntry(SeedEntry):
+class OrderEntry(StrictEntry):
     """One synthetic order, with its dates relative to the seed's "today"."""
 
     number: Annotated[str, StringConstraints(pattern=r"^BB-\d{4}$")]
@@ -212,7 +204,7 @@ class OrderEntry(SeedEntry):
         return sum(line.price_czk * line.quantity for line in self.items)
 
 
-class OrderFile(SeedEntry):
+class OrderFile(StrictEntry):
     """The whole of orders.yaml."""
 
     orders: list[OrderEntry] = Field(min_length=1)
@@ -349,11 +341,13 @@ class SeedReport:
 def seed(directory: Path, today: date) -> SeedReport:
     """Check the seed files in `directory`, then make the lb01 tables match them in one transaction.
 
-    `today` is the day the orders' relative dates count from.
+    `today` is the day the orders' relative dates count from. A file that doesn't follow
+    its schema raises core.data_files.DataFileError; files that contradict each other,
+    or a customer removed while their tickets remain, raise SeedError.
     """
-    policy_file = read_seed_file(directory / "policies.yaml", PolicyFile)
-    customer_file = read_seed_file(directory / "customers.yaml", CustomerFile)
-    order_file = read_seed_file(directory / "orders.yaml", OrderFile)
+    policy_file = read_data_file(directory / "policies.yaml", PolicyFile)
+    customer_file = read_data_file(directory / "customers.yaml", CustomerFile)
+    order_file = read_data_file(directory / "orders.yaml", OrderFile)
     check_order_customers(order_file, customer_file)
 
     report = SeedReport()
@@ -367,23 +361,6 @@ def seed(directory: Path, today: date) -> SeedReport:
         tickets = sorted({str(row) for row in error.protected_objects})
         raise SeedError(f"A customer removed from customers.yaml still has tickets: {', '.join(tickets)}") from None
     return report
-
-
-def read_seed_file[Schema: SeedEntry](path: Path, schema: type[Schema]) -> Schema:
-    """Read one YAML seed file and check it against its schema, naming the file in any error."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as error:
-        raise SeedError(f"{path} can't be read: {error.strerror}") from None
-    try:
-        content = yaml.safe_load(text)
-    except yaml.YAMLError as error:
-        raise SeedError(f"{path} isn't valid YAML: {error}") from None
-    try:
-        return schema.model_validate(content)
-    except ValidationError as error:
-        problems = [f"{'.'.join(str(part) for part in issue['loc'])}: {issue['msg']}" for issue in error.errors()]
-        raise SeedError(f"{path} breaks the seed rules:\n- " + "\n- ".join(problems)) from None
 
 
 def check_order_customers(order_file: OrderFile, customer_file: CustomerFile) -> None:

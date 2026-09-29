@@ -13,8 +13,9 @@ import yaml
 from django.conf import settings
 from django.core.management import CommandError, call_command
 
+from core.data_files import read_data_file
 from lb01.models import Customer, Order, Policy, PolicyPassage, Ticket
-from lb01.seed import CustomerFile, OrderFile, PolicyFile, SeedError, read_seed_file, seed
+from lb01.seed import CustomerFile, OrderFile, PolicyFile, SeedError, seed
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb01"])]
 
@@ -38,9 +39,9 @@ def edit(path: Path, change: Callable[[dict[str, Any]], None]) -> None:
 
 def test_seeding_loads_every_file() -> None:
     """Every policy, passage, customer and order in the files ends up in the tables."""
-    policies = read_seed_file(SEED_FILES / "policies.yaml", PolicyFile).policies
-    customers = read_seed_file(SEED_FILES / "customers.yaml", CustomerFile).customers
-    orders = read_seed_file(SEED_FILES / "orders.yaml", OrderFile).orders
+    policies = read_data_file(SEED_FILES / "policies.yaml", PolicyFile).policies
+    customers = read_data_file(SEED_FILES / "customers.yaml", CustomerFile).customers
+    orders = read_data_file(SEED_FILES / "orders.yaml", OrderFile).orders
 
     report = seed(SEED_FILES, TODAY)
 
@@ -65,7 +66,7 @@ def test_seeding_twice_changes_nothing() -> None:
 
 def test_orders_are_stored_as_the_file_says_with_dates_from_today() -> None:
     """Relative days become dates counted from the given day, and lines and money are kept exactly."""
-    entry = read_seed_file(SEED_FILES / "orders.yaml", OrderFile).orders[0]
+    entry = read_data_file(SEED_FILES / "orders.yaml", OrderFile).orders[0]
 
     seed(SEED_FILES, TODAY)
     order = Order.objects.select_related("customer").get(number=entry.number)
@@ -79,7 +80,7 @@ def test_orders_are_stored_as_the_file_says_with_dates_from_today() -> None:
 
 def test_passages_keep_their_policy_and_order() -> None:
     """Each passage belongs to its policy, numbered from 1 in the file's order."""
-    first_policy = read_seed_file(SEED_FILES / "policies.yaml", PolicyFile).policies[0]
+    first_policy = read_data_file(SEED_FILES / "policies.yaml", PolicyFile).policies[0]
 
     seed(SEED_FILES, TODAY)
 
@@ -165,7 +166,7 @@ def test_the_command_reports_a_broken_file(seed_copy: Path) -> None:
     """A rule broken in a seed file stops the command with the file's name, and writes nothing."""
     edit(seed_copy / "orders.yaml", lambda content: content["orders"][0].update(total_czk=1))
 
-    with pytest.raises(CommandError, match=re.escape("orders.yaml breaks the seed rules")):
+    with pytest.raises(CommandError, match=re.escape("orders.yaml doesn't follow its schema")):
         call_command("seed_lb01", "--data", str(seed_copy), stdout=StringIO())
 
     assert not Order.objects.exists()

@@ -399,6 +399,7 @@ packages/contracts/       Shared Zod schemas and event types
 packages/api-clients/     TypeScript clients generated from OpenAPI
 python/lb-common/         Shared Python: gateway client, tracer, run context
 data/seed/                Deterministic synthetic data for Basalt & Bean
+evals/                    Golden sets, one folder per system, graded by rules in CI
 infra/                    docker-compose.yml, Caddyfile, deploy scripts
 docs/                     STACK.md, PLAYBOOK.md, decision records
 ```

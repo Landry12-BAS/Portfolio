@@ -224,11 +224,11 @@ class Migration(migrations.Migration):
                     models.CharField(
                         blank=True,
                         choices=[
-                            ("damaged", "Damaged or stale coffee"),
+                            ("damaged", "Damaged, stale or faulty item"),
                             ("late", "Late or lost delivery"),
-                            ("wrong_item", "Wrong item"),
+                            ("wrong_item", "Wrong or missing item"),
                             ("return", "Return or refund"),
-                            ("subscription", "Subscription change"),
+                            ("subscription", "Subscription question or change"),
                             ("order_change", "Change or cancel an order"),
                             ("product", "Product question"),
                             ("other", "Something else"),
@@ -246,7 +246,26 @@ class Migration(migrations.Migration):
                         ],
                     ),
                 ),
-                ("escalation_reason", models.CharField(blank=True, max_length=40)),
+                (
+                    "escalation_reason",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("injection", "The injection screen flagged the ticket"),
+                            (
+                                "unchecked",
+                                "The injection screen couldn't check the ticket",
+                            ),
+                            (
+                                "senior_agent",
+                                "A senior agent's matter: a legal claim, an allergy, fraud or personal data",
+                            ),
+                            ("no_policy", "No policy passage covers the question"),
+                            ("pipeline_error", "A step failed, so a person takes over"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
                 ("run_id", models.CharField(blank=True, max_length=64)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),

@@ -64,6 +64,9 @@ REDIS_PREFIX = ENVIRONMENT.redis_prefix
 
 # The synthetic data the seed commands load: one folder per system, such as data/seed/lb01.
 SEED_DIR = Path(ENVIRONMENT.seed_dir) if ENVIRONMENT.seed_dir else BASE_DIR.parents[1] / "data" / "seed"
+# The golden sets the evals grade against, such as evals/lb01/golden.yaml. They are read
+# in development and CI only, never by the deployed service.
+EVALS_DIR = BASE_DIR.parents[1] / "evals"
 
 # Logs go to the console as plain lines. Request bodies never reach them.
 LOGGING = {
