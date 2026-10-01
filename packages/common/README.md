@@ -93,3 +93,8 @@ start `services/gateway`'s own app on a fake provider and a real Redis (Testcont
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` where Docker isn't available), and drive it
 with this client: tokens, run headers, chat and JSON answers, error codes, and spans that
 nest across the two sides.
+
+`@lb/common/testing` is for other packages' tests: it makes the site's key pair and mints
+visitor tokens the way the site does (`makeSiteKeys`, `mintVisitorToken`), so a service can
+test its own token check without a copy of the minting code. Never import it from a service's
+own code.
