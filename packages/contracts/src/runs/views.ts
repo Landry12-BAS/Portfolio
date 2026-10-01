@@ -67,6 +67,8 @@ export const workflowVersionSchema = z.strictObject({
   createdAt: timestamp,
   // Model calls it took: 1 or 2 for a generated version, 0 otherwise.
   modelCalls: z.int().min(0),
+  // The id the gateway and the tracer know the generation by, to open its trace in the Scope; null when no model wrote this version.
+  traceRunId: z.string().max(64).nullable(),
 })
 
 /** A workflow as the workflow list shows it. */

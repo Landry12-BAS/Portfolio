@@ -104,11 +104,12 @@ export async function ensureSchema<Tables extends Record<string, unknown>>(datab
 export async function applyMigrations<Tables extends Record<string, unknown>>(database: Database<Tables>, migrationsFolder: string): Promise<number> {
   const migrations = readMigrationFiles({ migrationsFolder })
   const table = sql`${sql.identifier(database.schema)}.${sql.identifier(MIGRATIONS_TABLE)}`
-  await ensureSchema(database)
   const client = await database.pool.connect()
   try {
     const db = drizzle(client)
+    // The lock comes first: two processes starting together must not both try to create the schema.
     await db.execute(sql`SELECT pg_advisory_lock(hashtextextended(${`${database.schema}.migrations`}, 0))`)
+    await ensureSchema(database)
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ${table} (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint)`)
     const last = await db.execute<{ created_at: string }>(sql`SELECT created_at FROM ${table} ORDER BY created_at DESC LIMIT 1`)
     const lastMillis = Number(last.rows[0]?.created_at ?? 0)

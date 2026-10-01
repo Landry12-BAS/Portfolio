@@ -117,7 +117,7 @@ describe('API shapes', () => {
 
   it('describes a workflow and a run the way the service builds them', () => {
     const now = '2026-10-01T09:00:00.000Z'
-    const workflow = { id: RUN, name: 'Wholesale', version: 1, createdAt: now, updatedAt: now, expiresAt: now, description: null, graph: wholesaleGraph, versions: [{ version: 1, origin: 'sample', createdAt: now, modelCalls: 0 }] }
+    const workflow = { id: RUN, name: 'Wholesale', version: 1, createdAt: now, updatedAt: now, expiresAt: now, description: null, graph: wholesaleGraph, versions: [{ version: 1, origin: 'sample', createdAt: now, modelCalls: 0, traceRunId: null }] }
     const run = { id: RUN, workflowId: RUN, workflowName: 'Wholesale', version: 1, rootRunId: RUN, replayOf: null, status: 'queued', createdAt: now, finishedAt: null, input: {}, replayedBy: null, steps: [], events: [] }
 
     expect(workflowViewSchema.safeParse(workflow).success).toBe(true)

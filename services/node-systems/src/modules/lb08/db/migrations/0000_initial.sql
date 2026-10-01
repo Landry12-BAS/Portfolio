@@ -73,7 +73,6 @@ CREATE TABLE "lb08"."runs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"started_at" timestamp with time zone,
 	"finished_at" timestamp with time zone,
-	"expires_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "runs_status_check" CHECK ("lb08"."runs"."status" in ('queued', 'running', 'awaiting_approval', 'succeeded', 'failed'))
 );
 --> statement-breakpoint
@@ -114,6 +113,7 @@ CREATE TABLE "lb08"."workflow_versions" (
 	"description" text,
 	"graph" jsonb NOT NULL,
 	"model_calls" integer DEFAULT 0 NOT NULL,
+	"trace_run_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "workflow_versions_origin_check" CHECK ("lb08"."workflow_versions"."origin" in ('generated', 'sample', 'edited'))
 );

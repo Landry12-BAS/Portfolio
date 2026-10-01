@@ -54,6 +54,8 @@ export const workflowVersions = lb08.table('workflow_versions', {
   graph: jsonb('graph').$type<WorkflowGraph>().notNull(),
   // Gateway calls it took: one or two for a generated version, none otherwise.
   modelCalls: integer('model_calls').notNull().default(0),
+  // The id the gateway and the tracer know that generation by, so the Scope can open its trace.
+  traceRunId: text('trace_run_id'),
   createdAt: now('created_at'),
 }, table => [
   uniqueIndex('workflow_versions_number_idx').on(table.workflowId, table.version),
@@ -77,7 +79,6 @@ export const runs = lb08.table('runs', {
   createdAt: now('created_at'),
   startedAt: moment('started_at'),
   finishedAt: moment('finished_at'),
-  expiresAt: moment('expires_at').notNull(),
 }, table => [
   index('runs_session_idx').on(table.sessionKey, table.createdAt),
   index('runs_workflow_idx').on(table.workflowId),

@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { buildApp } from '../../src/core/app.ts'
 import { SECURITY_HEADERS } from '../../src/core/security-headers.ts'
+import { bodyTextIsSafe, isSafeText } from '../../src/core/text-guard.ts'
 import { fakeModule } from '../support/fake-module.ts'
 
 const site = makeSiteKeys()
@@ -101,6 +102,54 @@ describe('errors', () => {
 
     expect(response.statusCode).toBe(500)
     expect(response.body).not.toContain('must not be sent')
+  })
+})
+
+describe('the check on request text', () => {
+  it('lets ordinary text through: accents, emoji, tabs and line breaks', () => {
+    for (const text of ['Café Lumen', 'Velkoobchodní objednávka nad 500 €', 'two\nlines\tand a tab', 'a coffee \u{2615} and a pair \u{1F600}']) expect(isSafeText(text), text).toBe(true)
+  })
+
+  it.each([
+    ['a NUL character, which Postgres cannot store', 'a\u0000b'],
+    ['an escape character', 'a\u001Bb'],
+    ['a delete character', 'a\u007Fb'],
+    ['a C1 control character', 'a\u0085b'],
+    ['a right-to-left override', 'a\u202Eb'],
+    ['a bidirectional isolate', 'a\u2066b'],
+    ['half of an emoji', 'a\uD83Db'],
+  ])('refuses text with %s', (_name, text) => {
+    expect(isSafeText(text)).toBe(false)
+  })
+
+  it('checks every string and every key, however deep they sit', () => {
+    expect(bodyTextIsSafe({ a: [{ b: 'fine' }] })).toBe(true)
+    expect(bodyTextIsSafe({ a: [{ b: 'bad\u0000' }] })).toBe(false)
+    expect(bodyTextIsSafe({ 'bad\u0000key': 'fine' })).toBe(false)
+    expect(bodyTextIsSafe(['x', 'y', 'z\u202E'])).toBe(false)
+  })
+
+  it('gives up on a body deeper or wider than any honest request, without recursing', () => {
+    let deep: unknown = 'leaf'
+    for (let level = 0; level < 100_000; level += 1) deep = [deep]
+    const wide = Array.from({ length: 6_000 }, () => 'x')
+
+    expect(bodyTextIsSafe(deep)).toBe(false)
+    expect(bodyTextIsSafe(wide)).toBe(false)
+  })
+
+  it('answers a body with unsafe text with 422 before any route validates it, and never repeats the text', async () => {
+    const response = await app.inject({ method: 'POST', url: '/api/lb99/echo', headers: { ...authorised, 'content-type': 'application/json' }, payload: '{"text": "a\\u0000b"}' })
+
+    expect(response.statusCode).toBe(422)
+    expect(response.json()).toEqual({ error: { code: 'invalid_request', message: 'Text can\'t hold control characters or unpaired surrogates.' } })
+  })
+
+  it('refuses a lone surrogate sent as an escape in the JSON', async () => {
+    const response = await app.inject({ method: 'POST', url: '/api/lb99/echo', headers: { ...authorised, 'content-type': 'application/json' }, payload: '{"text": "\\ud83d"}' })
+
+    expect(response.statusCode).toBe(422)
+    expect(response.json().error.code).toBe('invalid_request')
   })
 })
 

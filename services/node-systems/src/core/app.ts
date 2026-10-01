@@ -1,6 +1,6 @@
 // Builds the Node systems' HTTP server: the security headers, the JSON error handling, the
-// OpenAPI document, the health checks and every system's routes. `main.ts` starts it for
-// real; the tests build it with fakes around it.
+// check on request text, the OpenAPI document, the health checks and every system's
+// routes. `main.ts` starts it for real; the tests build it with fakes around it.
 import { randomUUID } from 'node:crypto'
 
 import Fastify from 'fastify'
@@ -13,6 +13,7 @@ import type { RunningModule } from './module.ts'
 import { registerOpenApi } from './openapi.ts'
 import type { SchemaNames } from './openapi.ts'
 import { registerSecurityHeaders } from './security-headers.ts'
+import { registerTextGuard } from './text-guard.ts'
 
 // The largest request body any route accepts. A workflow graph is a few kilobytes.
 const BODY_LIMIT_BYTES = 262_144
@@ -43,6 +44,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   registerSecurityHeaders(app)
   registerErrorHandling(app)
+  registerTextGuard(app)
   await registerOpenApi(app, options.schemaNames ?? {})
   registerHealth(app, options.modules)
 
