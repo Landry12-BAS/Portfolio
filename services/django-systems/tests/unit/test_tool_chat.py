@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
 from openai.types.chat.chat_completion_message_function_tool_call import Function
 
@@ -13,6 +14,7 @@ from core.tool_chat import (
     ToolDefinition,
     ToolReply,
     call_id,
+    gateway_safe_name,
     openai_message,
     openai_tool,
 )
@@ -118,6 +120,18 @@ def test_a_missing_or_oversized_call_id_is_replaced() -> None:
     assert call_id("", 2) == "call_2"
     assert call_id(None, 1) == "call_1"
     assert call_id("x" * 129, 3) == "call_3"
+
+
+@pytest.mark.parametrize("name", ["functions.hold_slot", "hold slot", "hold_slot!", "x" * 65, "h\u00f3ld", ""])
+def test_a_tool_name_the_gateway_would_refuse_is_sent_back_as_unknown_tool(name: str) -> None:
+    """A made-up name must not make the gateway reject the whole next request, so it goes back as a placeholder."""
+    call = ToolCall("call_a", name, "{}")
+
+    sent = openai_message(ToolChatMessage("assistant", None, tool_calls=(call,)))
+
+    assert sent["tool_calls"][0]["function"]["name"] == "unknown_tool"  # type: ignore[typeddict-item,index]
+    assert gateway_safe_name("hold_slot") == "hold_slot"
+    assert gateway_safe_name("a-b_9" * 12) == "a-b_9" * 12
 
 
 def test_messages_become_the_sdks_typed_messages_with_calls_and_their_answers() -> None:

@@ -12,6 +12,7 @@ combine with tools, and it asks for temperature 0 so the same conversation gets 
 answer.
 """
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
@@ -32,6 +33,10 @@ from lb_common.gateway import Gateway
 
 # The gateway accepts tool call IDs of 1 to 128 characters; a provider that sends none gets one made here.
 MAX_CALL_ID_LENGTH = 128
+# Tool names as the gateway accepts them (services/gateway/src/schemas/chat.ts): ASCII letters, digits, underscores
+# and hyphens, up to 64.
+TOOL_NAME = re.compile(r"[\w-]{1,64}", re.ASCII)
+UNKNOWN_TOOL = "unknown_tool"
 
 
 @dataclass(frozen=True)
@@ -93,10 +98,20 @@ def openai_tool(tool: ToolDefinition) -> ChatCompletionFunctionToolParam:
     )
 
 
+def gateway_safe_name(name: str) -> str:
+    """Return a tool name as the gateway accepts it back, or `unknown_tool` for one it would refuse.
+
+    A model may invent a name with spaces or dots in it. The call is refused by this system, but it
+    is then sent back in the conversation, and the gateway rejects a request that carries such a
+    name, which would end the whole turn over one bad call.
+    """
+    return name if TOOL_NAME.fullmatch(name) else UNKNOWN_TOOL
+
+
 def openai_call(call: ToolCall) -> ChatCompletionMessageFunctionToolCallParam:
     """Turn a call the model made into the SDK's typed form, to send back in the conversation."""
     return ChatCompletionMessageFunctionToolCallParam(
-        id=call.id, type="function", function={"name": call.name, "arguments": call.arguments}
+        id=call.id, type="function", function={"name": gateway_safe_name(call.name), "arguments": call.arguments}
     )
 
 
