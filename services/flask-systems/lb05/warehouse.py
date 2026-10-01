@@ -213,8 +213,20 @@ def open_connection(path: Path, memory_limit: str, threads: int) -> DuckDBPyConn
         connection = duckdb.connect(str(path), read_only=True, config=config)
     except duckdb.Error as error:
         raise WarehouseError(f"The warehouse at {path} can't be opened: {short_message(error)}") from None
-    connection.execute("SET lock_configuration = true")
+    if not is_configuration_locked(connection):
+        connection.execute("SET lock_configuration = true")
     return connection
+
+
+def is_configuration_locked(connection: DuckDBPyConnection) -> bool:
+    """Tell whether the database's configuration is already locked.
+
+    DuckDB shares one database between every connection a process opens to the same file, and
+    that database stays locked, so a second open must not try to lock it again. `verify_lockdown`
+    still proves the lock before anything is served.
+    """
+    row = connection.execute("SELECT value FROM duckdb_settings() WHERE name = 'lock_configuration'").fetchone()
+    return row is not None and str(row[0]).lower() == "true"
 
 
 def verify_lockdown(connection: DuckDBPyConnection) -> None:

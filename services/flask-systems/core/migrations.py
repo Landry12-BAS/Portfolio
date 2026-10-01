@@ -58,6 +58,10 @@ def run_migrations(environment: Any, metadata: MetaData, schema: str) -> None:
         return
     settings = read_environment(os.environ)
     url = (settings.lb05_database_url if schema == "lb05" else None) or settings.database_url
-    with create_system_engine(url, schema).begin() as connection:
-        ensure_schema(connection, schema)
-        migrate_on(environment, connection, metadata)
+    engine = create_system_engine(url, schema)
+    try:
+        with engine.begin() as connection:
+            ensure_schema(connection, schema)
+            migrate_on(environment, connection, metadata)
+    finally:
+        engine.dispose()

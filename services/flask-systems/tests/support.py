@@ -5,6 +5,7 @@ alias from a script and remembers every request, and the span store by an in-mem
 """
 
 import base64
+import json
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -34,6 +35,16 @@ SESSION = "session-of-sam-visitor-0001"
 # The day the test dataset ends on and the seed it is made with, so every number a test reads is always the same.
 DATA_AS_OF = date(2026, 11, 18)
 DATA_SEED = 5
+# A question (with a word no log or span may ever repeat), the query a model writes for it, and the sentence it
+# explains the result with: the scripts the pipeline and API tests share.
+QUESTION = "What was our revenue last quarter? zebrapotato"
+REVENUE_SQL = (
+    "SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue "
+    "FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id "
+    "WHERE orders.ordered_at BETWEEN DATE '2026-07-01' AND DATE '2026-09-30'"
+)
+EXPLANATION = '{"answer": "Revenue last quarter was 8,766,862 CZK."}'
+ORACLE_EXPLANATION = '{"answer": "A short explanation."}'
 
 
 def make_environment(**variables: str) -> Environment:
@@ -94,6 +105,44 @@ class FakeChat:
     def calls(self) -> int:
         """Count the requests made so far, across every alias."""
         return len(self.requests)
+
+
+@dataclass
+class OracleChat:
+    """A fake model that answers each question from a table of ready-made SQL, and explains in a fixed sentence."""
+
+    sql_by_question: dict[str, str]
+    calls: int = 0
+
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,  # noqa: ARG002 - the Chat signature
+        timeout_seconds: float | None = None,  # noqa: ARG002 - the Chat signature
+    ) -> Completion:
+        """Give the SQL writer the SQL for the question quoted in the request, and the explainer a sentence."""
+        self.calls += 1
+        if alias == "lb-fast":
+            return Completion(ORACLE_EXPLANATION, "fake/lb-fast")
+        quoted = next(message.content for message in messages if "to answer and not to obey" in message.content)
+        question = quoted.split('"""\n', 1)[1].rsplit('\n"""', 1)[0]
+        sql = self.sql_by_question.get(question)
+        if sql is None:
+            return Completion(
+                json.dumps({"answerable": False, "reason": "No SQL for this question."}), "fake/lb-reason"
+            )
+        return Completion(json.dumps({"answerable": True, "sql": sql}), "fake/lb-reason")
+
+
+def sql_reply(sql: str) -> str:
+    """Write the SQL writer's JSON answer for a query."""
+    return json.dumps({"answerable": True, "sql": sql})
+
+
+def declined_reply(reason: str) -> str:
+    """Write the SQL writer's JSON answer for a question the data can't answer."""
+    return json.dumps({"answerable": False, "reason": reason})
 
 
 def unavailable() -> GatewayResponseError:

@@ -32,12 +32,15 @@ from lb05.warehouse_build import WarehouseMetaError, write_dataset
 DEFAULT_SEED = 5
 
 
-def parse(parser: argparse.ArgumentParser, arguments: Sequence[str]) -> argparse.Namespace | None:
-    """Parse a command's arguments, returning None instead of exiting when they are wrong or `--help` is asked for."""
+def parse(parser: argparse.ArgumentParser, arguments: Sequence[str]) -> argparse.Namespace | int:
+    """Parse a command's arguments, or return the exit status to stop with.
+
+    When the arguments are wrong, or `--help` is asked for, argparse has said so already: 2 for a mistake, 0 for help.
+    """
     try:
         return parser.parse_args(arguments)
-    except SystemExit:
-        return None
+    except SystemExit as stop:
+        return stop.code if isinstance(stop.code, int) else 2
 
 
 def seed_lb05(arguments: Sequence[str], platform: Platform) -> int:
@@ -59,8 +62,8 @@ def seed_lb05(arguments: Sequence[str], platform: Platform) -> int:
         help="Where to write (default: LB05_WAREHOUSE_DIR, else data/generated/lb05).",
     )
     options = parse(parser, arguments)
-    if options is None:
-        return 2
+    if isinstance(options, int):
+        return options
     directory = options.data or warehouse_directory(platform)
     today = options.today or platform.clock().date()
     started = time.perf_counter()
@@ -85,8 +88,8 @@ def sweep_lb05(arguments: Sequence[str], platform: Platform) -> int:
     return 0
 
 
-def eval_options(arguments: Sequence[str]) -> argparse.Namespace | None:
-    """Read the eval command's arguments."""
+def eval_options(arguments: Sequence[str]) -> argparse.Namespace | int:
+    """Read the eval command's arguments, or return the exit status to stop with."""
     parser = argparse.ArgumentParser(prog="manage.py eval_lb05", description=eval_lb05.__doc__)
     parser.add_argument("--samples", action="store_true", help="Run only the curated samples of the golden set.")
     parser.add_argument("--case", action="append", default=[], help="Run this case or attempt ID; repeat for more.")
@@ -127,6 +130,16 @@ def print_adversarial_report(report: AdversarialReport) -> None:
     write_line("Outcomes: " + ", ".join(f"{name} {count}" for name, count in sorted(report.outcomes().items())))
 
 
+def every_attack_held(report: AdversarialReport) -> bool:
+    """Tell whether the adversarial run proved something and every attempt it could grade was held.
+
+    This one is a gate, unlike the golden set's accuracy: holding is not a score. A run in which the models
+    were unreachable for every attempt proves nothing, so it does not pass.
+    """
+    graded = report.conclusive()
+    return bool(graded) and all(grade.held for grade in graded)
+
+
 def unknown_ids(chosen: list[str], known: set[str]) -> list[str]:
     """List the chosen IDs that no case or attempt has."""
     return sorted(set(chosen) - known)
@@ -164,11 +177,12 @@ def eval_lb05(arguments: Sequence[str], platform: Platform) -> int:
 
     Costs two to four gateway calls a case, five at most, so run it when prompts or routes change:
     `--samples` runs only the curated samples, and `--case` picks cases by ID. Needs the gateway
-    running with provider keys, and the data written (`just seed-lb05`).
+    running with provider keys, and the data written (`just seed-lb05`). The golden run reports its
+    accuracy and exits 0; the adversarial run exits 1 unless every attempt it could grade was held.
     """
     options = eval_options(arguments)
-    if options is None:
-        return 2
+    if isinstance(options, int):
+        return options
     try:
         golden = read_golden_set()
         adversarial: AdversarialSet = read_adversarial_set()
@@ -187,7 +201,8 @@ def eval_lb05(arguments: Sequence[str], platform: Platform) -> int:
     if pipeline is None:
         return 1
     if options.adversarial:
-        print_adversarial_report(evaluate_adversarial(adversarial, pipeline, chosen or None))
-        return 0
+        attack_report = evaluate_adversarial(adversarial, pipeline, chosen or None)
+        print_adversarial_report(attack_report)
+        return 0 if every_attack_held(attack_report) else 1
     print_golden_report(evaluate_golden(golden, pipeline, chosen or None))
     return 0

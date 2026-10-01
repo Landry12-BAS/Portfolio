@@ -12,7 +12,7 @@ from pathlib import Path
 from config.environment import ConfigurationError, read_environment
 from core.app import create_app, render_openapi
 from core.migrations import upgrade
-from core.platform import Platform, connect_platform
+from core.platform import Platform, close_platform, connect_platform
 from core.registry import Command, SystemModule
 
 # The folder manage.py lives in: services/flask-systems.
@@ -76,4 +76,7 @@ def main(argv: Sequence[str], environ: Mapping[str, str], systems: Sequence[Syst
     except ConfigurationError as error:
         write_line(str(error), error=True)
         return 1
-    return commands[argv[0]](argv[1:], platform)
+    try:
+        return commands[argv[0]](argv[1:], platform)
+    finally:
+        close_platform(platform)

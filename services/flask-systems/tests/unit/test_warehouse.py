@@ -450,3 +450,17 @@ def test_closing_the_warehouse_stops_queries(small_data: Path, tmp_path: Path) -
     closing.close()
     with pytest.raises(duckdb.Error):
         closing.run("SELECT 1")
+
+
+def test_a_dataset_opened_twice_in_one_process_is_locked_down_both_times(small_data: Path, tmp_path: Path) -> None:
+    """DuckDB shares one locked database between a process's connections to a file: the second open must still work."""
+    copy = tmp_path / "twice"
+    shutil.copytree(small_data, copy)
+    first = Warehouse.open(copy, "1GB", 2)
+    second = Warehouse.open(copy, "1GB", 2)
+    try:
+        verify_lockdown(second._connection)
+        assert second.run("SELECT COUNT(*) FROM orders").rows == first.run("SELECT COUNT(*) FROM orders").rows
+    finally:
+        first.close()
+        second.close()

@@ -34,14 +34,18 @@ from lb05.semantic_layer import SemanticLayer
 from lb05.sql_policy import SqlPolicy, ValidatedQuery
 from lb05.warehouse import PlanReport, QueryResult, ResultColumn, Warehouse
 from lb_common.tracing import Tracer
-from tests.support import SESSION, FakeChat, MemorySpanWriter, unavailable
-
-QUESTION = "What was our revenue last quarter? zebrapotato"
-REVENUE_SQL = (
-    "SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue "
-    "FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id "
-    "WHERE orders.ordered_at BETWEEN DATE '2026-07-01' AND DATE '2026-09-30'"
+from tests.support import (
+    EXPLANATION,
+    QUESTION,
+    REVENUE_SQL,
+    SESSION,
+    FakeChat,
+    MemorySpanWriter,
+    declined_reply,
+    sql_reply,
+    unavailable,
 )
+
 MONTHLY_SQL = (
     "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, COUNT(*) AS orders FROM orders GROUP BY 1 ORDER BY 1"
 )
@@ -51,17 +55,6 @@ LOOP_SQL = (
     "FROM orders AS o"
 )
 RUNTIME_ERROR_SQL = "SELECT CAST(orders.status AS INTEGER) AS n FROM orders"
-EXPLANATION = '{"answer": "Revenue last quarter was 8,766,862 CZK."}'
-
-
-def sql_reply(sql: str) -> str:
-    """Write the SQL writer's JSON answer for a query."""
-    return json.dumps({"answerable": True, "sql": sql})
-
-
-def declined_reply(reason: str) -> str:
-    """Write the SQL writer's JSON answer for a question the data can't answer."""
-    return json.dumps({"answerable": False, "reason": reason})
 
 
 @dataclass

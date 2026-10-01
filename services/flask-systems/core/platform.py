@@ -74,6 +74,12 @@ def connect_gateway(environment: Environment) -> Gateway | None:
     return Gateway(settings, tokens)
 
 
+def close_platform(platform: Platform) -> None:
+    """Close what a finished command opened: every engine's pooled connections, so none is left to be dropped."""
+    for engine in platform.engines.values():
+        engine.dispose()
+
+
 def connect_platform(environment: Environment) -> Platform:
     """Build the platform the running service uses: engines, the gateway if configured, and spans to Redis."""
     gateway = connect_gateway(environment)

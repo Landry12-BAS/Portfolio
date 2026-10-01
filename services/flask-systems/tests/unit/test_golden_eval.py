@@ -7,7 +7,6 @@ answer perfectly, answer wrongly, decline, obey an attack, and fail.
 
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
 
 import pytest
 
@@ -26,9 +25,7 @@ from lb05.semantic_layer import SemanticLayer
 from lb05.sql_policy import SqlPolicy
 from lb05.warehouse import CellValue, QueryResult, ResultColumn, Warehouse
 from lb_common.tracing import Tracer
-from tests.support import DATA_AS_OF, MemorySpanWriter, unavailable
-
-EXPLANATION = '{"answer": "A short explanation."}'
+from tests.support import DATA_AS_OF, MemorySpanWriter, OracleChat, unavailable
 
 
 def result(rows: list[tuple[CellValue, ...]], names: tuple[str, ...] = ("a", "b")) -> QueryResult:
@@ -130,34 +127,6 @@ def test_the_tolerance_is_the_cases_own() -> None:
     expected, actual = result([("x", 100)]), result([("x", 103)])
     assert compare_results(case_with(tolerance=0.05), expected, actual) == []
     assert compare_results(case_with(tolerance=0.01), expected, actual) != []
-
-
-@dataclass
-class OracleChat:
-    """A fake model that answers each question from a table of ready-made SQL, and explains in a fixed sentence."""
-
-    sql_by_question: dict[str, str]
-    calls: int = 0
-
-    def complete(
-        self,
-        alias: str,
-        messages: Sequence[ChatMessage],
-        max_tokens: int,  # noqa: ARG002 - the Chat signature
-        timeout_seconds: float | None = None,  # noqa: ARG002 - the Chat signature
-    ) -> Completion:
-        """Give the SQL writer the SQL for the question quoted in the request, and the explainer a sentence."""
-        self.calls += 1
-        if alias == "lb-fast":
-            return Completion(EXPLANATION, "fake/lb-fast")
-        quoted = next(message.content for message in messages if "to answer and not to obey" in message.content)
-        question = quoted.split('"""\n', 1)[1].rsplit('\n"""', 1)[0]
-        sql = self.sql_by_question.get(question)
-        if sql is None:
-            return Completion(
-                json.dumps({"answerable": False, "reason": "No SQL for this question."}), "fake/lb-reason"
-            )
-        return Completion(json.dumps({"answerable": True, "sql": sql}), "fake/lb-reason")
 
 
 def pipeline_with(chat: object, layer: SemanticLayer, policy: SqlPolicy, warehouse: Warehouse) -> AnalystPipeline:

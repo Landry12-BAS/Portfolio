@@ -14,8 +14,8 @@ import logging
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from flask.typing import ResponseReturnValue
-from pydantic import BaseModel, StringConstraints, field_validator
+from flask import Response
+from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.app import COMMON_RESPONSES
@@ -65,7 +65,9 @@ type Question = Annotated[
 
 
 class AskIn(BaseModel):
-    """A visitor's question, in their own words."""
+    """A visitor's question, in their own words. Nothing else is accepted next to it."""
+
+    model_config = ConfigDict(extra="forbid")
 
     question: Question
 
@@ -338,7 +340,7 @@ def answer_out(answer: Answer, remaining: int) -> AnswerOut:
     )
 
 
-def not_admitted(admission: Admission) -> ResponseReturnValue:
+def not_admitted(admission: Admission) -> Response:
     """Answer a question the ledger did not admit: 429, for the day's questions used or one still running."""
     if admission.reason == "busy":
         return error_response(429, "question_running", BUSY_MESSAGE)
@@ -369,7 +371,7 @@ def build_blueprint(service: Lb05Service | None, web_token_key: str | None) -> A
         layer_document = semantic_layer_document(service.layer, service.warehouse.meta.as_of).model_dump(mode="json")
 
     @blueprint.post("/ask", responses={200: AnswerOut, 429: ErrorOut})
-    def ask(body: AskIn) -> ResponseReturnValue:
+    def ask(body: AskIn) -> Response | dict[str, Any]:
         """Answer a question about the sales data, synchronously: the SQL, the table, a chart and an explanation.
 
         Counts against the visitor's 25 questions a day, which the service enforces itself, and a
@@ -391,14 +393,14 @@ def build_blueprint(service: Lb05Service | None, web_token_key: str | None) -> A
         return answer_out(answer, admission.remaining + int(refund)).model_dump(mode="json")
 
     @blueprint.get("/semantic-layer", responses={200: SemanticLayerOut})
-    def semantic_layer() -> ResponseReturnValue:
+    def semantic_layer() -> Response | dict[str, Any]:
         """Read the semantic layer: the tables, joins, metrics and slices a question may use, and what each means."""
         if layer_document is None:
             return error_response(503, "unavailable", NOT_SERVING_MESSAGE)
         return layer_document
 
     @blueprint.get("/quota", responses={200: QuotaOut})
-    def quota() -> ResponseReturnValue:
+    def quota() -> Response | dict[str, Any]:
         """Read how many questions the visitor has left today, and the limits LB-05 enforces."""
         if service is None:
             return error_response(503, "unavailable", NOT_SERVING_MESSAGE)
