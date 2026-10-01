@@ -566,6 +566,17 @@ def test_a_czech_first_message_is_recognised_without_a_model_and_the_receipts_fo
     assert result.reply.startswith("Termín pá 2. 10., 18:00–18:45 (Degustace kávy) pro 4 osoby je pro vás podržen")
 
 
+def test_the_models_czech_is_typeset_like_the_codes() -> None:
+    """A one-letter word is tied to the next with a no-break space, so no line can end on it."""
+    rig = build_rig([say("Mám volný termín v 18:00 a také u okna.")])
+    conversation = rig.conversation()
+
+    result = rig.concierge.take_turn(conversation, "Dobrý den, chtěla bych se u vás objednat na degustaci.")
+
+    nbsp = chr(0xA0)
+    assert result.reply == f"Mám volný termín v{nbsp}18:00 a{nbsp}také u{nbsp}okna."
+
+
 def test_a_first_message_the_code_cant_read_costs_one_fast_model_call() -> None:
     """A bare name has no language the code can read, so lb-fast is asked once and the answer is kept."""
     rig = build_rig([say("Grüß Gott! Was möchten Sie buchen?")], language_replies=['{"language": "de"}'])

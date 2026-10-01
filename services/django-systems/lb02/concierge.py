@@ -57,7 +57,7 @@ from lb02.limits import (
     MESSAGES_PER_SESSION,
 )
 from lb02.live import ChannelLayerNotifier
-from lb02.messages import Receipt, has_wording, render, when_text
+from lb02.messages import Receipt, has_wording, render, typeset_czech, when_text
 from lb02.models import Conversation, Handoff, Offering, Reservation
 from lb02.privacy import MaskedMessage, mask, strip_control_characters
 from lb02.prompts import (
@@ -443,7 +443,8 @@ class Concierge:
             return self.lost_the_thread(conversation, language, outcomes)
         conversation.failed_turns = 0
         conversation.save(update_fields=["failed_turns", "updated_at"])
-        return self.view(conversation, Reply(text), outcomes)
+        # Czech is typeset the way the code's own Czech is, so no line may end on a one-letter word.
+        return self.view(conversation, Reply(typeset_czech(text) if language == "cs" else text), outcomes)
 
     def lost_the_thread(self, conversation: Conversation, language: str, outcomes: list[ToolOutcome]) -> TurnResult:
         """Ask the visitor to say it again when the model gave nothing, and hand over the second time running."""

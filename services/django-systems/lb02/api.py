@@ -23,6 +23,7 @@ from core.visitors import Visitor, VisitorBearer
 from lb02.booking import BookingService, SlotState, SlotStatus, bookable_days, day_start
 from lb02.conversations import messages_left
 from lb02.limits import CALENDAR_DAYS_AHEAD
+from lb02.messages import typeset_czech
 from lb02.models import Confirmation, Conversation, Handoff, Message, Offering, Slot
 from lb02.snapshot import BookingView, HoldView, OptionView, snapshot_of
 
@@ -260,9 +261,9 @@ def offering_out(offering: Offering) -> OfferingOut:
     """Describe an offering in both languages."""
     return OfferingOut(
         key=offering.key,
-        title=LocalizedOut(en=offering.title_en, cs=offering.title_cs),
-        summary=LocalizedOut(en=offering.summary_en, cs=offering.summary_cs),
-        room=LocalizedOut(en=offering.resource.name_en, cs=offering.resource.name_cs),
+        title=LocalizedOut(en=offering.title_en, cs=typeset_czech(offering.title_cs)),
+        summary=LocalizedOut(en=offering.summary_en, cs=typeset_czech(offering.summary_cs)),
+        room=LocalizedOut(en=offering.resource.name_en, cs=typeset_czech(offering.resource.name_cs)),
         duration_minutes=offering.duration_minutes,
         capacity=offering.capacity,
         price_czk=offering.price_czk,

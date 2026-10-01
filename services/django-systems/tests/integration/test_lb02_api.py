@@ -96,6 +96,22 @@ def test_the_offerings_come_in_both_languages(web_signing_key: Ed25519PrivateKey
 # The calendar
 
 
+def test_the_czech_texts_are_typeset_so_no_line_can_end_on_a_one_letter_word(
+    web_signing_key: Ed25519PrivateKey,
+) -> None:
+    """The same rule as everywhere Czech is shown: a no-break space after u, s, k, z and the like."""
+    _, offerings = get(visitor(web_signing_key), "/api/lb02/offerings")
+
+    summary = offerings[0]["summary"]["cs"]
+    assert "u" + chr(0xA0) + "na\u0161eho baru" in summary
+    assert "s" + chr(0xA0) + "pozn\u00e1mkami" in summary
+    assert " u " not in summary
+    assert (
+        offerings[0]["summary"]["en"]
+        == "A private guided flight of three single-origin coffees at our bar, with notes on how each was roasted."
+    )
+
+
 def test_the_calendar_shows_tomorrow_and_the_days_after_it_with_every_slot_free(
     web_signing_key: Ed25519PrivateKey,
 ) -> None:
