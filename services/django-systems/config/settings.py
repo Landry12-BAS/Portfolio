@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "core",
     "lb01",
+    "lb02",
 ]
 
 MIDDLEWARE = [
@@ -40,7 +41,10 @@ ASGI_APPLICATION = "config.asgi.application"
 # Nothing may use `default`: every system names its own connection (core.databases).
 DATABASES: dict[str, dict[str, object]] = {
     "default": {},
-    **system_databases(ENVIRONMENT.database_url, {"lb01": ENVIRONMENT.lb01_database_url}),
+    **system_databases(
+        ENVIRONMENT.database_url,
+        {"lb01": ENVIRONMENT.lb01_database_url, "lb02": ENVIRONMENT.lb02_database_url},
+    ),
 }
 DATABASE_ROUTERS = ["core.databases.SystemSchemaRouter"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -58,11 +62,21 @@ X_FRAME_OPTIONS = "DENY"
 # TLS ends at Cloudflare, and the proxy in front of the service passes the scheme on.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Tickets are short; nothing the API accepts comes near this.
+# Tickets and chat messages are short; nothing the API accepts comes near this.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 65_536
 
 REDIS_URL = ENVIRONMENT.redis_url
 REDIS_PREFIX = ENVIRONMENT.redis_prefix
+
+# Channels (LB-02's WebSockets): the layer that carries the live calendar between
+# connections lives in the same Redis, under the platform's key prefix. The prefix ends
+# in a colon so that an ACL rule for `lb:channels:*` covers every key the layer writes.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL], "prefix": f"{REDIS_PREFIX}channels:"},
+    },
+}
 
 # Celery: Redis carries the queue under the platform's key prefix, messages are JSON
 # only (never pickle), and nothing stores task results.
@@ -78,6 +92,14 @@ CELERY_BEAT_SCHEDULE = {
     "lb01-sweep-expired-tickets": {"task": "lb01.sweep_expired_tickets", "schedule": 15 * 60},
     # A new day moves the orders' relative dates on.
     "lb01-reseed": {"task": "lb01.reseed", "schedule": crontab(hour=3, minute=7)},
+    # A hold that ran out is already free for everyone (LB-02 reads expiry when it
+    # checks, not when it sweeps); the sweep only tidies the rows and tells the live
+    # calendar.
+    "lb02-sweep-expired-holds": {"task": "lb02.sweep_expired_holds", "schedule": 60},
+    # Visitor data lives 24 hours (the LB-02 datasheet keeps the LB-01 promise).
+    "lb02-sweep-expired-conversations": {"task": "lb02.sweep_expired_conversations", "schedule": 15 * 60},
+    # The demo calendar starts afresh every night, counted from the new day.
+    "lb02-reset-calendar": {"task": "lb02.reset_calendar", "schedule": crontab(hour=3, minute=11)},
 }
 
 # The synthetic data the seed commands load: one folder per system, such as data/seed/lb01.

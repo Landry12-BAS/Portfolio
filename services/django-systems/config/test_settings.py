@@ -13,3 +13,7 @@ os.environ.setdefault("LB_REDIS_URL", "redis://127.0.0.1:6379/0")
 
 # The production settings, star-imported the way Django settings modules extend each other.
 from config.settings import *  # noqa: F403
+
+# Tests use the in-memory channel layer, so none of them needs a Redis by accident. The
+# ones that are about the real layer ask for it (tests/conftest.py, `redis_channel_layer`).
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

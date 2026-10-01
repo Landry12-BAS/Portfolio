@@ -52,7 +52,7 @@ def test_readiness_fails_when_a_system_cant_reach_its_schema(client: Client, mon
     response = client.get("/api/readyz")
 
     assert response.status_code == 503
-    assert response.json() == {"lb01": False}
+    assert response.json() == {"lb01": False, "lb02": False}
 
 
 def test_serves_the_openapi_schema_but_no_documentation_page(client: Client) -> None:

@@ -11,7 +11,7 @@ from django.utils import timezone
 from core.extensions import CHECK_PGVECTOR_SCHEMA
 from lb01.models import MAX_TICKET_LENGTH, Customer, Decision, Policy, PolicyPassage, Ticket
 
-pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb01"])]
+pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb01", "lb02"])]
 
 
 def query_lb01(sql: str) -> list[tuple[object, ...]]:
@@ -153,4 +153,4 @@ def test_readiness_reports_each_system(client: Client) -> None:
     response = client.get("/api/readyz")
 
     assert response.status_code == 200
-    assert response.json() == {"lb01": True}
+    assert response.json() == {"lb01": True, "lb02": True}
