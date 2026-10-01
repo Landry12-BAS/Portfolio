@@ -23,7 +23,14 @@ see its [README](python/lb-common/README.md)). In build: `services/django-system
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
 (`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
 API and Celery worker so far (see its [README](services/django-systems/README.md)); next
-come the recorded sample runs and LB-01's demo on the site.
+come the recorded sample runs and LB-01's demo on the site. The Node side: `packages/contracts`
+(the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
+`lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
+Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
+graphs checked by one schema, a BullMQ engine with retries, a dead-letter queue, replay and
+exactly-once side effects, and the visitor API (see its
+[README](services/node-systems/README.md)); next come the Vue Flow editor and LB-08's pages
+on the site, and the recorded sample runs.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -157,6 +164,12 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
 | `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
 | `just eval-lb01 [--samples] [--case ID]` | Run LB-01's golden set through the live pipeline and grade it by rules (about five gateway calls a case; run it when prompts or routes change) |
+| `just node-api` | Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in `services/node-systems/.env`, from `.env.example`) |
+| `just node-worker` | Run the Node systems' BullMQ workers with their sweep: LB-08's step jobs, the 24-hour deletion of expired workflows and the recovery of lost jobs |
+| `just node-migrate` | Create or update each Node system's Postgres schema from its Drizzle migrations (one schema per system) |
+| `just node-seed` | Load the Node systems' synthetic data (LB-08's stock list) from `data/seed`, replacing what the files no longer hold |
+| `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
+| `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
@@ -164,8 +177,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. Integration tests start Redis (gateway and Python) and Postgres with
-pgvector (Django) with Testcontainers; where Docker isn't available, set
+Playwright's own. Integration tests start Redis (gateway, Python and the Node systems) and
+Postgres with pgvector (Django and the Node systems) with Testcontainers; where Docker
+isn't available, or its Ryuk helper can't be pulled (set `TESTCONTAINERS_RYUK_DISABLED=true`), set
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` and
 `LB_TEST_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb` to use local servers instead
 (the Postgres user needs the right to create databases). The Python contract tests also

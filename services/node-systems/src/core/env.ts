@@ -43,7 +43,9 @@ export type Role = 'api' | 'worker' | 'tool'
  * every problem, so a broken deploy can be fixed in a single pass.
  */
 export function loadEnv(source: Readonly<Record<string, string | undefined>>, role: Role): Env {
-  const parsed = envSchema.safeParse(source)
+  // A variable set to nothing, as `.env.example` leaves the ones to fill in, counts as not set.
+  const set = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== undefined && value !== ''))
+  const parsed = envSchema.safeParse(set)
   const problems = parsed.success ? [] : parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`)
   if (parsed.success && role === 'api') {
     // The API makes model calls, so it can't start without a way to reach the gateway.

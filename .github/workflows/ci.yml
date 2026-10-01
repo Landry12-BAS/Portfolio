@@ -22,6 +22,35 @@ jobs:
     name: Lint, types, tests and end-to-end
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # The gateway's and the Node systems' integration tests need Redis, and the Node systems'
+    # also Postgres with pgvector: the versions production runs, as in the python job. Each
+    # test file makes a database and a key prefix of its own on them.
+    services:
+      redis:
+        image: redis:8.10-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: lb
+          POSTGRES_PASSWORD: lb-ci-only
+          POSTGRES_DB: lb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lb"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      LB_TEST_REDIS_URL: redis://127.0.0.1:6379
+      LB_TEST_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
     steps:
       # Actions are pinned by commit SHA; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

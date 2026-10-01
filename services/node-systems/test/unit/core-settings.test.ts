@@ -29,6 +29,15 @@ describe('the environment', () => {
     })
   })
 
+  it('counts a variable set to nothing as not set, as .env.example leaves the ones to fill in', () => {
+    const env = loadEnv({ ...minimal, LB_WEB_TOKEN_KEY: '', LB_SERVICE_KEY_FILE: '', LB_GATEWAY_URL: '', LB08_DATABASE_URL: '' }, 'worker')
+
+    expect(env.LB_WEB_TOKEN_KEY).toBeUndefined()
+    expect(env.LB_SERVICE_KEY_FILE).toBeUndefined()
+    expect(env.LB08_DATABASE_URL).toBeUndefined()
+    expect(() => loadEnv({ ...minimal, LB_GATEWAY_URL: '', LB_SERVICE_KEY_FILE: '' }, 'api')).toThrow(/LB_GATEWAY_URL: required/)
+  })
+
   it('needs the gateway to start the API, and not for the worker or a tool', () => {
     expect(() => loadEnv(minimal, 'api')).toThrow(/LB_GATEWAY_URL: required[\s\S]*LB_SERVICE_KEY_FILE: required/)
     expect(() => loadEnv(minimal, 'worker')).not.toThrow()
