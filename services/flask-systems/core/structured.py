@@ -117,23 +117,34 @@ class StructuredAnswer[Answer: BaseModel]:
 
 
 def ask_for_json[Answer: BaseModel](
-    models: ChatModels, alias: str, messages: Sequence[ChatMessage], schema: type[Answer], max_tokens: int
+    models: ChatModels,
+    alias: str,
+    messages: Sequence[ChatMessage],
+    schema: type[Answer],
+    max_tokens: int,
+    repair: bool = True,
+    echo_chars: int = MAX_ECHO_CHARS,
 ) -> StructuredAnswer[Answer]:
     """Ask for a JSON answer that `schema` accepts, with one repair request if the first reply doesn't fit.
 
-    A caller that must bound the wait wraps `models` in one that sets the timeout of each call.
+    A caller that has no model call to spare passes `repair=False`, and a caller whose prompt has
+    little room left passes a smaller `echo_chars`, which is how much of the bad reply the repair
+    request quotes back. A caller that must bound the wait wraps `models` in one that sets the
+    timeout of each call.
     """
     first = models.complete(alias, messages, max_tokens)
     try:
         return StructuredAnswer(parse_answer(first.text, schema), first.model, attempts=1, reply=first.text)
     except (ValueError, ValidationError) as error:
         problems = describe_problems(error)
-    repair = [
+    if not repair:
+        raise StructuredOutputError(f"{schema.__name__} didn't validate: {problems}") from None
+    repair_messages = [
         *messages,
-        ChatMessage("assistant", first.text[:MAX_ECHO_CHARS]),
+        ChatMessage("assistant", first.text[:echo_chars]),
         ChatMessage("user", REPAIR_REQUEST.format(problems=problems)),
     ]
-    second = models.complete(alias, repair, max_tokens)
+    second = models.complete(alias, repair_messages, max_tokens)
     try:
         return StructuredAnswer(parse_answer(second.text, schema), second.model, attempts=2, reply=second.text)
     except (ValueError, ValidationError) as error:

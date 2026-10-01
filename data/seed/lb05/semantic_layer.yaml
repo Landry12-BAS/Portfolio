@@ -125,7 +125,7 @@ metrics:
     description: "Customers who registered in the period, by signup date."
     expression: "COUNT(customers.customer_id)"
     needs: [customers]
-    synonyms: [signups, sign-ups, new signups, registrations, joined]
+    synonyms: [signups, sign-ups, new signups, registrations, joined, signed up, registered]
   - name: cancellation_rate
     label: "Cancellation rate"
     description: "Share of orders that were cancelled, as a fraction from 0 to 1."
@@ -169,7 +169,7 @@ metrics:
     label: "Lost repeat buyers"
     description: "Repeat buyers of a coffee in the period before the one asked about who did not buy that coffee at all in the period asked about."
     needs: [orders, order_lines, products]
-    synonyms: [lost customers, lapsed buyers, lost buyers, churned buyers, stopped buying, no longer buy, lapsed customers]
+    synonyms: [lost customers, lapsed buyers, lost buyers, churned buyers, stopped buying, lapsed customers, lost the most repeat buyers, lose repeat buyers, lost repeat customers, repeat buyers lost, lost the most repeat customers]
     pattern: >-
       WITH purchases AS (SELECT orders.customer_id AS customer_id, products.name AS product, orders.ordered_at AS day
       FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id

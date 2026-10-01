@@ -103,6 +103,26 @@ def test_a_second_malformed_reply_is_an_error() -> None:
     assert len(chat.requests) == 2
 
 
+def test_a_caller_with_no_call_to_spare_gets_no_repair() -> None:
+    """With repair switched off, a bad reply is an error at once, and no second request is made."""
+    chat = ScriptedChat(["no JSON here", '{"category": "damaged", "count": 2}'])
+
+    with pytest.raises(StructuredOutputError, match="Answer didn't validate:") as error:
+        ask_for_json(chat, "lb-fast", QUESTION, Answer, max_tokens=100, repair=False)
+
+    assert "no JSON here" not in str(error.value)
+    assert len(chat.requests) == 1
+
+
+def test_the_repair_request_quotes_only_as_much_of_the_bad_reply_as_it_is_told_to() -> None:
+    """A caller whose prompt has little room left limits how much of the bad reply the repair repeats."""
+    chat = ScriptedChat(["x" * 900, '{"category": "damaged", "count": 2}'])
+
+    ask_for_json(chat, "lb-fast", QUESTION, Answer, max_tokens=100, echo_chars=40)
+
+    assert chat.requests[1][2].content == "x" * 40
+
+
 @pytest.mark.parametrize("reply", ["", "just words", "{ broken", '{"a": 1'])
 def test_a_reply_without_a_whole_json_object_is_refused(reply: str) -> None:
     """Empty replies, prose and broken JSON are all refused before validation."""
