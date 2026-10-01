@@ -1,12 +1,18 @@
 # The systems that have a Postgres schema of their own, one per line (blank lines and
 # comments are ignored). Each name is both the login role and the schema it owns:
 # `lb01` is the role that owns schema `lb01`, the way services/django-systems keeps
-# LB-01's tables (core/databases.py).
+# LB-01's tables (core/databases.py). Each role sees its own schema and the shared
+# `extensions` schema (pgvector, btree_gist) and nothing else; test-roles.sh proves it
+# for every pair of systems listed here.
 #
 # To give another system its schema (docs/DEPLOY.md, Adding a service):
 #   1. add its name here, in the same change that builds the system;
-#   2. add LB_PG_PASSWORD_<NAME IN CAPITALS> to infra/secrets/postgres-roles.enc.env
-#      (`just secrets-edit infra/secrets/postgres-roles.enc.env`);
-#   3. pass the system its own database URL, built from that password, in the compose file.
+#   2. add LB_PG_PASSWORD_<NAME IN CAPITALS> to infra/secrets/postgres-roles.example.env
+#      and give it a value with `just secrets-edit postgres-roles`;
+#   3. pass the system its own database URL (<NAME>_DATABASE_URL, such as LB05_DATABASE_URL),
+#      built from that password, in the compose file.
 # Until its password is set the role exists but cannot log in.
 lb01
+lb02
+lb05
+lb08
