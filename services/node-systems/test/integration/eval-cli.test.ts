@@ -12,6 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'v
 import { startContractGateway } from '../../../../packages/common/test/support/contract-gateway.ts'
 import type { ContractGateway } from '../../../../packages/common/test/support/contract-gateway.ts'
 import { completion } from '../../../../packages/common/test/support/fake-provider.ts'
+import type { BuildCase } from '../../src/modules/lb08/golden/cases.ts'
 import { loadGolden } from '../support/data.ts'
 
 const script = fileURLToPath(new URL('../../src/cli/eval-lb08.ts', import.meta.url))
@@ -104,7 +105,7 @@ describe('the eval command, against a scripted provider', () => {
   })
 
   it('runs only the curated samples with --samples, and passes a model that builds each one', async () => {
-    const samples = golden.filter(entry => entry.kind === 'build' && entry.sample)
+    const samples = golden.filter((entry): entry is BuildCase => entry.kind === 'build' && entry.sample)
     for (const entry of samples) provide(entry.reference)
 
     const finished = await runEval('--samples', '--pause', '0')

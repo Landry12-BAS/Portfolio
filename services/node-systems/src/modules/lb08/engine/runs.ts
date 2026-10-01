@@ -133,8 +133,12 @@ export async function startRun(deps: EngineDeps, sessionKey: string, workflowId:
  * chain. Whatever the original already sent is recognised and not sent again, and a step
  * that was dead-lettered gets another go with whatever failures the visitor asked for
  * still left. A replay counts as one of the visitor's runs. Returns the new run's id.
+ *
+ * Replaying from a dead letter (`deadLetterId`) takes that dead letter in the same
+ * transaction that makes the run, so two clicks at once make one replay: the second finds
+ * it taken, and fails with 409 before anything is kept or counted.
  */
-export async function replayRun(deps: EngineDeps, sessionKey: string, runId: string): Promise<string> {
+export async function replayRun(deps: EngineDeps, sessionKey: string, runId: string, deadLetterId?: string): Promise<string> {
   const [original] = await deps.db.select().from(runs).where(and(eq(runs.id, runId), eq(runs.sessionKey, sessionKey))).limit(1)
   if (!original) throw runNotFound()
   if (original.status !== 'succeeded' && original.status !== 'failed') {
@@ -146,10 +150,11 @@ export async function replayRun(deps: EngineDeps, sessionKey: string, runId: str
   const replayed = await deps.db.transaction(async (tx) => {
     if (!(await reserve(tx, sessionKey, 'run', deps.now()))) throw dailyLimit('run', deps.now())
     await insertRun(tx, deps, { id, rootRunId: original.rootRunId, replayOf: original.id, sessionKey, workflow, input: original.input, failures: [] })
-    // The dead letters of the original are answered by this replay.
-    return tx.update(deadLetters).set({ replayedRunId: id })
-      .where(and(eq(deadLetters.runId, original.id), isNull(deadLetters.replayedRunId)))
-      .returning({ nodeId: deadLetters.nodeId })
+    // The dead letters of the original are answered by this replay: the one that was clicked, or all of them.
+    const answered = and(eq(deadLetters.runId, original.id), isNull(deadLetters.replayedRunId), ...(deadLetterId === undefined ? [] : [eq(deadLetters.id, deadLetterId)]))
+    const taken = await tx.update(deadLetters).set({ replayedRunId: id }).where(answered).returning({ nodeId: deadLetters.nodeId })
+    if (deadLetterId !== undefined && taken.length === 0) throw new AppError(409, 'already_replayed', 'This dead letter was already replayed. Open the run that replayed it.')
+    return taken
   })
   for (const letter of replayed) await deps.scheduler.unpark(original.id, letter.nodeId).catch(() => undefined)
   await dispatchSafely(deps, id)

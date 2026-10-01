@@ -451,6 +451,22 @@ describe('making it fail, and putting it right', () => {
     expect(again.json().error.code).toBe('already_replayed')
   })
 
+  it('takes one click on a dead letter even when two arrive at the same moment: one replay, one 409, one run spent', async () => {
+    const session = newSession()
+    const workflowId = await fromSample(session, 'wholesale-order')
+    await startRun(session, workflowId, 'wholesale-order', { failures: [{ nodeId: 'alert_roastery', times: 3 }] })
+    await drive(api.engine)
+    const letterId = (await api.call('GET', '/dead-letters', session)).json()[0].id
+
+    const clicks = await Promise.all([api.call('POST', `/dead-letters/${letterId}/replay`, session), api.call('POST', `/dead-letters/${letterId}/replay`, session)])
+    await drive(api.engine)
+
+    expect(clicks.map(click => click.statusCode).sort()).toEqual([202, 409])
+    expect(clicks.find(click => click.statusCode === 409)?.json().error.code).toBe('already_replayed')
+    expect((await api.call('GET', '/runs', session)).json()).toHaveLength(2)
+    expect((await api.call('GET', '/limits', session)).json().runs.used).toBe(2)
+  })
+
   it('replays any finished run, and refuses one that is still going', async () => {
     const session = newSession()
     const workflowId = await fromSample(session, 'low-stock-reorder')

@@ -43,7 +43,7 @@ export function registerSandboxRoutes(app: Typed, services: Lb08Services): void 
     const [letter] = await deps.db.select().from(deadLetters).where(and(eq(deadLetters.id, request.params.id), eq(deadLetters.sessionKey, sessionKey))).limit(1)
     if (!letter) throw new AppError(404, 'not_found', 'There is no such dead letter.')
     if (letter.replayedRunId !== null) throw new AppError(409, 'already_replayed', 'This dead letter was already replayed. Open the run that replayed it.')
-    const replayId = await replayRun(deps, sessionKey, letter.runId)
+    const replayId = await replayRun(deps, sessionKey, letter.runId, letter.id)
     const view = await readRunView(deps.db, sessionKey, replayId)
     if (!view) throw runNotFound()
     return reply.code(202).send(view)
