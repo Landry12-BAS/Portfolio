@@ -1,0 +1,463 @@
+# The platform on one box: gateway, Django systems, Postgres, Redis, the edge and the proxies
+# that are the only way out. docs/DEPLOY.md is the owner's runbook; docs/SECURITY.md,
+# sections 5 and 6, says why it is shaped this way.
+#
+# Run it through infra/scripts/compose.sh, which hands compose the decrypted secrets
+# (/run/lb/secrets, a tmpfs; see infra/secrets). Every ${VARIABLE} below comes from there
+# or from the deploy: LB_TAG is the release, LB_API_HOST and LB_SITE_ORIGIN are the public
+# names, LB_PG_PASSWORD_* and LB_REDIS_PASSWORD_* are each service's own credentials.
+#
+# --- Networks: nothing reaches the internet except by the two doors named at the end ------
+#   edge             cloudflared <-> caddy. Internal: no route out.
+#   app              caddy, the gateway and the systems. Internal.
+#   data             postgres, redis and the services that use them. Internal.
+#   egress-gateway   the gateway <-> its proxy. Internal.
+#   egress-systems   the systems and the backup <-> their proxy. Internal.
+#   outbound         the only network with a route to the internet: cloudflared (the
+#                    tunnel to Cloudflare) and the two egress proxies (Squid, each with its
+#                    own host allowlist). An internal network resolves no outside name and
+#                    reaches no outside address, so a compromised container can't dial out.
+#
+# --- Resources: one 2-OCPU, 12 GB Ampere A1 box shared by everything ----------------------
+#   Limits, not reservations: services rarely peak together. Memory is capped without swap.
+#   Steady state: postgres 2.0 + redis 0.5 + gateway 0.4 + django-api 0.5 + django-worker
+#   0.8 + caddy 0.13 + cloudflared 0.13 + two proxies 0.26 = 4.7 GB of the 12, with about
+#   1 GB for the host. The rest, 6 GB or so, is the room for the Flask and Node systems, the
+#   Playwright sandbox and Whisper that are still to come. CPU limits cap a service at that
+#   many cores; the sum is above 2 on purpose, and cpu_shares lets the request path win a
+#   contested core over the worker and the one-shot jobs.
+#
+# --- Adding a service ---------------------------------------------------------------------
+#   One block here, one route in caddy/Caddyfile, one entry in .github/workflows/images.yml,
+#   one Dockerfile in docker/. Copy a block that looks like it: django-api for a web
+#   service, django-worker for a worker. docs/DEPLOY.md has the checklist.
+
+name: lb
+
+x-hardening: &hardening
+  restart: unless-stopped
+  # A real PID 1, so signals reach the service and zombies are reaped.
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  # json-file keeps logs on the box's disk without limit unless told otherwise.
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+# The Django systems: one image, three jobs (the release step, the API, the worker).
+x-django: &django
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-django-systems:${LB_TAG:?LB_TAG must name the release to run}
+  env_file:
+    - ${LB_SECRETS_DIR:-/run/lb/secrets}/django-systems.env
+  environment:
+    # The API's own public name is the only host Django answers to.
+    DJANGO_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
+    DJANGO_DEBUG: "false"
+    # LB-01 logs in as the lb01 role, which owns the lb01 schema and can reach nothing
+    # else. The shared URL is only the fallback for a system without its own, and it is
+    # the same least-privileged login, so a system that forgets its own URL fails closed.
+    LB_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01:?LB_PG_PASSWORD_LB01 is not set}@postgres:5432/lb
+    LB01_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01}@postgres:5432/lb
+    LB_REDIS_URL: redis://django-systems:${LB_REDIS_PASSWORD_DJANGO_SYSTEMS:?LB_REDIS_PASSWORD_DJANGO_SYSTEMS is not set}@redis:6379/0
+    LB_GATEWAY_URL: http://gateway:8080
+    LB_SERVICE_NAME: django-systems
+    # R2 and Sentry, when a system uses them, go through the systems' proxy.
+    HTTPS_PROXY: http://egress-systems:3128
+    NO_PROXY: localhost,127.0.0.1,gateway,postgres,redis
+  tmpfs:
+    - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+    # Where the entrypoint writes the service's private key, readable by this user only.
+    - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
+  networks: [app, data, egress-systems]
+  stop_grace_period: 30s
+
+services:
+  # ------------------------------------------------------------------------------------
+  # Data
+  # ------------------------------------------------------------------------------------
+  postgres:
+    <<: *hardening
+    image: pgvector/pgvector:0.8.6-pg17-bookworm@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    # The image's own user. Started as postgres from the first instruction, so it needs no
+    # capability to change identity.
+    user: postgres
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    environment:
+      POSTGRES_DB: lb
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/postgres.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # The unix socket, shared with the provisioner and with nothing else.
+      - postgres-socket:/var/run/postgresql
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    tmpfs:
+      - /tmp:size=64m,uid=999,gid=999,mode=1777
+    shm_size: 128m
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "/var/run/postgresql", "-d", "lb", "-q"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    # A fast shutdown (the image's SIGINT) with time to checkpoint.
+    stop_grace_period: 60s
+    mem_limit: 2g
+    memswap_limit: 2g
+    cpus: 1.5
+    cpu_shares: 1536
+    pids_limit: 300
+
+  # Brings the schemas, extensions, roles and passwords to what the repository describes,
+  # on every deploy (infra/postgres/provision.sh). It reaches the superuser socket through
+  # the shared volume and has no network at all.
+  postgres-provision:
+    <<: *hardening
+    restart: "no"
+    image: pgvector/pgvector:0.8.6-pg17-bookworm@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    user: postgres
+    command: ["/provision/provision.sh"]
+    environment:
+      PGDATABASE: lb
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/postgres-roles.env
+    volumes:
+      - postgres-socket:/var/run/postgresql
+      - ./postgres:/provision:ro
+    network_mode: none
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+
+  redis:
+    <<: *hardening
+    image: redis:8.10-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+    # The image's own user (uid 999, gid 1000), from the first instruction.
+    user: "999:1000"
+    # Writes the ACL file from the template and the passwords, then starts Redis.
+    entrypoint: ["/usr/local/bin/lb-redis-entrypoint"]
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/redis.env
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+      - ./redis/users.acl.tmpl:/etc/redis/users.acl.tmpl:ro
+      - ./redis/entrypoint.sh:/usr/local/bin/lb-redis-entrypoint:ro
+    tmpfs:
+      # The rendered ACL file: hashes only, readable by Redis alone.
+      - /run/redis:size=1m,uid=999,gid=1000,mode=0700
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$LB_REDIS_PASSWORD_HEALTH\" redis-cli --user health --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    stop_grace_period: 30s
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 0.5
+    cpu_shares: 1536
+    pids_limit: 64
+
+  # ------------------------------------------------------------------------------------
+  # Services
+  # ------------------------------------------------------------------------------------
+  gateway:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-gateway:${LB_TAG:?LB_TAG must name the release to run}
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/gateway.env
+    environment:
+      LB_GATEWAY_HOST: 0.0.0.0
+      LB_GATEWAY_PORT: "8080"
+      # The production profile keeps providers whose terms forbid production (NVIDIA)
+      # off every chain, and the proxy's list does not name them either.
+      LB_GATEWAY_PROFILE: production
+      LB_REDIS_URL: redis://gateway:${LB_REDIS_PASSWORD_GATEWAY:?LB_REDIS_PASSWORD_GATEWAY is not set}@redis:6379
+      # Node 24's fetch honours the proxy variables only when asked to.
+      NODE_USE_ENV_PROXY: "1"
+      HTTPS_PROXY: http://egress-gateway:3128
+      NO_PROXY: localhost,127.0.0.1
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+    networks: [app, data, egress-gateway]
+    depends_on:
+      redis:
+        condition: service_healthy
+      egress-gateway:
+        condition: service_healthy
+        required: false
+    healthcheck:
+      # Readiness, not liveness: Redis answering and a provider configured. The image has no
+      # shell, so the check is a node one-liner.
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "fetch('http://127.0.0.1:8080/readyz',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 20s
+    # The gateway closes its connections after 8 seconds (src/main.ts).
+    stop_grace_period: 15s
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 256
+
+  # Migrates and seeds the systems' schemas before the API and the worker start. The
+  # schema is the system's own role's, so a migration can't touch another system.
+  django-migrate:
+    <<: *django
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - python manage.py migrate --database lb01 --noinput && python manage.py seed_lb01
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    pids_limit: 64
+
+  django-api:
+    <<: *django
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/lb-healthcheck"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # Celery's worker with its scheduler: the ticket pipeline, the 24-hour sweep, the nightly
+  # reseed. Two processes at most, and each is recycled before it grows large.
+  django-worker:
+    <<: *django
+    command:
+      - celery
+      - -A
+      - config
+      - worker
+      - --beat
+      - --loglevel
+      - INFO
+      - --concurrency
+      - "2"
+      - --max-memory-per-child
+      - "300000"
+      - --schedule
+      - /tmp/celerybeat-schedule
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # A control-channel ping to this very worker. It starts a Python process, so it runs
+      # rarely.
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME -t 8 > /dev/null"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
+    # Warm shutdown: a task in flight may take up to its deadline to finish.
+    stop_grace_period: 60s
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    pids_limit: 128
+
+  # ------------------------------------------------------------------------------------
+  # Edge
+  # ------------------------------------------------------------------------------------
+  caddy:
+    <<: *hardening
+    image: caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+    user: "65532:65532"
+    # The official binary carries a file capability (cap_net_bind_service), and the kernel
+    # won't start it unless the container has that one capability. Caddy listens on 8080,
+    # so it is never used.
+    cap_add: [NET_BIND_SERVICE]
+    environment:
+      LB_API_HOST: ${LB_API_HOST:?LB_API_HOST is not set}
+      LB_SITE_ORIGIN: ${LB_SITE_ORIGIN:?LB_SITE_ORIGIN is not set}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    tmpfs:
+      - /data:size=16m,uid=65532,gid=65532,mode=0700
+      - /config:size=4m,uid=65532,gid=65532,mode=0700
+    networks: [edge, app]
+    depends_on:
+      gateway:
+        condition: service_healthy
+      django-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # The Cloudflare Tunnel: the only way in. It dials out, so the box has no open port. The
+  # hostname-to-service mapping lives in the tunnel's own configuration, which the token
+  # (cloudflared.env) selects: api.<domain> -> http://caddy:8080 (docs/DEPLOY.md).
+  cloudflared:
+    <<: *hardening
+    image: cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c
+    # The image's entrypoint is `cloudflared --no-autoupdate`: updates are deploys.
+    command: ["tunnel", "--metrics", "127.0.0.1:2000", "run"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/cloudflared.env
+    networks: [edge, outbound]
+    depends_on:
+      caddy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 30s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 128
+
+  # ------------------------------------------------------------------------------------
+  # The only ways out: one proxy per caller group, each allowing HTTPS tunnels to its own
+  # host names (infra/egress). A new provider in services/gateway/routing.yaml needs its
+  # host here; `just check-infra` fails until it has one.
+  # ------------------------------------------------------------------------------------
+  egress-gateway:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-egress:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # Groq, Cloudflare Workers AI and OpenRouter: the hosts of the production providers
+      # in routing.yaml. NVIDIA's catalog is not here, because its trial terms forbid
+      # production use.
+      LB_EGRESS_ALLOW: api.groq.com,api.cloudflare.com,openrouter.ai
+    tmpfs:
+      - /run/lb-egress:size=64k,uid=31,gid=31,mode=0700
+      - /tmp:size=16m,uid=31,gid=31,mode=1777
+    networks: [egress-gateway, outbound]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3128"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+
+  egress-systems:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-egress:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # Cloudflare R2 (<account>.r2.cloudflarestorage.com) and Sentry's ingest host, set in
+      # the encrypted compose.enc.env once those are in use. Exact names, not wildcards: a
+      # wildcard would also allow other people's buckets and projects. Empty means nothing
+      # may leave, which is right until a system needs one.
+      LB_EGRESS_ALLOW: ${LB_EGRESS_SYSTEMS_ALLOW:-}
+    tmpfs:
+      - /run/lb-egress:size=64k,uid=31,gid=31,mode=0700
+      - /tmp:size=16m,uid=31,gid=31,mode=1777
+    networks: [egress-systems, outbound]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3128"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+
+  # ------------------------------------------------------------------------------------
+  # Jobs the host starts (a systemd timer: infra/systemd), not part of `up`
+  # ------------------------------------------------------------------------------------
+  backup:
+    <<: *hardening
+    profiles: [backup]
+    restart: "no"
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-backup:${LB_TAG:?LB_TAG must name the release to run}
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/backup.env
+    environment:
+      # The read-only login: it can read every schema and write nothing.
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: lb
+      PGUSER: lbbackup
+      PGPASSWORD: ${LB_PG_PASSWORD_LBBACKUP:-}
+      HTTPS_PROXY: http://egress-systems:3128
+    # The encrypted dump is written here, in memory, and uploaded from here.
+    tmpfs:
+      - /tmp:size=512m,uid=10002,gid=10002,mode=0700
+    networks: [data, egress-systems]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      egress-systems:
+        condition: service_healthy
+        # A local stack backs up to a folder and runs without the proxies.
+        required: false
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    pids_limit: 64
+
+networks:
+  outbound: {}
+  edge:
+    internal: true
+  app:
+    internal: true
+  data:
+    internal: true
+  egress-gateway:
+    internal: true
+  egress-systems:
+    internal: true
+
+volumes:
+  postgres-data:
+  postgres-socket:
+  redis-data:
