@@ -52,11 +52,12 @@ test:
     uv run pytest
     uv run --directory services/django-systems pytest
 
-# Run the Django systems' API with reload on http://127.0.0.1:8001 (settings in services/django-systems/.env).
+# The WebSocket frame limit (8 KB) stops an oversized frame before the application reads it.
+# Run the Django systems' API and WebSockets with reload on http://127.0.0.1:8001 (settings in services/django-systems/.env).
 django:
-    uv run --directory services/django-systems --env-file .env uvicorn config.asgi:application --reload --port 8001
+    uv run --directory services/django-systems --env-file .env uvicorn config.asgi:application --reload --port 8001 --ws-max-size 8192
 
-# Run the Celery worker with its scheduler (the ticket pipeline, the 24-hour sweep, the nightly reseed).
+# Run the Celery worker with its scheduler (the ticket pipeline, the 24-hour sweeps, the nightly reseed, LB-02's hold sweep and calendar reset).
 worker:
     uv run --directory services/django-systems --env-file .env celery -A config worker --beat --loglevel INFO
 
@@ -67,10 +68,13 @@ openapi:
 # Create or update every Django system's schema (settings in services/django-systems/.env).
 migrate:
     uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb01
+    uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb02
 
+# `--today YYYY-MM-DD` pins the day that order dates and LB-02's calendar are counted from.
 # Load the synthetic Basalt & Bean data into every system, replacing what the files no longer hold.
 seed *args:
     uv run --directory services/django-systems --env-file .env python manage.py seed_lb01 {{args}}
+    uv run --directory services/django-systems --env-file .env python manage.py seed_lb02 {{args}}
 
 # Needs the gateway running with a Workers AI key; commit the two files it writes.
 # Record the vectors LB-01's search needs, for the passages and golden-set texts that changed.
@@ -85,6 +89,12 @@ eval-search:
 # Run LB-01's golden set through the live pipeline and grade it by rules.
 eval-lb01 *args:
     uv run --directory services/django-systems --env-file .env python manage.py eval_lb01 {{args}}
+
+# Needs the gateway with provider keys, and the calendar seeded (`just seed`). A full run takes at most 247 calls
+# (about eight a case); `--samples` or `--case ID` run fewer. It fails unless every case passes (`--min-pass-rate`).
+# Run LB-02's golden set through the live concierge and grade it by rules.
+eval-lb02 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py eval_lb02 {{args}}
 
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:

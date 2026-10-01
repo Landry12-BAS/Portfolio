@@ -12,9 +12,11 @@ members = ["python/*", "services/django-systems"]
 [dependency-groups]
 dev = [
     "celery-types>=0.26.0",
+    "daphne>=4.2.3",
     "django-stubs[compatible-mypy]>=6.0.9,<6.1",
     "mypy>=2.3.1",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "pytest-django>=4.14.0",
     "ruff>=0.16.9",
     "testcontainers[postgres,redis]>=4.15.0",
@@ -65,7 +67,7 @@ ignore-variadic-names = true
 "**/migrations/**" = ["D", "E501", "RUF012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lb_common", "config", "core", "lb01"]
+known-first-party = ["lb_common", "config", "core", "lb01", "lb02"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

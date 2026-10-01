@@ -2,9 +2,10 @@
 
 Each system's app talks to the database through a connection of its own, whose
 search_path holds only that system's schema and the shared `extensions` schema, where
-pgvector's types live. The router keeps every model on its system's connection and
-refuses relations between systems, so no system reaches another's tables through the
-ORM. In production each connection also logs in as a role granted only its schema.
+pgvector's types and btree_gist's operators live. The router keeps every model on its
+system's connection and refuses relations between systems, so no system reaches
+another's tables through the ORM. In production each connection also logs in as a role
+granted only its schema.
 """
 
 from collections.abc import Mapping
@@ -16,8 +17,8 @@ from psycopg import sql
 
 # The systems with data of their own. A system's app label, database alias and schema
 # all share its part-number name.
-SYSTEM_SCHEMAS: tuple[str, ...] = ("lb01",)
-# Where database extensions such as pgvector live, readable by every system.
+SYSTEM_SCHEMAS: tuple[str, ...] = ("lb01", "lb02")
+# Where database extensions such as pgvector and btree_gist live, readable by every system.
 EXTENSIONS_SCHEMA = "extensions"
 # The only URL parameters passed on to Postgres.
 ALLOWED_URL_OPTIONS = frozenset({"sslmode", "connect_timeout"})

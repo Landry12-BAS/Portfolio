@@ -12,6 +12,7 @@ from ninja.errors import AuthenticationError, ValidationError
 from core.databases import SYSTEM_SCHEMAS
 from core.views import error_body
 from lb01.api import router as lb01_router
+from lb02.api import router as lb02_router
 
 api = NinjaAPI(
     title="LB Django systems",
@@ -21,6 +22,7 @@ api = NinjaAPI(
     openapi_url="/openapi.json",
 )
 api.add_router("/lb01/", lb01_router)
+api.add_router("/lb02/", lb02_router)
 
 
 @api.exception_handler(AuthenticationError)

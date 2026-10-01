@@ -8,6 +8,8 @@ description = "The LB systems built on Django: one project, one Postgres schema 
 requires-python = ">=3.13"
 dependencies = [
     "celery[redis]>=5.6.3",
+    "channels>=4.3.2",
+    "channels-redis>=4.3.0",
     "django>=5.2.17,<5.3",
     "django-ninja>=1.7.1",
     "lb-common",
@@ -16,6 +18,7 @@ dependencies = [
     "pyjwt[crypto]>=2.15.1",
     "pyyaml>=6.0.3",
     "uvicorn>=0.54.0",
+    "websockets>=15",
 ]
 
 [tool.uv.sources]
@@ -30,6 +33,8 @@ markers = [
 ]
 xfail_strict = true
 filterwarnings = ["error"]
+# The WebSocket tests are coroutines; pytest-asyncio runs every `async def` test without a marker.
+asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.13"
@@ -39,8 +44,8 @@ plugins = ["pydantic.mypy", "mypy_django_plugin.main"]
 exclude = ["migrations/"]
 
 [[tool.mypy.overrides]]
-# Testcontainers and pgvector ship no type information.
-module = ["testcontainers.*", "pgvector.*"]
+# Testcontainers, pgvector, Channels and its Redis layer ship no type information.
+module = ["testcontainers.*", "pgvector.*", "channels.*", "channels_redis.*"]
 ignore_missing_imports = true
 
 [tool.django-stubs]

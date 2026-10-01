@@ -235,12 +235,15 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 - **Django Ninja** for APIs: Pydantic schemas (the same style as the Flask side),
   native async views, and OpenAPI with little code. DRF is the common alternative;
   Ninja is lighter and typed.
-- **Channels 4** served by uvicorn for WebSockets (LB-02 live calendar), with a
-  Redis channel layer.
+- **Channels 4** served by uvicorn for WebSockets (LB-02's conversation and live
+  calendar), with a Redis channel layer. The visitor token travels in the first frame,
+  never in the address, so proxy logs never hold it.
 - **Celery 5** with Redis for jobs and Celery beat for schedules (nightly calendar
   reset, retention sweeps).
 - **Postgres specifics.** LB-02 prevents double booking with an exclusion constraint
-  on time ranges. LB-01 stores embeddings in pgvector and combines them with Postgres
+  on a room and its time range (`btree_gist`, installed in the shared `extensions`
+  schema). A hold expires by being read against the clock, so no sweep is needed for
+  correctness. LB-01 stores embeddings in pgvector and combines them with Postgres
   full-text search for hybrid retrieval.
 - **Speech (LB-09).** Groq Whisper in fast mode, faster-whisper on the box in private
   mode.

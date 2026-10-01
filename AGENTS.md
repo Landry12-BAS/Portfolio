@@ -22,8 +22,12 @@ prompt-injection guard; see its [README](services/gateway/README.md)) and
 see its [README](python/lb-common/README.md)). In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
 (`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
-API and Celery worker so far (see its [README](services/django-systems/README.md)); next
-come the recorded sample runs and LB-01's demo on the site.
+API and Celery worker so far, and LB-02's back end: the Booking Concierge's schema with
+the database-enforced no-double-booking constraint, its synthetic calendar
+(`data/seed/lb02`), golden set (`evals/lb02`), state-gated tool calling, WebSocket
+(Django Channels) and live calendar, visitor API, and golden-set eval (see its
+[README](services/django-systems/README.md)); next come the recorded sample runs, LB-01's
+demo, and LB-02's demo (the phone-frame PWA) on the site.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -149,14 +153,15 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just format` | Format the Python code with Ruff and apply its safe fixes (ESLint formats TypeScript) |
 | `just typecheck` | Strict type-check with `vue-tsc` and `tsc`, and mypy for Python |
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
-| `just django` | Run the Django systems' API with reload on http://127.0.0.1:8001 (settings in `services/django-systems/.env`, from `.env.example`) |
-| `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweep and the nightly reseed |
+| `just django` | Run the Django systems' API and WebSockets with reload on http://127.0.0.1:8001 (settings in `services/django-systems/.env`, from `.env.example`; frames over 8 KB are refused) |
+| `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweeps, the nightly reseed, and LB-02's minute-by-minute hold sweep and nightly calendar reset |
 | `just openapi` | Regenerate `services/django-systems/openapi.json` after an API change (a test fails while it is stale) |
 | `just migrate` | Create or update each Django system's schema (settings in `services/django-systems/.env`, from `.env.example`) |
-| `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed`; `--today` pins the day relative order dates count from |
+| `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed` into LB-01 and LB-02; `--today` pins the day that relative order dates and LB-02's calendar count from |
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
 | `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
 | `just eval-lb01 [--samples] [--case ID]` | Run LB-01's golden set through the live pipeline and grade it by rules (about five gateway calls a case; run it when prompts or routes change) |
+| `just eval-lb02 [--samples] [--case ID] [--min-pass-rate N]` | Run LB-02's golden set through the live concierge and grade it by rules, on the seeded calendar (about eight gateway calls a case, at most 247 for the whole set; it fails unless every case passes, and prints what a booking cost; run it when prompts or routes change) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |

@@ -1,0 +1,62 @@
+# LB-02's synthetic calendar: the rooms of the Basalt & Bean roastery, what can be booked
+# in them, and when. Checked against services/django-systems/lb02/seed.py before anything
+# is written; the golden set in evals/lb02 refers to these offerings and times.
+#
+# Every session is private to the party that books it (up to `capacity` guests), so a
+# booking takes the whole room for the session. Times are the roastery's own, Prague time.
+# The calendar opens tomorrow and runs 14 days: `just seed` and the nightly reset lay one
+# slot for each start time on each of those days, counted from the day they run.
+#
+# The Tasting Room hosts two offerings on purpose. The cupping at 11:30 overlaps the
+# tasting at 12:00, so booking either takes the other with it: the exclusion constraint
+# is scoped to the room, not to the offering.
+
+resources:
+  - key: tasting-room
+    name:
+      en: Tasting Room
+      cs: Ochutnávková místnost
+  - key: roastery-floor
+    name:
+      en: Roastery Floor
+      cs: Pražírna
+
+offerings:
+  - key: tasting
+    resource: tasting-room
+    title:
+      en: Coffee tasting
+      cs: Degustace kávy
+    summary:
+      en: A private guided flight of three single-origin coffees at our bar, with notes on how each was roasted.
+      cs: Soukromá vedená degustace tří jednodruhových káv u našeho baru s poznámkami k pražení každé z nich.
+    duration_minutes: 45
+    capacity: 6
+    price_czk: 350
+    starts: ["10:00", "12:00", "16:00", "18:00"]
+
+  - key: cupping
+    resource: tasting-room
+    title:
+      en: Cupping session
+      cs: Cupping
+    summary:
+      en: "A private professional cupping, as our roasters do every morning: slurp and score eight coffees side by side."
+      cs: "Soukromý profesionální cupping, jaký děláme každé ráno: osm káv vedle sebe, které srkáte a hodnotíte."
+    duration_minutes: 60
+    capacity: 8
+    price_czk: 450
+    starts: ["11:30", "14:30"]
+
+  - key: roasting-workshop
+    resource: roastery-floor
+    title:
+      en: Roasting workshop
+      cs: Pražící workshop
+    summary:
+      en: Roast your own batch on our sample roaster with a roaster beside you, and take 250 g home.
+      cs: Upražte si vlastní várku na naší vzorkovací pražičce s pražičem po boku a odneste si 250 g domů.
+    duration_minutes: 120
+    capacity: 10
+    price_czk: 1200
+    starts: ["10:00", "14:00"]

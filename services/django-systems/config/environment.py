@@ -23,6 +23,7 @@ VARIABLES = {
     "DJANGO_ALLOWED_HOSTS": "allowed_hosts",
     "LB_DATABASE_URL": "database_url",
     "LB01_DATABASE_URL": "lb01_database_url",
+    "LB02_DATABASE_URL": "lb02_database_url",
     "LB_REDIS_URL": "redis_url",
     "LB_REDIS_PREFIX": "redis_prefix",
     "LB_SEED_DIR": "seed_dir",
@@ -33,9 +34,10 @@ VARIABLES = {
 class Environment(BaseModel):
     """The service's settings, as its environment gives them.
 
-    `lb01_database_url` is optional: in production it logs LB-01 in as a role granted
-    only the lb01 schema; without it, LB-01 uses the shared `database_url`. `seed_dir`
-    is where the synthetic data lives; without it, the repository's data/seed.
+    `lb01_database_url` and `lb02_database_url` are optional: in production each logs
+    its system in as a role granted only that system's schema; without one, the system
+    uses the shared `database_url`. `seed_dir` is where the synthetic data lives;
+    without it, the repository's data/seed.
     `web_token_key` is the site's Ed25519 public key, which visitor tokens are checked
     against (core/visitors.py); without it, every visitor call is refused.
     """
@@ -47,12 +49,13 @@ class Environment(BaseModel):
     allowed_hosts: tuple[str, ...] = Field(min_length=1)
     database_url: str
     lb01_database_url: str | None = None
+    lb02_database_url: str | None = None
     redis_url: str
     redis_prefix: str = "lb:"
     seed_dir: str | None = None
     web_token_key: str | None = None
 
-    @field_validator("database_url", "lb01_database_url")
+    @field_validator("database_url", "lb01_database_url", "lb02_database_url")
     @classmethod
     def _check_database_url(cls, url: str | None) -> str | None:
         """Accept only Postgres URLs."""
