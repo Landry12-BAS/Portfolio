@@ -7,12 +7,20 @@
 #   just stack-secrets && just stack up -d --build --wait
 #   curl -H 'Host: localhost' http://127.0.0.1:8180/api/lb01/customers
 #
+# LB-05 starts on its `small` dataset here, not the two-million-order one the box makes.
+#
 # `--profile egress` starts the two proxies, for trying a real provider key through the
 # gateway; `--profile backup` makes the backup service runnable (infra/backup).
 
 x-django-build: &django-build
   context: ..
   dockerfile: infra/docker/django-systems.Dockerfile
+x-flask-build: &flask-build
+  context: ..
+  dockerfile: infra/docker/flask-systems.Dockerfile
+x-node-build: &node-build
+  context: ..
+  dockerfile: infra/docker/node-systems.Dockerfile
 
 services:
   gateway:
@@ -26,6 +34,25 @@ services:
     build: *django-build
   django-worker:
     build: *django-build
+
+  flask-migrate:
+    build: *flask-build
+  flask-seed:
+    build: *flask-build
+    environment:
+      # A small dataset (about 28,000 orders) makes a local stack up in seconds.
+      LB05_SEED_SIZE: small
+  flask-api:
+    build: *flask-build
+
+  node-migrate:
+    build: *node-build
+  node-seed:
+    build: *node-build
+  node-api:
+    build: *node-build
+  node-worker:
+    build: *node-build
 
   egress-gateway:
     profiles: [egress]

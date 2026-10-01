@@ -24,6 +24,11 @@
 			# WebSockets write for minutes (Cloudflare closes a silent connection at 100 s).
 			read_header 10s
 			read_body 30s
+			# How long a keep-alive connection may sit between two requests. It does not apply
+			# to a WebSocket: once a connection is upgraded the server clears its deadlines,
+			# and reverse_proxy sets none, so a quiet LB-02 conversation is kept as long as
+			# the service wants it (it drops a connection after 15 minutes of silence, and
+			# uvicorn pings every 20 s). infra/caddy/test.sh proves it with a short idle.
 			idle 2m
 		}
 	}
@@ -32,14 +37,15 @@
 # How a request reaches a service: unbuffered, so server-sent events arrive as they are
 # written, with WebSocket upgrades passed through (Caddy does that on its own). The scheme
 # is always https, because Cloudflare ended TLS before the tunnel. Used as
-# `import proxy <matcher> <service>:<port>`: the requests the matcher picks go to that service.
+# `import proxy <matcher> <service>:<port> <time to the first byte>`: the requests the
+# matcher picks go to that service, which has that long to start answering.
 (proxy) {
 	reverse_proxy {args[0]} {args[1]} {
 		flush_interval -1
 		transport http {
 			dial_timeout 5s
 			# The first byte of an answer, which for a model call is the slowest part.
-			response_header_timeout 60s
+			response_header_timeout {args[2]}
 		}
 		header_up X-Forwarded-Proto https
 		header_down -Server
@@ -77,6 +83,10 @@
 
 	# The Django systems: LB-01 and LB-02's APIs, and LB-02's WebSocket.
 	@django path /api/lb01/* /api/lb02/* /ws/lb02/*
+
+	# The Flask systems (LB-05) and the Node systems (LB-08): one API prefix each.
+	@flask path /api/lb05/*
+	@node path /api/lb08/*
 
 	# The one gateway path the site's server reads, for the Scope: a run's spans. A run id
 	# is 8 to 64 letters, digits, '_' or '-', so no dot segment or escape can slip through.
@@ -128,8 +138,14 @@
 		}
 		respond @preflight 204
 
-		import proxy @django django-api:8000
-		import proxy @gateway_spans gateway:8080
+		# A question to LB-05 has 90 seconds to be answered (its own deadline), and LB-08 may
+		# make two model calls to describe a workflow, so those two get 95 seconds: more than
+		# the service needs, and less than the 100 at which Cloudflare gives up on its own and
+		# shows its error page in place of ours. The rest answer within a minute or not at all.
+		import proxy @django django-api:8000 60s
+		import proxy @flask flask-api:8102 95s
+		import proxy @node node-api:8002 95s
+		import proxy @gateway_spans gateway:8080 60s
 
 		respond `{"error":{"code":"not_found","message":"There is nothing at this address."}}` 404
 	}

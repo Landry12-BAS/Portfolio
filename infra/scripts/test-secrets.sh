@@ -104,7 +104,7 @@ while IFS= read -r line || [ -n "$line" ]; do
         LB_API_HOST=) echo "LB_API_HOST=api.test.invalid" ;;
         LB_SITE_ORIGIN=) echo "LB_SITE_ORIGIN=https://test.invalid" ;;
         LB_EGRESS_SYSTEMS_ALLOW=) echo "LB_EGRESS_SYSTEMS_ALLOW=acct.r2.cloudflarestorage.com" ;;
-        LB_SERVICE_KEYS=) echo "LB_SERVICE_KEYS='{\"django-systems\":\"AAAA\",\"web\":\"BBBB\"}'" ;;
+        LB_SERVICE_KEYS=) echo "LB_SERVICE_KEYS='{\"django-systems\":\"AAAA\",\"flask-systems\":\"CCCC\",\"node-systems\":\"DDDD\",\"web\":\"BBBB\"}'" ;;
         [A-Z]*=) echo "${line}filled-by-the-test" ;;
         *) printf '%s\n' "$line" ;;
     esac
@@ -213,19 +213,25 @@ else
     fail "check did not name what is missing -- exit $status: $output"
 fi
 expect_ok "editing it, a person fills the values" env EDITOR="$work/fill-editor.sh" "$secrets" edit gateway
-for name in compose cloudflared backup django-systems; do
+for name in compose cloudflared backup django-systems flask-systems node-systems; do
     expect_ok "$name is made, and filled in" env EDITOR="$work/fill-editor.sh" "$secrets" new "$name"
 done
 expect_equal "the Django secret key is long enough (Django needs 50 characters)" "64" \
     "$(sops decrypt "$work/repo/infra/secrets/django-systems.enc.env" | sed -n 's/^DJANGO_SECRET_KEY=//p' | tr -d '\n' | wc -c | tr -d ' ')"
-expect_ok "check passes when all eight files are complete" "$secrets" check
-expect_equal "and it says so for every one of them" "8" "$(grep -c '^  ok ' <<<"$output")"
+expect_ok "check passes when all ten files are complete" "$secrets" check
+expect_equal "and it says so for every one of them" "10" "$(grep -c '^  ok ' <<<"$output")"
 
 expect_refused "a misspelled variable fails the check" "GROQ_API_KEI is not a variable of the template" \
     env EDITOR="$work/sed-editor.sh s/^GROQ_API_KEY=/GROQ_API_KEI=/" "$secrets" edit gateway
 run "$secrets" check
 if grep -qF "GROQ_API_KEY is missing" <<<"$output"; then pass "which also names the variable that went missing"; else fail "the missing variable was not named: $output"; fi
 expect_ok "fixing it passes again" env EDITOR="$work/sed-editor.sh s/^GROQ_API_KEI=/GROQ_API_KEY=/" "$secrets" edit gateway
+
+# The site's public key is one value in compose.enc.env, for every back end. A Django file that
+# still carries its own copy, as the first release's template had, is named, not tolerated.
+expect_refused "the site's public key moved to compose: django-systems no longer takes it" "LB_WEB_TOKEN_KEY is not a variable of the template" \
+    env EDITOR="$work/sed-editor.sh \$aLB_WEB_TOKEN_KEY=old-copy" "$secrets" edit django-systems
+expect_ok "removing the stale copy passes again" env EDITOR="$work/sed-editor.sh /^LB_WEB_TOKEN_KEY=/d" "$secrets" edit django-systems
 
 cp "$work/repo/infra/secrets/backup.enc.env" "$work/repo/infra/secrets/stray.enc.env"
 expect_refused "an encrypted file with no template is named" "there is no template stray.example.env" "$secrets" check
@@ -250,7 +256,7 @@ expect_ok "the box's key is added" "$secrets" add-recipient box "$box_public"
 if opens "$box_key"; then pass "the box's key now opens the files"; else fail "the box's key does not open the files"; fi
 if opens "$owner_key"; then pass "and the owner's key still does"; else fail "the owner's key stopped working"; fi
 if opens "$stranger_key"; then fail "a stranger's key opened a file"; else pass "a stranger's key still opens nothing"; fi
-expect_equal "every file lists both recipients" "16" "$(cat "$work"/repo/infra/secrets/*.enc.env | grep -c '^sops_age__list_[01]__map_recipient=')"
+expect_equal "every file lists both recipients" "20" "$(cat "$work"/repo/infra/secrets/*.enc.env | grep -c '^sops_age__list_[01]__map_recipient=')"
 expect_refused "listing a key twice is refused" "already listed" "$secrets" add-recipient again "$box_public"
 expect_equal ".sops.yaml says whose key is whose" "2" "$(grep -c -E '# (owner|box)$' "$work/repo/.sops.yaml")"
 
@@ -277,8 +283,8 @@ else
     }
 
     expect_ok "the box's key decrypts every file into memory" decrypt_with "$work/keys/box-key-for-decrypt.txt"
-    expect_equal "one file per template" "8" "$(find "$live" -maxdepth 1 -name '*.env' | wc -l | tr -d ' ')"
-    expect_equal "each one is readable by its owner only" "8" "$(find "$live" -maxdepth 1 -name '*.env' -perm 600 | wc -l | tr -d ' ')"
+    expect_equal "one file per template" "10" "$(find "$live" -maxdepth 1 -name '*.env' | wc -l | tr -d ' ')"
+    expect_equal "each one is readable by its owner only" "10" "$(find "$live" -maxdepth 1 -name '*.env' -perm 600 | wc -l | tr -d ' ')"
     expect_equal "the folder is private too" "700" "$(stat -c %a "$live")"
     expect_equal "no staging folder is left behind" "0" "$(find "$live" -mindepth 1 -type d | wc -l | tr -d ' ')"
     if grep -q '^LB_REDIS_PASSWORD_GATEWAY=[0-9a-f]\{48\}$' "$live/redis.env"; then pass "the files are the plain dotenv Compose reads"; else fail "redis.env is not as expected"; fi

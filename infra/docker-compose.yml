@@ -59,11 +59,15 @@ x-django: &django
     # The API's own public name is the only host Django answers to.
     DJANGO_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
     DJANGO_DEBUG: "false"
-    # LB-01 logs in as the lb01 role, which owns the lb01 schema and can reach nothing
-    # else. The shared URL is only the fallback for a system without its own, and it is
-    # the same least-privileged login, so a system that forgets its own URL fails closed.
+    # Each system logs in as its own role, which owns its schema and can reach nothing but
+    # that and the shared extensions schema (btree_gist, pgvector). The shared URL is only
+    # the fallback for a system without its own, and it is LB-01's least-privileged login,
+    # so a system that forgets its own URL fails closed: LB-02 would find no schema there.
     LB_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01:?LB_PG_PASSWORD_LB01 is not set}@postgres:5432/lb
     LB01_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01}@postgres:5432/lb
+    LB02_DATABASE_URL: postgres://lb02:${LB_PG_PASSWORD_LB02:?LB_PG_PASSWORD_LB02 is not set}@postgres:5432/lb
+    # The site's public key: every visitor token is checked against it.
+    LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
     LB_REDIS_URL: redis://django-systems:${LB_REDIS_PASSWORD_DJANGO_SYSTEMS:?LB_REDIS_PASSWORD_DJANGO_SYSTEMS is not set}@redis:6379/0
     LB_GATEWAY_URL: http://gateway:8080
     LB_SERVICE_NAME: django-systems
@@ -75,6 +79,25 @@ x-django: &django
     # Where the entrypoint writes the service's private key, readable by this user only.
     - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
   networks: [app, data, egress-systems]
+  stop_grace_period: 30s
+
+# The Flask systems (LB-05): one image, three jobs (the migration, the data, the API). Each
+# job names the environment it needs and nothing more: only the API gets a secret, and the
+# jobs that need no Redis or database are given a URL that goes nowhere or no network at all.
+x-flask: &flask
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-flask-systems:${LB_TAG:?LB_TAG must name the release to run}
+  tmpfs:
+    - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+  stop_grace_period: 30s
+
+# The Node systems (LB-08): one image, four jobs (the migration, the seed, the API, the
+# worker), each a script of the service. Only the API gets a secret, its gateway key.
+x-node: &node
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-node-systems:${LB_TAG:?LB_TAG must name the release to run}
+  tmpfs:
+    - /tmp:size=16m,uid=65532,gid=65532,mode=1777
   stop_grace_period: 30s
 
 services:
@@ -222,14 +245,19 @@ services:
     pids_limit: 256
 
   # Migrates and seeds the systems' schemas before the API and the worker start. The
-  # schema is the system's own role's, so a migration can't touch another system.
+  # schema is the system's own role's, so a migration can't touch another system. LB-02's
+  # first migration finds btree_gist in the extensions schema, where the provisioner made it.
   django-migrate:
     <<: *django
     restart: "no"
     command:
       - sh
       - -c
-      - python manage.py migrate --database lb01 --noinput && python manage.py seed_lb01
+      - >-
+        python manage.py migrate --database lb01 --noinput
+        && python manage.py migrate --database lb02 --noinput
+        && python manage.py seed_lb01
+        && python manage.py seed_lb02
     depends_on:
       postgres-provision:
         condition: service_completed_successfully
@@ -296,6 +324,220 @@ services:
     cpus: 1.0
     pids_limit: 128
 
+  # LB-05 (the Flask systems). Its only Postgres table holds the daily question counters;
+  # its data is a DuckDB file, which the service opens read-only.
+  #
+  # The settings insist on a Redis URL and a shared database URL even for a job that touches
+  # neither, so the jobs are given the lb05 login (the only one there is) and a Redis URL
+  # that goes nowhere.
+  flask-migrate:
+    <<: *flask
+    restart: "no"
+    command: ["python", "manage.py", "migrate"]
+    environment:
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
+      LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  # Makes LB-05's synthetic sales data (about two million orders) into the warehouse volume,
+  # unless the volume already holds a dataset the service accepts (infra/docker/flask-seed.py).
+  # It is the only container that can write the volume, and it has no network, no secret and
+  # no database: the API mounts the volume read-only, so a compromised API cannot change the
+  # data it answers from, and a read-only root filesystem needs no other place for the file.
+  # The volume is derived data and is not backed up: a lost one is made again here.
+  flask-seed:
+    <<: *flask
+    restart: "no"
+    command: ["python", "seed_warehouse.py"]
+    environment:
+      LB05_WAREHOUSE_DIR: /warehouse/lb05
+      LB05_SEED_SIZE: full
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://seed:none@127.0.0.1:1/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    volumes:
+      - lb05-warehouse:/warehouse
+    network_mode: none
+    # numpy builds the whole dataset in memory: about 1 GB at its peak (measured), for ten
+    # seconds, once, when the volume is empty or the generator changed.
+    mem_limit: 1536m
+    memswap_limit: 1536m
+    cpus: 1.0
+    pids_limit: 64
+
+  flask-api:
+    <<: *flask
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/flask-systems.env
+    environment:
+      # The API's own public name is the only host Flask answers to.
+      FLASK_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
+      # LB-05 logs in as the lb05 role, which owns the lb05 schema and can reach nothing
+      # else. The shared URL is the same login, so a system that forgets its own fails closed.
+      LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
+      LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB_REDIS_URL: redis://flask-systems:${LB_REDIS_PASSWORD_FLASK_SYSTEMS:?LB_REDIS_PASSWORD_FLASK_SYSTEMS is not set}@redis:6379/0
+      LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: flask-systems
+      LB05_WAREHOUSE_DIR: /warehouse/lb05
+      # One DuckDB per worker process, and its limit is per process: this is the number the
+      # container's memory limit is sized from, with the Python process and its threads on top.
+      LB05_DUCKDB_MEMORY_LIMIT: 1GB
+      LB05_DUCKDB_THREADS: "2"
+      # gunicorn.conf.py binds the loopback unless told otherwise, and Caddy is another
+      # container. Nothing here reads a client address or a forwarded header, so
+      # GUNICORN_FORWARDED_ALLOW_IPS stays at its default: Caddy's X-Forwarded-* are ignored.
+      GUNICORN_BIND: 0.0.0.0:8102
+    tmpfs:
+      - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
+    volumes:
+      - lb05-warehouse:/warehouse:ro
+    networks: [app, data]
+    depends_on:
+      flask-migrate:
+        condition: service_completed_successfully
+      flask-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Readiness: every system's database answers, and the dataset is in place.
+      test: ["CMD", "/usr/local/bin/lb-healthcheck", "8102", "FLASK_ALLOWED_HOSTS"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    mem_limit: 1536m
+    memswap_limit: 1536m
+    cpus: 1.5
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # LB-08 (the Node systems). Its migration and its seed are two jobs, because the image has
+  # no shell to chain them with. The Redis URL they must have goes nowhere.
+  node-migrate:
+    <<: *node
+    restart: "no"
+    command: ["src/cli/migrate.ts"]
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08:?LB_PG_PASSWORD_LB08 is not set}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  node-seed:
+    <<: *node
+    restart: "no"
+    command: ["src/cli/seed.ts"]
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    depends_on:
+      node-migrate:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  node-api:
+    <<: *node
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/node-systems.env
+    environment:
+      LB_NODE_HOST: 0.0.0.0
+      LB_NODE_PORT: "8002"
+      # LB-08 logs in as the lb08 role, which owns the lb08 schema and can reach nothing
+      # else. The shared URL is the same login, so a system that forgets its own fails closed.
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS:?LB_REDIS_PASSWORD_NODE_SYSTEMS is not set}@redis:6379/0
+      LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: node-systems
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=65532,gid=65532,mode=0700
+    networks: [app, data]
+    depends_on:
+      node-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Readiness, not liveness: every system's schema and Redis answer. The image has no
+      # shell, so the check is a node one-liner.
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "fetch('http://127.0.0.1:8002/api/readyz',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 256
+
+  # BullMQ's workers with their sweep: one job per workflow step. It serves no HTTP, makes no
+  # model call and so has no gateway and no key. Its health check reads a heartbeat file that
+  # the entrypoint renews while the event loop turns.
+  node-worker:
+    <<: *node
+    command: ["src/worker.ts"]
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS}@redis:6379/0
+      LB_HEARTBEAT_FILE: /tmp/lb-heartbeat
+    networks: [data]
+    depends_on:
+      node-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "try{process.exit(Date.now()-require('node:fs').statSync('/tmp/lb-heartbeat').mtimeMs<30000?0:1)}catch{process.exit(1)}"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Workers finish the step they are on, then exit.
+    stop_grace_period: 45s
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    pids_limit: 256
+
   # ------------------------------------------------------------------------------------
   # Edge
   # ------------------------------------------------------------------------------------
@@ -316,10 +558,15 @@ services:
       - /data:size=16m,uid=65532,gid=65532,mode=0700
       - /config:size=4m,uid=65532,gid=65532,mode=0700
     networks: [edge, app]
+    # Every upstream is healthy before the tunnel can send it a request.
     depends_on:
       gateway:
         condition: service_healthy
       django-api:
+        condition: service_healthy
+      flask-api:
+        condition: service_healthy
+      node-api:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/ready"]
@@ -461,3 +708,5 @@ volumes:
   postgres-data:
   postgres-socket:
   redis-data:
+  # LB-05's generated warehouse: written by flask-seed, read-only in flask-api.
+  lb05-warehouse:

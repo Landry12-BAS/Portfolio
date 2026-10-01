@@ -1,14 +1,20 @@
 #!/bin/bash
 # Proves the Caddy edge (docs/SECURITY.md, sections 1 and 5) with the real Caddy image and
-# the repository's Caddyfile, in front of two stand-in services (test-upstream.py):
+# the repository's Caddyfile, in front of stand-ins for four services (test-upstream.py):
 #
-#   - only the routes the Caddyfile lists reach a service; health checks, the OpenAPI
-#     schema and the rest of the gateway answer 404 from Caddy itself;
+#   - only the routes the Caddyfile lists reach a service (LB-01 and LB-02 at the Django
+#     systems, LB-05 at the Flask systems, LB-08 at the Node systems, one path of the
+#     gateway); health checks, the OpenAPI schema and the rest of the gateway answer 404
+#     from Caddy itself;
 #   - paths built to slip past the allowlist (dot segments, escaped slashes) never reach
 #     a route they shouldn't;
 #   - only the API's own Host is served;
 #   - bodies over the limit are refused; CORS and WebSocket origins are limited to the site;
 #   - server-sent events arrive as they are written, and a WebSocket upgrade passes through;
+#   - a service has as long to answer as the Caddyfile says: LB-05 and LB-08 more than a
+#     minute (a question has 90 seconds), the others a minute;
+#   - a quiet WebSocket is not cut by the idle timeout that closes an idle HTTP connection,
+#     shown on a second Caddy whose only difference is a three-second idle timeout;
 #   - every response carries HSTS and none names the software behind it;
 #   - the access log holds no query string, no request header and no visitor address;
 #   - a service that is down gives a JSON 502, and the health listener is private.
@@ -31,7 +37,7 @@ scratch="$(mktemp -d)"
 failures=0
 
 cleanup() {
-    docker rm -f "$prefix-caddy" "$prefix-django" "$prefix-gateway" >/dev/null 2>&1 || true
+    docker rm -f "$prefix-caddy" "$prefix-caddy-idle" "$prefix-django" "$prefix-gateway" "$prefix-flask" "$prefix-node" >/dev/null 2>&1 || true
     docker network rm "$network" >/dev/null 2>&1 || true
     rm -rf "$scratch"
 }
@@ -44,7 +50,7 @@ fail() {
 }
 
 docker network create "$network" >/dev/null
-for pair in "django:django-api:8000" "gateway:gateway:8080"; do
+for pair in "django:django-api:8000" "gateway:gateway:8080" "flask:flask-api:8102" "node:node-api:8002"; do
     IFS=: read -r name alias port_number <<<"$pair"
     docker run -d --name "$prefix-$name" --network "$network" --network-alias "$alias" \
         -e UPSTREAM_NAME="$name" -e UPSTREAM_PORT="$port_number" \
@@ -70,6 +76,18 @@ if [ -z "$port" ]; then
     echo "Caddy did not start." >&2
     exit 1
 fi
+
+# The slowest checks are started first and read last, so that their minute of waiting passes
+# while the rest of the tests run. start_slow <service> <path> asks for an answer that takes
+# 63 seconds, in the background, and keeps the status code it got in $scratch/slow-<service>.
+slow_pids=()
+start_slow() {
+    (curl -sS -m 100 -o /dev/null -w '%{http_code}' -H "Host: $api_host" "http://127.0.0.1:$port$2" > "$scratch/slow-$1" 2>/dev/null || true) &
+    slow_pids+=($!)
+}
+start_slow django "/api/lb01/slow?seconds=63"
+start_slow flask "/api/lb05/slow?seconds=63"
+start_slow node "/api/lb08/slow?seconds=63"
 
 # call <method> <path> [curl arguments...]: sends one request with the API's Host, and sets
 # $status, $body and the headers file. --path-as-is keeps curl from tidying dot segments.
@@ -104,10 +122,14 @@ for path in /v1/models /v1/usage /v1/embeddings /v1/rerank /v1/guard /v1/runs; d
     call GET "$path"; check "the gateway's $path stays internal" caddy_404
 done
 call POST /v1/chat/completions -d '{}'; check "POST /v1/chat/completions stays internal" caddy_404
-for path in /api/lb03/x /api/lb04/x /api/lb05/x; do
+for path in /api/lb03/x /api/lb04/x /api/lb06/x /api/lb07/x /api/lb09/x /api/lb10/x; do
     call GET "$path"; check "$path has no route until its service exists" caddy_404
 done
-call GET /ws/lb04/x -H "Origin: $site_origin"; check "/ws/lb04/x has no route until its service exists" caddy_404
+for path in /ws/lb04/x /ws/lb05/x /ws/lb08/x; do
+    call GET "$path" -H "Origin: $site_origin"; check "$path has no route: only LB-02 has a WebSocket" caddy_404
+done
+call GET /api/lb05; check "the bare /api/lb05 is not a route" caddy_404
+call GET /api/lb08; check "the bare /api/lb08 is not a route" caddy_404
 call GET /api/lb01/customers -H "Authorization: Bearer test-token"
 check "GET /api/lb01/customers reaches the Django systems" reached django
 check "  with the path unchanged" grep -q '"path": "/api/lb01/customers"' <<<"$body"
@@ -117,6 +139,19 @@ payload='{"text":"my bag arrived torn"}'
 call POST /api/lb01/tickets -H 'Content-Type: application/json' -d "$payload"
 check "POST /api/lb01/tickets reaches the Django systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
 call GET /api/lb02/rooms; check "/api/lb02/* reaches the Django systems" reached django
+call GET /api/lb05/semantic-layer -H "Authorization: Bearer test-token"
+check "GET /api/lb05/semantic-layer reaches the Flask systems" reached flask
+check "  with the path unchanged and the API's own Host" grep -q "\"host\": \"$api_host\"" <<<"$body"
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+payload='{"question":"which coffee sold most last quarter?"}'
+call POST /api/lb05/ask -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb05/ask reaches the Flask systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call GET /api/lb08/samples -H "Authorization: Bearer test-token"
+check "GET /api/lb08/samples reaches the Node systems" reached node
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+payload='{"description":"text me when a pallet arrives"}'
+call POST /api/lb08/workflows -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb08/workflows reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
 call GET /v1/runs/run12345-abcdef/spans; check "GET /v1/runs/<id>/spans reaches the gateway" reached gateway
 call POST /v1/runs/run12345-abcdef/spans -d '{}'; check "POST on that path stays internal" caddy_404
 call GET /v1/runs/short/spans; check "a run id under 8 characters is refused" caddy_404
@@ -126,7 +161,9 @@ call GET /v1/runs/run12345-abcdef/other; check "another resource of the run is r
 echo "Paths built to slip past the allowlist"
 for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz /api/lb01%2f..%2f..%2fhealthz \
     //api/healthz /api/lb01//../healthz '/api/lb01/..;/healthz' /v1/runs/..%2f..%2fusage/spans \
-    /v1/runs/abcdefgh/spans/..%2f..%2fmodels /v1/runs/..%2fabcdefgh/spans /api/./healthz /API/healthz; do
+    /v1/runs/abcdefgh/spans/..%2f..%2fmodels /v1/runs/..%2fabcdefgh/spans /api/./healthz /API/healthz \
+    /api/lb05/../healthz /api/lb05/%2e%2e/readyz /api/lb05/..%2fhealthz /api/lb08/../openapi.json \
+    /api/lb08/%2e%2e/healthz '/api/lb08/..;/readyz' /api/lb05/../lb08/workflows; do
     call GET "$path"
     if [ "$status" = 404 ] && grep -q 'There is nothing at this address' <<<"$body"; then
         pass "refused: $path"
@@ -136,7 +173,7 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
         received="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["path"])' "$body")"
         resolved="$(python3 -c 'import posixpath,sys,urllib.parse; print(posixpath.normpath(urllib.parse.unquote(sys.argv[1].split("?")[0])))' "$received")"
         case "$resolved" in
-            /api/lb01/* | /api/lb02/* | /ws/lb02/*) pass "forwarded as $received, which still resolves to $resolved" ;;
+            /api/lb01/* | /api/lb02/* | /api/lb05/* | /api/lb08/* | /ws/lb02/*) pass "forwarded as $received, which still resolves to $resolved" ;;
             /v1/runs/*/spans) pass "forwarded as $received, which still resolves to $resolved" ;;
             *) fail "$path reached a service as $received, which resolves to $resolved" ;;
         esac
@@ -162,6 +199,11 @@ call OPTIONS /api/lb01/tickets -H "Origin: $site_origin" -H "Access-Control-Requ
 check "the site's preflight is answered 204 at the edge" test "$status" = 204
 check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"
 check "  and the Authorization header" grep -qi 'authorization' <<<"$(header_of access-control-allow-headers)"
+for path in /api/lb05/ask /api/lb08/workflows; do
+    call OPTIONS "$path" -H "Origin: $site_origin" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization"
+    check "the site's preflight for $path is answered 204 at the edge" test "$status" = 204
+    check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"
+done
 call OPTIONS /api/lb01/tickets -H "Origin: https://evil.lb.test" -H "Access-Control-Request-Method: POST"
 check "another origin's preflight gets no allow-origin header" test -z "$(header_of access-control-allow-origin)"
 call GET /api/lb01/customers -H "Origin: $site_origin"
@@ -241,6 +283,105 @@ check "a WebSocket from another origin is refused with 403" grep -q ' 403 ' <<<"
 answer="$(websocket "")"
 check "a WebSocket with no origin is refused with 403" grep -q ' 403 ' <<<"$answer"
 
+echo "A quiet WebSocket outlives the idle timeout that closes an idle HTTP connection"
+# A second Caddy: this Caddyfile with one change, an idle timeout of three seconds in place of
+# two minutes. Any other difference would make the comparison prove nothing, so it is checked.
+sed 's/^\([[:space:]]*\)idle 2m$/\1idle 3s/' "$here/Caddyfile" > "$scratch/Caddyfile.short-idle"
+chmod a+rx "$scratch"
+chmod a+r "$scratch/Caddyfile.short-idle"
+changed_lines="$(diff "$here/Caddyfile" "$scratch/Caddyfile.short-idle" | grep -c '^>' || true)"
+check "the short-idle copy differs from the Caddyfile in exactly one line" test "$changed_lines" = 1
+docker run -d --name "$prefix-caddy-idle" --network "$network" -p 127.0.0.1::8080 \
+    --user 65532:65532 --read-only --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true \
+    --tmpfs /data:uid=65532,gid=65532 --tmpfs /config:uid=65532,gid=65532 \
+    -e LB_API_HOST="$api_host" -e LB_SITE_ORIGIN="$site_origin" \
+    -v "$scratch/Caddyfile.short-idle":/etc/caddy/Caddyfile:ro "$caddy_image" >/dev/null
+idle_port=""
+for _ in $(seq 1 40); do
+    idle_port="$(docker port "$prefix-caddy-idle" 8080/tcp 2>/dev/null | head -1 | sed 's/.*://' || true)"
+    if [ -n "$idle_port" ] && curl -s -m 2 -o /dev/null -H "Host: $api_host" "http://127.0.0.1:$idle_port/"; then break; fi
+    sleep 0.5
+done
+silence="$(python3 - "$idle_port" "$api_host" "$site_origin" <<'PY'
+import base64
+import http.client
+import os
+import socket
+import sys
+import time
+
+port, host, origin = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+# Twice the idle timeout of this Caddy.
+SILENCE_SECONDS = 6
+
+
+def http_after_silence() -> str:
+    """Use one keep-alive connection twice, with the silence between: report whether it was still open."""
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+    connection.request("GET", "/api/lb01/customers", headers={"Host": host})
+    connection.getresponse().read()
+    time.sleep(SILENCE_SECONDS)
+    try:
+        connection.request("GET", "/api/lb01/customers", headers={"Host": host})
+        connection.getresponse().read()
+    except (http.client.HTTPException, OSError):
+        return "closed"
+    return "kept"
+
+
+def read_exactly(connection: socket.socket, buffer: bytearray, count: int) -> bytes:
+    """Take count bytes from what was received already and then from the connection."""
+    while len(buffer) < count:
+        chunk = connection.recv(4096)
+        if not chunk:
+            raise ConnectionError("the connection was closed")
+        buffer.extend(chunk)
+    taken = bytes(buffer[:count])
+    del buffer[:count]
+    return taken
+
+
+def read_text_frame(connection: socket.socket, buffer: bytearray) -> str:
+    """Read one short, unmasked text frame from the service."""
+    header = read_exactly(connection, buffer, 2)
+    return read_exactly(connection, buffer, header[1] & 0x7F).decode()
+
+
+def websocket_after_silence() -> str:
+    """Open a WebSocket, stay quiet, then speak: report what the service answered."""
+    key = base64.b64encode(os.urandom(16)).decode()
+    request = (
+        f"GET /ws/lb02/live HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+        f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nOrigin: {origin}\r\n\r\n"
+    )
+    with socket.create_connection(("127.0.0.1", port), timeout=15) as connection:
+        connection.sendall(request.encode())
+        buffer = bytearray()
+        while b"\r\n\r\n" not in buffer:
+            chunk = connection.recv(4096)
+            if not chunk:
+                return "no handshake"
+            buffer.extend(chunk)
+        head, _, rest = bytes(buffer).partition(b"\r\n\r\n")
+        if b" 101 " not in head.split(b"\r\n")[0]:
+            return head.split(b"\r\n")[0].decode()
+        buffer = bytearray(rest)
+        read_text_frame(connection, buffer)
+        time.sleep(SILENCE_SECONDS)
+        text = b"still here"
+        mask = os.urandom(4)
+        masked = bytes(byte ^ mask[index % 4] for index, byte in enumerate(text))
+        connection.sendall(bytes([0x81, 0x80 | len(text)]) + mask + masked)
+        return read_text_frame(connection, buffer)
+
+
+print(f"http: {http_after_silence()}")
+print(f"websocket: {websocket_after_silence()}")
+PY
+)"
+check "on the short-idle Caddy an HTTP connection that sat idle was closed, so the timeout is in force" grep -q '^http: closed' <<<"$silence"
+check "  and a WebSocket that stayed quiet for twice that long still answers" grep -q '^websocket: echo: still here' <<<"$silence"
+
 echo "The access log keeps no query string, header or visitor address"
 call GET "/api/lb01/customers?token=SECRETQUERYTOKEN&page=2" \
     -H "Authorization: Bearer SECRETBEARERTOKEN" -H "Cf-Connecting-Ip: 203.0.113.77" -H "User-Agent: SecretBrowser/1.0"
@@ -251,6 +392,14 @@ check "the log shows the path with the query removed" grep -q 'customers?\[remov
 for secret in SECRETQUERYTOKEN SECRETBEARERTOKEN 203.0.113.77 SecretBrowser; do
     check "the log never holds $secret" bash -c "! grep -q '$secret' '$scratch/caddy.log'"
 done
+
+echo "A service has as long to answer as the Caddyfile gives it"
+# Started at the top, and 63 seconds of waiting have passed during the tests since.
+wait "${slow_pids[@]}"
+check "LB-05 answers after 63 seconds: a question has up to 90" test "$(cat "$scratch/slow-flask")" = 200
+check "LB-08 answers after 63 seconds: describing a workflow may make two model calls" test "$(cat "$scratch/slow-node")" = 200
+slow_status="$(cat "$scratch/slow-django")"
+check "LB-01 is cut off at a minute, with a 5xx from Caddy (status $slow_status)" test "$slow_status" -ge 500 -a "$slow_status" -lt 600
 
 echo "A service that is down gives a JSON 502, and the health listener is private"
 docker stop "$prefix-django" >/dev/null

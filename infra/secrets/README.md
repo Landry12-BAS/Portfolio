@@ -14,12 +14,14 @@ has a template beside it that lists its variables and says where every value com
 
 | File | Read by | Holds |
 |---|---|---|
-| `compose` | Compose, Caddy, the Django systems | The API's hostname, the site's origin, the hosts the Django systems may reach |
+| `compose` | Compose, Caddy, the three back ends | The API's hostname, the site's origin, the site's public key, the hosts the Django systems may reach |
 | `postgres` | `postgres` | The superuser's password (nothing logs in with it) |
 | `postgres-roles` | `postgres-provision`, `backup` | One password per Postgres login role |
 | `redis` | `redis` | One password per Redis user |
 | `gateway` | `gateway` | The services' public keys, and the provider keys (the only ones on the platform) |
-| `django-systems` | `django-api`, `django-worker`, `django-migrate` | Django's signing key, the site's public key, the service's own gateway key |
+| `django-systems` | `django-api`, `django-worker`, `django-migrate` | Django's signing key, the service's own gateway key |
+| `flask-systems` | `flask-api` | The service's own gateway key |
+| `node-systems` | `node-api` | The service's own gateway key |
 | `cloudflared` | `cloudflared` | The Cloudflare Tunnel's token |
 | `backup` | `backup` | The backup's age public keys, and the R2 credentials it uploads with |
 

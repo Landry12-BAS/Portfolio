@@ -43,6 +43,8 @@ jobs:
         image:
           - { name: gateway, dockerfile: infra/docker/gateway.Dockerfile }
           - { name: django-systems, dockerfile: infra/docker/django-systems.Dockerfile }
+          - { name: flask-systems, dockerfile: infra/docker/flask-systems.Dockerfile }
+          - { name: node-systems, dockerfile: infra/docker/node-systems.Dockerfile }
           - { name: egress, dockerfile: infra/docker/egress.Dockerfile }
           - { name: backup, dockerfile: infra/docker/backup.Dockerfile }
     steps:

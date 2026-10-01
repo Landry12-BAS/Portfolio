@@ -63,9 +63,13 @@ write_jwk() {
 }
 
 django_public="$(write_jwk django-systems)"
+flask_public="$(write_jwk flask-systems)"
+node_public="$(write_jwk node-systems)"
 web_public="$(write_jwk web)"
 site_public="$(write_jwk site)"
 django_jwk_b64="$(base64_one_line < "$keys_dir/django-systems.jwk.json")"
+flask_jwk_b64="$(base64_one_line < "$keys_dir/flask-systems.jwk.json")"
+node_jwk_b64="$(base64_one_line < "$keys_dir/node-systems.jwk.json")"
 
 # The backup is encrypted to a public key whose private half stays off the "box": here, with
 # the other keys, so the restore can be tried.
@@ -76,6 +80,7 @@ cat > "$secrets_dir/compose.env" <<EOF
 LB_TAG=dev
 LB_API_HOST=localhost
 LB_SITE_ORIGIN=http://localhost:3000
+LB_WEB_TOKEN_KEY=$site_public
 LB_EGRESS_SYSTEMS_ALLOW=
 EOF
 
@@ -85,12 +90,17 @@ EOF
 
 cat > "$secrets_dir/postgres-roles.env" <<EOF
 LB_PG_PASSWORD_LB01=$(token)
+LB_PG_PASSWORD_LB02=$(token)
+LB_PG_PASSWORD_LB05=$(token)
+LB_PG_PASSWORD_LB08=$(token)
 LB_PG_PASSWORD_LBBACKUP=$(token)
 EOF
 
 cat > "$secrets_dir/redis.env" <<EOF
 LB_REDIS_PASSWORD_GATEWAY=$(token)
 LB_REDIS_PASSWORD_DJANGO_SYSTEMS=$(token)
+LB_REDIS_PASSWORD_FLASK_SYSTEMS=$(token)
+LB_REDIS_PASSWORD_NODE_SYSTEMS=$(token)
 LB_REDIS_PASSWORD_HEALTH=$(token)
 LB_REDIS_PASSWORD_ADMIN=$(token)
 EOF
@@ -98,14 +108,21 @@ EOF
 # A provider key only has to exist for the gateway to count the provider as configured; the
 # local stack's networks reach no provider, so it is never sent anywhere.
 cat > "$secrets_dir/gateway.env" <<EOF
-LB_SERVICE_KEYS='{"django-systems":"$django_public","web":"$web_public"}'
+LB_SERVICE_KEYS='{"django-systems":"$django_public","flask-systems":"$flask_public","node-systems":"$node_public","web":"$web_public"}'
 GROQ_API_KEY=local-stack-never-sent-anywhere
 EOF
 
 cat > "$secrets_dir/django-systems.env" <<EOF
 DJANGO_SECRET_KEY=$(token)$(token)
-LB_WEB_TOKEN_KEY=$site_public
 LB_SERVICE_KEY_JWK_B64=$django_jwk_b64
+EOF
+
+cat > "$secrets_dir/flask-systems.env" <<EOF
+LB_SERVICE_KEY_JWK_B64=$flask_jwk_b64
+EOF
+
+cat > "$secrets_dir/node-systems.env" <<EOF
+LB_SERVICE_KEY_JWK_B64=$node_jwk_b64
 EOF
 
 # No tunnel locally: there is no token to put here, and cloudflared is not started.

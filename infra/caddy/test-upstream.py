@@ -1,13 +1,17 @@
 """A stand-in for a service, for infra/caddy/test.sh: it shows Caddy what an upstream does.
 
-It answers three ways, so the test can check what Caddy does with each:
+It answers four ways, so the test can check what Caddy does with each:
 
 - most requests get a JSON echo of what reached it (method, path as received, the headers
   that matter), so the test can see exactly what Caddy forwarded and what it dropped;
 - a path ending in /events streams three server-sent events half a second apart, so the
   test can tell a proxy that flushes from one that buffers;
-- a WebSocket upgrade is accepted and answered with one text frame, so the test can tell
-  that the upgrade passes through.
+- a path ending in /slow?seconds=N waits N seconds before it answers, so the test can tell
+  how long Caddy is willing to wait for a service's first byte;
+- a WebSocket upgrade is accepted and answered with one text frame, and then every text
+  frame the client sends is answered with `echo: <text>`, however long the client was silent
+  before it, so the test can tell that the upgrade passes through and that a quiet
+  connection is not cut.
 
 It also announces itself in a `Server` header, which Caddy is expected to remove.
 """
@@ -18,6 +22,7 @@ import json
 import os
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
 
 NAME = os.environ.get("UPSTREAM_NAME", "upstream")
 PORT = int(os.environ.get("UPSTREAM_PORT", "8000"))
@@ -25,6 +30,11 @@ PORT = int(os.environ.get("UPSTREAM_PORT", "8000"))
 WEBSOCKET_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 # What the echo reports, so a test can see which headers reached the service.
 ECHOED_HEADERS = ("host", "origin", "authorization", "x-forwarded-proto", "x-forwarded-for", "cf-connecting-ip")
+# How long a WebSocket may stay silent before the stand-in gives up on it.
+WEBSOCKET_PATIENCE_SECONDS = 60
+# The WebSocket frame types the stand-in understands (RFC 6455, section 5.2).
+TEXT_FRAME = 0x1
+CLOSE_FRAME = 0x8
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -37,11 +47,14 @@ class Handler(BaseHTTPRequestHandler):
         """Say nothing: the test reads Caddy's log, not this one."""
 
     def handle_request(self) -> None:
-        """Pick the answer: a WebSocket handshake, an event stream or the echo."""
+        """Pick the answer: a WebSocket handshake, an event stream, a slow answer or the echo."""
+        route = urlsplit(self.path)
         if self.headers.get("Upgrade", "").lower() == "websocket":
             self.accept_websocket()
-        elif self.path.split("?")[0].endswith("/events"):
+        elif route.path.endswith("/events"):
             self.stream_events()
+        elif route.path.endswith("/slow"):
+            self.answer_slowly(parse_qs(route.query))
         else:
             self.echo()
 
@@ -62,6 +75,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def answer_slowly(self, query: dict[str, list[str]]) -> None:
+        """Wait for the number of seconds the query asks for (at most two minutes), then echo."""
+        seconds = min(int((query.get("seconds") or ["0"])[0]), 120)
+        time.sleep(seconds)
+        self.echo()
+
     def stream_events(self) -> None:
         """Send three events, half a second apart, as chunks the moment each is ready."""
         self.send_response(200)
@@ -78,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
     def accept_websocket(self) -> None:
-        """Complete the handshake and send one text frame, then hold the connection briefly."""
+        """Complete the handshake, greet, and then echo every text frame until the client leaves."""
         key = self.headers.get("Sec-WebSocket-Key", "")
         accept = base64.b64encode(hashlib.sha1((key + WEBSOCKET_GUID).encode()).digest()).decode()  # noqa: S324 - the protocol requires SHA-1
         self.send_response(101, "Switching Protocols")
@@ -86,11 +105,41 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "Upgrade")
         self.send_header("Sec-WebSocket-Accept", accept)
         self.end_headers()
-        message = f"hello from {NAME}".encode()
-        self.wfile.write(bytes([0x81, len(message)]) + message)
-        self.wfile.flush()
-        time.sleep(1)
+        self.send_text(f"hello from {NAME}")
+        self.connection.settimeout(WEBSOCKET_PATIENCE_SECONDS)
+        try:
+            while True:
+                frame = self.read_frame()
+                if frame is None or frame[0] == CLOSE_FRAME:
+                    break
+                if frame[0] == TEXT_FRAME:
+                    self.send_text(f"echo: {frame[1].decode(errors='replace')}")
+        except OSError:
+            pass
         self.close_connection = True
+
+    def send_text(self, text: str) -> None:
+        """Send one short text frame (the stand-in never sends more than 125 bytes)."""
+        message = text.encode()
+        self.wfile.write(bytes([0x80 | TEXT_FRAME, len(message)]) + message)
+        self.wfile.flush()
+
+    def read_frame(self) -> tuple[int, bytes] | None:
+        """Read one frame from the client: its type and its unmasked payload, or None when the client is gone."""
+        header = self.rfile.read(2)
+        if len(header) < 2:
+            return None
+        frame_type = header[0] & 0x0F
+        length = header[1] & 0x7F
+        if length == 126:
+            length = int.from_bytes(self.rfile.read(2), "big")
+        elif length == 127:
+            length = int.from_bytes(self.rfile.read(8), "big")
+        mask = self.rfile.read(4)
+        payload = bytearray(self.rfile.read(length))
+        for index in range(len(payload)):
+            payload[index] ^= mask[index % 4]
+        return frame_type, bytes(payload)
 
 
 if __name__ == "__main__":
