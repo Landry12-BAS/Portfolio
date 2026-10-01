@@ -1,0 +1,47 @@
+{
+  "name": "@lb/node-systems",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The LB systems built on Node: one Fastify monolith with a BullMQ worker, and one Postgres schema per system. LB-08 Automation Studio today.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/main.ts",
+    "start": "node src/main.ts",
+    "worker": "node --watch --env-file-if-exists=.env src/worker.ts",
+    "worker:start": "node src/worker.ts",
+    "migrate": "node --env-file-if-exists=.env src/cli/migrate.ts",
+    "seed": "node --env-file-if-exists=.env src/cli/seed.ts",
+    "openapi": "node src/cli/openapi.ts",
+    "eval:lb08": "node --env-file-if-exists=.env src/cli/eval-lb08.ts",
+    "check": "node src/cli/check.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.9.1",
+    "@lb/common": "workspace:*",
+    "@lb/contracts": "workspace:*",
+    "ai": "^7.0.126",
+    "bullmq": "^6.3.11",
+    "drizzle-orm": "^0.45.3",
+    "fastify": "^5.12.5",
+    "fastify-type-provider-zod": "^7.0.0",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.1",
+    "pino": "^10.3.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.2.0",
+    "@testcontainers/redis": "^12.1.0",
+    "@types/node": "^24.19.0",
+    "@types/pg": "^8.15.0",
+    "drizzle-kit": "^0.31.11",
+    "vitest": "^5.0.2"
+  }
+}

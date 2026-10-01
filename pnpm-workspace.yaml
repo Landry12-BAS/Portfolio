@@ -9,8 +9,11 @@ packages:
 # - ssh2 and cpu-features (pulled in by Testcontainers) only compile optional native
 #   crypto speed-ups; ssh2 falls back to JavaScript, and tests never use SSH.
 # - protobufjs only runs a version notice for its CLI.
+# - msgpackr-extract (pulled in by BullMQ) only builds an optional native speed-up;
+#   without it msgpackr uses its JavaScript decoder.
 ignoredBuiltDependencies:
   - cpu-features
+  - msgpackr-extract
   - protobufjs
   - ssh2
   - unrs-resolver
