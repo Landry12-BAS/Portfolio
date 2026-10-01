@@ -1,0 +1,19 @@
+# What the Node systems image's build may see. Everything is excluded unless listed, so a
+# stray .env file, a service key (*.jwk.json) or a test fixture can never reach an image.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!packages/common/package.json
+!packages/common/src/**
+!packages/contracts/package.json
+!packages/contracts/src/**
+!services/node-systems/package.json
+!services/node-systems/src/**
+!data/seed/lb08/**
+!infra/docker/node-entrypoint.mjs
+
+**/node_modules
+**/.env
+**/.env.*
+**/*.jwk.json

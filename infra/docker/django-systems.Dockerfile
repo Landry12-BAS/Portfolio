@@ -1,6 +1,7 @@
-# The Django systems image (services/django-systems): the API (uvicorn), the Celery worker
-# with its scheduler, and the release step that migrates and seeds. One image, three
-# commands (infra/docker-compose.yml). Build context: the repository root.
+# The Django systems image (services/django-systems): the API (uvicorn: HTTP for LB-01 and
+# LB-02, and LB-02's WebSocket), the Celery worker with its scheduler, and the release step
+# that migrates and seeds. One image, three commands (infra/docker-compose.yml). Build
+# context: the repository root.
 #
 # The build stage installs the production dependencies from uv.lock into a virtualenv; the
 # runtime stage copies that virtualenv and the code into a slim Python image and runs as an
@@ -32,7 +33,7 @@ RUN uv sync --frozen --no-editable --package django-systems \
 
 FROM python:3.13.15-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS runtime
 LABEL org.opencontainers.image.title="lb-django-systems" \
-      org.opencontainers.image.description="The Django systems (LB-01, then LB-02 and LB-09): API, Celery worker and release step." \
+      org.opencontainers.image.description="The Django systems (LB-01 and LB-02, then LB-09): API, Celery worker and release step." \
       org.opencontainers.image.source="https://github.com/Landry12-BAS/Portfolio"
 # An unprivileged user with no home and no shell. The numeric id is what docker-compose.yml
 # gives the tmpfs mounts, so the two must agree.
@@ -43,8 +44,8 @@ RUN groupadd --system --gid 10001 lb \
 COPY --from=build /app/.venv /app/.venv
 COPY --from=build /repo/services/django-systems /app/services/django-systems
 COPY data/seed /app/data/seed
-COPY --chmod=0555 infra/docker/django-entrypoint.sh /usr/local/bin/lb-entrypoint
-COPY --chmod=0555 infra/docker/django-healthcheck.py /usr/local/bin/lb-healthcheck
+COPY --chmod=0555 infra/docker/python-entrypoint.sh /usr/local/bin/lb-entrypoint
+COPY --chmod=0555 infra/docker/python-healthcheck.py /usr/local/bin/lb-healthcheck
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -54,6 +55,13 @@ USER 10001:10001
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/lb-entrypoint"]
 # The API. The worker and the release step override this command (docker-compose.yml).
-# No Server header: nothing outside needs to learn what is serving. One process, because
-# the box has two cores and a dozen services to share them.
-CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--no-server-header", "--timeout-keep-alive", "65", "--timeout-graceful-shutdown", "10"]
+#   --ws-max-size 8192   uvicorn reads a whole WebSocket frame into memory before the
+#                        consumer can refuse it, and LB-02's messages are at most 4 KB
+#                        (its README): this caps what a frame can make the process hold.
+#   --ws-ping-*          a ping every 20 s, and a peer that doesn't answer within 20 s is
+#                        dropped. The pings keep a quiet conversation alive through
+#                        Cloudflare, which closes a silent connection at 100 s, and free
+#                        the memory of a tab that went away without saying so.
+#   --no-server-header   nothing outside needs to learn what is serving.
+# One process, because the box has two cores and a dozen services to share them.
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--no-server-header", "--timeout-keep-alive", "65", "--timeout-graceful-shutdown", "10", "--ws-max-size", "8192", "--ws-ping-interval", "20", "--ws-ping-timeout", "20"]

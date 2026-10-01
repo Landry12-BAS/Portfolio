@@ -247,7 +247,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "/usr/local/bin/lb-healthcheck"]
+      test: ["CMD", "/usr/local/bin/lb-healthcheck", "8000", "DJANGO_ALLOWED_HOSTS"]
       interval: 15s
       timeout: 6s
       retries: 4

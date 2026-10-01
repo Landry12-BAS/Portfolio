@@ -1,6 +1,7 @@
 #!/bin/sh
-# Entrypoint of the Django systems image: it hands the service's private key to the
-# process as the file lb-common reads, then starts the container's command.
+# Entrypoint of the Python systems' images (Django and Flask): it hands the service's
+# private key to the process as the file lb-common reads, then starts the container's
+# command.
 #
 # lb-common loads the key from a JWK file and refuses one that other users could read
 # (python/lb-common/src/lb_common/tokens.py). The deploy hands the key over as one
@@ -8,7 +9,8 @@
 # a file bind-mounted from the host would have to be owned by this container's user, and
 # would be missing after a reboot until the next deploy decrypts it again. The file is
 # written to a tmpfs that only this user can read, and the variable is dropped before
-# the real command starts, so the service never sees the key twice.
+# the real command starts, so the service never sees the key twice. A container that is
+# given no key (a migration, a seed job) starts its command as it is.
 set -eu
 
 if [ -n "${LB_SERVICE_KEY_JWK_B64:-}" ]; then

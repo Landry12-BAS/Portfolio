@@ -153,11 +153,11 @@ jobs:
       - run: uv run ruff format --check python scripts services/django-systems services/flask-systems infra
       - name: Every module, class and function has a docstring
         run: uv run python scripts/check_docstrings.py
-      - run: uv run mypy python/lb-common scripts infra/docker/django-healthcheck.py infra/caddy/test-upstream.py
+      - run: uv run mypy python/lb-common scripts infra/docker/python-healthcheck.py infra/caddy/test-upstream.py
       - name: Django systems type-check, with the Django plugin
         run: uv run --directory services/django-systems mypy .
-      - name: Flask systems type-check
-        run: uv run --directory services/flask-systems mypy .
+      - name: Flask systems type-check, with the image's data job that imports the service
+        run: uv run --directory services/flask-systems mypy . ../../infra/docker/flask-seed.py
       - name: Unit, integration and gateway contract tests
         run: uv run pytest
       - name: Django systems migrations match their models

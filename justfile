@@ -41,9 +41,9 @@ format:
 # Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
-    uv run mypy python/lb-common scripts infra/docker/django-healthcheck.py infra/caddy/test-upstream.py
+    uv run mypy python/lb-common scripts infra/docker/python-healthcheck.py infra/caddy/test-upstream.py
     uv run --directory services/django-systems mypy .
-    uv run --directory services/flask-systems mypy .
+    uv run --directory services/flask-systems mypy . ../../infra/docker/flask-seed.py
 
 # Integration tests start Redis and Postgres with Docker, or use LB_TEST_REDIS_URL and
 # LB_TEST_DATABASE_URL when they are set.
