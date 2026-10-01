@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createVisitorVerifier, loadPublicKey, verifyVisitorToken, visitorFromHeader, VisitorTokenError } from '../../src/visitors.ts'
-import { hmacToken, makeSiteKeys, mintVisitorToken, segment, unsignedToken, validClaims } from '../support/visitor-tokens.ts'
+import { hmacToken, makeSiteKeys, mintVisitorToken, segment, unsignedToken, validClaims } from '../../src/testing.ts'
 
 const NOW = 1_790_000_000
 const site = makeSiteKeys()

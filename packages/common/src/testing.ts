@@ -1,5 +1,9 @@
-// The site's side of the visitor token, as the tests play it: mint a token the way the Nuxt
-// server must (docs/SECURITY.md, section 2), or a deliberately wrong one.
+// Helpers for the tests of every Node system: the site's side of the visitor token, played
+// by hand. Nothing in a running service imports this file.
+//
+// The site's Nitro server mints the real tokens (docs/SECURITY.md, section 2). A system's
+// tests need tokens too, valid ones and deliberately wrong ones, so the format is written
+// out here once, next to the check that reads it (visitors.ts).
 import { createHmac, generateKeyPairSync, sign } from 'node:crypto'
 import type { KeyObject } from 'node:crypto'
 
@@ -16,9 +20,9 @@ export function makeSiteKeys(): SiteKeys {
   return { privateKey, publicKey, encodedPublicKey: publicKey.export({ format: 'jwk' }).x ?? '' }
 }
 
-/** The claims of a token that is valid at `now` for lb-08. */
-export function validClaims(now: number): Record<string, unknown> {
-  return { iss: 'lb-web', aud: 'lb-08', sub: 'session-0123456789abcdef', iat: now, exp: now + 300 }
+/** The claims of a visitor token for `system` that is valid at `nowSeconds` and lives five minutes. */
+export function validClaims(nowSeconds: number, system = 'lb-08', session = 'session-0123456789abcdef'): Record<string, unknown> {
+  return { iss: 'lb-web', aud: system, sub: session, iat: nowSeconds, exp: nowSeconds + 300 }
 }
 
 /** Encodes a value as one base64url JSON segment. */
