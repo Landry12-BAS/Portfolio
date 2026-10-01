@@ -1,0 +1,49 @@
+// Tests that the files generated from code are up to date: the OpenAPI document the site's
+// typed client is built from, and LB-08's migrations. Both are written by a command and
+// committed, so a change to a route or to the schema that forgets the command fails here,
+// and again in `pnpm check` and CI. Neither needs a database or a network.
+import { readFileSync } from 'node:fs'
+
+import { describe, expect, it } from 'vitest'
+
+import { OPENAPI_FILE, renderOpenApi } from '../../src/documentation.ts'
+import { pendingSchemaChanges } from '../../src/modules/lb08/db/drift.ts'
+import { MODULES } from '../../src/modules/registry.ts'
+
+describe('openapi.json', () => {
+  it('is what the routes\' schemas generate; run `just node-openapi` when this fails', async () => {
+    expect(readFileSync(OPENAPI_FILE, 'utf8')).toBe(await renderOpenApi(MODULES))
+  })
+
+  it('is generated without a database, a queue or a model: documenting touches none of them', async () => {
+    const document = JSON.parse(await renderOpenApi(MODULES))
+
+    expect(Object.keys(document.paths)).toContain('/api/lb08/workflows')
+    expect(Object.keys(document.paths)).toContain('/api/healthz')
+  })
+
+  it('names the visitor token as the way in, and every LB-08 route as needing it', async () => {
+    const document = JSON.parse(await renderOpenApi(MODULES))
+
+    expect(document.components.securitySchemes.visitorToken.scheme).toBe('bearer')
+    const lb08Responses = Object.entries(document.paths).filter(([path]) => path.startsWith('/api/lb08')).flatMap(([, methods]) => Object.values(methods as Record<string, { responses: Record<string, unknown> }>))
+    expect(lb08Responses.every(operation => '401' in operation.responses)).toBe(true)
+  })
+})
+
+describe('LB-08\'s migrations', () => {
+  it('hold every change in schema.ts: run drizzle-kit generate when this fails', async () => {
+    expect(await pendingSchemaChanges()).toEqual([])
+  })
+})
+
+describe('the registry', () => {
+  it('hosts LB-08 under /api/lb08, in the lb08 schema, with a schema name each for the OpenAPI document', () => {
+    expect(MODULES.map(module => [module.part, module.apiPrefix, module.schema])).toEqual([['lb-08', '/api/lb08', 'lb08']])
+    expect(Object.keys(MODULES[0]?.schemaNames ?? {})).toContain('WorkflowView')
+  })
+
+  it('gives every module its own part number, prefix and schema, so a system added later can\'t collide', () => {
+    for (const key of ['part', 'apiPrefix', 'schema'] as const) expect(new Set(MODULES.map(module => module[key])).size).toBe(MODULES.length)
+  })
+})

@@ -353,3 +353,19 @@ systems:
     # visitor calls a day the free tiers carry (docs/STACK.md, Capacity): these are
     # ceilings, to be rebalanced from measured use once the systems run live.
     dailyCalls: 150
+  lb-08:
+    name: Automation Studio
+    service: node-systems
+    aliases: [lb-tools]
+    # Describing a process costs one lb-tools call, plus a second when the first answer
+    # fails validation and gets its one repair. Everything after that (validation, the
+    # workflow engine, the sandboxed connectors, retries, replay) is the service's own code
+    # and database, with no model call. The cap leaves one call spare.
+    maxCallsPerRun: 3
+    # 10 described workflows per visitor per day (the LB-08 datasheet: 10 runs a day, 1 to 3
+    # calls each), at up to 3 calls each. Samples are ready-made graphs and cost nothing.
+    sessionDailyCalls: 30
+    # 40 custom descriptions a day at up to 2 calls each, and one full pass of the golden
+    # set (39 cases, at most 2 calls each) when a prompt changes. Rebalanced as each system
+    # ships (docs/STACK.md, Capacity).
+    dailyCalls: 160

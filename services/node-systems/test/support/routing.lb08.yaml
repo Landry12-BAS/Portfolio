@@ -1,0 +1,54 @@
+# Routing for the tests that run LB-08's describe pipeline through the real gateway on a
+# fake provider. It is the real routing table in miniature: the lb-tools alias has the real
+# limits (4,000 tokens in, 2,048 out), and the lb-08 entry the real quotas, so a prompt that
+# is too long, or a pipeline that makes a third call, meets the gateway's own refusal here.
+# test/unit/routing-contract.test.ts compares the real services/gateway/routing.yaml with
+# the service's constants, so the two copies of these numbers can't drift.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 1000
+  responseMs: 2000
+  idleMs: 1000
+  deadlineMs: 6000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      small:
+        id: alpha/small-model
+        context: 32768
+        capabilities: [chat, tools, json_schema, reasoning]
+        # Roomy, so the model's own budget never ends a test: the gateway's budget tests cover
+        # that, and what is checked here is the alias's limits and the system's quotas.
+        limits:
+          minute: { requests: 1000, tokens: 400000 }
+          day: { requests: 10000, tokens: 4000000 }
+
+aliases:
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    chain: [alpha/small]
+
+systems:
+  lb-08:
+    name: Automation Studio
+    service: node-systems
+    aliases: [lb-tools]
+    maxCallsPerRun: 3
+    sessionDailyCalls: 30
+    dailyCalls: 160

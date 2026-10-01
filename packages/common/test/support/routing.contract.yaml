@@ -1,0 +1,64 @@
+# Routing for @lb/common's contract tests: the real gateway, one fake provider, and LB-08
+# as the system the Node service calls for. The limits are small so every quota can be
+# exercised in a few calls. The real routing table is services/gateway/routing.yaml; the
+# test in services/node-systems checks its lb-08 entry against the service's own constants.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 400
+  responseMs: 600
+  idleMs: 400
+  deadlineMs: 4000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      small:
+        id: alpha/small-model
+        context: 32768
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      tiny:
+        id: alpha/tiny-model
+        context: 32768
+        capabilities: [chat]
+        # 2 x 0.95 leaves room for exactly one call a day.
+        limits:
+          day: { requests: 2 }
+
+aliases:
+  lb-fast:
+    description: Classification
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 512
+    chain: [alpha/small]
+
+  lb-tiny:
+    description: One call a day
+    kind: chat
+    maxInputTokens: 1000
+    maxOutputTokens: 256
+    chain: [alpha/tiny]
+
+systems:
+  lb-08:
+    name: Automation Studio
+    service: node-systems
+    aliases: [lb-fast, lb-tiny]
+    maxCallsPerRun: 3
+    sessionDailyCalls: 6
+    dailyCalls: 50

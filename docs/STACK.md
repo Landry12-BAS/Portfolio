@@ -278,6 +278,11 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   workflow steps (LB-08). LB-06 streams simulator events through Redis Streams.
 - **AI SDK** for tool loops, streaming and `generateObject` with Zod, pointed at the
   gateway through its OpenAI-compatible provider.
+- **LB-08's engine** is one BullMQ job per workflow step (three attempts, exponential
+  backoff, a dead-letter queue), a Postgres run log, and an outbox with idempotency keys
+  so a side effect happens once even when a worker dies after sending it. Free steps run
+  inside the transaction; the site follows a run by polling its log with a cursor. See
+  [`services/node-systems/README.md`](../services/node-systems/README.md).
 - **LB-04:** pdf.js (`pdfjs-dist`) on the server and in the browser uses the same
   text layer, so quote positions line up exactly.
 - **LB-07:** Playwright and axe-core in a separate worker container with concurrency

@@ -1,0 +1,14 @@
+# The synthetic stock list LB-08's stock-check connector reads: the products Basalt & Bean
+# sells wholesale, the kilograms on the shelf and how many days a restock takes. The
+# numbers are invented. `just node-seed` checks this file against
+# services/node-systems/src/modules/lb08/data/stock.ts before loading it into the lb08
+# schema, and the nightly reseed puts the shelves back as they are here.
+#
+# A product with no kilograms left is how the demo shows the out-of-stock branch.
+products:
+  - {sku: basalt-blend-1kg, name: Basalt Blend 1 kg, availableKg: 180, restockEtaDays: 5}
+  - {sku: huila-espresso-1kg, name: Colombia Huila Espresso 1 kg, availableKg: 64, restockEtaDays: 4}
+  - {sku: guji-filter-1kg, name: Ethiopia Guji Filter 1 kg, availableKg: 22, restockEtaDays: 6}
+  - {sku: nyeri-filter-1kg, name: Kenya Nyeri Filter 1 kg, availableKg: 38, restockEtaDays: 7}
+  - {sku: decaf-sugarcane-1kg, name: Decaf Sugarcane 1 kg, availableKg: 0, restockEtaDays: 9}
+  - {sku: house-espresso-5kg, name: House Espresso 5 kg bag, availableKg: 95, restockEtaDays: 3}

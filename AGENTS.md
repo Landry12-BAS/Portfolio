@@ -32,7 +32,14 @@ demo, and LB-02's demo (the phone-frame PWA) on the site. Also in build:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
 and live eval sets (see its [README](services/flask-systems/README.md)); next come
-LB-05's recorded sample runs and its demo on the site.
+LB-05's recorded sample runs and its demo on the site. The Node side: `packages/contracts`
+(the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
+`lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
+Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
+graphs checked by one schema, a BullMQ engine with retries, a dead-letter queue, replay and
+exactly-once side effects, and the visitor API (see its
+[README](services/node-systems/README.md)); next come the Vue Flow editor and LB-08's pages
+on the site, and the recorded sample runs.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -172,6 +179,12 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just openapi-flask` | Regenerate `services/flask-systems/openapi.json` after an API change (a test fails while it is stale) |
 | `just seed-lb05 [--size small] [--today YYYY-MM-DD] [--data DIR]` | Generate LB-05's synthetic sales data (about two million orders) as Parquet and a read-only DuckDB file in `data/generated/lb05`; the same seed and day give the same data |
 | `just eval-lb05 [--samples] [--case ID] [--adversarial]` | Put LB-05's golden set (or, with `--adversarial`, its attacks) to the live pipeline and grade it by rules (two to four gateway calls a question; run it when prompts or routes change; the adversarial run exits 1 unless every attempt was held) |
+| `just node-api` | Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in `services/node-systems/.env`, from `.env.example`) |
+| `just node-worker` | Run the Node systems' BullMQ workers with their sweep: LB-08's step jobs, the 24-hour deletion of expired workflows and the recovery of lost jobs |
+| `just node-migrate` | Create or update each Node system's Postgres schema from its Drizzle migrations (one schema per system) |
+| `just node-seed` | Load the Node systems' synthetic data (LB-08's stock list) from `data/seed`, replacing what the files no longer hold |
+| `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
+| `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
@@ -179,8 +192,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. Integration tests start Redis (gateway, Python and Flask) and Postgres
-with pgvector (Django and Flask) with Testcontainers; where Docker isn't available, set
+Playwright's own. Integration tests start Redis (gateway, Python, Flask and the Node systems) and
+Postgres with pgvector (Django, Flask and the Node systems) with Testcontainers; where Docker
+isn't available, or its Ryuk helper can't be pulled (set `TESTCONTAINERS_RYUK_DISABLED=true`), set
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` and
 `LB_TEST_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb` to use local servers instead
 (the Postgres user needs the right to create databases; the Flask tests make a database

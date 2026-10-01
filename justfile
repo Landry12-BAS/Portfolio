@@ -120,6 +120,31 @@ seed-lb05 *args:
 eval-lb05 *args:
     uv run --directory services/flask-systems --env-file .env python manage.py eval_lb05 {{args}}
 
+# Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in services/node-systems/.env).
+node-api:
+    pnpm --filter @lb/node-systems dev
+
+# Run the Node systems' BullMQ workers with their sweep (settings in services/node-systems/.env).
+node-worker:
+    pnpm --filter @lb/node-systems worker
+
+# Create or update every Node system's Postgres schema (settings in services/node-systems/.env).
+node-migrate:
+    pnpm --filter @lb/node-systems migrate
+
+# Load the Node systems' synthetic data (LB-08's stock list), replacing what the files no longer hold.
+node-seed:
+    pnpm --filter @lb/node-systems seed
+
+# Write the Node systems' OpenAPI schema to services/node-systems/openapi.json, for the site's typed client.
+node-openapi:
+    pnpm --filter @lb/node-systems openapi
+
+# Needs the gateway with provider keys, and costs at most two calls a case: `--samples` or `--case ID` run fewer.
+# Run LB-08's golden set through the live pipeline and grade it by rules.
+eval-lb08 *args:
+    pnpm --filter @lb/node-systems eval:lb08 {{args}}
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

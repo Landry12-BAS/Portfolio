@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Plain ESM TypeScript that Node (type stripping), Vite and the Nuxt site all read
+    // as it is: only erasable syntax, and every relative import names its .ts file.
+    "lib": ["ES2024"],
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}
