@@ -11,6 +11,7 @@ from pathlib import Path
 
 from config.environment import ConfigurationError, read_environment
 from core.app import create_app, render_openapi
+from core.migrations import upgrade
 from core.platform import Platform, connect_platform
 from core.registry import Command, SystemModule
 
@@ -26,7 +27,7 @@ def write_line(text: str, *, error: bool = False) -> None:
 
 
 def platform_commands(systems: Sequence[SystemModule]) -> dict[str, Command]:
-    """Return the commands every deployment has: `export_openapi` for the systems served."""
+    """Return the commands every deployment has: `export_openapi` for the systems served, and `migrate`."""
 
     def export_openapi(arguments: Sequence[str], platform: Platform) -> int:
         """Write the API's OpenAPI document to openapi.json, for the site's typed client."""
@@ -38,7 +39,18 @@ def platform_commands(systems: Sequence[SystemModule]) -> dict[str, Command]:
         write_line(f"Wrote {path}.")
         return 0
 
-    return {"export_openapi": export_openapi}
+    def migrate(arguments: Sequence[str], platform: Platform) -> int:
+        """Bring every system's Postgres schema up to its latest migration."""
+        if arguments:
+            write_line("migrate takes no arguments.", error=True)
+            return 2
+        for module in systems:
+            if module.migrations is not None:
+                upgrade(platform.engines[module.schema], module.schema, module.migrations)
+                write_line(f"Migrated {module.schema}.")
+        return 0
+
+    return {"export_openapi": export_openapi, "migrate": migrate}
 
 
 def all_commands(systems: Sequence[SystemModule]) -> dict[str, Command]:

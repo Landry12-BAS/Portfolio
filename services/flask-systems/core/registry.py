@@ -7,6 +7,7 @@ modules is in config/systems.py; nothing else in the app names a system.
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from core.openapi import APIBlueprint
 from core.platform import Platform
@@ -28,11 +29,13 @@ class SystemModule:
     """One system of the monolith.
 
     `key` is its part number (`lb-05`), `schema` its Postgres schema (`lb05`), which also
-    names it in the readiness check. `build` makes its runtime from the platform, and
-    `commands` are the `manage.py` commands it brings, by name.
+    names it in the readiness check. `build` makes its runtime from the platform, `commands`
+    are the `manage.py` commands it brings, by name, and `migrations` is the folder of its
+    Alembic migrations, which `manage.py migrate` runs on its schema.
     """
 
     key: str
     schema: str
     build: Callable[[Platform], SystemRuntime]
     commands: Mapping[str, Command] = field(default_factory=dict)
+    migrations: Path | None = None

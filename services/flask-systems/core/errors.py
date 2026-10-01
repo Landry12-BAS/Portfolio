@@ -29,11 +29,15 @@ UNEXPECTED_ERROR = ("internal_error", "The service hit an internal error.")
 
 
 class ErrorDetail(BaseModel):
-    """What went wrong, as a stable code and a sentence for people; `fields` names the fields a 422 faults."""
+    """What went wrong, as a stable code and a sentence for people.
+
+    `fields` names the fields a 422 faults, and `resets_at` says when a daily limit starts again.
+    """
 
     code: str
     message: str
     fields: str | None = None
+    resets_at: str | None = None
 
 
 class ErrorOut(BaseModel):
