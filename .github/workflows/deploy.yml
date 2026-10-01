@@ -3,7 +3,7 @@ name: Deploy
 # Puts the commit that just passed CI on main live on the box:
 #
 #   1. images.yml builds the images for linux/amd64 and linux/arm64, pushes them to GHCR
-#      under the commit's hash, and signs them keylessly with cosign;
+#      under the commit's hash, scans them, and signs them keylessly with cosign;
 #   2. this workflow joins the owner's tailnet, sends the commit's infra/ folder to the box
 #      over Tailscale SSH, and runs deploy.sh there. The box decrypts the secrets, pulls the
 #      images, checks their signatures, starts the stack, waits for every health check, runs

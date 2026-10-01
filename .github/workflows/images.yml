@@ -8,9 +8,10 @@ name: Images
 #               image is built for both architectures, so a Dockerfile that breaks (on ARM
 #               alone, too) fails the pull request.
 #   deploy.yml  on main, once CI has passed, with push: true. Each image is pushed to GHCR
-#               under the commit's hash, signed keylessly with cosign, and the signature is
-#               checked straight away the way the box will check it, so a signer identity
-#               that does not match shows up here and not as a failed deploy.
+#               under the commit's hash, scanned for fixable high and critical
+#               vulnerabilities, signed keylessly with cosign, and the signature is checked
+#               straight away the way the box will check it, so a signer identity that does
+#               not match shows up here and not as a failed deploy.
 #
 # This workflow asks for no permissions of its own: it can do what its caller grants. A
 # build that does not push needs `contents: read`; pushing needs `packages: write`, and
@@ -88,6 +89,18 @@ jobs:
           # Attached to the image index, so they are covered by its signature.
           provenance: ${{ inputs.push && 'mode=max' || 'false' }}
           sbom: ${{ inputs.push }}
+
+      # A fixable high or critical vulnerability in the finished image stops the release here,
+      # before it is signed, and the box runs only signed images. Vulnerabilities with no fix
+      # yet are left to the base image's maintainers; `just pin-images` takes their fix.
+      - name: Scan the image
+        if: inputs.push
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
 
       - name: Install cosign
         if: inputs.push

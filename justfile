@@ -27,21 +27,21 @@ gateway-token *args:
 # Lint every TypeScript, Vue and Python package, and check every Python docstring.
 lint:
     pnpm lint
-    uv run ruff check python scripts services/django-systems
-    uv run ruff format --check python scripts services/django-systems
+    uv run ruff check python scripts services/django-systems infra
+    uv run ruff format --check python scripts services/django-systems infra
     uv run python scripts/check_docstrings.py
 
 # Format the Python code with Ruff and apply its safe fixes.
 format:
-    uv run ruff format python scripts services/django-systems
-    uv run ruff check --fix python scripts services/django-systems
+    uv run ruff format python scripts services/django-systems infra
+    uv run ruff check --fix python scripts services/django-systems infra
 
 # The Django service runs mypy from its own folder, where its settings and the Django
 # plugin live.
 # Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
-    uv run mypy python/lb-common scripts
+    uv run mypy python/lb-common scripts infra/docker/django-healthcheck.py infra/caddy/test-upstream.py
     uv run --directory services/django-systems mypy .
 
 # Integration tests start Redis and Postgres with Docker, or use LB_TEST_REDIS_URL and
@@ -102,3 +102,68 @@ check:
 # Regenerate the icon sprite and registry after editing packages/icons/svg.
 icons:
     pnpm --filter @lb/icons build
+
+# The local platform is hardened as on the box and needs Docker: run `just stack-secrets` once,
+# then `just stack up -d --wait`, and Caddy answers on http://127.0.0.1:8180.
+# Run a docker compose command on the local stack, such as `just stack ps` or `just stack logs gateway`.
+stack *args:
+    LB_STACK=dev infra/scripts/compose.sh {{args}}
+
+# Make throwaway secrets for the local stack in infra/.dev; `--again` replaces them with new ones.
+stack-secrets *args:
+    infra/scripts/dev-secrets.sh {{args}}
+
+# Check a running local stack from the inside: health, the routes through Caddy, an empty Redis ACL log.
+stack-smoke:
+    LB_STACK=dev infra/scripts/smoke.sh
+
+# Needs shellcheck, jq, Docker, hadolint and actionlint (`infra/scripts/install-tool.sh hadolint actionlint`).
+# Check the infrastructure statically: shell, Dockerfiles, workflows, image pins, Compose rules, Caddyfile, units.
+infra-check:
+    infra/scripts/check.sh
+
+# The last three need Docker, and the Redis ACL proof runs the services' own suites, so run `just install` first.
+# Run the infrastructure's tests: secrets, deploy decisions, pinning, Postgres roles, Caddy routing, the Redis ACL.
+infra-test:
+    infra/scripts/test-secrets.sh
+    infra/scripts/test-deploy.sh
+    infra/scripts/test-pin-images.sh
+    infra/postgres/test-roles.sh
+    infra/caddy/test.sh
+    infra/redis/test-acl.sh
+
+# Pin every third-party image to the digest its tag names today, then review the diff (CI fails on an unpinned one).
+pin-images:
+    infra/scripts/pin-images.sh
+
+# Make your age key outside the repository, and list its public half in .sops.yaml.
+secrets-init:
+    infra/scripts/secrets.sh init
+
+# Create infra/secrets/<name>.enc.env from its template: random values are made, then your editor opens for the rest.
+secrets-new name:
+    infra/scripts/secrets.sh new {{name}}
+
+# Edit an encrypted secrets file in $EDITOR, such as `just secrets-edit gateway`, and check it afterwards.
+secrets-edit name:
+    infra/scripts/secrets.sh edit {{name}}
+
+# Compare every encrypted secrets file with its template (variable names only, never values).
+secrets-check:
+    infra/scripts/secrets.sh check
+
+# Let one more age public key, such as the box's, open every secrets file.
+secrets-add-recipient label key:
+    infra/scripts/secrets.sh add-recipient {{label}} {{key}}
+
+# Lock every secrets file to the keys now listed in .sops.yaml, with a new data key (after removing a key).
+secrets-rekey:
+    infra/scripts/secrets.sh rekey
+
+# Test the secrets tooling with the real sops and age, in a throwaway copy with throwaway keys.
+secrets-test:
+    infra/scripts/test-secrets.sh
+
+# Print a random hex token (24 bytes by default), for a password or key you edit in by hand.
+secret-token *bytes:
+    infra/scripts/secrets.sh token {{bytes}}
