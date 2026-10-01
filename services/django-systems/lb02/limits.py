@@ -27,10 +27,15 @@ CONVERSATIONS_PER_VISITOR_PER_DAY: Final = 10
 
 # Every gateway call a conversation makes counts: one injection check for each visitor
 # message, the chat calls, and the language check when a first message is ambiguous. A
-# typical booking takes 7 to 10 (docs/PLAYBOOK.md calls them model calls too); this is the
-# most a conversation may spend before a person takes over. The gateway's own cap for
-# LB-02 in routing.yaml sits a few calls above it, as a backstop that code never reaches.
-MAX_MODEL_CALLS_PER_CONVERSATION: Final = 20
+# booking takes 7 of them (three checks, four chat calls); the datasheet says 6 to 10. The
+# most a conversation may spend before a person takes over is sized for the other limit:
+# 30 messages at a check and one reply each is 60, and 4 more cover the language check and
+# a turn or two that needs a second reply. A chatty visitor can run out of calls before
+# the 30th message; the message limit is the cap that always holds, because a message
+# costs at least one call. The gateway's cap for LB-02 in routing.yaml sits four calls
+# above this number, so the visitor is handed over by this code, never refused by the
+# gateway halfway through a turn.
+MAX_MODEL_CALLS_PER_CONVERSATION: Final = 64
 # Chat calls inside one visitor message: a tool call, its follow-up, and one spare.
 MAX_CHAT_CALLS_PER_TURN: Final = 3
 # Tool calls the concierge will run for one model reply.

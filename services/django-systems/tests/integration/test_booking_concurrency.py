@@ -19,11 +19,13 @@ from django.db import IntegrityError, connections, transaction
 from lb02.booking import BookingError, BookingService, ConfirmResult, HoldResult, Refusal, is_exclusion_violation
 from lb02.models import Conversation, Offering, Reservation, Slot
 from tests.lb02_support import (
+    PATIENCE_SECONDS,
     FakeClock,
     make_conversation,
     make_offering,
     make_room,
     make_slot,
+    race,
     raw_reservation,
     tomorrow_at,
 )
@@ -31,27 +33,6 @@ from tests.lb02_support import (
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb02"], transaction=True)]
 
 RACERS = 8
-# How long a test waits for its threads before giving up, so a deadlock fails the test instead of hanging it.
-PATIENCE_SECONDS = 20
-
-
-def race[Outcome](jobs: list[Callable[[], Outcome]]) -> list[Outcome | Exception]:
-    """Run every job in its own thread, all released at once, and return each job's result or the error it raised."""
-    barrier = threading.Barrier(len(jobs))
-
-    def run(job: Callable[[], Outcome]) -> Outcome | Exception:
-        """Wait for the others, run the job on this thread's own connection, and close it afterwards."""
-        try:
-            barrier.wait(timeout=PATIENCE_SECONDS)
-            return job()
-        except Exception as error:  # noqa: BLE001 - the test reads each racer's error as its result
-            return error
-        finally:
-            connections.close_all()
-
-    with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
-        futures = [pool.submit(run, job) for job in jobs]
-        return [future.result(timeout=PATIENCE_SECONDS) for future in futures]
 
 
 @pytest.fixture

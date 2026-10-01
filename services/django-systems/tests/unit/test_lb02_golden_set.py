@@ -228,7 +228,10 @@ def case_data(**changes: Any) -> dict[str, Any]:
     ("changes", "problem"),
     [
         ({"end": {"step": "availability", "calls_at_most": 3}}, "ends in a step its last turn doesn't allow"),
-        ({"end": {"step": "details", "calls_at_most": 21}}, "less than or equal to 20"),
+        (
+            {"end": {"step": "details", "calls_at_most": MAX_MODEL_CALLS_PER_CONVERSATION + 1}},
+            f"less than or equal to {MAX_MODEL_CALLS_PER_CONVERSATION}",
+        ),
         (
             {
                 "turns": [{"say": "Hello", "expect": {"step": "done"}}],

@@ -50,6 +50,7 @@ class Receipt(StrEnum):
     UNCHECKED = "unchecked"
     HANDED_OFF = "handed_off"
     MESSAGE_LIMIT = "message_limit"
+    BUDGET_SPENT = "budget_spent"
     UNAVAILABLE = "unavailable"
     OOPS = "oops"
     CLOSED = "closed"
@@ -91,6 +92,10 @@ TEMPLATES: Final[dict[str, dict[Receipt, str]]] = {
             "We've reached the {limit} messages this demo allows in one conversation, so I've passed it, "
             "with the whole transcript, to a member of our team."
         ),
+        Receipt.BUDGET_SPENT: (
+            "This conversation has used all the model calls the demo allows, so I've passed it, with the "
+            "whole transcript, to a member of our team."
+        ),
         Receipt.UNAVAILABLE: (
             "I can't reach my tools at the moment, so I've passed this conversation, with everything "
             "we've said so far, to a member of our team."
@@ -126,6 +131,10 @@ TEMPLATES: Final[dict[str, dict[Receipt, str]]] = {
         Receipt.MESSAGE_LIMIT: (
             "Dosáhli jsme {limit} zpráv, které toto demo v jedné konverzaci povoluje, proto je konverzace "
             "i s celým přepisem předána našemu týmu."
+        ),
+        Receipt.BUDGET_SPENT: (
+            "Tato konverzace vyčerpala všechna volání modelu, která demo povoluje, proto je i s celým "
+            "přepisem předána našemu týmu."
         ),
         Receipt.UNAVAILABLE: (
             "Momentálně nemám přístup ke svým nástrojům, proto je konverzace i s celým dosavadním "
