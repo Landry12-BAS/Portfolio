@@ -14,8 +14,11 @@
 #      proxy refuses a host that is not on its list. (Skipped where the proxies aren't
 #      running, as in a local stack.)
 #   4. No service was refused anything by Redis's ACL.
+#   5. With --public (the deploy passes it on the box): one request through the API's own
+#      public hostname, the way a visitor's browser comes in, which proves the tunnel and
+#      Cloudflare's side as well. It must be answered with the 401 that asks for a token.
 #
-#   infra/scripts/smoke.sh
+#   infra/scripts/smoke.sh [--public]
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,6 +67,22 @@ expect_status "the OpenAPI schema is not exposed" 404 "$api_host" /api/openapi.j
 expect_status "the gateway's model list is not exposed" 404 "$api_host" /v1/models
 expect_status "another Host is refused" 404 "evil.invalid" /api/lb01/customers
 expect_status "LB-01's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb01/customers
+
+if [ "${1:-}" = "--public" ]; then
+    echo "Through the public hostname"
+    public_status=""
+    # The tunnel can need a few seconds to carry traffic again after a restart.
+    for _ in 1 2 3 4 5 6; do
+        public_status="$(curl --silent --max-time 10 --output /dev/null --write-out '%{http_code}' "https://$api_host/api/lb01/customers" || true)"
+        [ "$public_status" = 401 ] && break
+        sleep 5
+    done
+    if [ "$public_status" = 401 ]; then
+        pass "https://$api_host reaches LB-01's API, and asks for a visitor token"
+    else
+        fail "https://$api_host/api/lb01/customers answered ${public_status:-nothing}, not 401"
+    fi
+fi
 
 echo "Nothing leaves except through a proxy"
 if grep -qx 'egress-gateway' <<<"$running_services" && grep -qx 'egress-systems' <<<"$running_services"; then
