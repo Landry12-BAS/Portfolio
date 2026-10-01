@@ -263,6 +263,7 @@ def case_data(**changes: Any) -> dict[str, Any]:
             "but there are only 1",
         ),
         ({"turns": [{"say": "", "expect": {"step": "details"}}]}, "at least 1 character"),
+        ({"turns": [{"say": "   ", "expect": {"step": "details"}}]}, "at least 1 character"),
         ({"turns": [{"say": "x" * 501, "expect": {"step": "details"}}]}, "at most 500 characters"),
         ({"covers": ["a_made_up_scenario"]}, "Input should be"),
         ({"language": "english"}, "String should match pattern"),

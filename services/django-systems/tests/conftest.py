@@ -9,11 +9,14 @@ tests never ask for either, so they run without Docker, and pytest-django refuse
 database access they attempt.
 """
 
+import base64
 import os
 import secrets
 from collections.abc import Iterator
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from django.conf import settings
 from pytest_django.fixtures import Settings
 from redis import Redis
@@ -91,3 +94,12 @@ def redis_channel_layer(settings: Settings, redis_url: str) -> Iterator[str]:
     if keys:
         client.delete(*keys)
     client.close()
+
+
+@pytest.fixture
+def web_signing_key(settings: Settings) -> Ed25519PrivateKey:
+    """Make the site's signing key, and give the service its public half the way the environment does."""
+    key = Ed25519PrivateKey.generate()
+    raw = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    settings.WEB_TOKEN_KEY = base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    return key

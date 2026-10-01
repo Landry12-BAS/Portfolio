@@ -48,7 +48,8 @@ MAX_OPTIONS: Final = 6
 INJECTION_STRIKES_BEFORE_HANDOFF: Final = 3
 FAILURES_BEFORE_HANDOFF: Final = 2
 
-# The WebSocket: how long a new connection has to present its token, and the largest
-# frame it may send, in bytes.
+# The WebSocket: how long a new connection has to present its token, how long an open one
+# may stay silent, and the largest frame it may send, in bytes.
 HELLO_TIMEOUT_SECONDS: Final = 10.0
+IDLE_TIMEOUT_SECONDS: Final = 900.0
 MAX_FRAME_BYTES: Final = 4_096

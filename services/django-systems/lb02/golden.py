@@ -28,9 +28,10 @@ from django.conf import settings
 from pydantic import Field, StringConstraints, model_validator
 
 from core.data_files import Key, StrictEntry, Text, read_data_file
-from lb02.limits import CALENDAR_DAYS_AHEAD, MAX_MESSAGE_LENGTH, MAX_MODEL_CALLS_PER_CONVERSATION, MAX_PARTY_SIZE
+from lb02.limits import CALENDAR_DAYS_AHEAD, MAX_MODEL_CALLS_PER_CONVERSATION, MAX_PARTY_SIZE
 from lb02.messages import Receipt
 from lb02.models import Conversation, Handoff
+from lb02.privacy import VisitorText
 from lb02.states import Step, Tool
 
 # A start time on the roastery's clock, such as 14:30.
@@ -38,7 +39,6 @@ ClockTime = Annotated[str, StringConstraints(pattern=r"^(?:[01]\d|2[0-3]):[0-5]\
 # A language as its two-letter ISO 639 code.
 Language = Annotated[str, StringConstraints(pattern=r"^[a-z]{2}$")]
 # What the visitor types: trimmed, never empty, never longer than the concierge accepts.
-VisitorText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_MESSAGE_LENGTH)]
 # Text a reply must never contain.
 Forbidden = Annotated[str, StringConstraints(min_length=2, max_length=80)]
 # The steps a conversation can end a turn in: one, or several when more than one is a right answer.

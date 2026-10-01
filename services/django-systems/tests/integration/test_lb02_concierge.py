@@ -21,33 +21,30 @@ from lb02.messages import Receipt
 from lb02.models import Confirmation, Conversation, Handoff, Message, Offering, Reservation
 from lb02.prompts import estimate_tokens
 from lb02.states import Step
-from tests.lb02_support import Rig, build_rig, call, calling, reload, say, tomorrow_at
+from tests.lb02_support import (
+    DETAILS,
+    FIRST_MESSAGE,
+    SECOND_MESSAGE,
+    THIRD_MESSAGE,
+    Rig,
+    build_rig,
+    call,
+    calling,
+    reload,
+    say,
+    tomorrow_at,
+)
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb02"])]
-
-FIRST_MESSAGE = "Hi! I'd like a cupping session for two tomorrow afternoon. I'm Jana Novak, jana@example.test."
-DETAILS = {
-    "offering": "cupping",
-    "party_size": 2,
-    "name": "Jana Novak",
-    "date_from": "2026-10-02",
-    "date_to": "2026-10-02",
-    "part_of_day": "afternoon",
-}
 
 
 def book_cupping(rig: Rig, conversation: Conversation) -> list[TurnResult]:
     """Take the conversation through the whole booking, with the replies a good model gives, and return each turn."""
-    rig.models.replies += [
-        calling(call("update_details", **DETAILS)),
-        say("I found Friday 2 Oct at 14:30. Shall I hold it?"),
-        calling(call("hold_slot", option=1)),
-        calling(call("confirm_booking")),
-    ]
+    rig.script_booking()
     return [
         rig.concierge.take_turn(conversation, FIRST_MESSAGE),
-        rig.concierge.take_turn(conversation, "The 2:30 pm one, please."),
-        rig.concierge.take_turn(conversation, "Yes, please confirm it."),
+        rig.concierge.take_turn(conversation, SECOND_MESSAGE),
+        rig.concierge.take_turn(conversation, THIRD_MESSAGE),
     ]
 
 

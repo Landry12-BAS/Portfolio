@@ -39,7 +39,7 @@ from core.structured import ChatMessage, ChatModels, Completion, GatewayChat, St
 from core.tool_chat import GatewayToolChat, ToolChat, ToolChatMessage, ToolReply
 from lb02.booking import DATABASE, BookingService, Clock, bookable_days, local_day
 from lb02.conversations import (
-    messages_left,
+    language_of,
     record,
     spend_call,
     spend_message,
@@ -57,8 +57,8 @@ from lb02.limits import (
 )
 from lb02.live import ChannelLayerNotifier
 from lb02.messages import Receipt, has_wording, render, when_text
-from lb02.models import Conversation, Handoff, Offering, Reservation, Slot
-from lb02.privacy import MaskedMessage, mask
+from lb02.models import Conversation, Handoff, Offering, Reservation
+from lb02.privacy import MaskedMessage, mask, strip_control_characters
 from lb02.prompts import (
     CHAT_MAX_TOKENS,
     LANGUAGE_MAX_TOKENS,
@@ -73,6 +73,7 @@ from lb02.prompts import (
     system_prompt,
     tool_definitions,
 )
+from lb02.snapshot import Snapshot, options_of, snapshot_of
 from lb02.states import Step
 from lb02.tools import ToolExecutor, ToolOutcome, TurnContext, email_status, hold_expiry_note
 from lb_common.gateway import Gateway
@@ -86,7 +87,6 @@ LANGUAGE_ALIAS = "lb-fast"
 OUT_OF_QUOTA = frozenset({"quota_exceeded", "budget_exhausted"})
 # The longest reply the concierge shows, in characters.
 MAX_REPLY_CHARS = 1_200
-CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 BLANK_LINES = re.compile(r"\n{3,}")
 REAL_ADDRESS_NOTE = (
     "The visitor gave an email address that isn't an example address, so it was not kept. "
@@ -123,41 +123,6 @@ class Guard(Protocol):
 
 
 @dataclass(frozen=True)
-class OptionView:
-    """A slot on offer, as a client shows it."""
-
-    number: int
-    slot_id: int
-    offering: str
-    starts_at: datetime
-    ends_at: datetime
-
-
-@dataclass(frozen=True)
-class HoldView:
-    """The slot a conversation holds, and when the hold runs out."""
-
-    slot_id: int
-    offering: str
-    starts_at: datetime
-    ends_at: datetime
-    expires_at: datetime
-
-
-@dataclass(frozen=True)
-class BookingView:
-    """A conversation's booking: its code, its slot, and where the mock confirmation was addressed."""
-
-    code: str
-    slot_id: int
-    offering: str
-    starts_at: datetime
-    ends_at: datetime
-    party_size: int
-    to: str
-
-
-@dataclass(frozen=True)
 class Reply:
     """What the concierge says, and the receipt it is when the code wrote it."""
 
@@ -165,19 +130,12 @@ class Reply:
     receipt: Receipt | None = None
 
 
-@dataclass
-class TurnResult:
-    """Everything one turn produced: the reply, where the booking stands, and what ran on the way."""
+@dataclass(frozen=True)
+class TurnResult(Snapshot):
+    """Everything one turn produced: where the conversation stands now, what was said, and what ran on the way."""
 
     reply: str
     receipt: Receipt | None
-    step: str
-    language: str
-    options: list[OptionView]
-    hold: HoldView | None
-    booking: BookingView | None
-    messages_left: int
-    closed: bool
     # Every tool call the model made this turn, in order, those the state machine refused included.
     tools: list[ToolOutcome] = field(default_factory=list)
     model_calls: int = 0
@@ -200,7 +158,7 @@ class BudgetedChat:
 
 def clean_reply(text: str) -> str:
     """Tidy a model's reply for display: no control characters, no runs of blank lines, a sane length."""
-    cleaned = BLANK_LINES.sub("\n\n", CONTROL_CHARACTERS.sub("", text)).strip()
+    cleaned = BLANK_LINES.sub("\n\n", strip_control_characters(text)).strip()
     if len(cleaned) <= MAX_REPLY_CHARS:
         return cleaned
     cut = cleaned[:MAX_REPLY_CHARS]
@@ -515,54 +473,22 @@ class Concierge:
     def view(self, conversation: Conversation, reply: Reply, outcomes: list[ToolOutcome] | None = None) -> TurnResult:
         """Record the reply in the transcript and describe where the conversation stands now."""
         record(conversation, "concierge", reply.text, self.clock())
-        step = sync_step(conversation, self.bookings)
-        if step == Step.HANDOFF:
+        sync_step(conversation, self.bookings)
+        where = snapshot_of(conversation, self.bookings)
+        if where.closed:
             refresh_transcript(conversation)
         return TurnResult(
             reply=reply.text,
             receipt=reply.receipt,
-            step=step,
-            language=language_of(conversation),
-            options=self.options_of(conversation) if step == Step.AVAILABILITY else [],
-            hold=self.hold_of(conversation),
-            booking=self.booking_of(conversation),
-            messages_left=messages_left(conversation),
-            closed=step == Step.HANDOFF,
+            step=where.step,
+            language=where.language,
+            options=where.options,
+            hold=where.hold,
+            booking=where.booking,
+            messages_left=where.messages_left,
+            closed=where.closed,
             tools=outcomes or [],
             model_calls=conversation.model_calls,
-        )
-
-    def options_of(self, conversation: Conversation) -> list[OptionView]:
-        """List the slots on offer, in the order they were numbered."""
-        slots = Slot.objects.select_related("offering").in_bulk(conversation.offered_slots)
-        return [
-            OptionView(number, slot.pk, slot.offering.key, slot.starts_at, slot.ends_at)
-            for number, slot_id in enumerate(conversation.offered_slots, start=1)
-            if (slot := slots.get(slot_id)) is not None
-        ]
-
-    def hold_of(self, conversation: Conversation) -> HoldView | None:
-        """Describe the slot the conversation holds, if it holds one."""
-        hold = self.bookings.current_hold(conversation)
-        if hold is None:
-            return None
-        slot = Slot.objects.select_related("offering").get(pk=hold.slot_id)
-        return HoldView(slot.pk, slot.offering.key, slot.starts_at, slot.ends_at, hold.hold_expires_at)
-
-    def booking_of(self, conversation: Conversation) -> BookingView | None:
-        """Describe the conversation's booking, if it has one."""
-        booking = self.bookings.current_booking(conversation)
-        if booking is None:
-            return None
-        slot = Slot.objects.select_related("offering").get(pk=booking.slot_id)
-        return BookingView(
-            booking.code,
-            slot.pk,
-            slot.offering.key,
-            slot.starts_at,
-            slot.ends_at,
-            booking.party_size,
-            conversation.guest_email,
         )
 
     def offering_facts(self) -> list[OfferingFacts]:
@@ -579,7 +505,7 @@ class Concierge:
         booking = self.bookings.current_booking(conversation)
         options = tuple(
             OptionFacts(view.number, view.offering, when_text(view.starts_at, view.ends_at, "en"))
-            for view in self.options_of(conversation)
+            for view in options_of(conversation)
         )
         return StateFacts(
             step=conversation.step,
@@ -602,11 +528,6 @@ class Concierge:
         if hold is None:
             return "none"
         return f"{when_text(hold.during.lower, hold.during.upper, 'en')}, until {hold.hold_expires_at:%H:%M} UTC"
-
-
-def language_of(conversation: Conversation) -> str:
-    """Return the language to answer in: the conversation's, or English before it has one."""
-    return conversation.language or "en"
 
 
 def search_text(conversation: Conversation) -> str:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from lb02.privacy import MaskedMessage, is_example_address, mask
+from lb02.privacy import MaskedMessage, is_example_address, mask, strip_control_characters
 
 
 @pytest.mark.parametrize(
@@ -127,3 +127,17 @@ def test_a_hostile_message_cant_make_the_patterns_backtrack_out_of_control() -> 
     masked = mask(hostile)
 
     assert isinstance(masked.text, str)
+
+
+def test_control_characters_are_dropped_and_tabs_and_line_breaks_stay() -> None:
+    """A NUL can't be stored in Postgres text, and the rest only garble a screen, so none of them gets in."""
+    assert strip_control_characters("Hi\x00 there\x07\tfriend\nok\x7f") == "Hi there\tfriend\nok"
+    assert mask("Book\x00 me\x1b in").text == "Book me in"
+
+
+def test_an_address_split_by_a_control_character_is_still_found() -> None:
+    """Stripping comes first, so a NUL in the middle of an address doesn't hide it from the mask."""
+    masked = mask("jana@exam\x00ple.test")
+
+    assert masked.text == "[email]"
+    assert masked.example_address == "jana@example.test"

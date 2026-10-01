@@ -3,17 +3,20 @@
 import itertools
 import json
 import threading
+import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
+import jwt
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django.conf import settings
 from django.db import connections
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
 
 from core.tool_chat import ToolCall, ToolChatMessage, ToolDefinition, ToolReply
-from lb02.booking import BookingService, SlotChange, local_day
+from lb02.booking import BookingService, CalendarNotifier, SlotChange, local_day
 from lb02.concierge import Concierge
 from lb02.conversations import start_conversation
 from lb02.models import ROASTERY_TIME_ZONE, Conversation, Offering, Reservation, Resource, Slot
@@ -83,6 +86,15 @@ def race[Outcome](jobs: list[Callable[[], Outcome]]) -> list[Outcome | Exception
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
         futures = [pool.submit(run, job) for job in jobs]
         return [future.result(timeout=PATIENCE_SECONDS) for future in futures]
+
+
+def mint_token(
+    key: Ed25519PrivateKey, session: str = "session-of-jana-visitor-01", system: str = "lb-02", lifetime: int = 300
+) -> str:
+    """Mint a visitor token the way the site does: EdDSA, issued by lb-web, for one system, for a few minutes."""
+    now = int(time.time())
+    claims = {"iss": "lb-web", "aud": system, "sub": session, "iat": now, "exp": now + lifetime}
+    return jwt.encode(claims, key, algorithm="EdDSA")
 
 
 def reload(conversation: Conversation) -> Conversation:
@@ -166,6 +178,19 @@ def raw_reservation(conversation: Conversation, slot: Slot, status: str = "held"
 _call_numbers = itertools.count(1)
 
 
+FIRST_MESSAGE = "Hi! I'd like a cupping session for two tomorrow afternoon. I'm Jana Novak, jana@example.test."
+SECOND_MESSAGE = "The 2:30 pm one, please."
+THIRD_MESSAGE = "Yes, please confirm it."
+DETAILS: dict[str, object] = {
+    "offering": "cupping",
+    "party_size": 2,
+    "name": "Jana Novak",
+    "date_from": "2026-10-02",
+    "date_to": "2026-10-02",
+    "part_of_day": "afternoon",
+}
+
+
 def call(tool_name: str, /, **arguments: object) -> ToolCall:
     """Make a tool call as a model would write it: a name, and its arguments as a JSON string.
 
@@ -210,14 +235,20 @@ class ScriptedToolChat:
     replies: list[ToolReply]
     requests: list[ToolRequest] = field(default_factory=list)
     fails_with: Exception | None = None
+    # Things that happen while the model "thinks": each runs just before the model answers the request
+    # with this number (counting from 0), as another visitor's click would in real time.
+    meanwhile: dict[int, Callable[[], None]] = field(default_factory=dict)
 
     def complete(
         self, alias: str, messages: Sequence[ToolChatMessage], tools: Sequence[ToolDefinition], max_tokens: int
     ) -> ToolReply:
         """Return the next scripted reply, or fail like the gateway; remember the request and the run it was made in."""
+        number = len(self.requests)
         self.requests.append(
             ToolRequest(alias, list(messages), [tool.name for tool in tools], max_tokens, current_run())
         )
+        if number in self.meanwhile:
+            self.meanwhile.pop(number)()
         if self.fails_with is not None:
             raise self.fails_with
         return self.replies.pop(0)
@@ -239,13 +270,31 @@ class Rig:
         """Start a conversation for a visitor, the way the consumer does."""
         return start_conversation(session, self.clock())
 
+    def run_call(
+        self, conversation: Conversation, tool_call: ToolCall, context: TurnContext | None = None
+    ) -> ToolOutcome:
+        """Run a tool call inside the conversation's run, as the concierge does."""
+        run = Run(system="lb-02", run_id=conversation.run_id, data_class="visitor", session=conversation.session_key)
+        with run_scope(run):
+            return self.concierge.tools.run(conversation, tool_call, context or TurnContext("en"))
+
     def run_tool(
         self, conversation: Conversation, tool_name: str, /, context: TurnContext | None = None, **arguments: object
     ) -> ToolOutcome:
-        """Run one tool call as the model would write it, inside the conversation's run, as the concierge does."""
-        run = Run(system="lb-02", run_id=conversation.run_id, data_class="visitor", session=conversation.session_key)
-        with run_scope(run):
-            return self.concierge.tools.run(conversation, call(tool_name, **arguments), context or TurnContext("en"))
+        """Run one tool call as a model would write it: a name, and arguments as JSON text."""
+        return self.run_call(conversation, call(tool_name, **arguments), context)
+
+    def script_booking(self) -> None:
+        """Queue the replies a good model gives to take a visitor through a cupping booking in three messages.
+
+        The messages that go with them are FIRST_MESSAGE, SECOND_MESSAGE and THIRD_MESSAGE.
+        """
+        self.models.replies += [
+            calling(call("update_details", **DETAILS)),
+            say("I found Friday 2 Oct at 14:30. Shall I hold it?"),
+            calling(call("hold_slot", option=1)),
+            calling(call("confirm_booking")),
+        ]
 
     def give_details(
         self, conversation: Conversation, email: str = "jana@example.test", **details: object
@@ -258,15 +307,7 @@ class Rig:
         if email:
             conversation.guest_email = email
             conversation.save(update_fields=["guest_email"])
-        given: dict[str, object] = {
-            "offering": "cupping",
-            "party_size": 2,
-            "name": "Jana Novak",
-            "date_from": "2026-10-02",
-            "date_to": "2026-10-02",
-            "part_of_day": "afternoon",
-        }
-        return self.run_tool(conversation, "update_details", **(given | details))
+        return self.run_call(conversation, call("update_details", **(DETAILS | details)))
 
 
 def build_rig(
@@ -276,6 +317,7 @@ def build_rig(
     guard_fails: bool = False,
     language_replies: Sequence[str] = (),
     seeded: bool = True,
+    notifier: CalendarNotifier | None = None,
 ) -> Rig:
     """Build a concierge whose gateway is entirely fake, over a freshly seeded calendar.
 
@@ -283,7 +325,7 @@ def build_rig(
     2nd. Nothing here can reach a provider, so no test spends quota.
     """
     clock = FakeClock()
-    notifier = RecordingNotifier()
+    recording = RecordingNotifier()
     if seeded:
         seed(settings.SEED_DIR / "lb02", date(2026, 10, 1))
     models = ScriptedToolChat(list(replies))
@@ -295,7 +337,7 @@ def build_rig(
         chat=language_chat,
         tool_chat=models,
         tracer=Tracer(spans),
-        bookings=BookingService(clock=clock, notifier=notifier),
+        bookings=BookingService(clock=clock, notifier=notifier or recording),
         clock=clock,
     )
-    return Rig(concierge, models, guard, language_chat, spans, clock, notifier)
+    return Rig(concierge, models, guard, language_chat, spans, clock, recording)

@@ -110,19 +110,29 @@ def spend_call(conversation: Conversation) -> bool:
     return bool(counted)
 
 
+def language_of(conversation: Conversation) -> str:
+    """Return the language to answer in: the conversation's own, or English before it has one."""
+    return conversation.language or "en"
+
+
 def messages_left(conversation: Conversation) -> int:
     """Return how many more visitor messages the conversation will take."""
     return max(0, MESSAGES_PER_SESSION - conversation.message_count)
 
 
-def sync_step(conversation: Conversation, bookings: BookingService) -> str:
-    """Work the step out from the facts, store it if it changed, and return it."""
-    step = derive_step(
+def current_step(conversation: Conversation, bookings: BookingService) -> str:
+    """Work the step out from the facts, without storing it."""
+    return derive_step(
         details_complete=not conversation.missing_details(),
         has_live_hold=bookings.current_hold(conversation) is not None,
         has_booking=bookings.current_booking(conversation) is not None,
         handed_off=Handoff.objects.filter(conversation=conversation).exists(),
     )
+
+
+def sync_step(conversation: Conversation, bookings: BookingService) -> str:
+    """Work the step out from the facts, store it if it changed, and return it."""
+    step = current_step(conversation, bookings)
     if conversation.step != step:
         conversation.step = step
         conversation.save(update_fields=["step", "updated_at"])

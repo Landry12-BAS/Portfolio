@@ -33,6 +33,8 @@ markers = [
 ]
 xfail_strict = true
 filterwarnings = ["error"]
+# The WebSocket tests are coroutines; pytest-asyncio runs every `async def` test without a marker.
+asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.13"

@@ -1,6 +1,337 @@
 {
   "components": {
     "schemas": {
+      "BookingOut": {
+        "description": "A conversation's booking, and the address its mock confirmation was made out to.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "party_size": {
+            "title": "Party Size",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "party_size",
+          "to"
+        ],
+        "title": "BookingOut",
+        "type": "object"
+      },
+      "CalendarOut": {
+        "description": "A snapshot of the calendar. `as_of` is the server's time, for ordering it against live changes.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "last_day": {
+            "format": "date",
+            "title": "Last Day",
+            "type": "string"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "first_day",
+          "last_day",
+          "slots"
+        ],
+        "title": "CalendarOut",
+        "type": "object"
+      },
+      "CalendarQuery": {
+        "description": "Which days of the calendar to show, and which conversation's point of view to show them from.",
+        "properties": {
+          "conversation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation"
+          },
+          "days": {
+            "default": 14,
+            "maximum": 14,
+            "minimum": 1,
+            "title": "Days",
+            "type": "integer"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          }
+        },
+        "title": "CalendarQuery",
+        "type": "object"
+      },
+      "ConfirmationOut": {
+        "description": "The confirmation email as it would have been sent. `delivery` is always `mock`: nothing is ever sent.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "delivery": {
+            "const": "mock",
+            "title": "Delivery",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "body",
+          "language",
+          "delivery",
+          "recorded_at"
+        ],
+        "title": "ConfirmationOut",
+        "type": "object"
+      },
+      "ConversationOut": {
+        "description": "A conversation in full: the transcript, where the booking stands, and what a person would receive.",
+        "properties": {
+          "booking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "confirmation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandoffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hold": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HoldOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "messages_left": {
+            "title": "Messages Left",
+            "type": "integer"
+          },
+          "messages_used": {
+            "title": "Messages Used",
+            "type": "integer"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/LineOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "language",
+          "messages_used",
+          "messages_left",
+          "closed",
+          "created_at",
+          "expires_at",
+          "run_id",
+          "model_calls",
+          "transcript",
+          "options",
+          "hold",
+          "booking",
+          "confirmation",
+          "handoff"
+        ],
+        "title": "ConversationOut",
+        "type": "object"
+      },
+      "ConversationSummary": {
+        "description": "A conversation as the visitor's list shows it.",
+        "properties": {
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "messages_left": {
+            "title": "Messages Left",
+            "type": "integer"
+          },
+          "messages_used": {
+            "title": "Messages Used",
+            "type": "integer"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "language",
+          "messages_used",
+          "messages_left",
+          "closed",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ConversationSummary",
+        "type": "object"
+      },
       "CustomerOut": {
         "description": "A synthetic customer a visitor can file a ticket as.",
         "properties": {
@@ -149,6 +480,207 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "HandoffOut": {
+        "description": "A conversation handed to a person: why, what was collected, and every line said.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/LineOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reason",
+          "summary",
+          "created_at",
+          "transcript"
+        ],
+        "title": "HandoffOut",
+        "type": "object"
+      },
+      "HoldOut": {
+        "description": "The slot a conversation holds, and when the hold runs out.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "expires_at"
+        ],
+        "title": "HoldOut",
+        "type": "object"
+      },
+      "LineOut": {
+        "description": "One line of a transcript.",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "visitor",
+              "concierge",
+              "action"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "role",
+          "text",
+          "at"
+        ],
+        "title": "LineOut",
+        "type": "object"
+      },
+      "LocalizedOut": {
+        "description": "A text in each of the site's two languages.",
+        "properties": {
+          "cs": {
+            "title": "Cs",
+            "type": "string"
+          },
+          "en": {
+            "title": "En",
+            "type": "string"
+          }
+        },
+        "required": [
+          "en",
+          "cs"
+        ],
+        "title": "LocalizedOut",
+        "type": "object"
+      },
+      "OfferingOut": {
+        "description": "Something a visitor can book: what it is, how long it takes, how many it takes, and what it costs.",
+        "properties": {
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "duration_minutes": {
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "price_czk": {
+            "title": "Price Czk",
+            "type": "integer"
+          },
+          "room": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          },
+          "title": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "summary",
+          "room",
+          "duration_minutes",
+          "capacity",
+          "price_czk"
+        ],
+        "title": "OfferingOut",
+        "type": "object"
+      },
+      "OptionOut": {
+        "description": "A slot the concierge has on offer, by the number it holds it with.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
       "SentenceOut": {
         "description": "One sentence of a draft, its citations, and why the claim check failed it, if it did.",
         "properties": {
@@ -187,6 +719,67 @@
         ],
         "title": "SentenceOut",
         "type": "object"
+      },
+      "SlotOut": {
+        "description": "One slot of the calendar, as one visitor sees it; `mine` is true for the slot their conversation holds or has.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SlotStatus"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "id",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "status",
+          "mine",
+          "until"
+        ],
+        "title": "SlotOut",
+        "type": "object"
+      },
+      "SlotStatus": {
+        "enum": [
+          "free",
+          "held",
+          "booked"
+        ],
+        "type": "string"
       },
       "SourceOut": {
         "description": "A source a draft cites: a policy passage, or what the order tool reported, in the ticket's language.",
@@ -720,6 +1313,202 @@
         "summary": "Decide",
         "tags": [
           "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb02/calendar": {
+      "get": {
+        "description": "Show the slots of some days, each free, held or booked, and which of them the conversation holds or has.",
+        "operationId": "lb02_api_calendar",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "maximum": 14,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "conversation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Calendar",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/conversations": {
+      "get": {
+        "description": "List the visitor's own conversations, newest first.",
+        "operationId": "lb02_api_list_conversations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummary"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Conversations",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/conversations/{conversation_id}": {
+      "get": {
+        "description": "Show one of the visitor's own conversations in full.",
+        "operationId": "lb02_api_get_conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Conversation",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/offerings": {
+      "get": {
+        "description": "List what can be booked, in both languages.",
+        "operationId": "lb02_api_list_offerings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfferingOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Offerings",
+        "tags": [
+          "LB-02 Booking Concierge"
         ]
       }
     },

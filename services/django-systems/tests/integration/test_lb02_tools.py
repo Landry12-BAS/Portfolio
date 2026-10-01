@@ -455,7 +455,7 @@ def test_arguments_that_are_not_json_are_an_error_too() -> None:
     conversation = rig.conversation()
     broken = ToolCall("call_x", "update_details", "{not json")
 
-    outcome = rig.concierge.tools.run(conversation, broken, TurnContext("en"))
+    outcome = rig.run_call(conversation, broken)
 
     assert outcome.error == "invalid_arguments"
 

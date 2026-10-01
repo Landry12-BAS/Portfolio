@@ -19,10 +19,13 @@ The confirmation is a recorded mock in any case; it is never sent anywhere.
 
 import re
 from dataclasses import dataclass
-from typing import Final
+from typing import Annotated, Final
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from pydantic import BeforeValidator, StringConstraints
+
+from lb02.limits import MAX_MESSAGE_LENGTH
 
 # An email address. The parts are bounded, so a hostile message can't make the pattern backtrack out of control.
 EMAIL: Final = re.compile(r"[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}")
@@ -35,6 +38,9 @@ EXAMPLE_DOMAINS: Final = ("example.com", "example.org", "example.net")
 RESERVED_SUFFIXES: Final = (".test", ".example", ".invalid", ".localhost")
 # The longest email address there is.
 MAX_ADDRESS_LENGTH: Final = 254
+# Control characters other than the tab and the line break. A NUL can't be stored in Postgres text at
+# all, and the rest only ever garble a screen or a log.
+CONTROL_CHARACTERS: Final = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 @dataclass(frozen=True)
@@ -71,11 +77,33 @@ def is_well_formed(address: str) -> bool:
     return True
 
 
+def strip_control_characters(text: str) -> str:
+    """Remove the control characters from a text, keeping its tabs and line breaks."""
+    return CONTROL_CHARACTERS.sub("", text)
+
+
+def clean_visitor_text(value: object) -> object:
+    """Drop control characters and blank ends from a visitor's message; anything that isn't text is left to be refused.
+
+    Pydantic measures a string before it trims it, so the trimming is done here, first: a message of
+    nothing but spaces is then empty, and refused as empty.
+    """
+    return strip_control_characters(value).strip() if isinstance(value, str) else value
+
+
+# What a visitor may say: one to 500 characters once cleaned. The cleaning is listed last because the last
+# validator listed is the first to run, and the length limits apply to what it leaves.
+VisitorText = Annotated[
+    str, StringConstraints(min_length=1, max_length=MAX_MESSAGE_LENGTH), BeforeValidator(clean_visitor_text)
+]
+
+
 def mask(text: str) -> MaskedMessage:
     """Replace the addresses and long numbers in a message with labels, and report what was in it.
 
-    The first example address is returned for the booking to keep, and a second one is
-    masked and ignored. Every address that isn't an example address is counted as real.
+    Control characters are dropped first. The first example address is returned for the
+    booking to keep, and a second one is masked and ignored. Every address that isn't an
+    example address is counted as real.
     """
     example_address: str | None = None
     real = 0
@@ -90,6 +118,6 @@ def mask(text: str) -> MaskedMessage:
             real += 1
         return "[email]"
 
-    without_addresses = EMAIL.sub(replace, text)
+    without_addresses = EMAIL.sub(replace, strip_control_characters(text))
     without_numbers, numbers = LONG_NUMBER.subn("[number]", without_addresses)
     return MaskedMessage(text=without_numbers, example_address=example_address, real_addresses=real, numbers=numbers)
