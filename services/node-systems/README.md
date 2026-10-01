@@ -182,7 +182,7 @@ seed and OpenAPI commands pick it up.
 ## Tests
 
 `just test` runs them with the rest of the monorepo; from this folder, `pnpm test`:
-**394 tests**, 257 unit and 137 integration.
+**404 tests**, 257 unit and 147 integration.
 
 - **Unit (257)** need nothing: the flow rules, rendering and the request each connector
   gets, the prompts (every choice in the catalogue is in the prompt, the two words the
@@ -192,7 +192,7 @@ seed and OpenAPI commands pick it up.
   third), the golden set run through the real pipeline, the routing contract against the real
   `routing.yaml` and the datasheet, the HTTP layer, the text guard, the sandbox's import
   tripwire, and the generated files.
-- **Integration (137)** need Postgres with pgvector and Redis: Testcontainers starts both,
+- **Integration (147)** need Postgres with pgvector and Redis: Testcontainers starts both,
   or set `LB_TEST_DATABASE_URL` and `LB_TEST_REDIS_URL` (the Postgres user needs the right
   to create databases; each test file makes a database of its own and a key prefix of its
   own). They cover the schema (its own schema only, a role that owns nothing else), the
@@ -200,7 +200,10 @@ seed and OpenAPI commands pick it up.
   race, quotas, the sweep, and the worker killed between the send and the acknowledgement),
   the real BullMQ worker (backoff timing, a killed worker recovered by the queue), the whole
   API through Fastify, the module as the entry points open it, the describe pipeline against
-  the real gateway on a fake provider, and the eval command as a real process.
+  the real gateway on a fake provider, and the migrate, seed, check and eval commands and the
+  API and worker processes themselves, started from environment variables alone (the worker
+  finishing a run the API queued, a description going through the real gateway, a clean exit
+  on SIGTERM).
 
 No test spends quota: the model is a script or a fake provider. Where a Docker helper can't
 be pulled, set `TESTCONTAINERS_RYUK_DISABLED=true`.
