@@ -81,6 +81,8 @@ before="$(cat "$work/infra/docker-compose.yml" "$work"/infra/docker/*.Dockerfile
 run "$pin"
 expect_equal "pinning a second time changes nothing" "$before" "$(cat "$work/infra/docker-compose.yml" "$work"/infra/docker/*.Dockerfile | cksum)"
 
+# The ${LB_TAG} below is literal text to look for in the compose file, not a variable.
+# shellcheck disable=SC2016
 if grep -q 'lb-gateway:${LB_TAG' "$work/infra/docker-compose.yml" && ! grep 'lb-gateway:${LB_TAG' "$work/infra/docker-compose.yml" | grep -q '@sha256'; then
     pass "the images this repository builds are left alone"
 else

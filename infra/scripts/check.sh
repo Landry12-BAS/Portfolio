@@ -1,0 +1,139 @@
+#!/bin/bash
+# The infrastructure's static checks: everything that can be verified without starting the
+# stack. CI runs it (the `infra` job), and `just infra-check` runs it on a machine with the
+# tools (infra/scripts/install-tool.sh installs hadolint and actionlint; shellcheck, jq and
+# Docker are the usual ones). A missing tool is a failure, never a skipped check.
+#
+#   - every shell script passes shellcheck, and is executable;
+#   - every Dockerfile passes hadolint;
+#   - the GitHub workflows pass actionlint (which also runs shellcheck on their scripts);
+#   - every image is pinned by digest or built here (pin-images.sh --check);
+#   - the Compose files resolve and follow the security rules (check-compose.sh);
+#   - the Caddyfile is valid and is formatted the way `caddy fmt` writes it;
+#   - the systemd units parse;
+#   - the encrypted secrets files are encrypted, and nothing else is in infra/secrets.
+#
+#   infra/scripts/check.sh
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+infra="$(cd "$here/.." && pwd -P)"
+repo="$(cd "$infra/.." && pwd -P)"
+failures=0
+
+# check <label> <command...>: runs the command, and says ok, or fails and shows what it said.
+check() {
+    local label="$1" output
+    shift
+    if output="$("$@" 2>&1)"; then
+        printf '  ok    %s\n' "$label"
+    else
+        printf '  FAIL  %s\n' "$label" >&2
+        printf '%s\n' "$output" | head -40 | sed 's/^/        /' >&2
+        failures=$((failures + 1))
+    fi
+}
+
+# Stops a check with an install hint when a tool it needs is missing.
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "$1 is not installed. $2"
+        return 1
+    }
+}
+
+shell_scripts() {
+    need shellcheck "Install shellcheck (apt install shellcheck, brew install shellcheck)." || return 1
+    find "$infra" -name '*.sh' -not -path '*/.dev/*' -print0 | xargs -0 shellcheck -x
+}
+
+executable_scripts() {
+    local not_executable
+    not_executable="$(find "$infra" -name '*.sh' -not -path '*/.dev/*' ! -perm -u+x)"
+    if [ -n "$not_executable" ]; then
+        echo "These scripts are not executable (chmod +x):"
+        printf '%s\n' "$not_executable"
+        return 1
+    fi
+}
+
+dockerfiles() {
+    need hadolint "Run: infra/scripts/install-tool.sh hadolint (or brew install hadolint)." || return 1
+    local file
+    for file in "$infra"/docker/*.Dockerfile; do
+        hadolint "$file"
+    done
+}
+
+workflows() {
+    need actionlint "Run: infra/scripts/install-tool.sh actionlint (or brew install actionlint)." || return 1
+    (cd "$repo" && actionlint)
+}
+
+caddyfile() {
+    need docker "Install Docker." || return 1
+    local image
+    image="$("$here/image-of.sh" caddy)"
+    docker run --rm -v "$infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+        -e LB_API_HOST=api.example.com -e LB_SITE_ORIGIN=https://example.com \
+        "$image" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile > /dev/null
+    docker run --rm -v "$infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" "$image" caddy fmt /etc/caddy/Caddyfile \
+        | diff -u "$infra/caddy/Caddyfile" - || {
+        echo "The Caddyfile is not formatted the way caddy fmt writes it."
+        return 1
+    }
+}
+
+# systemd-analyze complains that the programs a unit starts are not on this machine; they
+# are on the box, once the first release is there. Anything else it says is a real problem.
+systemd_units() {
+    if ! command -v systemd-analyze >/dev/null 2>&1; then
+        echo "(systemd-analyze is not installed: skipped)"
+        return 0
+    fi
+    local problems
+    problems="$(systemd-analyze verify "$infra"/systemd/*.service "$infra"/systemd/*.timer 2>&1 | grep -v 'is not executable: No such file or directory' || true)"
+    if [ -n "$problems" ]; then
+        printf '%s\n' "$problems"
+        return 1
+    fi
+}
+
+secrets_folder() {
+    local file
+    for file in "$infra"/secrets/*; do
+        case "$file" in
+            */README.md | */*.example.env) ;;
+            */*.enc.env)
+                if ! grep -q '^sops_mac=ENC\[' "$file"; then
+                    echo "${file#"$repo"/} is not encrypted with SOPS."
+                    return 1
+                fi
+                ;;
+            *)
+                echo "${file#"$repo"/} does not belong in infra/secrets (only README.md, *.example.env and *.enc.env do)."
+                return 1
+                ;;
+        esac
+    done
+}
+
+echo "Infrastructure checks"
+check "shell scripts pass shellcheck" shell_scripts
+check "shell scripts are executable" executable_scripts
+check "Dockerfiles pass hadolint" dockerfiles
+check "workflows pass actionlint" workflows
+check "every image is pinned by digest or built here" "$here/pin-images.sh" --check
+check "Compose files follow the security rules" "$here/check-compose.sh"
+check "the policy rules themselves can fail" "$here/test-compose-policy.sh"
+check "the Caddyfile is valid and formatted" caddyfile
+check "systemd units parse" systemd_units
+check "infra/secrets holds only templates and encrypted files" secrets_folder
+
+echo
+if [ "$failures" -eq 0 ]; then
+    echo "All checks passed."
+else
+    echo "$failures check(s) failed." >&2
+    exit 1
+fi
