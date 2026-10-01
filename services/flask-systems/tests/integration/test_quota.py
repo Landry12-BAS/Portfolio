@@ -4,13 +4,14 @@ A fake database can't show that: what is under test is one SQL statement that mu
 send many questions at once from many threads, each on its own connection, and count how many were let in.
 """
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import Engine, insert, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from lb05.models import QuotaUsage
 from lb05.quota import BUSY_SECONDS, KEEP_DAYS, Admission, PostgresLedger, midnight_after
@@ -263,6 +264,58 @@ def test_the_sweep_removes_only_the_days_that_are_long_over(engine: Engine) -> N
     assert count_of(engine, VISITOR, DAY - timedelta(days=KEEP_DAYS)) == 4
     assert count_of(engine, VISITOR, DAY - timedelta(days=KEEP_DAYS + 1)) is None
     assert count_of(engine, OTHER_VISITOR, DAY - timedelta(days=30)) is None
+
+
+def test_the_first_question_of_a_day_sweeps_the_old_counters_and_the_others_do_not(engine: Engine) -> None:
+    """Retention keeps itself: old counters go when a day's first question arrives, once per day and no more often."""
+    clock = MovableClock()
+    ledger = PostgresLedger(engine, clock, busy_seconds=0)
+    long_ago = DAY - timedelta(days=KEEP_DAYS + 1)
+    put_row(engine, OTHER_VISITOR, long_ago, 5)
+
+    ledger.admit(VISITOR)
+    swept_by_the_first = count_of(engine, OTHER_VISITOR, long_ago)
+    put_row(engine, VISITOR, long_ago, 1)
+    ledger.admit(VISITOR)
+    kept_by_the_second = count_of(engine, VISITOR, long_ago)
+    clock.move(days=1)
+    ledger.admit(VISITOR)
+    swept_the_next_day = count_of(engine, VISITOR, long_ago)
+
+    assert swept_by_the_first is None
+    assert kept_by_the_second == 1
+    assert swept_the_next_day is None
+
+
+def test_a_sweep_that_fails_does_not_fail_the_question_and_is_tried_again(
+    engine: Engine, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The visitor's question comes first: a failed sweep is logged without its message, and retried on the next one."""
+    secret = "words-that-must-not-reach-a-log"
+    attempts: list[int] = []
+
+    class FailsOnce(PostgresLedger):
+        """A ledger whose first sweep fails, as a database hiccup would."""
+
+        def sweep(self) -> int:
+            """Fail the first time, then sweep for real."""
+            attempts.append(1)
+            if len(attempts) == 1:
+                raise OperationalError("DELETE", {}, Exception(secret))
+            return super().sweep()
+
+    ledger = FailsOnce(engine, MovableClock(), busy_seconds=0)
+
+    with caplog.at_level(logging.ERROR):
+        first = ledger.admit(VISITOR)
+    second = ledger.admit(VISITOR)
+    ledger.admit(VISITOR)
+
+    assert first.allowed
+    assert second.allowed
+    assert "Could not sweep old quota counters" in caplog.text
+    assert secret not in caplog.text
+    assert len(attempts) == 2
 
 
 @pytest.mark.parametrize("used", [-1, 1001])

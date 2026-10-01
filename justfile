@@ -88,6 +88,28 @@ eval-search:
 eval-lb01 *args:
     uv run --directory services/django-systems --env-file .env python manage.py eval_lb01 {{args}}
 
+# Run the Flask systems' API with gunicorn and reload on http://127.0.0.1:8102 (settings in services/flask-systems/.env).
+flask:
+    uv run --directory services/flask-systems --env-file .env gunicorn --config gunicorn.conf.py --reload wsgi:app
+
+# Write the Flask systems' OpenAPI document to services/flask-systems/openapi.json, for the site's typed client.
+openapi-flask:
+    uv run --directory services/flask-systems --env-file .env python manage.py export_openapi
+
+# Create or update every Flask system's Postgres schema (settings in services/flask-systems/.env).
+migrate-flask:
+    uv run --directory services/flask-systems --env-file .env python manage.py migrate
+
+# `--size small` makes a quick one, `--today YYYY-MM-DD` pins the last day, and `--data DIR` the folder.
+# Generate LB-05's synthetic sales data (about two million orders) as Parquet and a read-only DuckDB file.
+seed-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py seed_lb05 {{args}}
+
+# Needs the gateway with provider keys, and costs two to four calls a question (five at most): `--samples` or `--case ID` run fewer.
+# Put LB-05's golden set, or with `--adversarial` its attacks, to the live pipeline and grade it by rules.
+eval-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py eval_lb05 {{args}}
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

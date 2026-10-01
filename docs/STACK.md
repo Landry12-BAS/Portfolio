@@ -261,7 +261,10 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   gateway for fields, instructor + Pydantic for typed extraction with validation
   retries, and deterministic arithmetic checks.
 - **LB-05:** DuckDB over Parquet, sqlglot to parse and allowlist every query, a
-  read-only connection, a forced row limit and a timeout.
+  read-only connection, a forced row limit and a timeout. The service stacks six
+  layers (parse, allowlist, plan check, a locked-down read-only connection, row cap,
+  timeout) and runs only the tree it rebuilt from the allowlist, never the model's
+  text; its README has the threat model.
 
 ### Node systems (LB-04 Contract Radar, LB-06 Incident Commander, LB-07 QA Engineer, LB-08 Automation Studio)
 

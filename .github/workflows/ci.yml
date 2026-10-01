@@ -66,8 +66,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # The Python integration tests, and the real gateway the contract tests start, need
-    # a Redis. The version matches the gateway's own integration tests. The Django tests
-    # need Postgres with pgvector, the version production runs.
+    # a Redis. The version matches the gateway's own integration tests. The Django and
+    # Flask tests need Postgres with pgvector, the version production runs; the Flask
+    # tests make a database of their own on it and drop it, so the user needs CREATEDB.
     services:
       redis:
         image: redis:8.10-alpine

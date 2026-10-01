@@ -11,8 +11,12 @@ If a process dies mid-question the flag expires on its own.
 
 A question the service itself fails to answer (the models are down, the warehouse is busy) is
 refunded: it is not the visitor's fault, and it should not cost them one of their 25.
+
+No history of a visitor is kept: the first question each day deletes the counters of days that are
+over, so retention does not depend on a scheduler (`manage.py sweep_lb05` does the same by hand).
 """
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -20,9 +24,13 @@ from typing import Literal, Protocol
 
 from sqlalchemy import Engine, Select, and_, delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import SQLAlchemyError
 
+from core.errors import describe_failure
 from lb05.models import QuotaUsage
 from lb05.safety import QUESTION_DEADLINE_SECONDS, QUESTIONS_PER_DAY
+
+logger = logging.getLogger(__name__)
 
 # A running question holds its visitor's place a little longer than its own deadline, so a slow one is not cut off.
 BUSY_SECONDS = int(QUESTION_DEADLINE_SECONDS) + 30
@@ -99,6 +107,7 @@ class PostgresLedger:
         self._clock = clock
         self._limit = limit
         self._busy_seconds = busy_seconds
+        self._swept_day: date | None = None
 
     def today(self) -> date:
         """Return today's date in UTC, the day a visitor's count belongs to."""
@@ -108,6 +117,7 @@ class PostgresLedger:
         """Admit a question in one upsert that raises the count only while it is below the limit and nothing runs."""
         now = self._clock()
         day = now.astimezone(UTC).date()
+        self.sweep_once_a_day(day)
         until = now + timedelta(seconds=self._busy_seconds)
         free_to_ask = and_(
             QuotaUsage.used < self._limit, or_(QuotaUsage.busy_until.is_(None), QuotaUsage.busy_until <= now)
@@ -151,6 +161,17 @@ class PostgresLedger:
         with self._engine.connect() as connection:
             used = connection.execute(self.count_of(session_key, day)).scalar_one_or_none() or 0
         return Usage(used=used, limit=self._limit, resets_at=midnight_after(day))
+
+    def sweep_once_a_day(self, day: date) -> None:
+        """Delete the old counters the first time a question arrives on a new day. A failure is logged, never raised."""
+        if self._swept_day == day:
+            return
+        try:
+            self.sweep()
+        except SQLAlchemyError as error:
+            logger.error("Could not sweep old quota counters: %s", describe_failure(error))
+            return
+        self._swept_day = day
 
     def sweep(self) -> int:
         """Delete the counters of days that are over, and return how many rows went."""

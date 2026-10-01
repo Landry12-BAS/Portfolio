@@ -14,6 +14,8 @@ worker_class = "gthread"
 workers = int(os.environ.get("GUNICORN_WORKERS", "1"))
 threads = int(os.environ.get("GUNICORN_THREADS", "8"))
 preload_app = False
+# Gunicorn's admin control socket is a channel nobody here uses: left closed (least privilege).
+control_socket_disable = True
 
 # A question's own deadline (lb05.pipeline) is shorter than this; it only bounds a stuck worker.
 timeout = 120

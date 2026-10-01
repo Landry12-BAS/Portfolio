@@ -23,7 +23,12 @@ see its [README](python/lb-common/README.md)). In build: `services/django-system
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
 (`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
 API and Celery worker so far (see its [README](services/django-systems/README.md)); next
-come the recorded sample runs and LB-01's demo on the site.
+come the recorded sample runs and LB-01's demo on the site. Also in build:
+`services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
+synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
+question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
+and live eval sets (see its [README](services/flask-systems/README.md)); next come
+LB-05's recorded sample runs and its demo on the site.
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -157,6 +162,11 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
 | `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
 | `just eval-lb01 [--samples] [--case ID]` | Run LB-01's golden set through the live pipeline and grade it by rules (about five gateway calls a case; run it when prompts or routes change) |
+| `just flask` | Run the Flask systems' API with gunicorn and reload on http://127.0.0.1:8102 (settings in `services/flask-systems/.env`, from `.env.example`) |
+| `just migrate-flask` | Create or update each Flask system's Postgres schema with Alembic (settings in `services/flask-systems/.env`) |
+| `just openapi-flask` | Regenerate `services/flask-systems/openapi.json` after an API change (a test fails while it is stale) |
+| `just seed-lb05 [--size small] [--today YYYY-MM-DD] [--data DIR]` | Generate LB-05's synthetic sales data (about two million orders) as Parquet and a read-only DuckDB file in `data/generated/lb05`; the same seed and day give the same data |
+| `just eval-lb05 [--samples] [--case ID] [--adversarial]` | Put LB-05's golden set (or, with `--adversarial`, its attacks) to the live pipeline and grade it by rules (two to four gateway calls a question; run it when prompts or routes change; the adversarial run exits 1 unless every attempt was held) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
 | `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
@@ -164,11 +174,12 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
-Playwright's own. Integration tests start Redis (gateway and Python) and Postgres with
-pgvector (Django) with Testcontainers; where Docker isn't available, set
+Playwright's own. Integration tests start Redis (gateway, Python and Flask) and Postgres
+with pgvector (Django and Flask) with Testcontainers; where Docker isn't available, set
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379` and
 `LB_TEST_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb` to use local servers instead
-(the Postgres user needs the right to create databases). The Python contract tests also
+(the Postgres user needs the right to create databases; the Flask tests make a database
+of their own and drop it). The Python contract tests also
 need Node, since they start the real gateway
 (`services/gateway/test/support/contract-server.ts`). In a cloud session without a Docker
 daemon, `dockerd` can usually be started; if Docker Hub's anonymous pull limit bites,
