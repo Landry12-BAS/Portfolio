@@ -1,0 +1,29 @@
+{
+  "name": "@lb/common",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript for the LB Node systems: service tokens, the run context and tracer, the visitor-token check and the AI gateway client. The twin of python/lb-common.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.62",
+    "ai": "^7.0.126",
+    "ioredis": "^6.0.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@testcontainers/redis": "^12.1.0",
+    "@types/node": "^24.19.0",
+    "vitest": "^5.0.2"
+  }
+}
