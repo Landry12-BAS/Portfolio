@@ -1,24 +1,29 @@
-# Django systems · LB-01 Support Desk Agent
+# Django systems · LB-01 Support Desk Agent and LB-02 Booking Concierge
 
-One Django project for the systems that suit Django best: LB-01 Support Desk Agent
-today, then LB-02 Booking Concierge and LB-09 Meeting Recorder. Each system keeps its
-data in a Postgres schema of its own and calls models only through the AI gateway.
+One Django project for the systems that suit Django best: LB-01 Support Desk Agent and
+LB-02 Booking Concierge today, then LB-09 Meeting Recorder. Each system keeps its data in
+a Postgres schema of its own and calls models only through the AI gateway.
 
 LB-01 triages a customer's ticket, drafts a reply in which every sentence cites a
 policy passage or an order record, and hands the draft to a person to approve, edit or
-escalate. Why it is built this way: [`docs/STACK.md`](../../docs/STACK.md), Django
-systems. Platform security: [`docs/SECURITY.md`](../../docs/SECURITY.md).
+escalate. LB-02 books tastings, cupping sessions and roasting workshops in a chat, in
+English, Czech or another language, on a real calendar, and cannot double-book it: the
+database refuses an overlapping reservation whatever the model does. This is its back
+end; the page that uses it, the phone-frame PWA, isn't built yet. Why it is built this
+way: [`docs/STACK.md`](../../docs/STACK.md), Django systems. Platform security:
+[`docs/SECURITY.md`](../../docs/SECURITY.md).
 
 ## At a glance
 
 | Parameter | Value |
 |---|---|
-| API | Django Ninja under `/api/`: LB-01 at `/api/lb01/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema). Schema: [`openapi.json`](openapi.json) |
+| API | Django Ninja under `/api/`: LB-01 at `/api/lb01/`, LB-02 at `/api/lb02/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema). Schema: [`openapi.json`](openapi.json) |
+| WebSocket | LB-02's conversation at `/ws/lb02/`, on Django Channels 4 with a Redis channel layer (keys under `lb:channels:`). The visitor token travels in the first frame, never in the address |
 | Callers | The site's server, with an Ed25519 visitor token scoped to one system and valid 5 minutes at most ([`core/visitors.py`](core/visitors.py)) |
-| Worker | Celery on Redis: the ticket pipeline, a sweep of tickets past 24 hours, a nightly reseed |
-| Data | PostgreSQL 17 with pgvector: one schema per system (`lb01`), extensions in `extensions` |
+| Worker | Celery on Redis: LB-01's ticket pipeline, sweep and nightly reseed; LB-02's hold sweep (every minute), 24-hour sweep (every 15 minutes) and nightly calendar reset (03:11 UTC) |
+| Data | PostgreSQL 17 with pgvector and btree_gist: one schema per system (`lb01`, `lb02`), extensions in `extensions` |
 | Model calls | Through the gateway only, with [`lb-common`](../../python/lb-common/README.md), each labelled with its ticket's run |
-| Runtime | Python 3.13, Django 5.2 LTS, uvicorn |
+| Runtime | Python 3.13, Django 5.2 LTS, uvicorn with `--ws-max-size 8192` |
 
 ## LB-01: from a ticket to a cited draft
 
@@ -42,7 +47,67 @@ a third when an answer needs its repair. Escalation reasons: `injection`, `unche
 `senior_agent` (a legal claim, an allergy, fraud or personal data), `no_policy`,
 `pipeline_error`. Nothing is sent without a person: auto-send is off for visitors.
 
+## LB-02: from a message to a booking
+
+A conversation is one run of up to 30 visitor messages, and each message is a span of
+it. A booking takes three messages and 7 gateway calls in the offline eval: an injection
+check for each message and four calls to `lb-tools`. That is what scripted models cost;
+the datasheet's "6 to 10" stays an estimate until `just eval-lb02` has run live.
+
+| Step | What it does | When it can't |
+|---|---|---|
+| Mask | Replaces email addresses with `[email]` and runs of 9 or more digits with `[number]`, and drops control characters ([`lb02/privacy.py`](lb02/privacy.py)). The code, never a model, keeps the first example address (`example.com`, `.test` and the other reserved domains) | Never fails: patterns only. A real address is counted and refused, never kept |
+| Count | Adds the message to the conversation's 30 in one statement that refuses the 31st; the table also refuses a count above 30 | The 31st message hands the conversation to a person, with the whole transcript |
+| Detect the language | Reads the script, the stop words and the letters ([`lb02/languages.py`](lb02/languages.py)): ten Latin-script languages and nine other scripts, and a switch mid-conversation | A first message the code can't read costs one `lb-fast` call; if that fails, English |
+| Screen | `lb-guard` reads every message before any model that can call a tool does | A flagged message is refused with no model call, and the third hands over; one that can't be checked is asked again, and the second hands over: the screen fails closed |
+| Refresh | Marks the conversation's own run-out hold expired and searches again, so the slots on offer are free now | Never fails |
+| Converse | `lb-tools` with only the tools the step allows, at most 3 chat calls a message and 3 tool calls a reply | An empty answer asks the visitor to repeat; twice in a row, or a spent quota, hands over |
+| Run each tool | The step must accept the tool, and its arguments must pass a strict Pydantic model that forbids extra fields ([`lb02/tools.py`](lb02/tools.py)) | A refused or invalid call changes nothing, and the model is told which field was wrong, never its own text |
+| Answer | A hold, a confirmation, a taken slot and a run-out hold are written by the code from the database's facts, in English and Czech, so they cost no second call; other languages get the model's words | The model's own words are never trusted to state a booking: see the known gaps |
+
+The booking rules, each enforced below the model:
+
+- **The database refuses a double booking.** `lb02_no_double_booking` is an exclusion
+  constraint on a reservation's room and its time range, for held and booked rows, and it
+  needs `btree_gist`, which the first migration installs in `extensions` (and checks it
+  landed there). A room is shared by the offerings in it, so the 11:30 cupping and the
+  12:00 tasting exclude each other. Tests race eight transactions for one slot, and two
+  transactions that wait on each other inside Postgres; exactly one wins every time.
+- **A hold lasts five minutes and expires by being read, not by a sweep.** Every search,
+  hold and confirm compares `hold_expires_at` with the clock, placing a hold first marks
+  the stale holds of its room expired in the same transaction, and the Celery sweep
+  (`lb02.sweep_expired_holds`, every minute) only tidies rows and tells the live
+  calendar. A worker that is down for an hour changes nothing a visitor can see.
+- **Confirming is idempotent.** The key is made from the booking's code, so a repeated
+  confirm returns the same booking; one live hold and one booking per conversation are
+  partial unique indexes; the confirmation is a recorded mock, and the table refuses any
+  `delivery` but `mock`: nothing is ever sent.
+- **The step follows the facts, never the model.** Details, availability, hold, done, or
+  handoff, from what is in the database ([`lb02/states.py`](lb02/states.py)). The model
+  is offered `confirm_booking` only while the conversation holds a live slot, and it takes
+  no arguments, so it can't confirm a slot it never held or one somebody else holds. A hold
+  made in a turn can't be confirmed in the same turn: the visitor has to say yes first.
+  `hold_slot` takes an option number from the conversation's own list of offered slots,
+  never a slot ID.
+- **The calendar resets nightly.** `lb02.reset_calendar` clears what visitors made and lays
+  out the next 14 days from the day it runs; a conversation is deleted 24 hours after it
+  started.
+
+Limits, all in [`lb02/limits.py`](lb02/limits.py), and checked against the gateway's
+quotas in `routing.yaml` by a test:
+
+| Limit | Value |
+|---|---|
+| Messages in a conversation | 30 (datasheet) |
+| Hold | 5 minutes (datasheet) |
+| Gateway calls in a conversation | 64: 30 messages at a check and a reply each is 60, plus the language check and a second reply or two; the gateway's cap is 68, so a visitor is handed to a person, never refused halfway |
+| Conversations a visitor may start a day | 10 |
+| A message | 500 characters; a party of at most 12, and at most what the offering takes |
+| A WebSocket frame | 4 KB; a connection has 10 seconds to say hello and 15 minutes of silence |
+
 ## The API
+
+### LB-01
 
 Every route needs a visitor token for `lb-01`, and a visitor reaches only their own
 session's tickets.
@@ -56,7 +121,48 @@ session's tickets.
 | `POST /api/lb01/tickets/{id}/decision` | Approve, edit or escalate a waiting draft, once |
 | `GET /api/lb01/stats` | The demo's counters: deflection and accuracy |
 
+### LB-02
+
+Every route needs a visitor token for `lb-02`, and a visitor reaches only their own
+session's conversations.
+
+| Route | What it does |
+|---|---|
+| `GET /api/lb02/offerings` | What can be booked, in English and Czech: duration, capacity, price, room |
+| `GET /api/lb02/calendar?from=&days=&conversation=` | A snapshot of up to 14 days: each slot free, held or booked, and `mine` for the named conversation. `as_of` orders it against live changes |
+| `GET /api/lb02/conversations` | The visitor's own conversations, newest first |
+| `GET /api/lb02/conversations/{id}` | One in full: the transcript, the hold, the booking, the recorded confirmation, the handoff with its transcript. Reading changes nothing |
+
 Errors answer `{"error": {"code", "message"}}` and never echo what was sent.
+
+### LB-02 WebSocket
+
+`/ws/lb02/`, one JSON object to a text frame ([`lb02/events.py`](lb02/events.py) holds the
+models; both directions are strict). The first frame must be a hello, within 10 seconds:
+
+```json
+{"type": "hello", "token": "<visitor token for lb-02>", "conversation": null}
+```
+
+`conversation` names one of the visitor's own to resume, or is null to start a new one.
+The token is checked before anything is read, joined or sent. It travels in the frame and
+not in the address because addresses end up in proxy and access logs, in history and in
+referrers, and a frame is in none of them; a subprotocol header was the other candidate,
+and more proxies log headers than message bodies. After that:
+
+| Client sends | Server answers |
+|---|---|
+| `{"type": "message", "text": "..."}` (1 to 500 characters) | `working`, then `reply`: the text, the `receipt` when the code wrote it, the tools called, the step, language, options, hold, booking, `messages_left`, `model_calls` |
+| the hello | `ready`: the conversation, whether it resumed, and its whole transcript and state |
+| nothing | `calendar`: slots that changed, each `free`, `held` or `booked`, and `mine` for this conversation; `calendar_reset`: load the snapshot again |
+
+A frame that isn't in the protocol gets an `error` event with a code (`invalid_frame`,
+`message_too_long`, `already_said_hello`, `conversation_gone`, `too_many_conversations`,
+`unavailable`) and the connection goes on. These close it, with the code that says why:
+4400 (not a hello first, or not JSON), 4401 (the token is missing, malformed, expired,
+signed by anyone else or for another system, or there is no key to check it with; nothing
+more is said), 4404 (no such conversation of theirs), 4408 (no hello in 10 seconds, or 15
+minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB) and 1011 (the service itself isn't set up).
 
 ## Data and evals
 
@@ -66,6 +172,15 @@ Errors answer `{"error": {"code", "message"}}` and never echo what was sent.
 | Recorded vectors for the corpus and the golden set | `data/seed/lb01/embeddings.json`, `evals/lb01/query-embeddings.json` | `just embed`, once a Workers AI key is set; commit both files |
 | Golden set: 49 tickets in English and Czech, with expected outcomes | [`evals/lb01/golden.yaml`](../../evals/lb01/golden.yaml) | `just eval-lb01` runs the live pipeline and grades it by rules |
 | Search recall gate | [`evals/lb01/search-baseline.yaml`](../../evals/lb01/search-baseline.yaml) | `just eval-search`; CI fails below the gate |
+| LB-02's rooms, offerings and calendar (3 offerings in 2 rooms, 8 slots a day for 14 days) | [`data/seed/lb02`](../../data/seed/lb02) | `just seed` checks the file, then syncs the tables; dates are relative to the day it runs, and the nightly reset does the same |
+| LB-02's golden set: 30 conversations in English, Czech, German and Slovak, written before any prompt | [`evals/lb02/golden.yaml`](../../evals/lb02/golden.yaml) | `just eval-lb02` plays them live as synthetic data and grades them by rules; it fails unless every case passes |
+
+The golden set's grading is tested offline with scripted models: a model that does what a
+careful concierge does passes 20 cases, covering every scenario, on the seeded calendar, and
+models that get something wrong fail the check that names it. **The live eval has not been
+run**, since no provider key was available, so no pass rate, and no measured number of calls
+per booking, is claimed anywhere; `just eval-lb02` prints both. No sample runs are recorded
+for replay yet either.
 
 Search recall today, keyword search only: 1.000 at 4 when searching by the classifier's
 English query, 0.441 when searching by the customer's own words, and 0 of 14 Czech
@@ -78,19 +193,24 @@ docker run -d --name lb-postgres -e POSTGRES_USER=lb -e POSTGRES_PASSWORD=lb \
   -p 127.0.0.1:5432:5432 pgvector/pgvector:pg17
 cp services/django-systems/.env.example services/django-systems/.env   # then fill it in
 just migrate && just seed
-just django     # the API on http://127.0.0.1:8001
-just worker     # the pipeline, the sweep and the reseed
+just django     # the API and WebSockets on http://127.0.0.1:8001
+just worker     # the pipelines, the sweeps, the reseed and the calendar reset
 ```
 
-The pipeline needs the gateway (`just gateway`) with provider keys, and the service key
-pair from `just gateway-token keygen django-systems <key-file>`.
+LB-02's channel layer needs the Redis from `LB_REDIS_URL`. The pipeline and the concierge
+need the gateway (`just gateway`) with provider keys, and the service key pair from
+`just gateway-token keygen django-systems <key-file>`.
 
 ## Tests
 
 `just test` runs them with the rest of the monorepo; from this folder, `uv run pytest`.
-Unit tests need nothing. Integration tests need Postgres with pgvector: Testcontainers
-starts one, or set `LB_TEST_DATABASE_URL` to use a running server whose user may create
-databases. The gateway is replaced by fakes, so no test spends quota.
+Unit tests need nothing. Integration tests need Postgres with pgvector and Redis:
+Testcontainers starts them, or set `LB_TEST_DATABASE_URL` and `LB_TEST_REDIS_URL` to use
+running servers (the Postgres user may create databases). The gateway is replaced by fakes,
+so no test spends quota. The WebSocket tests are `async` (pytest-asyncio) and drive the real
+ASGI application with Channels' `WebsocketCommunicator`; they commit for real, because a
+turn runs on a worker thread with a connection of its own, as do the concurrency tests,
+which race threads against one Postgres.
 
 ## LB-01 threat model
 
@@ -126,3 +246,73 @@ Known gaps, measured or stated rather than hidden:
   can pass it by a few; the gateway's call quotas are the hard limit.
 - Until the vectors are recorded, search runs on keywords, and Czech tickets depend on
   the classifier's English query.
+
+## LB-02 threat model
+
+Short notes, as the playbook asks (step 8).
+
+- **Spoofing.** Visitors have no accounts. The only thing the WebSocket accepts before a
+  token has been checked is a hello within 10 seconds; the token must be signed by the
+  site for `lb-02` and at most 5 minutes old, and without the site's public key nobody is
+  let in. It is read from the first frame, never the address, so it isn't logged. A
+  conversation's ID is 16 random characters and also needs the visitor's own session: any
+  other visitor's is indistinguishable from none. There is no Origin check, on purpose:
+  the connection carries no cookie or other ambient credential, so a page on another site
+  can't speak as a visitor, only with a token it already holds.
+- **Tampering.** The model is untrusted. What it calls must be a tool the step offers and
+  pass a strict schema; it names an offered option, never a slot; it can't confirm what it
+  didn't hold or confirm in the turn it held; the database refuses overlapping reservations
+  and a second booking, and a repeated confirm is a replay. A visitor's words are data in
+  the user message, screened first. Receipts are written from the database's rows.
+- **Data exposure.** Synthetic data only. Email addresses and long digit runs are masked
+  before any model or the transcript sees them, and only reserved example addresses are
+  kept; spans hold labels and counts, never a visitor's words. Calendar events say whether
+  a slot is free, held or booked and whether it is this conversation's, never whose
+  otherwise. The confirmation is a record, never sent. Conversations, holds and bookings
+  are deleted 24 hours after they started.
+- **Denial of service.** 30 messages and 64 gateway calls a conversation, counted by the
+  database in one statement each; 10 conversations a visitor a day; 500 characters a
+  message and 4 KB a frame; one turn at a time per connection and per conversation; 10
+  seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
+  adds 68 calls a run, 128 a visitor a day and 425 a day. Each turn holds a worker thread
+  while the model answers, so the thread pool bounds concurrent turns.
+- **Privilege escalation.** Six tools, gated by step; none reads another conversation, sends
+  anything or reaches outside the conversation's own rows. A handoff only records. The
+  service's connection searches only its own schema and, in production, logs in as a role
+  granted nothing else (`LB02_DATABASE_URL`); provider keys live only in the gateway.
+
+Known gaps, stated rather than hidden:
+
+- The model's own words aren't verified. It could say a slot is booked when it isn't; the
+  authoritative state travels in the structured fields (`step`, `hold`, `booking`) and in
+  the code-written receipts, which the page should show, but in a language other than
+  English or Czech the model writes the answer to a hold or a confirmation.
+- Prompt Guard 2 isn't trained on Czech or Slovak, so an injection in those may pass the
+  screen; the golden cases `injection-cs` and the rest measure it live, and the state
+  machine and the database stand behind it.
+- Masking finds addresses and numbers by pattern. An obfuscated one ("tom at gmail dot
+  com") isn't found, so it reaches the model and stays in the transcript until the 24 hours
+  are up.
+- Two tabs of one conversation take turns only within one server process. With several
+  workers their turns can overlap; the limits, the constraint and the idempotent confirm
+  still hold, but the transcript's order of lines is then whichever got there first.
+- Calendar events are best effort: if Redis is down, a committed booking stays committed and
+  the next snapshot is right, but a tab misses the live change. A client should load the
+  snapshot again after it reconnects.
+- The daily conversation limit is counted when a conversation starts, so simultaneous hellos
+  can pass it by a few; the gateway's quotas are the hard limit.
+- Not run live: the golden eval, the measured calls per booking, and recorded samples.
+
+## Operating notes for LB-02
+
+- `btree_gist` goes in the `extensions` schema. The first migration runs
+  `CREATE EXTENSION IF NOT EXISTS btree_gist SCHEMA extensions` (a trusted extension) and
+  raises if it finds the extension anywhere else. The role needs `USAGE` on `extensions`
+  and its own schema, `lb02`, and that is all (`LB02_DATABASE_URL`, optional).
+- The channel layer writes under `lb:channels:*` in Redis, and Celery under its own prefix;
+  the Django service's Redis role needs both, and the commands the layer uses to send to a
+  group, which include `EVALSHA`.
+- Run uvicorn with `--ws-max-size 8192` (the `just django` recipe does): the server library
+  reads a whole frame before the consumer can refuse it.
+- The site opens the WebSocket on the API domain, as a Vercel function can't hold one, and
+  sends the visitor token as its first frame.
