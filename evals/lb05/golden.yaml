@@ -1,0 +1,1262 @@
+# LB-05's golden set: 100 questions, each with a reference query whose result is the right answer.
+#
+# Written before any prompt (docs/PLAYBOOK.md, step 3). The grader (lb05/golden_eval.py) runs the
+# reference query and the model's query on the same data and compares the two result sets by
+# rule: the same rows, numbers within `tolerance`, column names ignored, and the same order only
+# when `order: exact`. Nothing here is graded by a model.
+#
+# Dates are relative to the data's as-of day, so a reference query names them as parameters:
+# $last_quarter_start, $last_quarter_end, $this_year_start, and so on (lb05/timeranges.py lists
+# them all). They are filled in as typed dates before the query runs.
+#
+# `sample: true` marks the seven questions the live demo opens on. Every reference query passes the
+# same SQL check as a visitor's query and returns rows on the test data; tests/unit/test_golden_set.py
+# proves it.
+#
+# Money is in CZK. A "counted" order is one that is not cancelled or lost, which is how the
+# semantic layer defines revenue, orders, buyers and units.
+cases:
+  # ---- totals -------------------------------------------------------------------------------
+  - id: revenue-last-quarter
+    question: What was our revenue last quarter?
+    topic: totals
+    difficulty: easy
+    sample: true
+    sql: |
+      SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: orders-last-month
+    question: How many orders did we get last month?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_month_start AND $last_month_end
+
+  - id: customers-registered
+    question: How many customers are registered?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS customers FROM customers
+
+  - id: units-last-30-days
+    question: How many items did we sell in the last 30 days?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS units
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_30_days_start AND $last_30_days_end
+
+  - id: average-order-value-last-year
+    question: What was the average order value last year, in CZK?
+    topic: totals
+    difficulty: medium
+    tolerance: 0.05
+    sql: |
+      SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))
+             / COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS average_order_value
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: cancelled-orders-last-quarter
+    question: How many orders were cancelled last quarter?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS cancelled_orders
+      FROM orders
+      WHERE orders.status = 'cancelled' AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: active-subscriptions-now
+    question: How many subscriptions are active right now?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS active_subscriptions FROM subscriptions WHERE subscriptions.status = 'active'
+
+  - id: delivery-income-last-quarter
+    question: How much did we collect in delivery charges last quarter?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT SUM(orders.shipping_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS delivery_income
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: new-customers-this-year
+    question: How many customers signed up this year?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS new_customers
+      FROM customers
+      WHERE customers.signup_date BETWEEN $this_year_start AND $this_year_end
+
+  - id: lost-parcels-total
+    question: How many orders did the carrier lose?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS lost_orders FROM orders WHERE orders.status = 'lost'
+
+  - id: products-we-sell
+    question: How many different products do we sell, counting each coffee once whatever its bag size?
+    topic: totals
+    difficulty: medium
+    sql: |
+      SELECT COUNT(DISTINCT products.name) AS products FROM products
+
+  - id: business-customers
+    question: How many business customers do we have?
+    topic: totals
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS business_customers FROM customers WHERE customers.segment = 'business'
+
+  - id: subscription-discount-last-year
+    question: How much did subscription discounts cost us last year, in CZK?
+    topic: totals
+    difficulty: medium
+    sql: |
+      SELECT SUM(order_lines.discount_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS discounts
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  # ---- breakdowns ---------------------------------------------------------------------------
+  - id: revenue-by-product-last-quarter
+    question: What was the revenue of each product last quarter?
+    topic: breakdown
+    difficulty: medium
+    sample: true
+    sql: |
+      SELECT products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY products.name
+
+  - id: orders-by-country-this-year
+    question: How many orders did customers in each country place this year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT customers.country AS country,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      WHERE orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+      GROUP BY customers.country
+
+  - id: revenue-by-segment-last-year
+    question: How much revenue came from home customers and from business customers last year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT customers.segment AS segment,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.segment
+
+  - id: orders-by-carrier-last-quarter
+    question: How many orders did each carrier ship last quarter?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT orders.carrier AS carrier,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY orders.carrier
+
+  - id: customers-by-channel
+    question: How many customers did each acquisition channel bring in?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT customers.acquisition_channel AS channel, COUNT(*) AS customers
+      FROM customers
+      GROUP BY customers.acquisition_channel
+
+  - id: revenue-by-grind-last-quarter
+    question: What was coffee revenue by grind last quarter?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT order_lines.grind AS grind,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE order_lines.grind IS NOT NULL AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY order_lines.grind
+
+  - id: coffee-bags-by-size-last-year
+    question: How many coffee bags of each size did we sell last year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT products.bag_grams AS bag_grams,
+             SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS bags
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.bag_grams
+
+  - id: orders-by-source-this-year
+    question: How many orders came from each order source this year?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT orders.source AS source,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+      GROUP BY orders.source
+
+  - id: orders-by-status
+    question: How many orders are there in each status?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT orders.status AS status, COUNT(*) AS orders FROM orders GROUP BY orders.status
+
+  - id: czech-customers-by-city
+    question: How many customers live in each Czech city?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT customers.city AS city, COUNT(*) AS customers
+      FROM customers
+      WHERE customers.country = 'CZ'
+      GROUP BY customers.city
+
+  - id: revenue-by-shipping-country-last-year
+    question: What was last year's revenue for each country orders were shipped to?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT orders.ship_country AS ship_country,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY orders.ship_country
+
+  - id: equipment-revenue-this-year
+    question: How much has each piece of equipment earned this year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'equipment' AND orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+      GROUP BY products.name
+
+  - id: active-subscriptions-by-frequency
+    question: How many active subscriptions are there for each delivery frequency?
+    topic: breakdown
+    difficulty: easy
+    sample: true
+    sql: |
+      SELECT subscriptions.frequency_days AS frequency_days, COUNT(*) AS active_subscriptions
+      FROM subscriptions
+      WHERE subscriptions.status = 'active'
+      GROUP BY subscriptions.frequency_days
+
+  - id: cancellation-reasons
+    question: Why do subscribers cancel? Count the cancelled subscriptions for each reason.
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT subscriptions.cancel_reason AS reason, COUNT(*) AS cancellations
+      FROM subscriptions
+      WHERE subscriptions.status = 'cancelled'
+      GROUP BY subscriptions.cancel_reason
+
+  - id: coffee-revenue-by-roast-last-year
+    question: How much did light, medium and dark roasts earn last year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT products.roast AS roast,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.roast
+
+  - id: revenue-by-origin-last-quarter
+    question: What was coffee revenue by origin last quarter?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT products.origin AS origin,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY products.origin
+
+  - id: customers-by-country-and-segment
+    question: How many customers are there in each country, split into home and business?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT customers.country AS country, customers.segment AS segment, COUNT(*) AS customers
+      FROM customers
+      GROUP BY customers.country, customers.segment
+
+  - id: orders-by-weekday-last-90-days
+    question: How many orders were placed on each day of the week in the last 90 days?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT DAYNAME(orders.ordered_at) AS weekday,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_90_days_start AND $last_90_days_end
+      GROUP BY DAYNAME(orders.ordered_at)
+
+  - id: items-by-kind-last-year
+    question: How many coffee items and how many equipment items did we sell last year?
+    topic: breakdown
+    difficulty: medium
+    sql: |
+      SELECT products.kind AS kind,
+             SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS items
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.kind
+
+  - id: new-customers-by-channel-last-year
+    question: How many customers signed up last year through each acquisition channel?
+    topic: breakdown
+    difficulty: easy
+    sql: |
+      SELECT customers.acquisition_channel AS channel, COUNT(*) AS new_customers
+      FROM customers
+      WHERE customers.signup_date BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.acquisition_channel
+
+  # ---- time ---------------------------------------------------------------------------------
+  - id: monthly-revenue-last-year
+    question: Show revenue by month for last year.
+    topic: time
+    difficulty: medium
+    sample: true
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY month
+
+  - id: quarterly-orders-last-year
+    question: How many orders were placed in each quarter of last year?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('quarter', orders.ordered_at) AS quarter,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('quarter', orders.ordered_at)
+      ORDER BY quarter
+
+  - id: monthly-orders-this-year
+    question: How many orders did we get each month this year?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY month
+
+  - id: revenue-in-the-last-two-quarters
+    question: What was the revenue in each of the last two quarters?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('quarter', orders.ordered_at) AS quarter,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $quarter_before_last_start AND $last_quarter_end
+      GROUP BY DATE_TRUNC('quarter', orders.ordered_at)
+      ORDER BY quarter
+
+  - id: revenue-growth-on-a-year-earlier
+    question: By what percentage did revenue last quarter change compared with the same quarter a year earlier?
+    topic: time
+    difficulty: hard
+    tolerance: 0.1
+    sql: |
+      WITH totals AS (
+        SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')
+                 AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end) AS current_total,
+               SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')
+                 AND orders.ordered_at BETWEEN $last_quarter_a_year_ago_start AND $last_quarter_a_year_ago_end) AS earlier_total
+        FROM orders
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+      )
+      SELECT ROUND(100.0 * (totals.current_total - totals.earlier_total) / totals.earlier_total, 1) AS growth_percent
+      FROM totals
+
+  - id: orders-per-day-last-7-days
+    question: How many orders were placed on each of the last 7 days?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT orders.ordered_at AS day,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_7_days_start AND $last_7_days_end
+      GROUP BY orders.ordered_at
+      ORDER BY day
+
+  - id: best-month-last-year
+    question: Which month last year had the highest revenue?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY revenue DESC
+      LIMIT 1
+
+  - id: revenue-by-year
+    question: What was our revenue in each calendar year?
+    topic: time
+    difficulty: easy
+    order: exact
+    sql: |
+      SELECT YEAR(orders.ordered_at) AS year,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      GROUP BY YEAR(orders.ordered_at)
+      ORDER BY year
+
+  - id: december-orders-last-year
+    question: How many orders were placed in December of last year?
+    topic: time
+    difficulty: medium
+    sql: |
+      SELECT COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end AND MONTH(orders.ordered_at) = 12
+
+  - id: busiest-weekday-last-year
+    question: On which day of the week did we get the most orders last year?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DAYNAME(orders.ordered_at) AS weekday,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DAYNAME(orders.ordered_at)
+      ORDER BY orders DESC
+      LIMIT 1
+
+  - id: monthly-revenue-last-12-months
+    question: Show monthly revenue for the last 12 months.
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_12_months_start AND $last_12_months_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY month
+
+  - id: new-customers-per-month-this-year
+    question: How many new customers signed up in each month of this year?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', customers.signup_date) AS month, COUNT(*) AS new_customers
+      FROM customers
+      WHERE customers.signup_date BETWEEN $this_year_start AND $this_year_end
+      GROUP BY DATE_TRUNC('month', customers.signup_date)
+      ORDER BY month
+
+  - id: new-subscriptions-per-quarter-last-year
+    question: How many subscriptions started in each quarter of last year?
+    topic: time
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('quarter', subscriptions.started_at) AS quarter, COUNT(*) AS new_subscriptions
+      FROM subscriptions
+      WHERE subscriptions.started_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('quarter', subscriptions.started_at)
+      ORDER BY quarter
+
+  - id: cancellation-share-by-month-last-year
+    question: What share of orders was cancelled in each month of last year?
+    topic: time
+    difficulty: hard
+    order: exact
+    tolerance: 0.005
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             COUNT(*) FILTER (WHERE orders.status = 'cancelled') / COUNT(*) AS cancellation_rate
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY month
+
+  - id: average-order-value-by-quarter-last-year
+    question: What was the average order value in each quarter of last year?
+    topic: time
+    difficulty: hard
+    order: exact
+    tolerance: 0.05
+    sql: |
+      SELECT DATE_TRUNC('quarter', orders.ordered_at) AS quarter,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))
+             / COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS average_order_value
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('quarter', orders.ordered_at)
+      ORDER BY quarter
+
+  - id: orders-so-far-this-month
+    question: How many orders have been placed so far this month?
+    topic: time
+    difficulty: easy
+    sql: |
+      SELECT COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $this_month_start AND $this_month_end
+
+  - id: revenue-yesterday
+    question: What was our revenue yesterday?
+    topic: time
+    difficulty: easy
+    sql: |
+      SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $yesterday_start AND $yesterday_end
+
+  - id: revenue-year-to-date
+    question: What is our revenue so far this year?
+    topic: time
+    difficulty: easy
+    sql: |
+      SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+
+  # ---- joins across tables ------------------------------------------------------------------
+  - id: revenue-by-country-and-product-last-quarter
+    question: What was last quarter's revenue for each product in each customer country?
+    topic: join
+    difficulty: hard
+    sql: |
+      SELECT customers.country AS country, products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY customers.country, products.name
+
+  - id: kenya-revenue-by-country-last-year
+    question: Which countries bought Kenya Nyeri last year, and how much revenue did each bring?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT customers.country AS country,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.name = 'Kenya Nyeri' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.country
+
+  - id: business-spend-by-kind-last-year
+    question: How much did business customers spend on coffee and on equipment last year?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT products.kind AS kind,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE customers.segment = 'business' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.kind
+
+  - id: subscription-revenue-by-coffee-last-year
+    question: What was revenue from subscription orders for each coffee last year?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.source = 'subscription' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.name
+
+  - id: subscribers-by-country
+    question: How many customers have an active subscription, by country?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT customers.country AS country, COUNT(DISTINCT subscriptions.customer_id) AS subscribers
+      FROM subscriptions
+      JOIN customers ON customers.customer_id = subscriptions.customer_id
+      WHERE subscriptions.status = 'active'
+      GROUP BY customers.country
+
+  - id: average-order-value-by-segment-last-year
+    question: What was the average order value for home customers and for business customers last year?
+    topic: join
+    difficulty: hard
+    tolerance: 0.05
+    sql: |
+      SELECT customers.segment AS segment,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))
+             / COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS average_order_value
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.segment
+
+  - id: subscriptions-by-coffee
+    question: How many active subscriptions does each coffee have?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT products.name AS coffee, COUNT(*) AS active_subscriptions
+      FROM subscriptions
+      JOIN products ON products.product_id = subscriptions.product_id
+      WHERE subscriptions.status = 'active'
+      GROUP BY products.name
+
+  - id: subscription-revenue-last-year
+    question: How much revenue came from subscription orders last year?
+    topic: join
+    difficulty: medium
+    sql: |
+      SELECT SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.subscription_id IS NOT NULL AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: kettle-buyers-by-country-last-year
+    question: How many different customers bought a Gooseneck Kettle last year, by country?
+    topic: join
+    difficulty: hard
+    sql: |
+      SELECT customers.country AS country,
+             COUNT(DISTINCT orders.customer_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS buyers
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.name = 'Gooseneck Kettle' AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.country
+
+  - id: equipment-buyer-share-last-year
+    question: What percentage of the customers who ordered last year bought any equipment?
+    topic: join
+    difficulty: hard
+    tolerance: 0.1
+    sql: |
+      WITH buyers AS (
+        SELECT orders.customer_id AS customer_id,
+               MAX(CASE WHEN products.kind = 'equipment' THEN 1 ELSE 0 END) AS bought_equipment
+        FROM orders
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+        JOIN products ON products.product_id = order_lines.product_id
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+        GROUP BY orders.customer_id
+      )
+      SELECT ROUND(100.0 * SUM(buyers.bought_equipment) / COUNT(*), 1) AS equipment_buyer_percent FROM buyers
+
+  - id: items-per-order-last-quarter
+    question: How many items does an average order hold, counting last quarter's orders?
+    topic: join
+    difficulty: medium
+    tolerance: 0.02
+    sql: |
+      SELECT SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))
+             / COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS items_per_order
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: delivery-income-by-carrier-last-year
+    question: How much delivery income did each carrier bring in last year?
+    topic: join
+    difficulty: easy
+    sql: |
+      SELECT orders.carrier AS carrier,
+             SUM(orders.shipping_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS delivery_income
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY orders.carrier
+
+  # ---- rankings -----------------------------------------------------------------------------
+  - id: top-5-products-last-year
+    question: Which 5 products earned the most revenue last year?
+    topic: ranking
+    difficulty: medium
+    sample: true
+    order: exact
+    sql: |
+      SELECT products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY products.name
+      ORDER BY revenue DESC
+      LIMIT 5
+
+  - id: top-3-countries-by-orders-last-year
+    question: Which 3 customer countries placed the most orders last year?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT customers.country AS country,
+             COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.country
+      ORDER BY orders DESC
+      LIMIT 3
+
+  - id: worst-month-last-year
+    question: Which month last year had the lowest revenue?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT DATE_TRUNC('month', orders.ordered_at) AS month,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY DATE_TRUNC('month', orders.ordered_at)
+      ORDER BY revenue ASC
+      LIMIT 1
+
+  - id: top-10-customers-last-year
+    question: Who were our 10 biggest customers by revenue last year? Give the customer number and the revenue.
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT orders.customer_id AS customer_id,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY orders.customer_id
+      ORDER BY revenue DESC
+      LIMIT 10
+
+  - id: top-3-coffees-by-bags-last-quarter
+    question: Which 3 coffees sold the most items last quarter?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT products.name AS coffee,
+             SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS items
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY products.name
+      ORDER BY items DESC
+      LIMIT 3
+
+  - id: city-with-most-customers
+    question: Which city has the most customers?
+    topic: ranking
+    difficulty: easy
+    order: exact
+    sql: |
+      SELECT customers.city AS city, COUNT(*) AS customers
+      FROM customers
+      GROUP BY customers.city
+      ORDER BY customers DESC
+      LIMIT 1
+
+  - id: most-popular-grind-last-year
+    question: Which grind did people buy the most last year?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT order_lines.grind AS grind,
+             SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS items
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE order_lines.grind IS NOT NULL AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY order_lines.grind
+      ORDER BY items DESC
+      LIMIT 1
+
+  - id: bottom-2-products-last-quarter
+    question: Which 2 products earned the least revenue last quarter?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT products.name AS product,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      GROUP BY products.name
+      ORDER BY revenue ASC
+      LIMIT 2
+
+  - id: top-5-cities-by-revenue-last-year
+    question: Which 5 customer cities brought in the most revenue last year?
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT customers.city AS city,
+             SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.city
+      ORDER BY revenue DESC
+      LIMIT 5
+
+  - id: best-product-per-country-last-year
+    question: For each customer country, which product earned the most revenue last year?
+    topic: ranking
+    difficulty: hard
+    sql: |
+      WITH by_country AS (
+        SELECT customers.country AS country, products.name AS product,
+               SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue
+        FROM orders
+        JOIN customers ON customers.customer_id = orders.customer_id
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+        JOIN products ON products.product_id = order_lines.product_id
+        WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+        GROUP BY customers.country, products.name
+      ), ranked AS (
+        SELECT by_country.country AS country, by_country.product AS product, by_country.revenue AS revenue,
+               ROW_NUMBER() OVER (PARTITION BY by_country.country ORDER BY by_country.revenue DESC) AS place
+        FROM by_country
+      )
+      SELECT ranked.country AS country, ranked.product AS product, ranked.revenue AS revenue
+      FROM ranked
+      WHERE ranked.place = 1
+
+  - id: channel-with-most-new-customers-last-year
+    question: Which acquisition channel brought in the most new customers last year?
+    topic: ranking
+    difficulty: easy
+    order: exact
+    sql: |
+      SELECT customers.acquisition_channel AS channel, COUNT(*) AS new_customers
+      FROM customers
+      WHERE customers.signup_date BETWEEN $last_year_start AND $last_year_end
+      GROUP BY customers.acquisition_channel
+      ORDER BY new_customers DESC
+      LIMIT 1
+
+  - id: top-5-orders-last-quarter
+    question: What were the 5 largest orders last quarter by the amount paid? Give the order number and the amount.
+    topic: ranking
+    difficulty: medium
+    order: exact
+    sql: |
+      SELECT orders.order_id AS order_id, orders.total_czk AS total_czk
+      FROM orders
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+      ORDER BY orders.total_czk DESC, orders.order_id
+      LIMIT 5
+
+  # ---- ratios and percentages ---------------------------------------------------------------
+  - id: cancellation-rate-last-quarter
+    question: What was the cancellation rate last quarter?
+    topic: ratio
+    difficulty: medium
+    sample: true
+    tolerance: 0.001
+    sql: |
+      SELECT COUNT(*) FILTER (WHERE orders.status = 'cancelled') / COUNT(*) AS cancellation_rate
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: subscription-order-share-last-year
+    question: What percentage of last year's orders were subscription deliveries?
+    topic: ratio
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE orders.source = 'subscription') / COUNT(*), 1) AS subscription_percent
+      FROM orders
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: equipment-revenue-share-last-year
+    question: What percentage of last year's revenue came from equipment?
+    topic: ratio
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * SUM(order_lines.line_total_czk) FILTER (WHERE products.kind = 'equipment')
+                   / SUM(order_lines.line_total_czk), 1) AS equipment_percent
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: weekend-order-share-last-year
+    question: What percentage of last year's orders were placed on a weekend?
+    topic: ratio
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE DAYOFWEEK(orders.ordered_at) IN (0, 6)) / COUNT(*), 1) AS weekend_percent
+      FROM orders
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: courier-share-last-year
+    question: What percentage of last year's orders went with Kolo Courier?
+    topic: ratio
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE orders.carrier = 'Kolo Courier') / COUNT(*), 1) AS courier_percent
+      FROM orders
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: repeat-customer-share-last-year
+    question: Of the customers who ordered last year, what percentage ordered more than once?
+    topic: ratio
+    difficulty: hard
+    tolerance: 0.1
+    sql: |
+      WITH per_customer AS (
+        SELECT orders.customer_id AS customer_id, COUNT(DISTINCT orders.order_id) AS orders
+        FROM orders
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+        GROUP BY orders.customer_id
+      )
+      SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE per_customer.orders > 1) / COUNT(*), 1) AS repeat_percent
+      FROM per_customer
+
+  - id: large-bag-share-last-year
+    question: What percentage of the coffee bags sold last year were 1000 g bags?
+    topic: ratio
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * SUM(order_lines.quantity) FILTER (WHERE products.bag_grams = 1000)
+                   / SUM(order_lines.quantity), 1) AS large_bag_percent
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.status NOT IN ('cancelled', 'lost')
+        AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: kenya-share-of-coffee-revenue-last-quarter
+    question: What share of coffee revenue came from Kenya Nyeri last quarter, as a percentage?
+    topic: ratio
+    difficulty: hard
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * SUM(order_lines.line_total_czk) FILTER (WHERE products.name = 'Kenya Nyeri')
+                   / SUM(order_lines.line_total_czk), 1) AS kenya_percent
+      FROM orders
+      JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE products.kind = 'coffee' AND orders.status NOT IN ('cancelled', 'lost')
+        AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  # ---- subscriptions ------------------------------------------------------------------------
+  - id: paused-subscriptions
+    question: How many subscriptions are paused?
+    topic: subscriptions
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS paused_subscriptions FROM subscriptions WHERE subscriptions.status = 'paused'
+
+  - id: cancellations-last-quarter
+    question: How many subscriptions were cancelled last quarter?
+    topic: subscriptions
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS cancelled_subscriptions
+      FROM subscriptions
+      WHERE subscriptions.status = 'cancelled' AND subscriptions.cancelled_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: top-cancellation-reason
+    question: What is the most common reason for cancelling a subscription?
+    topic: subscriptions
+    difficulty: easy
+    order: exact
+    sql: |
+      SELECT subscriptions.cancel_reason AS reason, COUNT(*) AS cancellations
+      FROM subscriptions
+      WHERE subscriptions.status = 'cancelled'
+      GROUP BY subscriptions.cancel_reason
+      ORDER BY cancellations DESC
+      LIMIT 1
+
+  - id: average-subscription-length
+    question: On average, how many days did cancelled subscriptions last?
+    topic: subscriptions
+    difficulty: medium
+    tolerance: 0.5
+    sql: |
+      SELECT AVG(DATE_DIFF('day', subscriptions.started_at, subscriptions.cancelled_at)) AS average_days
+      FROM subscriptions
+      WHERE subscriptions.status = 'cancelled'
+
+  - id: new-subscriptions-last-quarter
+    question: How many subscriptions started last quarter?
+    topic: subscriptions
+    difficulty: easy
+    sql: |
+      SELECT COUNT(*) AS new_subscriptions
+      FROM subscriptions
+      WHERE subscriptions.started_at BETWEEN $last_quarter_start AND $last_quarter_end
+
+  - id: weekly-subscriber-share
+    question: What percentage of active subscriptions deliver every week?
+    topic: subscriptions
+    difficulty: medium
+    tolerance: 0.1
+    sql: |
+      SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE subscriptions.frequency_days = 7) / COUNT(*), 1) AS weekly_percent
+      FROM subscriptions
+      WHERE subscriptions.status = 'active'
+
+  - id: kenya-cancellation-reasons
+    question: Why did subscribers of Kenya Nyeri cancel? Count each reason.
+    topic: subscriptions
+    difficulty: medium
+    sql: |
+      SELECT subscriptions.cancel_reason AS reason, COUNT(*) AS cancellations
+      FROM subscriptions
+      JOIN products ON products.product_id = subscriptions.product_id
+      WHERE products.name = 'Kenya Nyeri' AND subscriptions.status = 'cancelled'
+      GROUP BY subscriptions.cancel_reason
+
+  - id: active-subscriptions-by-bag-size
+    question: How many active subscriptions are for 1000 g bags, and how many for 250 g?
+    topic: subscriptions
+    difficulty: medium
+    sql: |
+      SELECT products.bag_grams AS bag_grams, COUNT(*) AS active_subscriptions
+      FROM subscriptions
+      JOIN products ON products.product_id = subscriptions.product_id
+      WHERE subscriptions.status = 'active'
+      GROUP BY products.bag_grams
+
+  # ---- customers and repeat buyers ----------------------------------------------------------
+  - id: lost-repeat-buyers-last-quarter
+    question: Which coffees lost the most repeat buyers last quarter?
+    topic: customers
+    difficulty: hard
+    sample: true
+    order: exact
+    sql: |
+      WITH purchases AS (
+        SELECT orders.customer_id AS customer_id, products.name AS product, orders.ordered_at AS day
+        FROM orders
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+        JOIN products ON products.product_id = order_lines.product_id
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND products.kind = 'coffee'
+      ), earlier AS (
+        SELECT DISTINCT customer_id, product FROM purchases
+        WHERE day BETWEEN $quarter_before_last_start AND $quarter_before_last_end
+      ), before_earlier AS (
+        SELECT DISTINCT customer_id, product FROM purchases WHERE day < $quarter_before_last_start
+      ), asked AS (
+        SELECT DISTINCT customer_id, product FROM purchases
+        WHERE day BETWEEN $last_quarter_start AND $last_quarter_end
+      )
+      SELECT earlier.product AS product, COUNT(*) AS lost_repeat_buyers
+      FROM earlier
+      JOIN before_earlier ON before_earlier.customer_id = earlier.customer_id AND before_earlier.product = earlier.product
+      LEFT JOIN asked ON asked.customer_id = earlier.customer_id AND asked.product = earlier.product
+      WHERE asked.customer_id IS NULL
+      GROUP BY earlier.product
+      ORDER BY lost_repeat_buyers DESC
+
+  - id: repeat-buyers-last-quarter
+    question: How many repeat buyers did each coffee have last quarter?
+    topic: customers
+    difficulty: hard
+    sql: |
+      WITH purchases AS (
+        SELECT orders.customer_id AS customer_id, products.name AS product, orders.ordered_at AS day
+        FROM orders
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+        JOIN products ON products.product_id = order_lines.product_id
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND products.kind = 'coffee'
+      ), in_period AS (
+        SELECT DISTINCT customer_id, product FROM purchases
+        WHERE day BETWEEN $last_quarter_start AND $last_quarter_end
+      ), before_period AS (
+        SELECT DISTINCT customer_id, product FROM purchases WHERE day < $last_quarter_start
+      )
+      SELECT in_period.product AS product, COUNT(*) AS repeat_buyers
+      FROM in_period
+      JOIN before_period ON before_period.customer_id = in_period.customer_id AND before_period.product = in_period.product
+      GROUP BY in_period.product
+
+  - id: one-time-customers
+    question: How many customers have placed only one order, not counting cancelled or lost ones?
+    topic: customers
+    difficulty: medium
+    sql: |
+      SELECT COUNT(*) AS one_time_customers
+      FROM (
+        SELECT orders.customer_id AS customer_id
+        FROM orders
+        WHERE orders.status NOT IN ('cancelled', 'lost')
+        GROUP BY orders.customer_id
+        HAVING COUNT(DISTINCT orders.order_id) = 1
+      ) AS singles
+
+  - id: customers-ordering-every-quarter-last-year
+    question: How many customers ordered in every quarter of last year?
+    topic: customers
+    difficulty: hard
+    sql: |
+      SELECT COUNT(*) AS regular_customers
+      FROM (
+        SELECT orders.customer_id AS customer_id
+        FROM orders
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+        GROUP BY orders.customer_id
+        HAVING COUNT(DISTINCT DATE_TRUNC('quarter', orders.ordered_at)) = 4
+      ) AS regulars
+
+  - id: retained-signups-this-year
+    question: Of the customers who signed up last year, how many have placed an order this year?
+    topic: customers
+    difficulty: hard
+    sql: |
+      SELECT COUNT(DISTINCT customers.customer_id) AS retained_customers
+      FROM customers
+      JOIN orders ON orders.customer_id = customers.customer_id
+      WHERE customers.signup_date BETWEEN $last_year_start AND $last_year_end
+        AND orders.status NOT IN ('cancelled', 'lost')
+        AND orders.ordered_at BETWEEN $this_year_start AND $this_year_end
+
+  - id: lapsed-customers
+    question: How many customers have ordered before but not in the last 90 days?
+    topic: customers
+    difficulty: hard
+    sql: |
+      SELECT COUNT(*) AS lapsed_customers
+      FROM (
+        SELECT orders.customer_id AS customer_id, MAX(orders.ordered_at) AS last_order
+        FROM orders
+        WHERE orders.status NOT IN ('cancelled', 'lost')
+        GROUP BY orders.customer_id
+      ) AS last_orders
+      WHERE last_orders.last_order < $last_90_days_start
+
+  - id: existing-customers-ordering-last-quarter
+    question: How many customers who ordered last quarter had registered before last quarter began?
+    topic: customers
+    difficulty: medium
+    sql: |
+      SELECT COUNT(DISTINCT orders.customer_id) AS existing_customers
+      FROM orders
+      JOIN customers ON customers.customer_id = orders.customer_id
+      WHERE orders.status NOT IN ('cancelled', 'lost')
+        AND orders.ordered_at BETWEEN $last_quarter_start AND $last_quarter_end
+        AND customers.signup_date < $last_quarter_start
+
+  - id: orders-per-buyer-last-year
+    question: On average, how many orders did each customer who ordered last year place?
+    topic: customers
+    difficulty: medium
+    tolerance: 0.01
+    sql: |
+      SELECT COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))
+             / COUNT(DISTINCT orders.customer_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS orders_per_buyer
+      FROM orders
+      WHERE orders.ordered_at BETWEEN $last_year_start AND $last_year_end
+
+  - id: first-time-kenya-buyers-last-quarter
+    question: How many customers bought Kenya Nyeri for the first time last quarter?
+    topic: customers
+    difficulty: hard
+    sql: |
+      SELECT COUNT(*) AS first_time_buyers
+      FROM (
+        SELECT orders.customer_id AS customer_id, MIN(orders.ordered_at) AS first_purchase
+        FROM orders
+        JOIN order_lines ON order_lines.order_id = orders.order_id
+        JOIN products ON products.product_id = order_lines.product_id
+        WHERE orders.status NOT IN ('cancelled', 'lost') AND products.name = 'Kenya Nyeri'
+        GROUP BY orders.customer_id
+      ) AS firsts
+      WHERE firsts.first_purchase BETWEEN $last_quarter_start AND $last_quarter_end

@@ -27,22 +27,23 @@ gateway-token *args:
 # Lint every TypeScript, Vue and Python package, and check every Python docstring.
 lint:
     pnpm lint
-    uv run ruff check python scripts services/django-systems
-    uv run ruff format --check python scripts services/django-systems
+    uv run ruff check python scripts services/django-systems services/flask-systems
+    uv run ruff format --check python scripts services/django-systems services/flask-systems
     uv run python scripts/check_docstrings.py
 
 # Format the Python code with Ruff and apply its safe fixes.
 format:
-    uv run ruff format python scripts services/django-systems
-    uv run ruff check --fix python scripts services/django-systems
+    uv run ruff format python scripts services/django-systems services/flask-systems
+    uv run ruff check --fix python scripts services/django-systems services/flask-systems
 
-# The Django service runs mypy from its own folder, where its settings and the Django
-# plugin live.
+# The Django and Flask services run mypy from their own folders, where their settings,
+# plugins and imports live.
 # Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
     uv run mypy python/lb-common scripts
     uv run --directory services/django-systems mypy .
+    uv run --directory services/flask-systems mypy .
 
 # Integration tests start Redis and Postgres with Docker, or use LB_TEST_REDIS_URL and
 # LB_TEST_DATABASE_URL when they are set.
@@ -51,6 +52,7 @@ test:
     pnpm test
     uv run pytest
     uv run --directory services/django-systems pytest
+    uv run --directory services/flask-systems pytest
 
 # The WebSocket frame limit (8 KB) stops an oversized frame before the application reads it.
 # Run the Django systems' API and WebSockets with reload on http://127.0.0.1:8001 (settings in services/django-systems/.env).
@@ -95,6 +97,28 @@ eval-lb01 *args:
 # Run LB-02's golden set through the live concierge and grade it by rules.
 eval-lb02 *args:
     uv run --directory services/django-systems --env-file .env python manage.py eval_lb02 {{args}}
+
+# Run the Flask systems' API with gunicorn and reload on http://127.0.0.1:8102 (settings in services/flask-systems/.env).
+flask:
+    uv run --directory services/flask-systems --env-file .env gunicorn --config gunicorn.conf.py --reload wsgi:app
+
+# Write the Flask systems' OpenAPI document to services/flask-systems/openapi.json, for the site's typed client.
+openapi-flask:
+    uv run --directory services/flask-systems --env-file .env python manage.py export_openapi
+
+# Create or update every Flask system's Postgres schema (settings in services/flask-systems/.env).
+migrate-flask:
+    uv run --directory services/flask-systems --env-file .env python manage.py migrate
+
+# `--size small` makes a quick one, `--today YYYY-MM-DD` pins the last day, and `--data DIR` the folder.
+# Generate LB-05's synthetic sales data (about two million orders) as Parquet and a read-only DuckDB file.
+seed-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py seed_lb05 {{args}}
+
+# Needs the gateway with provider keys, and costs two to four calls a question (five at most): `--samples` or `--case ID` run fewer.
+# Put LB-05's golden set, or with `--adversarial` its attacks, to the live pipeline and grade it by rules.
+eval-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py eval_lb05 {{args}}
 
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
