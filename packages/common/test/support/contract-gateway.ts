@@ -36,8 +36,12 @@ export interface ContractGateway {
   close: () => Promise<void>
 }
 
-/** Starts the gateway on a fake provider, against the Redis at `redisUrl`. */
-export async function startContractGateway(redisUrl: string): Promise<ContractGateway> {
+/**
+ * Starts the gateway on a fake provider, against the Redis at `redisUrl`. `routingFile` is
+ * the routing table to load: this package's own small one by default, or another system's
+ * (services/node-systems tests load one with the real alias limits of `lb-tools`).
+ */
+export async function startContractGateway(redisUrl: string, routingFile: URL = new URL('routing.contract.yaml', import.meta.url)): Promise<ContractGateway> {
   const provider = await FakeProvider.start('alpha answer')
 
   // The service's key pair. The private half goes to a file only this user can read.
@@ -49,7 +53,7 @@ export async function startContractGateway(redisUrl: string): Promise<ContractGa
   const prefix = `lbtest-${randomBytes(6).toString('hex')}:`
   const redis = new Redis(redisUrl, { enableOfflineQueue: false, maxRetriesPerRequest: 1, lazyConnect: true })
   await redis.connect()
-  const routing = loadRouting(readFileSync(new URL('routing.contract.yaml', import.meta.url), 'utf8'), { ALPHA_URL: provider.url, ALPHA_KEY: 'alpha-key' })
+  const routing = loadRouting(readFileSync(routingFile, 'utf8'), { ALPHA_URL: provider.url, ALPHA_KEY: 'alpha-key' })
   const app = await buildGateway({
     routing,
     profile: 'production',
