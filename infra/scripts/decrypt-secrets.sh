@@ -28,7 +28,7 @@ fail() {
     exit 1
 }
 
-command -v sops >/dev/null 2>&1 || fail "sops is not installed on this machine (docs/DEPLOY.md, The box)."
+command -v sops >/dev/null 2>&1 || fail "sops is not installed on this machine (docs/DEPLOY.md, The box: system, Docker, folders, tools, keys)."
 [ -f "$SOPS_AGE_KEY_FILE" ] || fail "the box's age key $SOPS_AGE_KEY_FILE does not exist."
 key_mode="$(stat -c %a "$SOPS_AGE_KEY_FILE")"
 case "$key_mode" in
