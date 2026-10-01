@@ -38,7 +38,6 @@ from lb02.states import Step, Tool
 ClockTime = Annotated[str, StringConstraints(pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")]
 # A language as its two-letter ISO 639 code.
 Language = Annotated[str, StringConstraints(pattern=r"^[a-z]{2}$")]
-# What the visitor types: trimmed, never empty, never longer than the concierge accepts.
 # Text a reply must never contain.
 Forbidden = Annotated[str, StringConstraints(min_length=2, max_length=80)]
 # The steps a conversation can end a turn in: one, or several when more than one is a right answer.

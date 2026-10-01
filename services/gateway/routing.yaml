@@ -312,3 +312,26 @@ systems:
     # calls a day Groq and Workers AI carry (docs/STACK.md, Capacity), rebalanced as
     # each system ships.
     dailyCalls: 350
+
+  lb-02:
+    name: Booking Concierge
+    service: django-systems
+    aliases: [lb-fast, lb-tools, lb-guard]
+    # A booking takes 7 calls: an injection check for each of the three messages the
+    # visitor writes (lb-guard), and four lb-tools calls (the details and the search, the
+    # answer that offers the slots, the hold, the confirmation). The hold and the
+    # confirmation are receipts the code writes itself, so they cost no second call. The
+    # datasheet's 6 to 10 leaves room for a changed mind. A conversation is held to 30
+    # messages, which at a check and a reply each is 60 calls: the service stops at 64
+    # and hands the visitor to a person (lb02/limits.py), so the cap here sits four calls
+    # above it and the gateway never refuses a call halfway through a turn.
+    maxCallsPerRun: 68
+    # Two conversations of 30 messages, or about eighteen bookings. A visitor may start
+    # ten conversations a day.
+    sessionDailyCalls: 128
+    # 25 bookings a day at 7 calls (175), plus the owner's golden-set run, which is
+    # synthetic and takes at most 247 calls (`just eval-lb02`; the sum of the cases' own
+    # ceilings). The guard calls run on a budget of their own; the chat calls stay within
+    # LB-02's share of the roughly 330 visitor calls a day (docs/STACK.md, Capacity),
+    # rebalanced as each system ships.
+    dailyCalls: 425
