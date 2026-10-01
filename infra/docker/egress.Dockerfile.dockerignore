@@ -1,0 +1,4 @@
+# What the egress proxy image's build may see: its two files and nothing else.
+*
+!infra/egress/squid.conf
+!infra/egress/entrypoint.sh

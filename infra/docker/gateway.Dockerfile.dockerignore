@@ -1,0 +1,9 @@
+# What the gateway image's build may see. Everything is excluded unless listed, so a
+# stray .env file, a service key (*.jwk.json) or a test fixture can never reach an image.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!services/gateway/package.json
+!services/gateway/routing.yaml
+!services/gateway/src/**
