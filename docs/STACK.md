@@ -337,11 +337,24 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 - **Edge:** the box runs `cloudflared` and opens no inbound ports. Cloudflare adds WAF
   rules, DDoS protection and Turnstile. SSH and owner tools are reachable only over
   Tailscale.
-- **Deploys:** GitHub Actions builds multi-arch images, signs them, pushes them to
-  GHCR, joins the Tailscale network with an ephemeral key, and deploys over SSH. The
-  box verifies each image's signature, then runs
-  `docker compose pull && docker compose up -d` with health checks. Rollback means
-  redeploying the previous image tag.
+- **Deploys:** after CI passes on `main`, GitHub Actions builds multi-arch images,
+  pushes them to GHCR under the commit's hash, scans and signs them, joins the
+  Tailscale network as an ephemeral node (an OAuth client, no stored SSH key), sends
+  that commit's `infra/` folder to the box and runs `infra/scripts/deploy.sh` there.
+  The box decrypts the release's secrets into memory, pulls the images, verifies each
+  signature, runs `docker compose up -d --wait` so that every health check must pass,
+  smoke-tests the stack through the public hostname, and starts the previous release
+  again by itself if anything fails. Each release keeps its own folder and images on
+  the box, so a rollback needs no network. The runbook is [`docs/DEPLOY.md`](DEPLOY.md).
+- **Egress:** two Squid proxies, one for the gateway and one for the systems, each on
+  its own internal network, with a host allowlist taken from the environment. One proxy
+  per caller keeps the gateway's list (model providers) apart from the systems' list
+  (R2, Sentry) without trusting a caller to say which it is.
+- **Config changes reach containers by path:** every release runs from a folder of its
+  own, so a deploy recreates the three containers that bind-mount files from it
+  (Postgres, Redis, Caddy) and none can keep an older release's configuration. The cost
+  is a few seconds of errors from those three on each deploy; content-hash labels would
+  avoid restarting what did not change, and are the way to go if that ever matters.
 
 ## Observability
 
@@ -392,6 +405,10 @@ short:
   Testcontainers for real Postgres and Redis, Playwright for end to end.
 - **CI gates on every PR:** lint, types, tests for changed packages, OpenAPI client
   drift check, eval gate when prompts or routes change, axe and Lighthouse budgets.
+  Infrastructure changes also run `infra/scripts/check.sh` (shellcheck, hadolint,
+  actionlint, image digest pins, the Compose security rules), the secrets and deploy
+  tests, the Postgres, Caddy and Redis container tests, and a build of every image for
+  amd64 and arm64 that pushes nothing.
   Making the repository public keeps Actions minutes free.
 
 ## Repository layout
@@ -411,7 +428,8 @@ packages/api-clients/     TypeScript clients generated from OpenAPI
 python/lb-common/         Shared Python: gateway client, tracer, run context
 data/seed/                Deterministic synthetic data for Basalt & Bean
 evals/                    Golden sets, one folder per system, graded by rules in CI
-infra/                    docker-compose.yml, Caddyfile, deploy scripts
+infra/                    Compose stack, Dockerfiles, Caddyfile, Postgres and Redis config,
+                          SOPS secrets, deploy and check scripts, systemd units
 docs/                     STACK.md, PLAYBOOK.md, decision records
 ```
 

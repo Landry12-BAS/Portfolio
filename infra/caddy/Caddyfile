@@ -1,0 +1,149 @@
+# Caddy: the only thing cloudflared talks to, and the only door from the internet to the
+# services (docs/SECURITY.md, sections 1 and 5). It routes by path to the services that
+# the site's server and the visitor's browser actually call, and answers 404 to everything
+# else, so health checks, the OpenAPI schema and most of the gateway stay unreachable.
+#
+# Settings, from the environment (docker-compose.yml):
+#   LB_API_HOST      the public name of the API, such as api.example.com: the only Host
+#                    this serves. Anything else (an IP address, a scanner's guess) gets 404.
+#   LB_SITE_ORIGIN   the site's origin, such as https://example.com: the only origin the
+#                    browser may call this from (CORS) or open a WebSocket from.
+#
+# To add a service, see docs/DEPLOY.md, "Adding a service": usually one path in a matcher.
+{
+	# TLS ends at Cloudflare. The tunnel reaches this over plain HTTP on the internal edge
+	# network, so there is no certificate to obtain, and no admin API to leave open.
+	auto_https off
+	admin off
+	persist_config off
+
+	servers {
+		timeouts {
+			# What a client controls: how long it may take to send its request. Nothing
+			# bounds how long a response may take to write, because server-sent events and
+			# WebSockets write for minutes (Cloudflare closes a silent connection at 100 s).
+			read_header 10s
+			read_body 30s
+			idle 2m
+		}
+	}
+}
+
+# How a request reaches a service: unbuffered, so server-sent events arrive as they are
+# written, with WebSocket upgrades passed through (Caddy does that on its own). The scheme
+# is always https, because Cloudflare ended TLS before the tunnel. Used as
+# `import proxy <matcher> <service>:<port>`: the requests the matcher picks go to that service.
+(proxy) {
+	reverse_proxy {args[0]} {args[1]} {
+		flush_interval -1
+		transport http {
+			dial_timeout 5s
+			# The first byte of an answer, which for a model call is the slowest part.
+			response_header_timeout 60s
+		}
+		header_up X-Forwarded-Proto https
+		header_down -Server
+		header_down -X-Powered-By
+	}
+}
+
+:8080 {
+	# Access logs say what was asked and how it went, and nothing that identifies a visitor:
+	# no request headers at all (Cloudflare adds the visitor's IP address in Cf-Connecting-Ip,
+	# and the browser sends its token in Authorization) and no query string (a token may
+	# travel there when a browser can't set a header, as with a WebSocket).
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>headers delete
+				request>uri regexp \?.* ?[removed]
+			}
+		}
+	}
+
+	# Every response, including the ones made here: transport security that browsers
+	# remember, no sniffing, and no word about what software answered.
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		-Server
+		-X-Powered-By
+		defer
+	}
+
+	@other_host not host {$LB_API_HOST}
+
+	# The Django systems: LB-01 and LB-02's APIs, and LB-02's WebSocket.
+	@django path /api/lb01/* /api/lb02/* /ws/lb02/*
+
+	# The one gateway path the site's server reads, for the Scope: a run's spans. A run id
+	# is 8 to 64 letters, digits, '_' or '-', so no dot segment or escape can slip through.
+	# The gateway checks the service token; this only lets the request reach it.
+	@gateway_spans {
+		method GET
+		path_regexp ^/v1/runs/[A-Za-z0-9_-]{8,64}/spans$
+	}
+
+	# A WebSocket can be opened from any web page, so only the site's own origin may.
+	@websocket_from_elsewhere {
+		path /ws/*
+		not header Origin {$LB_SITE_ORIGIN}
+	}
+
+	# The browser calls the API from the site's origin: that origin may, and no other, and
+	# only for the API's own paths (the gateway route is for the site's server).
+	@from_site {
+		path /api/*
+		header Origin {$LB_SITE_ORIGIN}
+	}
+	@preflight {
+		method OPTIONS
+		path /api/*
+		header Origin {$LB_SITE_ORIGIN}
+		header Access-Control-Request-Method *
+	}
+
+	# One ordered list, so each rule sees the request only if the ones above let it by.
+	route {
+		respond @other_host `{"error":{"code":"not_found","message":"There is nothing at this address."}}` 404
+
+		# No body bigger than a ticket's text and a little more. An upload route would raise
+		# this for itself, in its own route.
+		request_body {
+			max_size 1MB
+		}
+
+		respond @websocket_from_elsewhere `{"error":{"code":"forbidden_origin","message":"This origin may not open a connection."}}` 403
+
+		header @from_site {
+			Access-Control-Allow-Origin {$LB_SITE_ORIGIN}
+			Vary Origin
+		}
+		header @preflight {
+			Access-Control-Allow-Methods "GET, POST, OPTIONS"
+			Access-Control-Allow-Headers "Authorization, Content-Type, Last-Event-ID"
+			Access-Control-Max-Age 600
+		}
+		respond @preflight 204
+
+		import proxy @django django-api:8000
+		import proxy @gateway_spans gateway:8080
+
+		respond `{"error":{"code":"not_found","message":"There is nothing at this address."}}` 404
+	}
+
+	# A service that isn't answering, or a body that is too big, in the platform's shape.
+	handle_errors {
+		header Content-Type "application/json; charset=utf-8"
+		respond `{"error":{"code":"{err.status_code}","message":"The request could not be served."}}` {err.status_code}
+	}
+}
+
+# Only the container's own health check reaches this: it listens on the loopback address
+# inside the container, which no other container can connect to.
+http://127.0.0.1:8081 {
+	bind 127.0.0.1
+	respond /ready "ok" 200
+}

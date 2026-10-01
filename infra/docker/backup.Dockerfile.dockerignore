@@ -1,0 +1,3 @@
+# What the backup image's build may see: its one script and nothing else.
+*
+!infra/backup/backup.sh

@@ -1,0 +1,9 @@
+# Decrypted secrets must never reach git. The repository holds them only encrypted
+# (*.enc.env) next to the templates that name their variables (*.example.env); every
+# other file in infra/secrets is a plaintext copy someone made while editing, and a local
+# stack's throwaway secrets live in .dev.
+.dev/
+secrets/*
+!secrets/*.enc.env
+!secrets/*.example.env
+!secrets/README.md

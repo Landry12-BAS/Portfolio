@@ -103,10 +103,15 @@ attempts. Every prompt change must pass it.
 
 - **Segmented networks.** Docker networks `edge` (cloudflared, Caddy), `app` (gateway
   and systems), `data` (Postgres, Redis) and `sandbox` (Playwright worker, staging
-  shop). The data network has no route to the internet.
+  shop). The data network has no route to the internet. Neither has `edge` or `app`, nor
+  the network of either egress proxy: one `outbound` network has a route out, and only
+  the two proxies and the tunnel connector join it. (`sandbox` arrives with LB-07.)
 - **Allowlisted egress.** Outbound traffic goes through an egress proxy with a domain
   allowlist: the gateway may reach the model providers, the systems may reach R2 and
-  Sentry, and nothing else leaves the box except the tunnel.
+  Sentry, and nothing else leaves the box except the tunnel. There are two Squid
+  proxies, one for the gateway and one for the systems, each reachable only from its
+  caller's network, so one list never has to serve both; they allow HTTPS CONNECT to
+  the listed hosts and refuse everything else.
 - **Service tokens.** Each service signs short-lived JWTs (EdDSA) with its own private
   key; the gateway holds only the public keys, refuses tokens older than 10 minutes,
   ties each system to one service, and rejects everything else. A service refuses a
@@ -115,17 +120,25 @@ attempts. Every prompt change must pass it.
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
 - **Postgres:** one role per system, granted only its own schema; the gateway's role
-  sees only `platform`.
+  sees only `platform`. The superuser can log in only over the container's own socket,
+  and every deploy re-applies the roles and passwords, so a role is never created by
+  hand. `infra/postgres/test-roles.sh` proves that one role cannot read, write, create
+  in or drop another's schema.
 - **Redis:** one ACL user per service, limited to its key prefix, with dangerous
-  commands disabled.
+  commands disabled. The ACL was derived from what the services run, and
+  `infra/redis/test-acl.sh` runs their own test suites against it and then checks that
+  Redis's ACL log is empty.
 - **R2:** one scoped token per bucket.
-- **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box.
+- **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box, to
+  public keys whose private halves stay off the box: a stolen box cannot read its own
+  backups.
 
 ## 6. Containers and host
 
 - **Images:** pinned by digest, slim or distroless bases, non-root users, read-only
   root filesystems, `cap_drop: [ALL]`, `no-new-privileges`, and PID, CPU and memory
-  limits.
+  limits. CI holds every service block to these rules (`infra/scripts/check-compose.sh`),
+  so a new service cannot quietly weaken them, and no service publishes a port.
 - **Browser sandbox:** the LB-07 Playwright worker runs under gVisor, and its network
   reaches only the staging shop.
 - **Host:** an Oracle Cloud Always Free VM running Ubuntu LTS, with unattended
@@ -139,13 +152,17 @@ attempts. Every prompt change must pass it.
 ## 7. Supply chain and delivery
 
 - **Secrets:** encrypted in the repository with SOPS and age, and decrypted only on
-  the box at deploy time.
+  the box at deploy time, into a tmpfs (`infra/scripts/decrypt-secrets.sh` refuses any
+  other folder), with an age key that is made on the box and used nowhere else. The
+  owner's key stays on the owner's machine; no age key or SSH key is stored in GitHub.
 - **CI:** GitHub Actions pinned by commit SHA, a least-privilege `GITHUB_TOKEN`, and
   OIDC instead of long-lived cloud keys. Deploys reach the box through an ephemeral
   Tailscale node.
 - **Every image** gets an SBOM (Syft), a Trivy scan, a build-provenance attestation
   and a keyless cosign signature. The box verifies the signature before it runs the
-  image.
+  image: `infra/scripts/deploy.sh` checks the digest it pulled against this
+  repository's image workflow, run from `main`, and a release with an unsigned image is
+  refused before anything is started. Third-party images are pinned by digest instead.
 - **Every change** is linted with eslint-plugin-security (no eval-like code, no regexes
   built from strings, no hidden bidirectional Unicode) and eslint-plugin-regexp (no
   regexes open to catastrophic backtracking), and CI fails on any high or critical

@@ -149,11 +149,11 @@ jobs:
       - run: uv sync
       - name: No known vulnerabilities in Python dependencies
         run: uv audit --preview-features audit-command
-      - run: uv run ruff check python scripts services/django-systems services/flask-systems
-      - run: uv run ruff format --check python scripts services/django-systems services/flask-systems
+      - run: uv run ruff check python scripts services/django-systems services/flask-systems infra
+      - run: uv run ruff format --check python scripts services/django-systems services/flask-systems infra
       - name: Every module, class and function has a docstring
         run: uv run python scripts/check_docstrings.py
-      - run: uv run mypy python/lb-common scripts
+      - run: uv run mypy python/lb-common scripts infra/docker/django-healthcheck.py infra/caddy/test-upstream.py
       - name: Django systems type-check, with the Django plugin
         run: uv run --directory services/django-systems mypy .
       - name: Flask systems type-check
@@ -170,3 +170,71 @@ jobs:
         run: uv run --directory services/django-systems pytest
       - name: Flask systems unit and integration tests
         run: uv run --directory services/flask-systems pytest
+
+  infra:
+    name: Infrastructure checks and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # sops, hadolint and actionlint come from pinned releases whose checksums
+      # install-tool.sh verifies; age comes from Ubuntu. shellcheck, jq and Docker are on the runner.
+      - name: Install the tools the checks need
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age
+          sudo infra/scripts/install-tool.sh sops hadolint actionlint
+
+      - name: Shell scripts, Dockerfiles, workflows, image pins, Compose rules, Caddyfile, units
+        run: infra/scripts/check.sh
+      - name: Secrets tooling, with the real sops and age
+        run: infra/scripts/test-secrets.sh
+      - name: Deploy decisions, with stand-ins for Docker and cosign
+        run: infra/scripts/test-deploy.sh
+      - name: Image pinning
+        run: infra/scripts/test-pin-images.sh
+
+  infra-containers:
+    name: Postgres roles, Redis ACL and Caddy routing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      UV_LOCKED: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The Redis ACL proof runs the gateway's and lb-common's own integration tests, and a
+      # Celery worker, against a Redis that enforces the production ACL.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install uv
+        run: pipx install uv==0.12.19
+      - run: uv sync
+
+      - name: Each Postgres role sees its own schema and no other
+        run: infra/postgres/test-roles.sh
+      - name: Caddy routes what it should and nothing else
+        run: infra/caddy/test.sh
+      - name: Redis refuses what a service must not do, and the services still work
+        run: infra/redis/test-acl.sh
+
+  # A Dockerfile that breaks, on either architecture, fails the pull request. Pushes to main
+  # are built, pushed and signed by deploy.yml, so building them here too would only repeat it.
+  images:
+    name: Images build
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/images.yml
+    with:
+      ref: ${{ github.sha }}
+      push: false
