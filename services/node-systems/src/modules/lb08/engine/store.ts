@@ -41,16 +41,21 @@ export function workflowNotFound(): AppError {
   return new AppError(404, 'not_found', 'There is no such workflow.')
 }
 
+/** Refuses, with 409, when the visitor already keeps as many workflows as they may. */
+export async function checkWorkflowRoom(db: Executor, sessionKey: string): Promise<void> {
+  const [kept] = await db.select({ total: count() }).from(workflows).where(eq(workflows.sessionKey, sessionKey))
+  if ((kept?.total ?? 0) >= RUN_LIMITS.maxWorkflowsPerVisitor) {
+    throw new AppError(409, 'workflow_limit', `A visitor may keep ${RUN_LIMITS.maxWorkflowsPerVisitor} workflows at once. Delete one to make another.`)
+  }
+}
+
 /** Creates a workflow with its first version, and returns the workflow's id. Refuses when the visitor already keeps as many as they may. */
 export async function createWorkflow(deps: EngineDeps, input: NewWorkflow): Promise<string> {
   const now = deps.now()
   return deps.db.transaction(async (tx) => {
     // One visitor's creations take turns, so the count below can't be raced past the limit.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`lb08.workflows:${input.sessionKey}`}, 0))`)
-    const [kept] = await tx.select({ total: count() }).from(workflows).where(eq(workflows.sessionKey, input.sessionKey))
-    if ((kept?.total ?? 0) >= RUN_LIMITS.maxWorkflowsPerVisitor) {
-      throw new AppError(409, 'workflow_limit', `A visitor may keep ${RUN_LIMITS.maxWorkflowsPerVisitor} workflows at once. Delete one to make another.`)
-    }
+    await checkWorkflowRoom(tx, input.sessionKey)
     const id = randomUUID()
     await tx.insert(workflows).values({
       id,

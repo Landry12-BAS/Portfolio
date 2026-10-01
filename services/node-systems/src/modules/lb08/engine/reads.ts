@@ -2,7 +2,7 @@
 // (`@lb/contracts`). Every read is scoped to the visitor's own session, in the query
 // itself, so another visitor's workflow, run or delivery is never reachable: asking for
 // one finds nothing, exactly as if it did not exist.
-import type { ConnectorId, DeadLetterView, RunStatus, RunSummary, RunView, SentView, StepStatus, StepView, WorkflowSummary, WorkflowVersion, WorkflowView } from '@lb/contracts'
+import type { ConnectorId, DeadLetterView, RunEvent, RunStatus, RunSummary, RunView, SentView, StepStatus, StepView, WorkflowSummary, WorkflowVersion, WorkflowView } from '@lb/contracts'
 import { and, desc, eq } from 'drizzle-orm'
 
 import type { Executor } from '../db/connection.ts'
@@ -75,6 +75,19 @@ export async function readRunView(db: Executor, sessionKey: string, runId: strin
     steps,
     events: await readEvents(db, runId),
   }
+}
+
+/** What a poll of a run's log returns: where the run is, and the events after the last one the caller saw. */
+export interface RunEvents {
+  status: RunStatus
+  events: RunEvent[]
+}
+
+/** Reads one of the visitor's runs' events after sequence number `after`, with the run's status, for a page that follows a run. */
+export async function readRunEvents(db: Executor, sessionKey: string, runId: string, after: number): Promise<RunEvents | undefined> {
+  const [run] = await db.select({ status: runs.status }).from(runs).where(and(eq(runs.id, runId), eq(runs.sessionKey, sessionKey))).limit(1)
+  if (!run) return undefined
+  return { status: run.status as RunStatus, events: await readEvents(db, runId, after) }
 }
 
 /** Lists the visitor's runs, newest first. */

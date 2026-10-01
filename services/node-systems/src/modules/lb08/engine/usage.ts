@@ -6,7 +6,7 @@
 // workflow doesn't give a run back. They reset at 00:00 UTC, and the sweep removes old rows.
 import { RUN_LIMITS } from '@lb/contracts'
 import type { LimitsView } from '@lb/contracts'
-import { and, eq, lt, sql } from 'drizzle-orm'
+import { and, eq, gt, lt, sql } from 'drizzle-orm'
 
 import type { Executor } from '../db/connection.ts'
 import { usageCounters } from '../db/schema.ts'
@@ -46,6 +46,17 @@ export async function reserve(db: Executor, sessionKey: string, kind: UsageKind,
     })
     .returning({ used: usageCounters.used })
   return taken.length > 0
+}
+
+/**
+ * Gives back a place taken with `reserve`, for work that failed through no fault of the
+ * visitor's (the model could not be reached). A place that was never taken is not given
+ * back: the counter never goes below zero.
+ */
+export async function release(db: Executor, sessionKey: string, kind: UsageKind, moment: Date): Promise<void> {
+  await db.update(usageCounters)
+    .set({ used: sql`${usageCounters.used} - 1` })
+    .where(and(eq(usageCounters.sessionKey, sessionKey), eq(usageCounters.day, dayOf(moment)), eq(usageCounters.kind, kind), gt(usageCounters.used, 0)))
 }
 
 /** Reads how much of today's allowance a visitor has used, for each kind. */

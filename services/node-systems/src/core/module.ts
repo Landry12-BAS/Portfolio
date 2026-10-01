@@ -7,6 +7,7 @@ import type { FastifyInstance } from 'fastify'
 import type { Logger } from 'pino'
 
 import type { Env } from './env.ts'
+import type { SchemaNames } from './openapi.ts'
 
 /** What every module is given when it opens: the settings and the shared platform pieces. */
 export interface ModuleContext {
@@ -45,7 +46,18 @@ export interface RunningModule {
 /** A system the monolith hosts. */
 export interface SystemModule {
   readonly part: string
+  // Where the system's routes live, such as /api/lb08.
+  readonly apiPrefix: string
   // The Postgres schema the system owns; also its migrations' home.
   readonly schema: string
+  // The names the OpenAPI document gives the system's schemas.
+  readonly schemaNames: SchemaNames
   open: (context: ModuleContext) => Promise<RunningModule>
+  // Creates or updates the system's schema, and returns how many migrations it applied.
+  migrate: (env: Env) => Promise<number>
+  // Loads the system's synthetic data, and returns a sentence saying what it loaded.
+  seed: (env: Env) => Promise<string>
+  // Adds the system's routes with nothing behind them (no database, queue or model), so the
+  // OpenAPI document can be generated, and checked for drift, without any of them running.
+  documentRoutes: (scope: FastifyInstance) => void
 }
