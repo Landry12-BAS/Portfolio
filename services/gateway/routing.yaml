@@ -312,3 +312,22 @@ systems:
     # calls a day Groq and Workers AI carry (docs/STACK.md, Capacity), rebalanced as
     # each system ships.
     dailyCalls: 350
+
+  lb-05:
+    name: Data Analyst
+    service: flask-systems
+    aliases: [lb-reason, lb-fast]
+    # A question costs two chat calls (write the SQL on lb-reason, explain the result on
+    # lb-fast), a third when its first query is a mistake the checks can describe and it
+    # gets its one self-correction, and a fourth when a reply is not valid JSON and gets
+    # its one repair. Resolving metrics, the SQL checks and the chart need no model. The
+    # pipeline stops itself at five calls, so the cap is a second line, not the first.
+    maxCallsPerRun: 5
+    # 25 questions per visitor per day (the LB-05 datasheet), at up to 5 calls each. The
+    # service counts the 25 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 125
+    # About 50 custom questions a day at three calls each. The seven curated samples are
+    # cached and cost nothing. Together with LB-01 this is more than the roughly 330
+    # visitor calls a day the free tiers carry (docs/STACK.md, Capacity): these are
+    # ceilings, to be rebalanced from measured use once the systems run live.
+    dailyCalls: 150
