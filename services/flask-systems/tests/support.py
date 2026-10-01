@@ -8,7 +8,7 @@ import base64
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import jwt
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -31,6 +31,9 @@ VALID_ENVIRONMENT = {
 # The day tests treat as today, so every date a test checks is the same on every run.
 TODAY = datetime(2026, 10, 1, 9, 30, tzinfo=UTC)
 SESSION = "session-of-sam-visitor-0001"
+# The day the test dataset ends on and the seed it is made with, so every number a test reads is always the same.
+DATA_AS_OF = date(2026, 11, 18)
+DATA_SEED = 5
 
 
 def make_environment(**variables: str) -> Environment:
