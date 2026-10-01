@@ -21,3 +21,10 @@ ignoredBuiltDependencies:
 # esbuild's install script only verifies its prebuilt binary for this platform.
 onlyBuiltDependencies:
   - esbuild
+
+# drizzle-kit, the tool that writes LB-08's migrations (a development tool: nothing serves
+# requests with it), still pulls in the retired @esbuild-kit loader, whose old esbuild has an
+# advisory about its development server, which nothing here starts. Pinning that one esbuild
+# to a patched release keeps `pnpm audit` clean.
+overrides:
+  '@esbuild-kit/core-utils>esbuild': ^0.25.0
