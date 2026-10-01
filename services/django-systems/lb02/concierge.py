@@ -27,6 +27,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from functools import cache
 from typing import Literal, Protocol
 
 from django.conf import settings
@@ -37,7 +38,7 @@ from redis import Redis
 
 from core.structured import ChatMessage, ChatModels, Completion, GatewayChat, StructuredOutputError, ask_for_json
 from core.tool_chat import GatewayToolChat, ToolChat, ToolChatMessage, ToolReply
-from lb02.booking import DATABASE, BookingService, Clock, bookable_days, local_day
+from lb02.booking import DATABASE, BookingService, CalendarNotifier, Clock, bookable_days, local_day
 from lb02.conversations import (
     language_of,
     record,
@@ -77,7 +78,7 @@ from lb02.snapshot import Snapshot, options_of, snapshot_of
 from lb02.states import Step
 from lb02.tools import ToolExecutor, ToolOutcome, TurnContext, email_status, hold_expiry_note
 from lb_common.gateway import Gateway
-from lb_common.run import Run, run_scope
+from lb_common.run import DataClass, Run, run_scope
 from lb_common.tracing import RedisSpanWriter, Tracer
 
 # The virtual models: the strongest chat model for the conversation, and a fast one for the language check.
@@ -195,9 +196,14 @@ class Concierge:
         self.clock = clock
         self.tools = ToolExecutor(bookings, tracer, clock)
 
-    def take_turn(self, conversation: Conversation, text: str) -> TurnResult:
-        """Answer one visitor message, as a turn of the conversation's run."""
-        run = Run(system="lb-02", run_id=conversation.run_id, data_class="visitor", session=conversation.session_key)
+    def take_turn(self, conversation: Conversation, text: str, data_class: DataClass = "visitor") -> TurnResult:
+        """Answer one visitor message, as a turn of the conversation's run.
+
+        A visitor's conversation runs on their session's quota. A curated sample or a golden-set case is
+        synthetic, runs on no visitor's quota, and may use the providers that only synthetic data may reach.
+        """
+        session = conversation.session_key if data_class == "visitor" else None
+        run = Run(system="lb-02", run_id=conversation.run_id, data_class=data_class, session=session)
         with run_scope(run), self.tracer.span("visitor message", step=conversation.step) as span:
             result = self.work_through(conversation, text)
             span.set("step", result.step)
@@ -538,15 +544,25 @@ def search_text(conversation: Conversation) -> str:
     return f"{conversation.search_from.isoformat()} to {last.isoformat()}, {conversation.search_part_of_day or 'any'}"
 
 
-def connect_concierge() -> Concierge:
-    """Build the concierge the service runs: the gateway from the environment, spans to Redis, live calendar updates."""
-    gateway = Gateway.from_env()
+@cache
+def shared_gateway() -> Gateway:
+    """Connect to the gateway once per process, with the settings in the environment."""
+    return Gateway.from_env()
+
+
+def connect_concierge(clock: Clock = timezone.now, notifier: CalendarNotifier | None = None) -> Concierge:
+    """Build the concierge the service runs: the gateway from the environment, spans to Redis, and the live calendar.
+
+    The golden-set eval passes a clock of its own, so it can make a hold run out without waiting, and a notifier
+    that tells nobody, so an eval never moves a visitor's calendar.
+    """
+    gateway = shared_gateway()
     writer = RedisSpanWriter(Redis.from_url(settings.REDIS_URL), prefix=settings.REDIS_PREFIX)
     return Concierge(
         guard=gateway,
         chat=GatewayChat(gateway),
         tool_chat=GatewayToolChat(gateway),
         tracer=Tracer(writer),
-        bookings=BookingService(notifier=ChannelLayerNotifier()),
-        clock=timezone.now,
+        bookings=BookingService(clock=clock, notifier=notifier or ChannelLayerNotifier()),
+        clock=clock,
     )

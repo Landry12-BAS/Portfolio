@@ -19,6 +19,7 @@ from core.tool_chat import ToolCall, ToolChatMessage, ToolDefinition, ToolReply
 from lb02.booking import BookingService, CalendarNotifier, SlotChange, local_day
 from lb02.concierge import Concierge
 from lb02.conversations import start_conversation
+from lb02.golden_eval import MovableClock
 from lb02.models import ROASTERY_TIME_ZONE, Conversation, Offering, Reservation, Resource, Slot
 from lb02.seed import seed
 from lb02.tools import ToolOutcome, TurnContext
@@ -151,7 +152,7 @@ def make_conversation(
     )
 
 
-def tomorrow_at(clock: FakeClock, hour: int, minute: int = 0, days: int = 1) -> datetime:
+def tomorrow_at(clock: MovableClock, hour: int, minute: int = 0, days: int = 1) -> datetime:
     """Return a moment on the roastery's calendar: `days` after the clock's day, at a local hour (Prague time)."""
     day = local_day(clock()) + timedelta(days=days)
     return datetime(day.year, day.month, day.day, hour, minute, tzinfo=ROASTERY_TIME_ZONE)
@@ -263,7 +264,7 @@ class Rig:
     guard: FakeGateway
     language_chat: FakeChat
     spans: MemorySpanWriter
-    clock: FakeClock
+    clock: MovableClock
     notifier: RecordingNotifier
 
     def conversation(self, session: str = "session-of-jana-visitor-01") -> Conversation:
@@ -318,16 +319,18 @@ def build_rig(
     language_replies: Sequence[str] = (),
     seeded: bool = True,
     notifier: CalendarNotifier | None = None,
+    clock: MovableClock | None = None,
+    today: date = date(2026, 10, 1),
 ) -> Rig:
     """Build a concierge whose gateway is entirely fake, over a freshly seeded calendar.
 
     The clock stands on Thursday 1 October 2026, so the calendar's first day is Friday the
     2nd. Nothing here can reach a provider, so no test spends quota.
     """
-    clock = FakeClock()
+    clock = clock or FakeClock()
     recording = RecordingNotifier()
     if seeded:
-        seed(settings.SEED_DIR / "lb02", date(2026, 10, 1))
+        seed(settings.SEED_DIR / "lb02", today)
     models = ScriptedToolChat(list(replies))
     guard = FakeGateway(flag_when=flag_when, guard_fails=guard_fails)
     language_chat = FakeChat({"lb-fast": list(language_replies)})
