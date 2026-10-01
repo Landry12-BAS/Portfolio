@@ -27,22 +27,23 @@ gateway-token *args:
 # Lint every TypeScript, Vue and Python package, and check every Python docstring.
 lint:
     pnpm lint
-    uv run ruff check python scripts services/django-systems
-    uv run ruff format --check python scripts services/django-systems
+    uv run ruff check python scripts services/django-systems services/flask-systems
+    uv run ruff format --check python scripts services/django-systems services/flask-systems
     uv run python scripts/check_docstrings.py
 
 # Format the Python code with Ruff and apply its safe fixes.
 format:
-    uv run ruff format python scripts services/django-systems
-    uv run ruff check --fix python scripts services/django-systems
+    uv run ruff format python scripts services/django-systems services/flask-systems
+    uv run ruff check --fix python scripts services/django-systems services/flask-systems
 
-# The Django service runs mypy from its own folder, where its settings and the Django
-# plugin live.
+# The Django and Flask services run mypy from their own folders, where their settings,
+# plugins and imports live.
 # Type-check every package: vue-tsc and tsc for TypeScript, mypy for Python.
 typecheck:
     pnpm typecheck
     uv run mypy python/lb-common scripts
     uv run --directory services/django-systems mypy .
+    uv run --directory services/flask-systems mypy .
 
 # Integration tests start Redis and Postgres with Docker, or use LB_TEST_REDIS_URL and
 # LB_TEST_DATABASE_URL when they are set.
@@ -51,6 +52,7 @@ test:
     pnpm test
     uv run pytest
     uv run --directory services/django-systems pytest
+    uv run --directory services/flask-systems pytest
 
 # Run the Django systems' API with reload on http://127.0.0.1:8001 (settings in services/django-systems/.env).
 django:

@@ -7,7 +7,7 @@
 required-version = ">=0.12.19"
 
 [tool.uv.workspace]
-members = ["python/*", "services/django-systems"]
+members = ["python/*", "services/django-systems", "services/flask-systems"]
 
 [dependency-groups]
 dev = [
@@ -65,7 +65,7 @@ ignore-variadic-names = true
 "**/migrations/**" = ["D", "E501", "RUF012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lb_common", "config", "core", "lb01"]
+known-first-party = ["lb_common", "config", "core", "lb01", "lb05"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
