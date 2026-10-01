@@ -12,6 +12,7 @@ gateway it talks to is [`services/gateway`](../../services/gateway/README.md).
 | `lb_common.run` | `Run` and `run_scope`: the run a piece of work belongs to |
 | `lb_common.tracing` | `Tracer`: run spans in the gateway's format, written to the same Redis streams |
 | `lb_common.tokens` | The short-lived Ed25519 service tokens the gateway checks |
+| `lb_common.visitors` | The check every Python system runs on the visitor token the site mints (`visitor_from_header`), with no web framework in it |
 
 ## Using it
 

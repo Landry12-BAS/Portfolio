@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from django.core.exceptions import ImproperlyConfigured
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from core.visitors import load_public_key
+from lb_common.visitors import load_public_key
 
 # The gateway's rule for LB_REDIS_PREFIX, so spans written here land beside its own.
 REDIS_PREFIX = re.compile(r"[a-z0-9-]{1,24}:")
