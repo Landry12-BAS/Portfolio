@@ -7,7 +7,7 @@ import { LbIcon } from '@lb/icons'
 import { defineAsyncComponent } from 'vue'
 
 import { findSystemIn } from '#shared/data/datasheets'
-import { boardLoader } from '~/boards/registry'
+import { boardLinks, boardLoader } from '~/boards/registry'
 
 // Key the page by path so moving between parts, or languages, builds a fresh page.
 definePageMeta({ key: route => route.path })
@@ -27,6 +27,9 @@ useSeoMeta({
   title: t('boardPage.title', { name: system.name }),
   description: system.function,
 })
+
+// A board that can be installed as an app names its manifest here, in the page's head.
+useHead({ link: boardLinks(slug, locale.value) })
 
 // The board is loaded on demand, and only for a part that has one.
 const loader = boardLoader(slug)
