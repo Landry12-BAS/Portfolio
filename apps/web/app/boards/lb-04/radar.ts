@@ -5,10 +5,12 @@
 // only turns them into SVG.
 import type { Lb04RadarScore, Lb04Topic } from '@lb/contracts'
 
-/** The side of the square the radar is drawn in, in SVG units. */
-export const RADAR_SIZE = 460
-/** The room left round the rings for the axes' labels. */
-const MARGIN = 104
+/** The width and the height of the rectangle the radar is drawn in, in SVG units: wider than tall, since the labels run sideways. */
+export const RADAR_WIDTH = 560
+export const RADAR_HEIGHT = 440
+/** The room left at each side of the rings, and above and below them, for the axes' labels. */
+const SIDE_MARGIN = 132
+const VERTICAL_MARGIN = 58
 /** The highest score: a critical finding. */
 export const MAX_SCORE = 4
 /** How far beyond the outer ring a label starts. */
@@ -37,7 +39,8 @@ export interface RadarAxis {
 
 /** The whole radar. */
 export interface RadarShape {
-  size: number
+  width: number
+  height: number
   centre: Point
   radius: number
   // One polygon for each score from 1 to 4, as the `points` of an SVG polygon.
@@ -70,9 +73,9 @@ function polygonOf(points: readonly Point[]): string {
 }
 
 /** Builds the radar of a report's scores, in the order the report gives them, which is the playbook's. */
-export function buildRadar(scores: readonly Lb04RadarScore[], size: number = RADAR_SIZE): RadarShape {
-  const centre = { x: size / 2, y: size / 2 }
-  const radius = size / 2 - MARGIN
+export function buildRadar(scores: readonly Lb04RadarScore[], width: number = RADAR_WIDTH, height: number = RADAR_HEIGHT): RadarShape {
+  const centre = { x: width / 2, y: height / 2 }
+  const radius = Math.min(width / 2 - SIDE_MARGIN, height / 2 - VERTICAL_MARGIN)
   const count = Math.max(scores.length, 1)
   const angleOf = (index: number): number => (2 * Math.PI * index) / count
   const axes = scores.map((entry, index): RadarAxis => {
@@ -91,5 +94,5 @@ export function buildRadar(scores: readonly Lb04RadarScore[], size: number = RAD
     const score = step + 1
     return { score, points: polygonOf(scores.map((_, index) => along(centre, radius, angleOf(index), score / MAX_SCORE))) }
   })
-  return { size, centre, radius, rings, axes, polygon: polygonOf(axes.map(axis => axis.point)) }
+  return { width, height, centre, radius, rings, axes, polygon: polygonOf(axes.map(axis => axis.point)) }
 }

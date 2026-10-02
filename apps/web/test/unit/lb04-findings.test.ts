@@ -8,7 +8,10 @@ import { LB04_TOPICS } from '@lb/contracts'
 import { describe, expect, it } from 'vitest'
 
 import { citationOf, countBySeverity, filterFindings, findingById, sortFindings } from '~/boards/lb-04/findings'
-import { buildRadar, MAX_SCORE, RADAR_SIZE } from '~/boards/lb-04/radar'
+import { buildRadar, MAX_SCORE, RADAR_HEIGHT, RADAR_WIDTH } from '~/boards/lb-04/radar'
+
+import cs from '../../i18n/locales/cs'
+import en from '../../i18n/locales/en'
 
 /** Makes a risk finding. */
 function risk(id: string, topic: Lb04Finding['topic'], severity: Lb04Finding['severity'], page: number, start: number): Lb04Finding {
@@ -83,7 +86,7 @@ describe('the risk radar', () => {
     expect(shape.axes[0]?.tip).toEqual({ x: shape.centre.x, y: shape.centre.y - shape.radius })
     const second = shape.axes[1]
     expect(second && second.tip.x > shape.centre.x && second.tip.y < shape.centre.y).toBe(true)
-    expect(shape.size).toBe(RADAR_SIZE)
+    expect([shape.width, shape.height]).toEqual([RADAR_WIDTH, RADAR_HEIGHT])
   })
 
   it('puts a point on each axis in proportion to its score: the rim for critical, the centre for none', () => {
@@ -114,6 +117,25 @@ describe('the risk radar', () => {
     expect(anchors[1]).toBe('start')
     expect(anchors[8]).toBe('end')
     expect(anchors.filter(anchor => anchor === 'start')).toHaveLength(4)
+  })
+
+  it('leaves each label the room its text needs to the edge of the drawing, in English and in Czech', () => {
+    const shape = buildRadar(scores())
+    // A topic's name at 14 units in the semibold face is about 7.4 units a character; a little more is allowed.
+    const characterWidth = 8.2
+    for (const messages of [en, cs]) {
+      for (const axis of shape.axes) {
+        const needed = messages.lb04.topics[axis.topic].length * characterWidth
+        const room = axis.label.anchor === 'end'
+          ? axis.label.x
+          : axis.label.anchor === 'start'
+            ? shape.width - axis.label.x
+            : Math.min(axis.label.x, shape.width - axis.label.x) * 2
+        expect(room, `${axis.topic} in ${messages.lb04.topics[axis.topic]}`).toBeGreaterThanOrEqual(needed)
+        expect(axis.label.y).toBeGreaterThan(8)
+        expect(axis.label.y).toBeLessThan(shape.height - 8)
+      }
+    }
   })
 
   it('makes the same drawing for the same report, and one with all zeros collapses to the centre', () => {

@@ -3,7 +3,9 @@
 // PDF viewer's alternative for a reader who cannot see the page, and a reading aid for one who can: the
 // text is the very text the server extracted and checked every quote against, so what is marked here is
 // exactly what a citation names, whether or not the PDF itself could be drawn. The marks use the page's
-// marker colour and are real `mark` elements, which assistive technology announces.
+// marker colour and are real `mark` elements, which assistive technology announces. A page of text is
+// longer than the box it is shown in, so the box scrolls, and it can be focused so that a keyboard can
+// scroll it: that is also why it has a name.
 import type { Lb04Citation } from '@lb/contracts'
 import { computed } from 'vue'
 
@@ -13,14 +15,19 @@ const props = defineProps<{
   text: string
   /** The citations that fall on this page. */
   citations: readonly Lb04Citation[]
+  /** What the box is called, such as "Text of page 8". */
+  label: string
 }>()
 
 const segments = computed(() => segmentsOf(props.text, props.citations))
 </script>
 
 <template>
-  <p
+  <div
     class="text"
+    role="group"
+    tabindex="0"
+    :aria-label="label"
     data-testid="page-text"
   >
     <template
@@ -30,7 +37,7 @@ const segments = computed(() => segmentsOf(props.text, props.citations))
       <mark v-if="segment.marked">{{ segment.text }}</mark>
       <span v-else>{{ segment.text }}</span>
     </template>
-  </p>
+  </div>
 </template>
 
 <style scoped>

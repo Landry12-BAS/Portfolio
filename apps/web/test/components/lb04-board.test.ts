@@ -408,6 +408,15 @@ describe('LB-04\'s board', () => {
       expect(first?.kind === 'risk' && marked.replace(/\s+/g, ' ')).toContain(first?.kind === 'risk' ? first.quote.replace(/\s+/g, ' ').slice(0, 24) : '')
     })
 
+    it('give the page\'s text a name and a place in the tab order, since it scrolls', async () => {
+      const { wrapper, store } = await reviewed()
+      const first = await showFirstRisk(wrapper, store)
+      const text = wrapper.get('[data-testid="page-text"]')
+
+      expect(text.attributes('tabindex')).toBe('0')
+      expect(text.attributes('aria-label')).toBe(`Text of page ${first?.kind === 'risk' ? first.citation.page : 0}`)
+    })
+
     it('go to another page from the keyboard-reachable controls, within the contract', async () => {
       const { wrapper, store } = await reviewed()
       await showFirstRisk(wrapper, store)

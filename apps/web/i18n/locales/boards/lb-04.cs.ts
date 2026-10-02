@@ -263,6 +263,7 @@ const lb04 = {
     agrees: 'Prohlížeč čte stejný text jako server na všech stranách ({count}), takže zvýraznění leží přesně na znacích, které citace pojmenovává.',
     differs: 'Na stranách {pages} čte prohlížeč jiný text než server, a proto je tam zvýraznění vypnuté. Místa se dál zobrazují jako text.',
     asText: 'Přečíst stranu {page} jako text',
+    textArea: 'Text strany {page}',
   },
   mine: {
     title: 'Vaše smlouvy',

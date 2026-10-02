@@ -333,6 +333,7 @@ onBeforeUnmount(() => {
       <PageTextView
         :text="currentText"
         :citations="citations"
+        :label="t('lb04.viewer.textArea', { page: current })"
       />
     </details>
   </section>

@@ -24,7 +24,7 @@ const lb04 = {
     legend: 'Choose a sample contract',
     about: 'About this sample',
     facts: {
-      report: '{pages} pages. Planted in it: {planted} risky clauses and {absent} missing clauses.',
+      report: '{pages} pages. Planted in it: risky clauses {planted}, missing clauses {absent}.',
       clean: '{pages} pages. Nothing is planted in it.',
       refused: '{pages} pages. The system must refuse this file.',
     },
@@ -263,6 +263,7 @@ const lb04 = {
     agrees: 'The browser reads the same text as the server on all {count} pages, so a highlight sits on exactly the characters a citation names.',
     differs: 'On pages {pages} the browser reads other text than the server did, so highlights are left off there. The passages are still shown as text.',
     asText: 'Read page {page} as text',
+    textArea: 'Text of page {page}',
   },
   mine: {
     title: 'Your contracts',

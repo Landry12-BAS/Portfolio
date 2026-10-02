@@ -69,6 +69,21 @@ function wasCancelled(error: unknown): boolean {
   return error instanceof Error && error.name === 'RenderingCancelledException'
 }
 
+/**
+ * What is known of the drawing on one canvas. pdf.js refuses a second render on a canvas that a first has
+ * not let go of, even one it was told to cancel, so the drawings on a canvas are made one after another:
+ * a newer request cancels the render in progress, waits for it to end, and is skipped itself if a newer
+ * one has come in by the time its turn is up.
+ */
+interface CanvasState {
+  // The render in progress on the canvas, if there is one.
+  task: RenderTask | undefined
+  // The end of everything asked of the canvas so far.
+  last: Promise<unknown>
+  // The number of the newest request.
+  latest: number
+}
+
 /** Opens a contract's PDF. The bytes are copied, because pdf.js hands what it is given to its worker. */
 export async function openPdf(bytes: Uint8Array, host: Host = browserHost()): Promise<PdfDocument> {
   const worker = startPdfWorker(workerAddress, host)
@@ -86,37 +101,53 @@ export async function openPdf(bytes: Uint8Array, host: Host = browserHost()): Pr
     worker.terminate()
     throw error
   }
-  const drawings = new WeakMap<HTMLCanvasElement, RenderTask>()
+  const canvases = new WeakMap<HTMLCanvasElement, CanvasState>()
+
+  /** Draws a page on a canvas that nothing else is drawing on, unless a newer request has come in meanwhile. */
+  async function drawNow(page: number, canvas: HTMLCanvasElement, width: number, state: CanvasState, ticket: number): Promise<DrawnPage | undefined> {
+    const proxy = await document.getPage(page)
+    if (ticket !== state.latest) return undefined
+    const unit = proxy.getViewport({ scale: 1 })
+    const viewport = proxy.getViewport({ scale: width / unit.width })
+    const ratio = host.devicePixelRatio
+    canvas.width = Math.floor(viewport.width * ratio)
+    canvas.height = Math.floor(viewport.height * ratio)
+    canvas.style.width = `${Math.floor(viewport.width)}px`
+    canvas.style.height = `${Math.floor(viewport.height)}px`
+    const task = proxy.render({ canvas, viewport, ...(ratio === 1 ? {} : { transform: [ratio, 0, 0, ratio, 0, 0] }) })
+    state.task = task
+    try {
+      await task.promise
+    }
+    catch (error) {
+      if (wasCancelled(error)) return undefined
+      throw error
+    }
+    finally {
+      if (state.task === task) state.task = undefined
+    }
+    return {
+      width: viewport.width,
+      height: viewport.height,
+      boxesFor: (text, start, end) => boxesForRange(text, start, end).map(box => pixelBox(viewport, box)),
+    }
+  }
 
   return {
     pageCount: document.numPages,
     async textOf(page) {
       return extractPageText(await document.getPage(page))
     },
-    async draw(page, canvas, width) {
-      drawings.get(canvas)?.cancel()
-      const proxy = await document.getPage(page)
-      const unit = proxy.getViewport({ scale: 1 })
-      const viewport = proxy.getViewport({ scale: width / unit.width })
-      const ratio = host.devicePixelRatio
-      canvas.width = Math.floor(viewport.width * ratio)
-      canvas.height = Math.floor(viewport.height * ratio)
-      canvas.style.width = `${Math.floor(viewport.width)}px`
-      canvas.style.height = `${Math.floor(viewport.height)}px`
-      const task = proxy.render({ canvas, viewport, ...(ratio === 1 ? {} : { transform: [ratio, 0, 0, ratio, 0, 0] }) })
-      drawings.set(canvas, task)
-      try {
-        await task.promise
-      }
-      catch (error) {
-        if (wasCancelled(error)) return undefined
-        throw error
-      }
-      return {
-        width: viewport.width,
-        height: viewport.height,
-        boxesFor: (text, start, end) => boxesForRange(text, start, end).map(box => pixelBox(viewport, box)),
-      }
+    draw(page, canvas, width) {
+      const state = canvases.get(canvas) ?? { task: undefined, last: Promise.resolve(), latest: 0 }
+      canvases.set(canvas, state)
+      state.latest += 1
+      const ticket = state.latest
+      // A newer request ends the render in progress; this one then waits its turn on the canvas.
+      state.task?.cancel()
+      const mine = state.last.then(() => (ticket === state.latest ? drawNow(page, canvas, width, state, ticket) : undefined))
+      state.last = mine.catch(() => undefined)
+      return mine
     },
     async destroy() {
       await loading.destroy()

@@ -51,7 +51,7 @@ function choose(topic: Lb04Topic): void {
     <div class="layout">
       <svg
         class="drawing"
-        :viewBox="`0 0 ${shape.size} ${shape.size}`"
+        :viewBox="`0 0 ${shape.width} ${shape.height}`"
         role="img"
         aria-labelledby="lb4-radar-title lb4-radar-desc"
       >
@@ -158,6 +158,12 @@ function choose(topic: Lb04Topic): void {
 </template>
 
 <style scoped>
+/* The board's column is narrower than the page (the limits sit beside it), so the radar and its table go side
+   by side when the section itself is wide enough for both, and not when the page is. */
+.radar {
+  container-type: inline-size;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -165,15 +171,15 @@ function choose(topic: Lb04Topic): void {
   align-items: start;
 }
 
-@media (min-width: 900px) {
+@container (min-width: 780px) {
   .layout {
-    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    grid-template-columns: minmax(300px, 460px) minmax(0, 1fr);
   }
 }
 
 .drawing {
   width: 100%;
-  max-width: 460px;
+  max-width: 560px;
   height: auto;
   justify-self: center;
 }
@@ -208,7 +214,7 @@ function choose(topic: Lb04Topic): void {
 }
 
 .label {
-  font: 600 13px var(--lb-font-sans);
+  font: 600 14px var(--lb-font-sans);
   fill: var(--lb-ink);
 }
 
