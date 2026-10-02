@@ -135,6 +135,20 @@ describe('describing a workflow through the gateway', () => {
     expect(JSON.stringify(spans)).not.toContain('SMS')
   })
 
+  it('serves the trace to the site\'s server, which the Scope reads it as, and calls it finished once the pipeline\'s root span is written', async () => {
+    gw.provider.answerNext(goodAnswer)
+    const run = visitorRun()
+
+    await runScope(run, () => pipeline()(wholesale.description))
+
+    // A routing table that lists no trace readers (or leaves `web` out) refuses this read with 403, which the site shows as a 502.
+    const answer = await gw.readTrace(run.runId)
+    expect(answer.status).toBe(200)
+    const trace = await answer.json() as { finished: boolean, spans: { kind: string, name: string }[] }
+    expect(trace.finished).toBe(true)
+    expect(trace.spans.map(span => span.name)).toEqual(expect.arrayContaining(['describe', 'generate']))
+  })
+
   it('reaches the caller as the gateway\'s own code when the provider is down, and spends no repair on it', async () => {
     gw.provider.enqueue({ status: 500, body: { error: { message: 'a private description leaked here' } } })
 
