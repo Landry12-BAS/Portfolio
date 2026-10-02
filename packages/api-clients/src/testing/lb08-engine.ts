@@ -92,6 +92,8 @@ export interface StepState {
   finishedAt: number | null
   // Which way a condition or an approval went.
   branch: BranchLabel | null
+  // For a step waiting for its next attempt: the moment the queue tries it again.
+  retryAt: number | null
 }
 
 /** Why a step failed, and whether another attempt could help. */
@@ -184,6 +186,7 @@ export class Lb08Run {
         startedAt: isTrigger ? this.createdAt : null,
         finishedAt: isTrigger ? this.createdAt : null,
         branch: null,
+        retryAt: null,
       })
     }
     this.#emit({ type: 'run.queued', version: setup.version, replayOf: setup.replayOf })
@@ -196,15 +199,22 @@ export class Lb08Run {
     return this.status === 'succeeded' || this.status === 'failed'
   }
 
-  /** Moves the run on by one wave: the steps started last time are resolved, then the steps that are ready are started. */
+  /**
+   * Moves the run on by one wave: the steps started last time are resolved, then the steps that are ready
+   * are started, and so are the steps whose wait after a failed attempt is over. The wait is real time on
+   * the mock's clock, so a retry shows up one second after the first failure and two after the second,
+   * as the queue's backoff does, and a test moves the clock to move a retry on.
+   */
   wave(): void {
     if (this.over) return
     for (const node of this.graph.nodes) {
       if (node.type === 'action' && this.#step(node.id).status === 'running') this.#resolve(node)
     }
+    const now = this.#env.now()
     for (const node of this.graph.nodes) {
-      const status = this.#step(node.id).status
-      if (node.type === 'action' && (status === 'ready' || status === 'queued')) this.#start(node)
+      const step = this.#step(node.id)
+      const due = step.status === 'ready' || (step.status === 'queued' && (step.retryAt ?? 0) <= now)
+      if (node.type === 'action' && due) this.#start(node)
     }
     this.#syncStatus()
   }
@@ -269,6 +279,7 @@ export class Lb08Run {
   #start(node: ActionNode): void {
     const step = this.#step(node.id)
     step.status = 'running'
+    step.retryAt = null
     step.attempts += 1
     step.startedAt ??= this.#env.now()
     this.#logRunStarted()
@@ -316,6 +327,7 @@ export class Lb08Run {
     const failure = { nodeId: node.id, attempt, maxAttempts: MAX_ATTEMPTS, code: problem.code, message: problem.message }
     if (problem.retryable && attempt < MAX_ATTEMPTS) {
       step.status = 'queued'
+      step.retryAt = this.#env.now() + retryDelayMs(attempt)
       this.#emit({ type: 'step.failed', ...failure, retryInMs: retryDelayMs(attempt) })
       return
     }

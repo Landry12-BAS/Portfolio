@@ -72,6 +72,8 @@ async function follow(runId: string, until: string[] = ['succeeded', 'failed']):
   const events: any[] = [] // eslint-disable-line @typescript-eslint/no-explicit-any
   let after = 0
   for (let poll = 0; poll < 60; poll += 1) {
+    // A second goes by between two reads, as it does while a visitor's page waits on a retry.
+    clock += 1_000
     const answer = await call('GET', `/runs/${runId}/events?after=${after}`)
     expect(answer.status).toBe(200)
     for (const event of answer.json.events) {

@@ -19,6 +19,13 @@ export type ProblemKind
     | 'network' // the browser could not reach the site
     | 'unknown'
 
+/** One thing a system found wrong with what it was sent: a stable code, the place in what was sent, and an instruction in English. */
+export interface ProblemDetail {
+  code: string
+  path: string
+  message: string
+}
+
 /** A failed call to the API, with what the visitor may be told about it. */
 export class ApiProblem extends Error {
   readonly status: number
@@ -26,15 +33,18 @@ export class ApiProblem extends Error {
   readonly kind: ProblemKind
   // When the daily limit starts again, if the answer said so (ISO 8601).
   readonly resetsAt: string | undefined
+  // For a refused workflow: every problem found in it, which the editor shows where each belongs.
+  readonly problems: readonly ProblemDetail[]
 
   /** Builds a problem from the status and the platform error's code and message. */
-  constructor(status: number, code: string, message: string, resetsAt?: string) {
+  constructor(status: number, code: string, message: string, resetsAt?: string, problems: readonly ProblemDetail[] = []) {
     super(message)
     this.name = 'ApiProblem'
     this.status = status
     this.code = code
     this.kind = kindOfStatus(status, code)
     this.resetsAt = resetsAt
+    this.problems = problems
   }
 }
 
@@ -85,8 +95,8 @@ export function cookieProblem(): ApiProblem {
 export function problemFromAnswer(status: number, body: unknown): ApiProblem {
   const parsed = platformErrorSchema.safeParse(body)
   if (!parsed.success) return new ApiProblem(status, 'error', 'The request did not work.')
-  const { code, message, resets_at: resetsAt } = parsed.data.error
-  return new ApiProblem(status, code, message, resetsAt ?? undefined)
+  const { code, message, resets_at: resetsAt, problems } = parsed.data.error
+  return new ApiProblem(status, code, message, resetsAt ?? undefined, problems ?? [])
 }
 
 /** Tells whether a thrown value is an `ApiProblem`, so a handler can tell it from a bug. */
