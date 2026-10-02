@@ -36,7 +36,8 @@ const lb08 = {
     describing: 'Model píše workflow…',
     describingStatus: 'Popisuji proces. Může to trvat až minutu.',
     cost: 'Popis spotřebuje jeden z vašich dnešních popisů a jedno nebo dvě volání modelu.',
-    privacy: 'Váš popis jde modelu, který se na něm neučí, a to, co model napíše, se zkontroluje dřív, než to uvidíte. Workflow, běhy a doručené zprávy se po 24 hodinách mažou.',
+    privacy: 'Váš popis jde modelu, který se na něm neučí, a to, co model napíše, se zkontroluje dřív, než to uvidíte.',
+    retention: 'Workflow, běhy a doručené zprávy se po 24 hodinách mažou.',
   },
   samples: {
     'wholesale-order': {
@@ -248,6 +249,9 @@ const lb08 = {
     productName: 'Název výrobku',
     messageId: 'Id zprávy',
     taskId: 'Id úkolu',
+    checked: 'Zkontrolovaná hodnota',
+    branch: 'Zvolená větev',
+    question: 'Položená otázka',
   },
   fields: {
     trigger: {

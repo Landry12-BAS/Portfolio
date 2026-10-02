@@ -37,7 +37,8 @@ const lb08 = {
     describing: 'The model is writing the workflow…',
     describingStatus: 'Describing the process. This can take up to a minute.',
     cost: 'A description uses one of your descriptions today, and one or two model calls.',
-    privacy: 'Your description goes to a model that does not train on it, and what the model writes is checked before you see it. Workflows, runs and deliveries are deleted after 24 hours.',
+    privacy: 'Your description goes to a model that does not train on it, and what the model writes is checked before you see it.',
+    retention: 'Workflows, runs and deliveries are deleted after 24 hours.',
   },
   samples: {
     'wholesale-order': {
@@ -249,6 +250,9 @@ const lb08 = {
     productName: 'Product name',
     messageId: 'Message id',
     taskId: 'Task id',
+    checked: 'Value checked',
+    branch: 'Branch taken',
+    question: 'Question asked',
   },
   fields: {
     trigger: {

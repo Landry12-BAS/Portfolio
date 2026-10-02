@@ -180,6 +180,16 @@ textarea.lb8-control {
   color: var(--lb-graphite);
 }
 
+/* A row's heading is the step or the run it is about, in the page's own type, not a column heading. */
+.lb8-table tbody th {
+  font-family: var(--lb-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--lb-ink);
+  text-transform: none;
+}
+
 .lb8-nums {
   font-variant-numeric: tabular-nums;
 }

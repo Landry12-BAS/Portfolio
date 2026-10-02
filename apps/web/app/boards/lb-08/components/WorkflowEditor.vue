@@ -280,7 +280,10 @@ defineExpose({ view })
       />
     </div>
 
-    <div class="body">
+    <div
+      class="body"
+      :class="`body--${view}`"
+    >
       <div class="surface">
         <template v-if="view === 'canvas'">
           <component
@@ -315,12 +318,12 @@ defineExpose({ view })
         class="side"
         :brief="brief"
       />
+      <IssueList
+        class="issues"
+        :brief="brief"
+        @go-to="focusInspector"
+      />
     </div>
-
-    <IssueList
-      :brief="brief"
-      @go-to="focusInspector"
-    />
 
     <p
       class="lb-sr-only"
@@ -366,24 +369,39 @@ defineExpose({ view })
   min-width: 150px;
 }
 
+/* The canvas needs width to be read, so it has the whole row and its form and problems sit under it; the outline is a list, so its form sits beside it. */
 .body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-areas: "surface" "side" "issues";
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
 .surface {
+  grid-area: surface;
   min-width: 0;
 }
 
 .side {
+  grid-area: side;
   min-width: 0;
 }
 
-@media (max-width: 900px) {
-  .body {
-    grid-template-columns: minmax(0, 1fr);
+.issues {
+  grid-area: issues;
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .body--outline {
+    grid-template-areas: "surface side" "issues issues";
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  }
+
+  .body--canvas {
+    grid-template-areas: "surface surface" "side issues";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 </style>

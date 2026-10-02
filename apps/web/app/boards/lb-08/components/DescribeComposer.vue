@@ -209,10 +209,13 @@ function describeOwn(): void {
           {{ t('lb08.descriptionsLabel') }}: {{ descriptionsLeft }}.
         </template>
       </p>
+      <p class="lb8-hint">
+        {{ t('lb08.describe.privacy') }}
+      </p>
     </form>
 
     <p class="lb8-hint">
-      {{ t('lb08.describe.privacy') }}
+      {{ t('lb08.describe.retention') }}
     </p>
   </section>
 </template>

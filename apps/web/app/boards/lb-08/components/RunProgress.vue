@@ -6,6 +6,7 @@
 // skipped or failed, is in its last column. The runs of the chain (a run and its replays) are
 // listed above, and the changes worth hearing (a retry, a dead letter, the end) are said aloud.
 // The same table serves a live run and the replay of a recording, since both are folds of events.
+import type { Values } from '@lb/contracts'
 import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -104,9 +105,15 @@ function valueName(name: string): string {
   return te(key) ? t(key) : name
 }
 
+/** A value a step produced, written for a reader; the branch a step took is named in the visitor's language. */
+function valueText(name: string, value: Values[string]): string {
+  const branch = `lb08.branches.${String(value)}`
+  return name === 'branch' && te(branch) ? t(branch) : valueWords(words, value)
+}
+
 /** The values a step produced, named and written for a reader. */
 function produced(step: StepRun): { name: string, text: string }[] {
-  return Object.entries(step.output ?? {}).map(([name, value]) => ({ name: valueName(name), text: valueWords(words, value) }))
+  return Object.entries(step.output ?? {}).map(([name, value]) => ({ name: valueName(name), text: valueText(name, value) }))
 }
 
 /** A run of the chain in words: which run it is, and how it ended or how it is going. */
@@ -384,5 +391,12 @@ function chainWords(run: RunModel): string {
   margin: 0;
   font-size: 12.5px;
   list-style: none;
+}
+
+.outputs li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  align-items: baseline;
 }
 </style>
