@@ -2,7 +2,7 @@
 // some must have them all and right, and no message ever repeats a value.
 import { describe, expect, it } from 'vitest'
 
-import { ConfigError, loadSiteState } from '../../server/lib/config.ts'
+import { ConfigError, loadSiteOrigin, loadSiteState } from '../../server/lib/config.ts'
 import type { RawRuntimeConfig } from '../../server/lib/config.ts'
 import { TEST_BUILD_ON_VERCEL } from '../../shared/build-mode.ts'
 import { makeTestKeys } from '../support/site-app.ts'
@@ -147,5 +147,35 @@ describe('the end-to-end test build', () => {
     expect(loadSiteState(settings(), true, Date.now, {}).status).toBe('ready')
     expect(loadSiteState({}, true, Date.now, {}).status).toBe('disabled')
     expect(loadSiteState(settings(), false, Date.now, { VERCEL: '1' }).status).toBe('ready')
+  })
+})
+
+describe('the site\'s own address', () => {
+  it('is none when it is not set, which is how a preview runs: on any host', () => {
+    expect(loadSiteOrigin({})).toBeUndefined()
+    expect(loadSiteOrigin({ lbSiteOrigin: '' })).toBeUndefined()
+    expect(loadSiteOrigin({ lbSiteOrigin: undefined })).toBeUndefined()
+  })
+
+  it('is the origin it is set to, with plain HTTP only for this machine', () => {
+    expect(loadSiteOrigin({ lbSiteOrigin: 'https://example.com' })?.origin).toBe('https://example.com')
+    expect(loadSiteOrigin({ lbSiteOrigin: 'https://www.example.com' })?.host).toBe('www.example.com')
+    expect(loadSiteOrigin({ lbSiteOrigin: 'http://127.0.0.1:3100' })?.host).toBe('127.0.0.1:3100')
+  })
+
+  it('refuses what is not an origin, naming the variable and never repeating the value', () => {
+    for (const bad of ['example.com', 'http://example.com', 'https://user:p4ssw0rd-LEAK@example.com', 'https://example.com/path', 'https://example.com/?x=1', 'ftp://example.com', 'not a url']) {
+      let error: unknown
+      try {
+        loadSiteOrigin({ lbSiteOrigin: bad })
+      }
+      catch (caught) {
+        error = caught
+      }
+
+      expect(error, bad).toBeInstanceOf(ConfigError)
+      expect((error as ConfigError).problems, bad).toEqual([expect.stringContaining('NUXT_LB_SITE_ORIGIN')])
+      expect((error as Error).message, bad).not.toContain('LEAK')
+    }
   })
 })

@@ -10,7 +10,7 @@ import { createServer } from 'node:http'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
-import { createApp, createRouter, defineEventHandler, toNodeListener } from 'h3'
+import { createApp, createRouter, toNodeListener } from 'h3'
 import type { EventHandler } from 'h3'
 
 import { SERVER_ROUTES } from '../../server/api-routes.ts'
@@ -18,6 +18,7 @@ import { loadSiteState } from '../../server/lib/config.ts'
 import type { RawRuntimeConfig } from '../../server/lib/config.ts'
 import { SYSTEM_POLICIES } from '../../server/lib/policy.ts'
 import type { SystemPolicy } from '../../server/lib/policy.ts'
+import { siteMiddleware } from '../../server/lib/site-middleware.ts'
 import { SITEVERIFY_URL } from '../../server/lib/turnstile.ts'
 import type { RecordingStore, SiteServices } from '../../server/lib/services.ts'
 import { TraceCache } from '../../server/lib/trace-cache.ts'
@@ -63,6 +64,8 @@ export interface TestSiteOptions {
   recordings?: Record<string, unknown>
   // Whether the deployment has no back end configured at all.
   disabled?: boolean
+  // The site's one address (NUXT_LB_SITE_ORIGIN), which every other host is sent on to; none, as in a preview, by default.
+  siteOrigin?: string
   // The clock to share with the mock back end, in Unix milliseconds: the back end must see the same moment the site stamps its tokens with.
   clock?: { now: number }
   // Limits to use instead of the real ones, by system: a test shortens a deadline to wait less.
@@ -121,6 +124,7 @@ export async function startTestSite(options: TestSiteOptions): Promise<TestSite>
   }
   const services: SiteServices = {
     state: options.disabled ? { status: 'disabled' } : loadSiteState(raw, true, () => clock.now),
+    siteOrigin: options.siteOrigin === undefined ? undefined : new URL(options.siteOrigin),
     fetch: fakeFetch,
     now: () => clock.now,
     random: bytes => randomBytes(bytes),
@@ -129,10 +133,9 @@ export async function startTestSite(options: TestSiteOptions): Promise<TestSite>
     traces: new TraceCache(() => clock.now),
   }
 
+  // The site's own middleware, the one the running site uses, so a test sees what a request would meet there.
   const app = createApp()
-  app.use(defineEventHandler((event) => {
-    event.context.lbSite = services
-  }))
+  app.use(siteMiddleware(() => services))
   const router = createRouter()
   for (const route of SERVER_ROUTES) {
     const handler = await loadHandler(route.handler)

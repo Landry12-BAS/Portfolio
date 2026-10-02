@@ -499,7 +499,7 @@ Create a project from this repository, then:
 | Node.js Version | 24.x |
 | Install Command | `pnpm install --frozen-lockfile` |
 | Build Command | the default (`nuxt build`) |
-| Domains | `example.com` and `www.example.com`, with the DNS records Vercel shows (kept DNS-only in Cloudflare) |
+| Domains | `example.com` and `www.example.com`, with the DNS records Vercel shows (kept DNS-only in Cloudflare). `example.com` is the site's one address: the site sends every other host on to it (below) |
 
 Environment variables, for **Production** (Preview deployments need no API access, and
 the API refuses their origin on purpose: it answers cross-origin calls from
@@ -514,6 +514,8 @@ the API refuses their origin on purpose: it answers cross-origin calls from
 | `NUXT_LB_SESSION_SECRET` | A random secret for the visitors' anonymous sessions: `just secret-token 32` |
 | `NUXT_TURNSTILE_SECRET_KEY` | Turnstile's secret key |
 | `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile's site key (public) |
+| `NUXT_LB_SITE_ORIGIN` | `https://example.com`: the site's one address. Any other host that reaches the site (`www.example.com`, the project's `*.vercel.app` addresses) is sent on to it with a permanent redirect |
+| `NUXT_PUBLIC_I18N_BASE_URL` | `https://example.com` too: the language links (`hreflang`) must be absolute |
 
 Mark everything except `NUXT_LB_API_URL`, `NUXT_LB_GATEWAY_URL` and
 `NUXT_PUBLIC_TURNSTILE_SITE_KEY` as Sensitive. The site reads exactly these names
@@ -523,6 +525,15 @@ demo with "not connected", as a preview does; with some set it refuses to start 
 one is right, and the log names the variable that is wrong and never its value. Turnstile's
 widget mode stays Managed: the site draws it with `appearance: interaction-only`, so a visitor
 sees it only when Cloudflare needs them to do something.
+
+Why `NUXT_LB_SITE_ORIGIN` matters: a visitor's session is a cookie that belongs to one host, and the
+quotas follow the session, so `www.example.com` and the `*.vercel.app` addresses of the production
+deployment would each be a separate site with a separate quota for the same person. With the variable
+set, the site answers a request for any other host with `308` and the same path and query on
+`https://example.com`, before it reads a cookie, calls a back end or renders a page; the redirect is
+never cached, so a wrong value is cured by changing it. Leave it unset only on a deployment that has
+no API access (a preview), which then answers on any host. The host is the one Vercel reports in
+`X-Forwarded-Host`, which Vercel sets itself.
 
 Never set `LB_TEST_BUILD` in Vercel. It makes the end-to-end test build, which accepts a fixed
 stand-in for a Turnstile token and shows recordings made on the mock, and CI's check of the
@@ -554,6 +565,11 @@ From a machine **outside** the tailnet:
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' -H 'Origin: https://evil.example' https://api.example.com/ws/lb02/x`
       is `403`: a WebSocket from another origin is refused.
 - [ ] `https://example.com` loads, in both languages, in both themes.
+- [ ] `curl -sI https://www.example.com/systems/lb-01?x=1` is `308` with `location:
+      https://example.com/systems/lb-01?x=1`, no `set-cookie` and `cache-control: no-store`;
+      so is the same request to the project's `https://<project>.vercel.app` address. And
+      `curl -si https://example.com/api` is the JSON `404` the API's other unknown paths give,
+      not a `503`.
 - [ ] `curl -si https://example.com/api/session` carries one `set-cookie`, `__Host-lb_session`
       with `HttpOnly`, `Secure` and `SameSite=Strict`, and no `access-control-allow-origin`;
       `curl -si https://example.com/systems/lb-01` carries none.

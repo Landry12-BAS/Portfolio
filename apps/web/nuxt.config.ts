@@ -59,6 +59,8 @@ export default defineNuxtConfig({
     lbSessionSecret: '',
     // Turnstile's secret key: NUXT_TURNSTILE_SECRET_KEY.
     turnstileSecretKey: '',
+    // The site's one address, such as https://example.com: NUXT_LB_SITE_ORIGIN. Another host is sent on to it.
+    lbSiteOrigin: '',
     public: {
       // Turnstile's site key, which the browser's widget needs: NUXT_PUBLIC_TURNSTILE_SITE_KEY.
       turnstileSiteKey: '',

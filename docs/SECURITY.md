@@ -77,6 +77,19 @@ start when some are set and any is wrong, naming the variable and never its valu
 set it serves the catalog and the datasheets and answers every demo route with 503, which is
 how a Vercel preview runs.
 
+- **One address.** The session cookie belongs to one host and the quotas follow the session, so
+  `www.` and the `*.vercel.app` addresses of the production deployment would each be a site of
+  their own, with a quota of their own for the same person. With `NUXT_LB_SITE_ORIGIN` set (the
+  site's one address, `https://example.com`), the server's first middleware answers a request made
+  for any other host with a `308` to the same path and query on that origin, before it reads a
+  cookie, calls a back end or renders a page (`server/lib/site-middleware.ts`). The host is the one
+  Vercel reports in `X-Forwarded-Host`, which Vercel sets itself and which the Origin and
+  Turnstile-hostname checks trust too. The redirect repeats the request as it was written, only
+  ever after the configured origin and only if it is printable ASCII, so nothing in a request can
+  choose where a visitor goes; it is never cached, and carries HSTS and the other plain
+  security headers. The same middleware gives every path under `/api` its services, the bare `/api`
+  included, so it answers the API's own 404 like `/api/`. A site with the variable unset (a preview)
+  answers on any host.
 - **Session.** A call to `GET /api/session` creates the visitor's session the first time and
   says whether this deployment has a back end, whether the Turnstile check has passed today
   and when the day's quotas turn over. The cookie is `__Host-lb_session`, worth

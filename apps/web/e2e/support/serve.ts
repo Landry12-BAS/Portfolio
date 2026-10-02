@@ -37,6 +37,8 @@ const site = spawn('node', [TEST_BUILD_ENTRY], {
     NUXT_LB_WEB_SIGNING_KEY: JSON.stringify(siteKeys.privateKey.export({ format: 'jwk' })),
     NUXT_LB_GATEWAY_SERVICE_KEY: JSON.stringify(webKeys.privateKey.export({ format: 'jwk' })),
     NUXT_LB_SESSION_SECRET: randomBytes(32).toString('hex'),
+    // The site's one address: its own, as the production site is told its domain. Another host is sent on to it.
+    NUXT_LB_SITE_ORIGIN: `http://127.0.0.1:${sitePort}`,
   },
 })
 

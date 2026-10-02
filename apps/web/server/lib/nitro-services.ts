@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto'
 
 import { useRuntimeConfig, useStorage } from 'nitropack/runtime'
 
-import { loadSiteState } from './config.ts'
+import { loadSiteOrigin, loadSiteState } from './config.ts'
 import type { RawRuntimeConfig } from './config.ts'
 import { SYSTEM_POLICIES } from './policy.ts'
 import type { RecordingStore, SiteServices } from './services.ts'
@@ -44,6 +44,7 @@ let services: SiteServices | undefined
 export function nitroServices(): SiteServices {
   services ??= {
     state: loadSiteState(useRuntimeConfig() as RawRuntimeConfig, __LB_TEST_BUILD__, Date.now),
+    siteOrigin: loadSiteOrigin(useRuntimeConfig() as RawRuntimeConfig),
     fetch: globalThis.fetch,
     now: Date.now,
     random: bytes => randomBytes(bytes),

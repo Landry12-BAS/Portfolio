@@ -322,6 +322,14 @@ eleventh run, which two tabs of one visitor can reach.
   Vercel, so the build refuses to be the test build there: with `VERCEL` set, `LB_TEST_BUILD=1` stops the
   build, and a server built as a test build refuses to start (`shared/build-mode.ts`; tested in
   `test/unit/build-mode.test.ts`, `nuxt-config.test.ts` and `site-config.test.ts`).
+- **One address.** With `NUXT_LB_SITE_ORIGIN` set, the server's first middleware (`server/lib/site-middleware.ts`,
+  run by `server/middleware/lb-site.ts` and by the test server alike) sends a request for any other host on to
+  the same path on that origin with a `308`, before a cookie is read or a page rendered: `www.` and the
+  `*.vercel.app` addresses would otherwise each be a site with a session and a quota of their own. It repeats the
+  raw request target (h3's `event.path` has its escapes decoded, and `%0d%0a` in it once made a `Location` that
+  Node refused), never caches the redirect, and attaches the API's services to `/api` itself as well as `/api/...`
+  (the bare `/api` answered 503 for as long as the test server attached them to every path and the real one did
+  not). `e2e/hosts.spec.ts` checks both against the real build.
 - **Zod runs jitless** in the browser (`app/plugins/00.zod-jitless.ts`): its probe for `eval` is caught
   but reported by the browser as a Trusted Types violation, on the first schema of every page.
 - **Pages set no cookie**; the session cookie exists only after a call to `/api/*`, which a board makes

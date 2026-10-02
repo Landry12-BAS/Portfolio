@@ -23,6 +23,7 @@ export interface RawRuntimeConfig {
   lbGatewayServiceKey?: unknown
   lbSessionSecret?: unknown
   turnstileSecretKey?: unknown
+  lbSiteOrigin?: unknown
   public?: { turnstileSiteKey?: unknown }
 }
 
@@ -69,6 +70,7 @@ const VARIABLE_NAMES: Readonly<Record<string, string>> = {
   lbSessionSecret: 'NUXT_LB_SESSION_SECRET',
   turnstileSecretKey: 'NUXT_TURNSTILE_SECRET_KEY',
   turnstileSiteKey: 'NUXT_PUBLIC_TURNSTILE_SITE_KEY',
+  lbSiteOrigin: 'NUXT_LB_SITE_ORIGIN',
 }
 
 /** Reads a setting as text: a string as it is, JSON that Nitro already parsed written out again, and nothing as an empty text. */
@@ -127,6 +129,7 @@ const VARIABLE_RULES: Readonly<Record<string, string>> = {
   lbSessionSecret: 'must be a random secret of at least 32 characters (`just secret-token 32`)',
   turnstileSecretKey: 'must be Turnstile\'s secret key',
   turnstileSiteKey: 'must be Turnstile\'s site key',
+  lbSiteOrigin: 'must be the site\'s own origin: https://host (http only for localhost), with no login, path or query',
 }
 
 /**
@@ -178,4 +181,17 @@ export function loadSiteState(raw: RawRuntimeConfig, testBuild: boolean, now: ()
       turnstileSiteKey: values.turnstileSiteKey ?? '',
     },
   }
+}
+
+/**
+ * Reads the site's one address (NUXT_LB_SITE_ORIGIN), or none. Every other host that reaches the site is sent on
+ * to it, so `www.` and the `*.vercel.app` addresses never become sites of their own with a session and a quota
+ * each. A site with none set answers on any host, as a preview does. A value that is not an origin throws a
+ * ConfigError that names the variable and never repeats the value.
+ */
+export function loadSiteOrigin(raw: RawRuntimeConfig): URL | undefined {
+  const text = settingText(raw.lbSiteOrigin)
+  if (text === '') return undefined
+  if (!isServiceOrigin(text)) throw new ConfigError([`${VARIABLE_NAMES.lbSiteOrigin} ${VARIABLE_RULES.lbSiteOrigin}`])
+  return new URL(text)
 }

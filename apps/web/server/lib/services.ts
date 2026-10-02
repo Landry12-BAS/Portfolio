@@ -22,6 +22,8 @@ export interface RecordingStore {
 /** Everything a handler may reach for. */
 export interface SiteServices {
   state: SiteState
+  // The site's one address, which every other host is sent on to; undefined where the site answers on any host.
+  siteOrigin: URL | undefined
   // The network. Calls to the back ends and to Turnstile go through it, so tests can watch them.
   fetch: typeof fetch
   // The clock, in Unix milliseconds.

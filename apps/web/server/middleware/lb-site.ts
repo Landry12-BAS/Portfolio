@@ -1,11 +1,8 @@
-// Attaches the site's services to every request for the API, so the handlers can reach the
-// settings, the clock and the network through the request alone (and tests can give them fakes).
-// Page requests are left alone: they need none of it.
-import { defineEventHandler } from 'h3'
-
+// The site's first middleware: sends every host but the site's own address on to it, and attaches the
+// site's services to every request for the API, so the handlers can reach the settings, the clock and the
+// network through the request alone (and tests can give them fakes). Page requests need none of the
+// services and are left alone. The decisions are in server/lib/site-middleware.ts, which the tests run too.
 import { nitroServices } from '../lib/nitro-services.ts'
+import { siteMiddleware } from '../lib/site-middleware.ts'
 
-/** Puts the services on the context of a request for /api/. */
-export default defineEventHandler((event) => {
-  if (event.path.startsWith('/api/')) event.context.lbSite = nitroServices()
-})
+export default siteMiddleware(nitroServices)
