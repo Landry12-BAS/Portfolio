@@ -184,11 +184,11 @@ export const lb04LimitsViewSchema = z.strictObject({
   resetsAt: z.iso.datetime(),
 })
 
-/** One curated sample contract: its id, its title and its length. The board words its description from its own locale files. */
+/** One curated sample contract: its id, its title and its length. The board words its description from its own locale files. The length may be over the limit: a sample shows what the system refuses, too. */
 export const lb04SampleViewSchema = z.strictObject({
   id: sampleId,
   title: z.string().min(3).max(80),
-  pages: z.int().min(1).max(LB04_LIMITS.maxPages),
+  pages: z.int().min(1).max(200),
 })
 
 /** One rule of the playbook as the board shows it: what is acceptable and what is a red flag. */

@@ -11,6 +11,7 @@ import {
   lb04PagesViewSchema,
   lb04RedlineSchema,
   lb04ReportSchema,
+  lb04SampleViewSchema,
   lb04SeverityWeight,
   NOT_LEGAL_ADVICE,
 } from '../src/index.ts'
@@ -113,6 +114,17 @@ describe('a report', () => {
     expect(lb04ReportSchema.safeParse({ ...report(), screen: screen(9, 9) }).success).toBe(false)
     expect(lb04ReportSchema.safeParse({ ...report(), screen: screen(1, 65) }).success).toBe(false)
     expect(lb04ReportSchema.safeParse({ ...report(), screen: { verdict: 'flagged', guardScore: 0.97, passages: [passage] } }).success).toBe(false)
+  })
+})
+
+describe('a sample contract', () => {
+  it('may be longer than the limit, since a sample shows what the system refuses, and may not be absurdly long or empty', () => {
+    const sample = { id: 'master-supply-31', title: 'Master supply agreement, 31 pages', pages: LB04_LIMITS.maxPages + 1 }
+
+    expect(lb04SampleViewSchema.safeParse(sample).success).toBe(true)
+    expect(lb04SampleViewSchema.safeParse({ ...sample, pages: 0 }).success).toBe(false)
+    expect(lb04SampleViewSchema.safeParse({ ...sample, pages: 201 }).success).toBe(false)
+    expect(lb04SampleViewSchema.safeParse({ ...sample, id: '../etc/passwd' }).success).toBe(false)
   })
 })
 
