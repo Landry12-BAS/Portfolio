@@ -125,7 +125,7 @@ export const systems = [
       { label: 'Contracts per visitor per day', value: '3' },
       { label: 'Length', value: '30 pages' },
       { label: 'Output label', value: 'Not legal advice' },
-      { label: 'Model calls per contract (est.)', value: '4–8' },
+      { label: 'Model calls per contract (est.)', value: '2–8' },
     ],
   },
   {

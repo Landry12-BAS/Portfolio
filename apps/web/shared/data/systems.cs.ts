@@ -93,7 +93,7 @@ export const systemsCs = {
       { label: 'Smluv na návštěvníka za den', value: '3' },
       { label: 'Délka', value: '30 stran' },
       { label: 'Označení výstupu', value: 'Není právní rada' },
-      { label: 'Volání modelu na smlouvu (odhad)', value: '4–8' },
+      { label: 'Volání modelu na smlouvu (odhad)', value: '2–8' },
     ],
   },
   'lb-05': {
