@@ -37,6 +37,16 @@ describe('LB-01\'s ticket schema', () => {
     }
   })
 
+  it('accepts the longest draft the drafter may write (sixteen sentences of 500 characters) and the decision that approves it', () => {
+    const sentence = { text: 'x'.repeat(500), citations: ['passage:returns.withdrawal'], supported: true, problem: null }
+    const draft = { sentences: Array.from({ length: 16 }, () => sentence), claims_supported: true, model: 'a-model', sources: [] }
+    const decision = { action: 'approve', final_text: Array.from({ length: 16 }, () => 'x'.repeat(500)).join(' '), decided_at: '2026-10-02T03:00:00.000Z' }
+
+    const parsed = ticketSchema.safeParse({ ...FILED_ON_REAL_DJANGO, status: 'sent', run_id: 'run-3f9a1c7e2b', draft, decision })
+
+    expect(parsed.success, JSON.stringify(parsed.error?.issues)).toBe(true)
+  })
+
   it('refuses a status the board would not know how to show', () => {
     expect(ticketSchema.safeParse({ ...FILED_ON_REAL_DJANGO, status: 'archived' }).success).toBe(false)
   })

@@ -37,10 +37,14 @@ export const draftSchema = z.object({
   sources: z.array(sourceSchema).max(20),
 })
 
-/** What a person decided about a draft. */
+/**
+ * What a person decided about a draft. An approved draft's text is all its sentences joined, and the
+ * drafter may write sixteen sentences of 500 characters (services/django-systems/lb01/prompts.py), so
+ * the limit is a little over sixteen times 500 and not the 2000 an edited reply is held to.
+ */
 export const decisionSchema = z.object({
   action: z.string().max(20),
-  final_text: z.string().max(4_000),
+  final_text: z.string().max(8_100),
   decided_at: z.string().max(40),
 })
 
