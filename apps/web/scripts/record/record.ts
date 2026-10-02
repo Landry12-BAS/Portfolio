@@ -10,14 +10,17 @@ import { dirname, join } from 'node:path'
 import { recordingSchema, summariseTrace } from '@lb/contracts'
 import type { Exchange, Recording } from '@lb/contracts'
 
-import type { Backend } from './backend.ts'
+import type { Backend, TraceEnd } from './backend.ts'
 import { runLb01Sample } from './lb01.ts'
+import { runLb08Sample } from './lb08.ts'
 
 /** What a system's runner hands back: the language of the sample, what the board asked and was told, and the run's ID. */
 export interface RecordedRun {
   language: 'en' | 'cs'
   exchanges: Exchange[]
   runId: string
+  // How the run's trace is known to be complete: by its root span, unless the system says otherwise.
+  traceEnds?: TraceEnd
 }
 
 /** Runs one sample of a system on a back end. */
@@ -26,6 +29,7 @@ export type SampleRunner = (backend: Backend, sample: string) => Promise<Recorde
 // One runner for each system that has a board. A system's board engineer adds theirs here (apps/web/README.md).
 const RUNNERS: Readonly<Record<string, SampleRunner>> = {
   'lb-01': runLb01Sample,
+  'lb-08': runLb08Sample,
 }
 
 // How long to wait for the gateway to have the whole trace once the run is over.
@@ -42,7 +46,7 @@ export async function recordSample(backend: Backend, system: string, sample: str
   if (!runner) throw new Error(`There is no recorder for ${system} yet. Systems that have one: ${recordableSystems().join(', ')}.`)
   const origin = await backend.isMock() ? 'mock' : 'live'
   const run = await runner(backend, sample)
-  const spans = await backend.readTrace(run.runId, TRACE_PATIENCE_MS)
+  const spans = await backend.readTrace(run.runId, TRACE_PATIENCE_MS, run.traceEnds)
   const summary = summariseTrace(spans)
   return recordingSchema.parse({
     v: 1,

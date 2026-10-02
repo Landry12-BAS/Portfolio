@@ -1,0 +1,1181 @@
+{
+  "v": 1,
+  "system": "lb-08",
+  "sample": "refund-approval",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T05:18:23.459Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows",
+        "body": {
+          "from": "sample",
+          "sampleId": "refund-approval"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "19b9d510-a7b4-4c66-83fc-792b9149ac89",
+          "name": "Refund approval",
+          "version": 1,
+          "createdAt": "2026-10-02T05:18:18.959Z",
+          "updatedAt": "2026-10-02T05:18:18.959Z",
+          "expiresAt": "2026-10-03T05:18:18.959Z",
+          "description": null,
+          "graph": {
+            "name": "Refund approval",
+            "nodes": [
+              {
+                "id": "refund_asked",
+                "label": "Refund requested",
+                "type": "trigger",
+                "event": "refund_request"
+              },
+              {
+                "id": "over_100",
+                "label": "Over €100?",
+                "type": "condition",
+                "field": "trigger.amountEur",
+                "op": "gt",
+                "value": 100
+              },
+              {
+                "id": "finance_ok",
+                "label": "Finance approves",
+                "type": "approval",
+                "approver": "finance",
+                "message": "Approve a refund of €{{trigger.amountEur}} for order {{trigger.orderId}}?"
+              },
+              {
+                "id": "tell_accounting",
+                "label": "Tell accounting",
+                "type": "action",
+                "connector": "webhook",
+                "params": {
+                  "endpoint": "accounting",
+                  "event": "refund.approved",
+                  "fields": {
+                    "orderId": "{{trigger.orderId}}",
+                    "amountEur": "{{trigger.amountEur}}"
+                  }
+                }
+              },
+              {
+                "id": "email_refunded",
+                "label": "Email: refund approved",
+                "type": "action",
+                "connector": "email",
+                "params": {
+                  "to": "customer",
+                  "subject": "Your refund for {{trigger.orderId}}",
+                  "body": "Hello {{trigger.customerName}}, your refund of €{{trigger.amountEur}} has been approved."
+                }
+              },
+              {
+                "id": "email_declined",
+                "label": "Email: refund declined",
+                "type": "action",
+                "connector": "email",
+                "params": {
+                  "to": "customer",
+                  "subject": "About your refund request",
+                  "body": "Hello {{trigger.customerName}}, we could not approve the refund for order {{trigger.orderId}} this time. Our support team will be in touch."
+                }
+              },
+              {
+                "id": "email_small",
+                "label": "Email: small refund",
+                "type": "action",
+                "connector": "email",
+                "params": {
+                  "to": "customer",
+                  "subject": "Your refund for {{trigger.orderId}}",
+                  "body": "Hello {{trigger.customerName}}, we are refunding €{{trigger.amountEur}} right away."
+                }
+              }
+            ],
+            "edges": [
+              {
+                "from": "refund_asked",
+                "to": "over_100"
+              },
+              {
+                "from": "over_100",
+                "to": "finance_ok",
+                "branch": "true"
+              },
+              {
+                "from": "over_100",
+                "to": "email_small",
+                "branch": "false"
+              },
+              {
+                "from": "finance_ok",
+                "to": "tell_accounting",
+                "branch": "approved"
+              },
+              {
+                "from": "finance_ok",
+                "to": "email_refunded",
+                "branch": "approved"
+              },
+              {
+                "from": "finance_ok",
+                "to": "email_declined",
+                "branch": "rejected"
+              }
+            ]
+          },
+          "versions": [
+            {
+              "version": 1,
+              "origin": "sample",
+              "createdAt": "2026-10-02T05:18:18.959Z",
+              "modelCalls": 0,
+              "traceRunId": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows/19b9d510-a7b4-4c66-83fc-792b9149ac89/runs",
+        "body": {
+          "input": {
+            "orderId": "BB-1043",
+            "customerName": "Priya Nair",
+            "contactEmail": "priya.nair@example.test",
+            "amountEur": 120,
+            "reason": "Wrong grind"
+          }
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "workflowId": "19b9d510-a7b4-4c66-83fc-792b9149ac89",
+          "workflowName": "Refund approval",
+          "version": 1,
+          "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "replayOf": null,
+          "status": "awaiting_approval",
+          "createdAt": "2026-10-02T05:18:18.959Z",
+          "finishedAt": null,
+          "input": {
+            "orderId": "BB-1043",
+            "customerName": "Priya Nair",
+            "contactEmail": "priya.nair@example.test",
+            "amountEur": 120,
+            "reason": "Wrong grind"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "refund_asked",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "over_100",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "finance_ok",
+              "status": "awaiting_approval",
+              "attempts": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": null
+            },
+            {
+              "nodeId": "tell_accounting",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_refunded",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_declined",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_small",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "refund_asked",
+              "attempt": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "seq": 2,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "over_100",
+              "attempt": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.awaiting_approval",
+              "nodeId": "finance_ok",
+              "approver": "finance",
+              "seq": 4,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_small",
+              "reason": "branch_not_taken",
+              "seq": 5,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.started",
+              "seq": 6,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.awaiting_approval",
+              "nodeId": "finance_ok",
+              "seq": 7,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/4a55cc93-343e-46df-b42f-7d100833d565"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "workflowId": "19b9d510-a7b4-4c66-83fc-792b9149ac89",
+          "workflowName": "Refund approval",
+          "version": 1,
+          "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "replayOf": null,
+          "status": "awaiting_approval",
+          "createdAt": "2026-10-02T05:18:18.959Z",
+          "finishedAt": null,
+          "input": {
+            "orderId": "BB-1043",
+            "customerName": "Priya Nair",
+            "contactEmail": "priya.nair@example.test",
+            "amountEur": 120,
+            "reason": "Wrong grind"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "refund_asked",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "over_100",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "finance_ok",
+              "status": "awaiting_approval",
+              "attempts": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": null
+            },
+            {
+              "nodeId": "tell_accounting",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_refunded",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_declined",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_small",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "refund_asked",
+              "attempt": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "seq": 2,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "over_100",
+              "attempt": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.awaiting_approval",
+              "nodeId": "finance_ok",
+              "approver": "finance",
+              "seq": 4,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_small",
+              "reason": "branch_not_taken",
+              "seq": 5,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.started",
+              "seq": 6,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.awaiting_approval",
+              "nodeId": "finance_ok",
+              "seq": 7,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/runs/4a55cc93-343e-46df-b42f-7d100833d565/steps/finance_ok/decision",
+        "body": {
+          "decision": "approved"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "workflowId": "19b9d510-a7b4-4c66-83fc-792b9149ac89",
+          "workflowName": "Refund approval",
+          "version": 1,
+          "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "replayOf": null,
+          "status": "running",
+          "createdAt": "2026-10-02T05:18:18.959Z",
+          "finishedAt": null,
+          "input": {
+            "orderId": "BB-1043",
+            "customerName": "Priya Nair",
+            "contactEmail": "priya.nair@example.test",
+            "amountEur": 120,
+            "reason": "Wrong grind"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "refund_asked",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "over_100",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "finance_ok",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?",
+                "branch": "approved"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:19.959Z"
+            },
+            {
+              "nodeId": "tell_accounting",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_refunded",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_declined",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:19.959Z"
+            },
+            {
+              "nodeId": "email_small",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "refund_asked",
+              "attempt": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "seq": 2,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "over_100",
+              "attempt": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.awaiting_approval",
+              "nodeId": "finance_ok",
+              "approver": "finance",
+              "seq": 4,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_small",
+              "reason": "branch_not_taken",
+              "seq": 5,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.started",
+              "seq": 6,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.awaiting_approval",
+              "nodeId": "finance_ok",
+              "seq": 7,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.decided",
+              "nodeId": "finance_ok",
+              "decision": "approved",
+              "seq": 8,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "finance_ok",
+              "attempt": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?",
+                "branch": "approved"
+              },
+              "seq": 9,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_declined",
+              "reason": "branch_not_taken",
+              "seq": 10,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/4a55cc93-343e-46df-b42f-7d100833d565/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "running",
+          "events": [
+            {
+              "type": "step.decided",
+              "nodeId": "finance_ok",
+              "decision": "approved",
+              "seq": 8,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "finance_ok",
+              "attempt": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?",
+                "branch": "approved"
+              },
+              "seq": 9,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_declined",
+              "reason": "branch_not_taken",
+              "seq": 10,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_accounting",
+              "attempt": 1,
+              "seq": 11,
+              "at": "2026-10-02T05:18:20.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "email_refunded",
+              "attempt": 1,
+              "seq": 12,
+              "at": "2026-10-02T05:18:20.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/4a55cc93-343e-46df-b42f-7d100833d565/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "succeeded",
+          "events": [
+            {
+              "type": "effect.sent",
+              "nodeId": "tell_accounting",
+              "connector": "webhook",
+              "messageId": "msg-e609d8d7",
+              "seq": 13,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "tell_accounting",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-e609d8d7"
+              },
+              "seq": 14,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "email_refunded",
+              "connector": "email",
+              "messageId": "msg-fdd6c6ce",
+              "seq": 15,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "email_refunded",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-fdd6c6ce"
+              },
+              "seq": 16,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 17,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/4a55cc93-343e-46df-b42f-7d100833d565"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "workflowId": "19b9d510-a7b4-4c66-83fc-792b9149ac89",
+          "workflowName": "Refund approval",
+          "version": 1,
+          "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+          "replayOf": null,
+          "status": "succeeded",
+          "createdAt": "2026-10-02T05:18:18.959Z",
+          "finishedAt": "2026-10-02T05:18:21.959Z",
+          "input": {
+            "orderId": "BB-1043",
+            "customerName": "Priya Nair",
+            "contactEmail": "priya.nair@example.test",
+            "amountEur": 120,
+            "reason": "Wrong grind"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "refund_asked",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "over_100",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            },
+            {
+              "nodeId": "finance_ok",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?",
+                "branch": "approved"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:18.959Z",
+              "finishedAt": "2026-10-02T05:18:19.959Z"
+            },
+            {
+              "nodeId": "tell_accounting",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-e609d8d7"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:20.959Z",
+              "finishedAt": "2026-10-02T05:18:21.959Z"
+            },
+            {
+              "nodeId": "email_refunded",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-fdd6c6ce"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T05:18:20.959Z",
+              "finishedAt": "2026-10-02T05:18:21.959Z"
+            },
+            {
+              "nodeId": "email_declined",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:19.959Z"
+            },
+            {
+              "nodeId": "email_small",
+              "status": "skipped",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": "2026-10-02T05:18:18.959Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "refund_asked",
+              "attempt": 0,
+              "output": {
+                "orderId": "BB-1043",
+                "customerName": "Priya Nair",
+                "contactEmail": "priya.nair@example.test",
+                "amountEur": 120,
+                "reason": "Wrong grind"
+              },
+              "seq": 2,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "over_100",
+              "attempt": 0,
+              "output": {
+                "checked": 120,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.awaiting_approval",
+              "nodeId": "finance_ok",
+              "approver": "finance",
+              "seq": 4,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_small",
+              "reason": "branch_not_taken",
+              "seq": 5,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.started",
+              "seq": 6,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.awaiting_approval",
+              "nodeId": "finance_ok",
+              "seq": 7,
+              "at": "2026-10-02T05:18:18.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.decided",
+              "nodeId": "finance_ok",
+              "decision": "approved",
+              "seq": 8,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "finance_ok",
+              "attempt": 0,
+              "output": {
+                "question": "Approve a refund of €120 for order BB-1043?",
+                "branch": "approved"
+              },
+              "seq": 9,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.skipped",
+              "nodeId": "email_declined",
+              "reason": "branch_not_taken",
+              "seq": 10,
+              "at": "2026-10-02T05:18:19.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_accounting",
+              "attempt": 1,
+              "seq": 11,
+              "at": "2026-10-02T05:18:20.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "email_refunded",
+              "attempt": 1,
+              "seq": 12,
+              "at": "2026-10-02T05:18:20.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "tell_accounting",
+              "connector": "webhook",
+              "messageId": "msg-e609d8d7",
+              "seq": 13,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "tell_accounting",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-e609d8d7"
+              },
+              "seq": 14,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "email_refunded",
+              "connector": "email",
+              "messageId": "msg-fdd6c6ce",
+              "seq": 15,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "email_refunded",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-fdd6c6ce"
+              },
+              "seq": 16,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 17,
+              "at": "2026-10-02T05:18:21.959Z",
+              "runId": "4a55cc93-343e-46df-b42f-7d100833d565"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/sent"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "e609d8d7-adf2-4e15-af55-60167258b97b",
+            "connector": "webhook",
+            "nodeId": "tell_accounting",
+            "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+            "payload": {
+              "endpoint": "accounting",
+              "event": "refund.approved",
+              "field.orderId": "BB-1043",
+              "field.amountEur": "120"
+            },
+            "sentAt": "2026-10-02T05:18:21.959Z"
+          },
+          {
+            "id": "fdd6c6ce-0102-47ef-b8cb-f7f160bb3fe2",
+            "connector": "email",
+            "nodeId": "email_refunded",
+            "rootRunId": "4a55cc93-343e-46df-b42f-7d100833d565",
+            "payload": {
+              "to": "priya.nair@example.test",
+              "subject": "Your refund for BB-1043",
+              "body": "Hello Priya Nair, your refund of €120 has been approved."
+            },
+            "sentAt": "2026-10-02T05:18:21.959Z"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/dead-letters"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "e41c6f7f-1bdc-448f-843c-fd843cf3d0bc",
+            "runId": "5aeede7e-1dbd-49c1-a178-cff65236de2f",
+            "workflowId": "0f22de26-07c7-4dce-80d1-010370a3ca68",
+            "nodeId": "tell_purchasing",
+            "attempts": 3,
+            "error": {
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable."
+            },
+            "createdAt": "2026-10-02T05:18:15.459Z",
+            "replayedRunId": "e0fe2bb5-b22d-40de-817e-d410cda714db"
+          }
+        ]
+      }
+    }
+  ],
+  "trace": {
+    "runId": "4a55cc93-343e-46df-b42f-7d100833d565",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "4a55cc93-343e-46df-b42f-7d100833d565",
+        "system": "lb-08",
+        "spanId": "d63d7a8daef9af1b",
+        "kind": "system.step",
+        "name": "step.tell_accounting",
+        "status": "ok",
+        "startMs": 1790918298959,
+        "endMs": 1790918298984,
+        "attrs": {
+          "connector": "webhook",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4a55cc93-343e-46df-b42f-7d100833d565",
+        "system": "lb-08",
+        "spanId": "ef529496e5a1d69d",
+        "kind": "system.step",
+        "name": "step.email_refunded",
+        "status": "ok",
+        "startMs": 1790918298999,
+        "endMs": 1790918299024,
+        "attrs": {
+          "connector": "email",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 2,
+    "durationMs": 65
+  }
+}

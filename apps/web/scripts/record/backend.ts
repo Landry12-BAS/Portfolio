@@ -13,6 +13,12 @@ import type { Span } from '@lb/contracts'
 
 import { callService } from '../../server/lib/upstream.ts'
 
+/** How a trace is known to be complete: its root span has arrived, or it has stopped growing. */
+export type TraceEnd = 'root' | 'quiet'
+
+// How many reads in a row must bring nothing new before a trace with no root span is taken as complete.
+const QUIET_READS = 3
+
 /** The clock and the waiting the recorder uses, so a test can run a recording without waiting. */
 export interface Clock {
   // Unix milliseconds.
@@ -58,15 +64,15 @@ export class Backend {
     return this.#target.clock
   }
 
-  /** Calls the system's API as the visitor, with a fresh token for the system. */
-  async call(system: string, method: 'GET' | 'POST', path: string, body?: unknown): Promise<Answer> {
+  /** Calls the system's API as the visitor, with a fresh token for the system. The query is a list of name and value pairs. */
+  async call(system: string, method: 'GET' | 'POST', path: string, body?: unknown, query: readonly (readonly [string, string])[] = []): Promise<Answer> {
     const target = this.#target
     const token = mintVisitorToken(target.signingKey, { system, sessionKey: this.#sessionKey }, target.clock.now() / 1_000)
     const answer = await callService({
       method,
       origin: target.apiUrl,
       path,
-      query: [],
+      query,
       token,
       body: body === undefined ? undefined : JSON.stringify(body),
       timeoutMs: CALL_TIMEOUT_MS,
@@ -106,20 +112,25 @@ export class Backend {
   }
 
   /**
-   * Reads a run's whole trace: every page, until the run's root span has arrived. Gives up after
-   * `patienceMs` of waiting, since a trace that never finishes is not one to record.
+   * Reads a run's whole trace: every page, until the run's root span has arrived. A trace with no
+   * root span (a workflow run's steps are spans of their own, with no span around them) is read
+   * until it has been quiet for a few reads in a row instead. Gives up after `patienceMs` of
+   * waiting, since a trace that never finishes is not one to record.
    */
-  async readTrace(runId: string, patienceMs: number): Promise<Span[]> {
+  async readTrace(runId: string, patienceMs: number, ends: TraceEnd = 'root'): Promise<Span[]> {
     const { clock } = this.#target
     const startedAt = clock.now()
     const spans: Span[] = []
     let cursor: string | undefined
+    let quietReads = 0
     for (;;) {
       const page = await this.#spansPage(runId, cursor)
       if (page) {
         spans.push(...page.spans)
         cursor = page.cursor
-        if (page.finished && !page.more) return spans
+        if (ends === 'root' && page.finished && !page.more) return spans
+        quietReads = page.spans.length === 0 && !page.more ? quietReads + 1 : 0
+        if (ends === 'quiet' && spans.length > 0 && quietReads >= QUIET_READS) return spans
       }
       if (clock.now() - startedAt > patienceMs) throw new Error(`The trace of run ${runId} did not finish within ${Math.round(patienceMs / 1_000)} seconds.`)
       await clock.sleep(page?.more ? 0 : 500)
