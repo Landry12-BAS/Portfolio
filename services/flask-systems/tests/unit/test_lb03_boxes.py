@@ -22,45 +22,7 @@ from lb03.boxes import (
     place_fields,
 )
 from lb03.invoice import ExtractedInvoice
-from lb03.ocr.protocol import OcrWord
-
-ROW_HEIGHT = 0.012
-LETTER_WIDTH = 0.011
-
-
-def quad_at(x: float, y: float, width: float, height: float = ROW_HEIGHT, tilt: float = 0.0) -> tuple[float, ...]:
-    """Make the four corners of a box at a position, turned about the page's origin by `tilt` radians."""
-    corners = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
-    cosine, sine = math.cos(tilt), math.sin(tilt)
-    turned = [(cx * cosine - cy * sine, cx * sine + cy * cosine) for cx, cy in corners]
-    return tuple(round(value, 6) for corner in turned for value in corner)
-
-
-def row(y: float, *cells: tuple[str, float], confidence: float = 0.99, tilt: float = 0.0) -> list[OcrWord]:
-    """Make a row of words: each cell is a text and its left edge, and its width follows from its length."""
-    return [
-        OcrWord(
-            text=text,
-            confidence=confidence,
-            quad=quad_at(x, y, LETTER_WIDTH * len(text), tilt=tilt),
-            line=0,
-        )
-        for text, x in cells
-    ]
-
-
-def sentence(y: float, x: float, text: str, confidence: float = 0.99) -> list[OcrWord]:
-    """Make the words of a sentence printed in one line, each a space (a few thousandths) after the one before."""
-    cells = []
-    for word in text.split():
-        cells.append((word, x))
-        x += LETTER_WIDTH * len(word) + 0.006
-    return row(y, *cells, confidence=confidence)
-
-
-def page(*rows: list[OcrWord], number: int = 1) -> PageWords:
-    """Gather rows of words into a page."""
-    return PageWords(number, [word for line in rows for word in line])
+from tests.lb03_support import LETTER_WIDTH, page, row, sentence
 
 
 def invoice(**fields: object) -> ExtractedInvoice:
