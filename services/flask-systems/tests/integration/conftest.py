@@ -21,6 +21,7 @@ from sqlalchemy import Engine, delete
 
 from core.databases import create_system_engine
 from core.migrations import upgrade
+from lb03 import models as lb03_models
 from lb05.models import QuotaUsage
 from lb05.module import MIGRATIONS
 from lb_common.tracing import Span
@@ -126,3 +127,21 @@ def read_spans(redis: Redis) -> Callable[[str], list[Span]]:
         return [Span.model_validate_json(fields["span"]) for _, fields in entries if fields]
 
     return read
+
+
+@pytest.fixture(scope="session")
+def lb03_migrated_engine(make_database: Callable[[], str]) -> Iterator[Engine]:
+    """Make a database, bring LB-03's schema up to date with its real migrations, and connect as the service does."""
+    engine = create_system_engine(make_database(), "lb03")
+    upgrade(engine, "lb03", lb03_models.MIGRATIONS)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def lb03_engine(lb03_migrated_engine: Engine) -> Engine:
+    """Return LB-03's engine with no documents and no counters, so a test starts from nothing."""
+    with lb03_migrated_engine.begin() as connection:
+        connection.execute(delete(lb03_models.Document))
+        connection.execute(delete(lb03_models.QuotaUsage))
+    return lb03_migrated_engine

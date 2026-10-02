@@ -1,0 +1,47 @@
+# Basalt & Bean Coffee Co.'s chart of accounts, as LB-03 posts to it. Synthetic, like everything in data/seed.
+#
+# Every document that passes its checks becomes one balanced journal entry: the expense accounts (by what each
+# line is), the input VAT, and the supplier's payable (or the till, for a receipt). The entry is made by code from
+# the checked numbers; no model chooses an account. A line goes to the first rule below whose keyword its
+# description contains, in lower case; a line no rule matches goes to the default expense account.
+version: 1
+
+accounts:
+  - { code: "1010", name: "Cash and card payments", kind: asset }
+  - { code: "1400", name: "Input VAT receivable", kind: asset }
+  - { code: "2100", name: "Accounts payable, suppliers", kind: liability }
+  - { code: "5010", name: "Green coffee", kind: expense }
+  - { code: "5020", name: "Packaging materials", kind: expense }
+  - { code: "5030", name: "Dairy and ingredients", kind: expense }
+  - { code: "5040", name: "Freight and delivery", kind: expense }
+  - { code: "5045", name: "Fuel and travel", kind: expense }
+  - { code: "5050", name: "Equipment and repairs", kind: expense }
+  - { code: "5060", name: "Cafe supplies and cleaning", kind: expense }
+  - { code: "5070", name: "Food and drink", kind: expense }
+  - { code: "5090", name: "Other expenses", kind: expense }
+  - { code: "5900", name: "Rounding differences", kind: expense }
+
+# Where each side of an entry goes.
+payable: "2100"
+cash: "1010"
+input_vat: "1400"
+rounding: "5900"
+default_expense: "5090"
+
+rules:
+  - account: "5010"
+    keywords: ["green coffee", "coffee beans"]
+  - account: "5020"
+    keywords: ["coffee bag", "sack", "carton", "label", "sticker", "wrap film", "tamper-evident", "paper filler", "liner"]
+  - account: "5030"
+    keywords: ["milk", "cream", "oat drink", "syrup", "cocoa", "chocolate"]
+  - account: "5040"
+    keywords: ["freight", "transport", "delivery", "handling", "shipping"]
+  - account: "5045"
+    keywords: ["diesel", "car wash", "travel", "fuel"]
+  - account: "5050"
+    keywords: ["service", "maintenance", "burrs", "tamper 58", "scale", "grinder", "hose", "filter", "knock box", "scoop"]
+  - account: "5060"
+    keywords: ["cup", "saucer", "apron", "jug", "cleaning", "soap", "sponge", "towel", "latte art"]
+  - account: "5070"
+    keywords: ["flat white", "croissant", "tiramisu", "spaghetti", "mineral water", "free coffee"]

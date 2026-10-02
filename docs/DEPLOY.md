@@ -19,7 +19,7 @@ Part 12 lists exactly what is unverified.
 |---|---|---|
 | Vercel | The site (`apps/web`) | `https://example.com` |
 | The box (one Oracle Cloud VM) | The whole back end, as one Docker Compose project named `lb`: Caddy, `cloudflared`, the gateway, the Django, Flask and Node systems, Postgres, Redis, two egress proxies | Visitors only through Cloudflare's tunnel to Caddy; you only over Tailscale |
-| Cloudflare | DNS, the tunnel, the WAF, Turnstile, and R2 (the backup bucket) | |
+| Cloudflare | DNS, the tunnel, the WAF, Turnstile, and R2 (the backup bucket, and LB-03's uploads bucket) | |
 | GitHub | The code, CI, and GHCR (the signed images) | |
 | Tailscale | The private network that CI and you use to reach the box | |
 
@@ -320,6 +320,26 @@ keys: the **site key** (public) and the **secret key**. They go to Vercel in par
    the endpoint `https://<account id>.r2.cloudflarestorage.com` (your account ID is on the
    R2 overview page).
 
+**R2, for LB-03's uploads.** The visitors' invoices, and a picture of each of their pages,
+for an hour. A second bucket, because its token must not be able to read the backups.
+
+1. R2, Create bucket: `lb-uploads`. Leave it **private**: do not turn on public access, the
+   `r2.dev` address or a custom domain for it. Nothing in the service makes a public address
+   for a file or sets an access rule on one, and the only way a visitor gets anything back is
+   a page's picture through the API, to the visitor who uploaded it.
+2. In the bucket's settings, add an object lifecycle rule that deletes objects after 1 day.
+   **This is the backstop, not the promise.** R2's lifecycle rules work in whole days, so a
+   rule alone would keep a file for a day or more. The one-hour life is the service's own: it
+   deletes each document and its files at their hour, sweeping every minute
+   (`services/flask-systems/lb03/sweeper.py`), and `just sweep-lb03` does the same by hand.
+   The rule only catches what a service that was not running left behind.
+3. R2, Manage API tokens, Create API token: permission Object Read and Write, scoped to the
+   `lb-uploads` bucket only, and a token of its own. Keep the **access key ID** and the
+   **secret access key**: they go in `flask-systems` (part 7). The endpoint is the same as the
+   backups'. The service reaches the bucket through the systems' egress proxy, so that host must
+   be in `LB_EGRESS_SYSTEMS_ALLOW` (part 7). The S3 client was tested against moto's fake S3 and
+   never against R2 itself (part 12).
+
 ## 6. Provider keys and service keys
 
 **Provider keys.** Only the gateway holds these, and they go only into `gateway.enc.env`:
@@ -393,21 +413,33 @@ and opens your editor for the rest. The values are the ones from parts 5 and 6:
 ```sh
 just secrets-new compose         # LB_API_HOST=api.example.com, LB_SITE_ORIGIN=https://example.com,
                                  #   LB_WEB_TOKEN_KEY (the site key's public half),
-                                 #   LB_EGRESS_SYSTEMS_ALLOW=<account id>.r2.cloudflarestorage.com
+                                 #   LB_EGRESS_SYSTEMS_ALLOW=<account id>.r2.cloudflarestorage.com,
+                                 #   LB_LB03_BUCKET=lb-uploads,
+                                 #   LB_R2_ENDPOINT=https://<account id>.r2.cloudflarestorage.com
 just secrets-new postgres        # nothing to type
 just secrets-new postgres-roles  # nothing to type
 just secrets-new redis           # nothing to type
 just secrets-new gateway         # LB_SERVICE_KEYS, GROQ_API_KEY, CLOUDFLARE_ACCOUNT_ID,
                                  #   CLOUDFLARE_API_TOKEN, OPENROUTER_API_KEY
 just secrets-new django-systems  # LB_SERVICE_KEY_JWK_B64 (the django-systems file, in base64)
-just secrets-new flask-systems   # LB_SERVICE_KEY_JWK_B64 (the flask-systems file, in base64)
+just secrets-new flask-systems   # LB_SERVICE_KEY_JWK_B64 (the flask-systems file, in base64),
+                                 #   LB03_S3_ACCESS_KEY_ID and LB03_S3_SECRET_ACCESS_KEY (the
+                                 #   lb-uploads token from part 5)
 just secrets-new node-systems    # LB_SERVICE_KEY_JWK_B64 (the node-systems file, in base64)
 just secrets-new cloudflared     # TUNNEL_TOKEN
 just secrets-new backup          # see below
 ```
 
-`LB_EGRESS_SYSTEMS_ALLOW` lists the hosts the Django systems and the backup may reach, comma
-separated; add Sentry's ingest host (`.ingest.sentry.io`) when a system sends errors there.
+`LB_EGRESS_SYSTEMS_ALLOW` lists the hosts the Django systems, the Flask API (LB-03's files go
+to R2) and the backup may reach, comma separated; add Sentry's ingest host
+(`.ingest.sentry.io`) when a system sends errors there.
+
+`LB_LB03_REQUIRE_LANDLOCK` is optional in `compose`, and starts off. LB-03's OCR worker puts a
+cage round itself before it reads a visitor's file, and Landlock is one wall of it that the
+kernel and the container must allow. Where it is missing the worker still reads, with one wall
+less, and says so. After the first deploy (part 11) check that the box has it, and then make
+the service insist: `just secrets-edit compose`, add `LB_LB03_REQUIRE_LANDLOCK=true`, deploy.
+From then on a box that loses Landlock reads nothing, which is the better failure.
 
 The site's public key, `LB_WEB_TOKEN_KEY`, used to be a line of `django-systems`. It is one
 value in `compose` now, so that the three back ends cannot hold different ones; an older
@@ -580,7 +612,7 @@ From a machine **outside** the tailnet:
       `server: cloudflare`).
 - [ ] `curl -si https://api.example.com/api/lb01/customers` is `401`: LB-01's API is
       reached, and asks for a visitor token. So are `/api/lb02/offerings` (LB-02),
-      `/api/lb05/quota` (LB-05) and `/api/lb08/limits` (LB-08).
+      `/api/lb03/quota` (LB-03), `/api/lb05/quota` (LB-05) and `/api/lb08/limits` (LB-08).
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' https://api.example.com/api/healthz` is `404`,
       and so are `/api/openapi.json` and `/v1/models`: only the routes in the Caddyfile
       exist.
@@ -617,6 +649,16 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
 - [ ] LB-05's data is in place and cannot be written by its API: `compose exec flask-api
       ls -l /warehouse/lb05` shows `lb05.duckdb` and `meta.json`, and `compose exec
       flask-api touch /warehouse/lb05/x` fails with "Read-only file system".
+- [ ] LB-03's cage and its bucket, with the board's own upload of a sample file of your own
+      (Turnstile passed, a file of under 4 MB): the document reaches `ready`; in its trace
+      (`/runs/<id>`) the `read pages` span says `seccomp` true and `landlock_abi` above 0 (then
+      set `LB_LB03_REQUIRE_LANDLOCK=true`, part 7); the file was in the bucket while it was read
+      (R2, `lb-uploads`, `docs/<id>/original.<ext>` and `page-1.jpg`) and is gone a minute after
+      its hour, and `compose exec flask-api python manage.py sweep_lb03` says it found nothing
+      to delete. The bucket is private: a request for a file with no signature, `curl -s -o
+      /dev/null -w '%{http_code}\n' https://<account id>.r2.cloudflarestorage.com/lb-uploads/docs/x`,
+      must not answer `200` (expect `403`; if it ever does, public access is on and must be turned off).
+      Then try a file of 9 MB through the site: the board refuses it before sending anything, at 4 MB.
 - [ ] `/opt/lb/current/infra/scripts/smoke.sh --public` ends with "All checks passed.": the
       routes through Caddy, no way out except through the proxies, an empty Redis ACL
       log, and the public hostname.
@@ -645,11 +687,12 @@ with real visitor tokens, the real database roles and the egress proxies, and LB
 read-only warehouse) and LB-08 (a workflow run through BullMQ to its worker) answer
 through it; every Compose service passes the security rules and the memory budgets
 (`infra/scripts/check-compose.sh`, which also has tests that show each rule can fail); the
-Postgres roles cannot reach each other's schemas, for every pair of the four systems
+Postgres roles cannot reach each other's schemas, for every pair of the five systems
 (`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
-consumer, LB-05's integration and LB-08's whole test suites and a Celery worker's, with an
-empty ACL log (`infra/redis/test-acl.sh`); Caddy's routes, headers, streaming, timeouts, a
-quiet WebSocket and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
+consumer, the Flask systems' integration (LB-03's and LB-05's) and LB-08's whole test suites
+and a Celery worker's, with an empty ACL log (`infra/redis/test-acl.sh`); Caddy's routes,
+headers, streaming, timeouts, LB-03's upload limit, a quiet WebSocket and bypass attempts
+(`infra/caddy/test.sh`); a backup is encrypted,
 restores into a scratch database and over the live one, and a wrong key cannot open it; the
 secrets tooling with the real `sops` and `age` (`infra/scripts/test-secrets.sh`); the deploy
 script's order, signature check, rollback and clean-up with stand-ins for Docker and cosign
@@ -665,12 +708,20 @@ config`, hadolint, shellcheck and actionlint.
   but nobody has run them on one.
 - Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
   list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
-  limits of what runs all the time add up to 7040 MiB (6.9 GiB; the sums are at the top of
+  limits of what runs all the time add up to 7552 MiB (7.4 GiB; the sums are at the top of
   `infra/docker-compose.yml`); idle, the stack used about 0.7 GiB here (without `cloudflared`
   and the proxies), LB-05's data job peaked at 923 MB, and the service's warehouse code at
-  452 MB while it answered the 100 reference questions on the full dataset, on a four-core
-  x86 machine; nothing was measured under visitor traffic or on the box's cores. LB-05's questions and LB-08's descriptions need a model, so
-  their answers through the stack were not tried; everything that does not call one was.
+  452 MB while it answered the 100 reference questions on the full dataset, and LB-03's OCR
+  worker at 692 to 837 MiB (a three-page PDF, five pages, the biggest image it accepts), on a
+  four-core x86 machine; nothing was measured under visitor traffic or on the box's cores. LB-05's
+  questions, LB-08's descriptions and LB-03's documents need a model, so their answers through
+  the stack were not tried; everything that does not call one was.
+- **LB-03 on the box**: the OCR on **arm64** and two cores (its seconds a document were
+  measured on four x86 cores: `services/flask-systems/README.md`); **Landlock** in the container
+  on the box's kernel (the worker says whether it has it, and the first check on the box
+  is in part 11); the S3 client against **R2 itself** (it was run against moto's fake S3 and a
+  local folder); and the Flask image's new native wheels (ONNX Runtime, OpenCV, pdfium) on
+  arm64: all publish arm64 builds, and nobody has run them there.
 - **Cloudflare**: the tunnel actually carrying traffic (`cloudflared` was not started),
   the DNS records, the WAF and rate-limit rule, Turnstile, R2 (the upload was tested
   against a local folder).
@@ -833,8 +884,9 @@ the box (below), and check Cloudflare's security events.
 Adding a system is one small block in each of a few files. The Flask systems (LB-05) and
 the Node systems (LB-08) are the examples to copy: `flask-api` for a web service with data
 of its own, `node-api` and `node-worker` for a service with a queue. A new system on a
-runtime that is already there (LB-03 on Flask, LB-04 on Node) is a module of that service
-and needs only steps 3 to 6; a new runtime needs all of them. The order that works:
+runtime that is already there (LB-03 and LB-05 on Flask, LB-08 on Node) is a module of that
+service and needs only steps 3 to 6, and 7 and 8 when it has secrets or calls out (LB-03's
+R2 token and its egress); a new runtime needs all of them. The order that works:
 
 1. **Image.** A Dockerfile in `infra/docker/<name>.Dockerfile` with its own
    `<name>.Dockerfile.dockerignore`, in the shape of `flask-systems.Dockerfile` (Python) or
@@ -929,3 +981,6 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | `cloudflared` keeps restarting | The `TUNNEL_TOKEN` is wrong or was refreshed in Cloudflare |
 | Backups stop appearing | `journalctl -u lb-backup.service`; usually `LB_EGRESS_SYSTEMS_ALLOW` lacks the R2 host, or the R2 token changed |
 | The box is slow or killed processes | `docker stats --no-stream`, then `dmesg \| grep -i oom`: a container hit its memory limit; raise it in the Compose file and the budget at its top |
+| Every LB-03 upload ends `failed` with `ocr_failed` | With `LB_LB03_REQUIRE_LANDLOCK=true` a box with no Landlock reads nothing: take the line out of `compose` and upload again, and the trace's `read pages` span shows `landlock_abi` 0; then check the kernel (`uname -r`, 5.13 or later) and Docker's seccomp profile. Otherwise the worker was probably killed for memory (`dmesg`), which is what its OOM score is for |
+| LB-03's upload is `503` `unavailable` | The file store can't be reached: the R2 host is missing from `LB_EGRESS_SYSTEMS_ALLOW` (the same fix as for backups), or the `lb-uploads` token or bucket name is wrong; `compose logs flask-api` names the problem by type, never by value |
+| Files stay in the bucket past their hour | The service sweeps every minute and says nothing when it finds none: run `compose exec flask-api python manage.py sweep_lb03` and read its counts; the bucket's one-day rule is only the backstop |

@@ -1,8 +1,9 @@
-# A local run of the stack: the same compose file as the box, with three differences.
+# A local run of the stack: the same compose file as the box, with four differences.
 #   - The images are built from this working tree, not pulled from GHCR.
 #   - There is no tunnel (cloudflared is behind the `tunnel` profile) and the egress proxies
 #     are behind the `egress` profile, so nothing here reaches the internet unless you ask.
 #   - Caddy is published on 127.0.0.1 only, so a local site or curl can call the API.
+#   - LB-03 keeps its uploaded files on a memory-backed folder, not in an R2 bucket.
 #
 #   just stack-secrets && just stack up -d --build --wait
 #   curl -H 'Host: localhost' http://127.0.0.1:8180/api/lb01/customers
@@ -44,6 +45,13 @@ services:
       LB05_SEED_SIZE: small
   flask-api:
     build: *flask-build
+    environment:
+      # LB-03's files stay on a memory-backed folder: the local stack's networks reach no bucket,
+      # and the egress proxy is not started by default. They are gone with the container.
+      LB03_STORAGE: local
+      LB03_FILES_DIR: /lb03-files
+    tmpfs:
+      - /lb03-files:size=64m,uid=10001,gid=10001,mode=0700
 
   node-migrate:
     build: *node-build

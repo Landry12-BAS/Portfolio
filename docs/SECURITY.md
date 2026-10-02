@@ -227,9 +227,16 @@ how a Vercel preview runs.
 - **Input and output:** Zod or Pydantic at every boundary. Vue escapes everything a
   template renders, and `v-html` is banned by lint (`vue/no-v-html`), so no visitor or
   model text is ever parsed as markup.
-- **Uploads:** checked by magic bytes, size and page count; parsed in a worker with
-  CPU, memory and time limits; stored in R2 under random keys; deleted by lifecycle
-  rules.
+- **Uploads (LB-03):** the length must be declared and is checked before a byte is read;
+  the first bytes decide what a file is, never its name or the type the browser claims;
+  the web process never decodes it. A worker process does, after it has put up a cage
+  (CPU, memory, file and time limits, no new privileges, a seccomp filter with no sockets
+  and no programs to start, Landlock where the kernel has it) and proved it holds, and the
+  page count and pixel count are checked before a page is drawn. Files are stored privately
+  under random keys, in R2 or on disk, and are never served back: a visitor sees only the
+  page pictures the service drew from them. The service deletes them at their hour itself,
+  since R2's lifecycle rules work in whole days and are only the backstop. The threat model
+  is in `services/flask-systems/README.md`.
 - **Target:** A+ on Mozilla Observatory, checked in CI.
 
 ## 4. AI-specific risks
@@ -238,8 +245,8 @@ Mapped to the OWASP Top 10 for LLM applications:
 
 | Risk | Control |
 |---|---|
-| Prompt injection | Prompt Guard 2 on visitor text, read in overlapping segments so nothing hides past its window, and failing closed without a verdict; untrusted content kept out of instruction slots; tools scoped per step |
-| Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code |
+| Prompt injection | Prompt Guard 2 on visitor text, read in overlapping segments so nothing hides past its window, and failing closed without a verdict; untrusted content kept out of instruction slots (a document's text sits in a data slot whose markers carry a code made for that document); tools scoped per step; and where a model reads a document, code checks what it said (LB-03's arithmetic) |
+| Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code; an exported spreadsheet cell that begins like a formula is written as text |
 | Excessive agency | No real side effects: sandboxed connectors, and a human click before any action |
 | Sensitive data disclosure | Synthetic data; visitor content routed only to providers that don't train on inputs |
 | Model denial of service | Per-run call caps, per-visitor and per-system quotas, token-aware provider budgets, replay mode |
@@ -274,7 +281,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01, LB-02, LB-05 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01, LB-02, LB-03, LB-05 and LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and
@@ -295,7 +302,9 @@ attempts. Every prompt change must pass it.
 - **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
   to the rest), the visitor token travels in the first frame and never in the address, and
   uvicorn refuses a frame over 8192 bytes before the service reads it.
-- **R2:** one scoped token per bucket.
+- **R2:** one scoped token per bucket. LB-03's uploads bucket is private (nothing sets an ACL
+  or makes a public address), its token may read, write and delete there and nowhere else,
+  and its one-day lifecycle rule is a backstop behind the service's own hourly sweep.
 - **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box, to
   public keys whose private halves stay off the box: a stolen box cannot read its own
   backups.

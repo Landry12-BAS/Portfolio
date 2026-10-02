@@ -10,6 +10,7 @@ import { createServer } from 'node:http'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
+import type { SystemName } from '@lb/api-clients/routes'
 import { createApp, createRouter, toNodeListener } from 'h3'
 import type { EventHandler } from 'h3'
 
@@ -69,7 +70,7 @@ export interface TestSiteOptions {
   // The clock to share with the mock back end, in Unix milliseconds: the back end must see the same moment the site stamps its tokens with.
   clock?: { now: number }
   // Limits to use instead of the real ones, by system: a test shortens a deadline to wait less.
-  policies?: Partial<Record<'lb-01' | 'lb-02' | 'lb-05' | 'lb-08', Partial<SystemPolicy>>>
+  policies?: Partial<Record<SystemName, Partial<SystemPolicy>>>
 }
 
 /** A running test site. */

@@ -10,7 +10,10 @@ Built so far: the catalog, the datasheets, the server (session, Turnstile, the p
 route, the recordings), the evaluation-board kit, **LB-01's board**, the reference every other
 board follows, **LB-02's board**, the one that streams (a WebSocket) and can be installed as an app, and
 **LB-05's board** (the Data Analyst: a question that takes up to 90 seconds in one request, a result table, a chart
-drawn in the browser, and the safety demo).
+drawn in the browser, and the safety demo), **LB-08's board** (the Workflow Automator: a graph on a canvas and as an
+outline, and a run with its retries and dead letters) and **LB-03's board** (the Invoice Reader: a file uploaded,
+the page of the document with the place of every field drawn over it, a table of fields that can be corrected,
+and the checks, the journal entry and the exports).
 
 ## Run it
 
@@ -22,7 +25,7 @@ All of it through the root `justfile` (see the Commands table in `AGENTS.md`):
 | `just dev` | The site alone. With no `NUXT_*` settings the demos say they are not connected |
 | `just build` / `just check-build` | The production build, and the proof that it holds no trace of the test build's Turnstile stand-in |
 | `just e2e` | The test build, then the Playwright journeys against it and the mock back end |
-| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's and LB-05's) and LB-02's installable-app files: icon, manifests, offline pages (`just check` fails while they are stale) |
+| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's and LB-03's), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
 | `just record-sample <system> <sample>` | Record a sample's run on a live back end (see "Replay and recordings") |
 
 The settings are the `NUXT_*` variables of [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 10;
@@ -62,12 +65,25 @@ only once the board is in `app/boards/registry.ts`.
 |---|---|
 | `GET /api/session` | Creates the anonymous session on first use and says whether this deployment has a back end, whether the Turnstile check has passed today and when the day turns over |
 | `POST /api/session/verify` | Checks a Turnstile token with Cloudflare; a pass marks the session verified for the day |
-| `/api/lb01/**`, `lb02`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `/api/lb01/**`, `lb02`, `lb03`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
 | `POST /api/tokens/lb-02` | The five-minute grant for LB-02's WebSocket |
 | `GET /api/runs/:runId/spans` | A run's trace from the gateway, for the Scope. Needs no session: the run's ID is the capability |
 | `GET /api/recordings/:system[/:sample]` | The recordings of the curated samples |
 
 Every route answers failures in the platform's error shape and never in the words of what failed.
+
+**A file in, and files out (LB-03).** The Invoice Reader is the one system a visitor sends a file to, and
+the one whose routes answer with files (a page's picture, a CSV or JSON export). Going in, the proxy
+reads a `multipart/form-data` body of up to 4 MiB of file and a 16 KiB envelope (`shared/lb03-limits.ts`)
+and passes the bytes on without decoding them: the site never reads an untrusted document, and the
+service reads it in a cage. The service takes 10 MB; a Vercel function takes a request body of 4.5 MB, so
+the hosted site takes less than the service, and the board checks the same limit before it sends. Coming
+out, a route whose OpenAPI document lists media types may answer with a file of exactly those types and
+no other (anything else is a 502), and only a plain file name is passed on (`attachment; filename="invoice.json"`).
+A picture and an export are plain links, `<img src>` and `<a download href>`, to the site's own path: the
+page's policy needs only `img-src 'self'`, no script handles the bytes, and the visitor's session cookie
+goes with the request as it does with every other call. The pictures and exports are `no-store`, and a
+visitor with no session of their own gets a 404 for a document that is not theirs, not a 403.
 
 ## The evaluation-board kit
 
@@ -175,7 +191,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    list it in `RUNNERS` in `scripts/record/record.ts`. Then `just record-sample lb-0n <sample>` on the
    live back end writes the recording; commit it with the system. A runner that makes a call with a
    query uses `backend.call(system, method, path, body, query)`, and keeps the path without it (a
-   recording's paths have no query string). A runner whose system writes no root span, or only sometimes
+   recording's paths have no query string). A runner that sends a file (LB-03's) uses `backend.upload(system,
+   path, { name, type, bytes })`, which writes the multipart form as the board does and records the request as
+   the file's name, since a recording cannot hold its bytes. A runner whose system writes no root span, or only sometimes
    (LB-02's conversation writes one only when it is handed over), returns `traceEnds: 'quiet'`, so the trace
    is read until it stops growing instead of until it is `finished`.
 9. **Tests.** The store against `FakeSite` (`test/support/fake-site.ts`: add the system's routes), the
@@ -318,6 +336,26 @@ block makes every read of the Scope a 502. Then drive the board in a browser: ev
 times, the dead letter and its replay, the approval, a described process and a refused one, and the
 eleventh run, which two tabs of one visitor can reach.
 
+For LB-03 (a Flask system with a caged OCR, an upload and files out) the service runs as production runs it
+(`gunicorn --config gunicorn.conf.py wsgi:app`, so the cage, pdfium and RapidOCR are real) on a scratch Postgres
+database, a Redis key prefix and a folder of its own, and the models are not faked inside it but behind the real
+gateway (`buildGateway`, in your own process) on a copy of the real `services/gateway/routing.yaml` whose three
+providers' addresses are pointed at a scripted provider. The script answers the injection classifier by what the text
+says, and each extraction with what a perfect model says for the golden document it recognises in the prompt (the
+printed truth in `evals/lb03/golden.yaml`); it reads from a control port how long to take and whether to fail. The
+test build of the site goes on top, and a browser: every sample, files of the visitor's own, each refusal (a pixel
+bomb, a script in a PDF, a truncated file, an SVG, an empty one, a file the site's limit stops), three tabs of one
+visitor (the third document is refused), the day's ten, the models failing, slow or answering nonsense, the gateway
+unreachable, a document of three pages, a correction with its downloads, the shelf and its deletes, the trace's own
+page, and the worker killed in the middle of a document.
+
+What it found, none of which a test with fake readers could: every document, PDFs too, went to the vision alias,
+because the OCR worker drew a picture for each file and the pipeline picks the alias by whether a picture exists; a
+document stopped after the OCR had no page count, so the page of a stopped document, which a replay shows, could not be
+shown live; and a worker that gunicorn respawned swept nothing until the first upload, so the documents a killed worker
+had been reading stayed "being read" and files past their hour stayed on disk. All three are fixed, with tests that
+fail without the fix. It found nothing wrong with the mock's flow of states.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -376,3 +414,30 @@ eleventh run, which two tabs of one visitor can reach.
   visitor's language), and its global key handlers for Backspace, Space, Control and Shift would stop
   those keys working anywhere on the page while the canvas is open, so they are switched off and
   Delete, Space and the arrow keys are handled on the steps themselves.
+- **LB-03's page and its boxes.** The page is a plain `<img>` of the service's own JPEG (a replay's is the sample's
+  static page under `public/lb03/pages`), and over it an SVG whose view box is the page itself, 0 to 1 on both sides:
+  a box is four corners as shares of the page, drawn as a polygon, so it follows the picture at any size and a
+  crooked box of a photograph stays crooked. The service's boxes are as tight as the words, so each is drawn a small
+  margin outside them (the same number of pixels above as beside, whatever the picture's shape), or the outline would
+  lie on the letters. How sure the reader is of a box is said in words and a percentage and drawn with its own kind of
+  line (solid, dashed, dotted) and a three-segment meter, never colour alone. The picture is white paper in both
+  themes, so the marks on it use their own tokens (`--lb-page-line`, `--lb-page-ink`, `--lb-page-marker`, the same in
+  both themes); the dark theme's near-white ink vanishes on it. The overlay is a convenience for a pointer and is
+  hidden from assistive technology: the table of fields does everything it does, from the keyboard. The page also
+  opens at full size in a tab of its own, since at the width of a column an invoice's print is too small to read.
+  A document that failed after its pages were read still shows its page, with no box and a caption that says why.
+- **LB-03's wait is told, not decorated.** The service gives a state, the place in the queue and nothing else, so the
+  board shows the stages it has, the place in the line, and a clock, and never a percentage it would have to make up.
+  It polls once a second, says when a reading is slow, and stops waiting after 300 seconds (the service ends every
+  reading with a result or a reason, within 240). The run is named only when it is over, so the Scope waits and then
+  fills in, as for LB-01.
+- **LB-03's file goes in through the typed client** (`apiClients().flask.POST(...)` with a `bodySerializer` that hands
+  the `FormData` on), after checks the board makes for the visitor's sake and the server makes again (4 MiB, the four
+  kinds, no SVG, not empty). A correction is live only: a replay's fields are read-only, since a correction is a write.
+  The documents of the hour are the visitor's shelf, from `GET /api/lb03/documents`, and deleting one is theirs.
+- **What ran against the real thing for LB-03.** The board ran against the real Flask service as production runs it
+  (the real OCR cage, Postgres, Redis, files on disk and its own sweep), behind the real gateway on the real routing
+  table, with the test build of the site and a browser (see "Against the real services"); the providers were a script.
+  Not run: a real model (so the extraction's accuracy and the injection classifier's hit rate are unmeasured), the real
+  Turnstile, a recording made on a live back end (the three recordings in `e2e/fixtures` are the mock's and say so),
+  R2, and the box's own two ARM cores (the timings are from this machine's four x86 cores).

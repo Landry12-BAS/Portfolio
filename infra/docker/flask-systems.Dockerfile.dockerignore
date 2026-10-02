@@ -9,6 +9,9 @@
 !services/*/pyproject.toml
 !services/flask-systems/**
 !data/seed/lb05/**
+!data/seed/lb03/chart_of_accounts.yaml
+!data/seed/lb03/manifest.json
+!evals/lb03/golden.yaml
 !infra/docker/python-entrypoint.sh
 !infra/docker/python-healthcheck.py
 !infra/docker/flask-seed.py

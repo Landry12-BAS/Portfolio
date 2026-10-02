@@ -1,0 +1,1339 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "planted-total",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T21:08:18.668Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "planted-total-hanse-2026-4700.pdf"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "uploaded",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.647Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": 0,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/_KBC5MKmNPg06Z5OL93qJg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "ocr",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.651Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/_KBC5MKmNPg06Z5OL93qJg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "extract",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.654Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/_KBC5MKmNPg06Z5OL93qJg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "validate",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.657Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "ok",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": false,
+                "score": 0.01
+              }
+            },
+            {
+              "name": "extract",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 1,
+                "text_chars": 900,
+                "text_cut": false,
+                "picture": false
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/_KBC5MKmNPg06Z5OL93qJg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "repair",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.660Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "ok",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": false,
+                "score": 0.01
+              }
+            },
+            {
+              "name": "extract",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 1,
+                "text_chars": 900,
+                "text_cut": false,
+                "picture": false
+              }
+            },
+            {
+              "name": "validate",
+              "status": "ok",
+              "ms": 2,
+              "detail": {
+                "failed": 1,
+                "ran": 9
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/_KBC5MKmNPg06Z5OL93qJg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "_KBC5MKmNPg06Z5OL93qJg",
+          "state": "ready",
+          "failure": null,
+          "label": "planted-total-hanse-2026-4700.pdf",
+          "kind": "pdf",
+          "byte_size": 5333,
+          "pages": 1,
+          "created_at": "2026-10-02T21:08:18.646Z",
+          "updated_at": "2026-10-02T21:08:18.663Z",
+          "expires_at": "2026-10-02T22:08:18.646Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": "groq/gpt-oss-20b",
+          "model_calls": 3,
+          "run_id": "run-97c96f23d3b7387dd3d3",
+          "ocr_ms": 3200,
+          "elapsed_ms": 7301,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "ok",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": false,
+                "score": 0.01
+              }
+            },
+            {
+              "name": "extract",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 1,
+                "text_chars": 900,
+                "text_cut": false,
+                "picture": false
+              }
+            },
+            {
+              "name": "validate",
+              "status": "ok",
+              "ms": 2,
+              "detail": {
+                "failed": 1,
+                "ran": 9
+              }
+            },
+            {
+              "name": "repair",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "adopted": false,
+                "failed_before": 1,
+                "failed_after": 1
+              }
+            },
+            {
+              "name": "place fields",
+              "status": "ok",
+              "ms": 6,
+              "detail": {
+                "found": 21,
+                "expected": 21
+              }
+            },
+            {
+              "name": "check duplicates",
+              "status": "ok",
+              "ms": 3,
+              "detail": {
+                "compared": 7,
+                "duplicate": false
+              }
+            },
+            {
+              "name": "journal entry",
+              "status": "skipped",
+              "ms": 0,
+              "detail": {
+                "reason": "checks_failed"
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": [
+            {
+              "path": "document_type",
+              "kind": "choice",
+              "value": "invoice",
+              "box": null,
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vendor",
+              "kind": "text",
+              "value": "Hanseatic Green Coffee GmbH",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.04751,
+                  0.43426,
+                  0.04751,
+                  0.43426,
+                  0.06532,
+                  0.06723,
+                  0.06532
+                ],
+                "confidence": 0.9643,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "invoice_number",
+              "kind": "text",
+              "value": "RE-2026-4700",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.81255,
+                  0.08789,
+                  0.93277,
+                  0.08789,
+                  0.93277,
+                  0.10095,
+                  0.81255,
+                  0.10095
+                ],
+                "confidence": 0.9666,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "issue_date",
+              "kind": "date",
+              "value": "2026-09-17",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84867,
+                  0.12233,
+                  0.93277,
+                  0.12233,
+                  0.93277,
+                  0.1342,
+                  0.84867,
+                  0.1342
+                ],
+                "confidence": 0.9664,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "due_date",
+              "kind": "date",
+              "value": "2026-10-17",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84867,
+                  0.14014,
+                  0.93277,
+                  0.14014,
+                  0.93277,
+                  0.15202,
+                  0.84867,
+                  0.15202
+                ],
+                "confidence": 0.9653,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "currency",
+              "kind": "currency",
+              "value": "EUR",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.89729,
+                  0.15796,
+                  0.93277,
+                  0.15796,
+                  0.93277,
+                  0.16983,
+                  0.89729,
+                  0.16983
+                ],
+                "confidence": 0.9731,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.description",
+              "kind": "text",
+              "value": "Green coffee Brazil Santos, 60 kg bag",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.34442,
+                  0.35123,
+                  0.34442,
+                  0.35123,
+                  0.35629,
+                  0.06723,
+                  0.35629
+                ],
+                "confidence": 0.9844,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.quantity",
+              "kind": "quantity",
+              "value": "2",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.56208,
+                  0.34442,
+                  0.57143,
+                  0.34442,
+                  0.57143,
+                  0.35629,
+                  0.56208,
+                  0.35629
+                ],
+                "confidence": 0.9817,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.unit_price",
+              "kind": "amount",
+              "value": "455.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.6881,
+                  0.34442,
+                  0.7395,
+                  0.34442,
+                  0.7395,
+                  0.35629,
+                  0.6881,
+                  0.35629
+                ],
+                "confidence": 0.9715,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.total",
+              "kind": "amount",
+              "value": "910.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.88138,
+                  0.34442,
+                  0.93277,
+                  0.34442,
+                  0.93277,
+                  0.35629,
+                  0.88138,
+                  0.35629
+                ],
+                "confidence": 0.9786,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.description",
+              "kind": "text",
+              "value": "Jute sack, empty (100)",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.36817,
+                  0.23723,
+                  0.36817,
+                  0.23723,
+                  0.38005,
+                  0.06723,
+                  0.38005
+                ],
+                "confidence": 0.9861,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.quantity",
+              "kind": "quantity",
+              "value": "1",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.56208,
+                  0.36817,
+                  0.57143,
+                  0.36817,
+                  0.57143,
+                  0.38005,
+                  0.56208,
+                  0.38005
+                ],
+                "confidence": 0.9814,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.unit_price",
+              "kind": "amount",
+              "value": "185.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.6881,
+                  0.36817,
+                  0.7395,
+                  0.36817,
+                  0.7395,
+                  0.38005,
+                  0.6881,
+                  0.38005
+                ],
+                "confidence": 0.9733,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.total",
+              "kind": "amount",
+              "value": "185.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.88138,
+                  0.36817,
+                  0.93277,
+                  0.36817,
+                  0.93277,
+                  0.38005,
+                  0.88138,
+                  0.38005
+                ],
+                "confidence": 0.98,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "subtotal",
+              "kind": "amount",
+              "value": "1095.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.86736,
+                  0.40855,
+                  0.93277,
+                  0.40855,
+                  0.93277,
+                  0.42043,
+                  0.86736,
+                  0.42043
+                ],
+                "confidence": 0.9922,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.rate",
+              "kind": "rate",
+              "value": "7",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.42399,
+                  0.09329,
+                  0.42399,
+                  0.09329,
+                  0.43468,
+                  0.06723,
+                  0.43468
+                ],
+                "confidence": 0.9758,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.base",
+              "kind": "amount",
+              "value": "910.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.20585,
+                  0.42399,
+                  0.2521,
+                  0.42399,
+                  0.2521,
+                  0.43468,
+                  0.20585,
+                  0.43468
+                ],
+                "confidence": 0.9897,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.amount",
+              "kind": "amount",
+              "value": "63.70",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.36552,
+                  0.42399,
+                  0.40336,
+                  0.42399,
+                  0.40336,
+                  0.43468,
+                  0.36552,
+                  0.43468
+                ],
+                "confidence": 0.9888,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.1.rate",
+              "kind": "rate",
+              "value": "19",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.43943,
+                  0.1017,
+                  0.43943,
+                  0.1017,
+                  0.45012,
+                  0.06723,
+                  0.45012
+                ],
+                "confidence": 0.9629,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.1.base",
+              "kind": "amount",
+              "value": "185.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.20585,
+                  0.43943,
+                  0.2521,
+                  0.43943,
+                  0.2521,
+                  0.45012,
+                  0.20585,
+                  0.45012
+                ],
+                "confidence": 0.9728,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.1.amount",
+              "kind": "amount",
+              "value": "35.15",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.36552,
+                  0.43943,
+                  0.40336,
+                  0.43943,
+                  0.40336,
+                  0.45012,
+                  0.36552,
+                  0.45012
+                ],
+                "confidence": 0.9915,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "total",
+              "kind": "amount",
+              "value": "1293.85",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.85428,
+                  0.43943,
+                  0.93277,
+                  0.43943,
+                  0.93277,
+                  0.45368,
+                  0.85428,
+                  0.45368
+                ],
+                "confidence": 0.9865,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": [
+                "total_reconciles"
+              ]
+            }
+          ],
+          "checks": [
+            {
+              "id": "required_fields",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "dates_valid",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "issue_date",
+                "due_date"
+              ],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "currency_known",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "currency"
+              ],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "signs_agree",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "line_math",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "line_items_sum",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "vat_math",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "vat_bases",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "total_reconciles",
+              "status": "failed",
+              "severity": "error",
+              "message": "The subtotal and the VAT come to 1193.85, but the total is 1293.85.",
+              "fields": [
+                "total"
+              ],
+              "expected": "1193.85",
+              "actual": "1293.85"
+            },
+            {
+              "id": "fields_on_page",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "not_duplicate",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "vendor",
+                "invoice_number"
+              ],
+              "expected": null,
+              "actual": null
+            }
+          ],
+          "duplicate": null,
+          "journal": null,
+          "journal_status": "blocked_by_checks",
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-97c96f23d3b7387dd3d3",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "b24381ac0d2ef1a0",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1790975298647,
+        "endMs": 1790975301847,
+        "attrs": {
+          "pages": 1,
+          "words": 120,
+          "worker_ms": 2900,
+          "wall_ms": 3150,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "83313fe534a1c53e",
+        "parentId": "91fed1c20ec456ed",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1790975301851,
+        "endMs": 1790975302033,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "91fed1c20ec456ed",
+        "parentId": "3a7f7e994ec173bb",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1790975301849,
+        "endMs": 1790975302035,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "3a7f7e994ec173bb",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "ok",
+        "startMs": 1790975301847,
+        "endMs": 1790975302037,
+        "attrs": {
+          "segments": 1,
+          "flagged": false,
+          "score": 0.01
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "f571207671a75e35",
+        "parentId": "00d38f93353589bf",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790975302041,
+        "endMs": 1790975303933,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "00d38f93353589bf",
+        "parentId": "8b13ddb435092c9e",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790975302039,
+        "endMs": 1790975303935,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "8b13ddb435092c9e",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "extract",
+        "status": "ok",
+        "startMs": 1790975302037,
+        "endMs": 1790975303937,
+        "attrs": {
+          "alias": "lb-fast",
+          "picture": false,
+          "attempts": 1,
+          "text_cut": false,
+          "text_chars": 900
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "29eb0de51730794c",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "validate",
+        "status": "ok",
+        "startMs": 1790975303937,
+        "endMs": 1790975303939,
+        "attrs": {
+          "failed": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "7845ff5c9f541ece",
+        "parentId": "0236666aa0934da7",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790975303943,
+        "endMs": 1790975305835,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "0236666aa0934da7",
+        "parentId": "7b822a68841c0231",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790975303941,
+        "endMs": 1790975305837,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "7b822a68841c0231",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "repair",
+        "status": "ok",
+        "startMs": 1790975303939,
+        "endMs": 1790975305839,
+        "attrs": {
+          "checks": 1,
+          "adopted": false,
+          "failed_before": 1,
+          "failed_after": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "e2124fdce0b1f171",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "place fields",
+        "status": "ok",
+        "startMs": 1790975305839,
+        "endMs": 1790975305845,
+        "attrs": {
+          "found": 21,
+          "expected": 21
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "773f2cfc23985e0e",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "check duplicates",
+        "status": "ok",
+        "startMs": 1790975305845,
+        "endMs": 1790975305848,
+        "attrs": {
+          "compared": 7,
+          "duplicate": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "9dca18089a8b2855",
+        "parentId": "6f60758ebb6ee720",
+        "kind": "system.step",
+        "name": "journal entry",
+        "status": "skipped",
+        "startMs": 1790975305848,
+        "endMs": 1790975305850,
+        "attrs": {
+          "reason": "checks_failed"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-97c96f23d3b7387dd3d3",
+        "system": "lb-03",
+        "spanId": "6f60758ebb6ee720",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1790975298647,
+        "endMs": 1790975305855,
+        "attrs": {
+          "kind": "pdf",
+          "outcome": "ready",
+          "model_calls": 3
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 3,
+    "steps": 8,
+    "durationMs": 7208
+  }
+}

@@ -73,9 +73,11 @@ user django-systems on #__HASH_DJANGO_SYSTEMS__ resetkeys resetchannels -@all \
         +multi +exec +discard \
         +eval +evalsha)
 
-# LB-05 (Flask): the one thing it writes to Redis is the run spans of a question, through
-# lb-common, the same two selectors as the Django systems. Its counters are in Postgres and
-# its data in DuckDB files, so it has no other key.
+# LB-03 and LB-05 (Flask): the one thing they write to Redis is the run spans of a question or
+# a document, through lb-common, the same two selectors as the Django systems. LB-05's counters
+# and LB-03's documents, files' records and counters are in Postgres, LB-05's data in DuckDB
+# files and LB-03's files in a bucket, so it has no other key. LB-03's spans come from a thread
+# of its own (lb03/spans.py) and use the same two commands.
 user flask-systems on #__HASH_FLASK_SYSTEMS__ resetkeys resetchannels -@all \
     +hello +ping +quit +client|setinfo \
     (~lb:run:*:spans +xadd +expire) \

@@ -9,7 +9,8 @@
 #
 #  2. The services' own code against the same rules. The gateway's integration tests, the
 #     lb-common span-writer tests, the gateway contract tests, LB-02's WebSocket consumer
-#     tests (the Channels layer), LB-05's integration tests, LB-08's whole suite (BullMQ) and
+#     tests (the Channels layer), the Flask systems' integration tests (LB-03's documents and
+#     LB-05's questions), LB-08's whole suite (BullMQ) and
 #     a real Celery worker with its scheduler all run against a Redis whose ACL is the
 #     production ACL with three additions, made mechanically below:
 #       - every key and channel pattern under `lb:` is joined by the same pattern under
@@ -348,7 +349,7 @@ if wanted django; then
 fi
 
 if wanted flask; then
-    echo "LB-05's integration tests (run spans), as the Flask user"
+    echo "LB-03's and LB-05's integration tests (run spans), as the Flask user"
     run_suite "the Flask integration tests pass as the flask-systems user" "$scratch/flask.log" \
         env LB_TEST_REDIS_URL="$flask_url" LB_TEST_DATABASE_URL="$database_url" \
         uv run --directory services/flask-systems pytest tests/integration -q -p no:cacheprovider

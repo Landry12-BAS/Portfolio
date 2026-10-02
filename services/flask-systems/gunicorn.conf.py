@@ -25,7 +25,8 @@ keepalive = 5
 max_requests = 2_000
 max_requests_jitter = 200
 
-# Requests are small JSON documents; a larger line, header or field is refused outright.
+# Requests are small JSON documents (an upload is a body, not a header: its size is limited by the route that takes
+# it); a larger line, header or field is refused outright.
 limit_request_line = 2_048
 limit_request_fields = 40
 limit_request_field_size = 4_096
@@ -40,3 +41,13 @@ accesslog = "-"
 access_log_format = "%(m)s %(U)s %(s)s %(L)s"
 errorlog = "-"
 loglevel = "info"
+
+
+def worker_exit(server: object, worker: object) -> None:  # noqa: ARG001 - gunicorn's hook signature
+    """Let each system end the work its worker was doing, before the process finishes (core/shutdown.py).
+
+    Imported here, not at the top: this file is read by the gunicorn master, which must not load the service.
+    """
+    from core.shutdown import run_all
+
+    run_all()

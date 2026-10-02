@@ -40,7 +40,34 @@ describe('the table of routes', () => {
       expect(route.path.startsWith(`/api/lb${route.system.slice(3)}/`), route.path).toBe(true)
       expect(['GET', 'POST', 'PUT', 'DELETE']).toContain(route.method)
     }
-    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-05', 'lb-08']))
+    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-03', 'lb-05', 'lb-08']))
+  })
+
+  it('marks the one route that takes a file as an upload and the two that answer with files, and no other', () => {
+    const uploads = API_ROUTES.filter(route => route.upload).map(route => `${route.method} ${route.path}`)
+    const files = API_ROUTES.filter(route => route.files !== undefined).map(route => `${route.method} ${route.path} ${route.files?.join(',')}`)
+
+    expect(uploads).toEqual(['POST /api/lb03/documents'])
+    expect(files).toEqual([
+      'GET /api/lb03/documents/{document_id}/export text/csv',
+      'GET /api/lb03/documents/{document_id}/pages/{number} image/jpeg',
+    ])
+    for (const route of API_ROUTES.filter(candidate => candidate.upload)) expect(route.body).toBe(true)
+  })
+
+  it('serves LB-03 with the routes of its documents, a correction being a POST because the proxy forwards no PATCH', () => {
+    expect(API_ROUTES.filter(route => route.system === 'lb-03').map(route => `${route.method} ${route.path}`)).toEqual([
+      'GET /api/lb03/documents',
+      'POST /api/lb03/documents',
+      'DELETE /api/lb03/documents/{document_id}',
+      'GET /api/lb03/documents/{document_id}',
+      'POST /api/lb03/documents/{document_id}/corrections',
+      'GET /api/lb03/documents/{document_id}/export',
+      'GET /api/lb03/documents/{document_id}/pages/{number}',
+      'GET /api/lb03/quota',
+    ])
+    expect(matchRoute('PATCH', '/api/lb03/documents/abc12345/fields/total')).toBeUndefined()
+    expect(matchRoute('GET', '/api/lb03/documents/abc12345/fields/line_items.0.total')).toBeUndefined()
   })
 
   it('has no route twice', () => {

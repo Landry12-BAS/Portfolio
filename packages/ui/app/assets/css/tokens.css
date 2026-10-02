@@ -41,6 +41,11 @@
   --lb-font-sans: "Archivo Variable", "Helvetica Neue", Arial, sans-serif;
   --lb-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --lb-gutter: 16px;
+  /* Marks drawn on the picture of a document: a line round a field, the outline and the highlighter of the
+     field in view. The picture is white paper in both themes, so these are the same in both. */
+  --lb-page-line: #045efe;
+  --lb-page-ink: #111214;
+  --lb-page-marker: #ffe45c;
   color-scheme: light;
 }
 
@@ -73,5 +78,8 @@ html.dark {
   --lb-series-8: #e66767;
   --lb-show-light: none;
   --lb-show-dark: inline;
+  --lb-page-line: #045efe;
+  --lb-page-ink: #111214;
+  --lb-page-marker: #ffe45c;
   color-scheme: dark;
 }

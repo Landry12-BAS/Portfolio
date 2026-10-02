@@ -15,7 +15,7 @@ from sqlalchemy.engine import URL
 from sqlalchemy.schema import CreateSchema
 
 # The systems with data of their own. A system's schema is its part number without the hyphen.
-SYSTEM_SCHEMAS: tuple[str, ...] = ("lb05",)
+SYSTEM_SCHEMAS: tuple[str, ...] = ("lb05", "lb03")
 # The only URL parameters passed on to Postgres.
 ALLOWED_URL_OPTIONS = frozenset({"sslmode", "connect_timeout"})
 # No statement of the ledger's may run longer than this: they are all single-row lookups.
