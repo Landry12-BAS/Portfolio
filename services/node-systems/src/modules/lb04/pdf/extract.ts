@@ -4,6 +4,7 @@
 // the memory it may use, and a deadline. When either is passed, or the thread dies for any reason, it
 // is terminated and the file is refused with a plain reason, and the service goes on. Nothing the
 // thread does can reach a visitor except the text it hands back, which is checked with a schema.
+import { join } from 'node:path'
 import { Worker } from 'node:worker_threads'
 
 import { LB04_LIMITS } from '@lb/contracts'
@@ -43,12 +44,14 @@ export class ExtractionRefused extends Error {
   }
 }
 
-// The worker's script, beside this file. Tests may name another to prove the limits with a script that misbehaves.
-const DEFAULT_SCRIPT = new URL('./extract-worker.ts', import.meta.url)
+// The worker's script, beside this file, by its path. A path and not a URL made from `import.meta.url`: the
+// site's component tests run this code under a DOM stand-in whose `URL` is not Node's, and a thread cannot be
+// started from that one. Tests may name another script to prove the limits with one that misbehaves.
+const DEFAULT_SCRIPT = join(import.meta.dirname, 'extract-worker.ts')
 
 /** Which script to run and what to refuse at; the defaults are the limits the system promises. */
 export interface ExtractionOptions {
-  script?: URL
+  script?: URL | string
   maxPages?: number
   maxChars?: number
 }
