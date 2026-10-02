@@ -288,9 +288,35 @@ export function journeys(): void {
     })
   })
 
-  test.describe('in Czech', () => {
+  test.describe('in the dark theme', () => {
+    test('runs a sample live in English: the hold, the booking and the recorded email', async ({ page }) => {
+      await page.emulateMedia({ colorScheme: 'dark' })
+      await openBoard(page)
+      await expect(page.locator('html')).toHaveClass(/\bdark\b/)
+      await page.getByTestId('run-sample-live').click()
+      await expect(page.getByTestId('connection')).toHaveText('Connected')
+      await page.getByTestId('script-next').click()
+      await expect(page.getByTestId('hold-timer')).toContainText('left')
+      await expect(slotRow(page, 'held', 'Held for you')).toHaveCount(1)
+      await page.getByTestId('script-next').click()
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
+      await expect(slotRow(page, 'booked', 'Booked for you')).toHaveCount(1)
+      await expect(page.getByTestId('email-badge')).toHaveText('Recorded, never sent')
+    })
+  })
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    czechJourney(colorScheme)
+  }
+}
+
+/** Registers the journey in Czech under a colour scheme: the same sample, live, with every word in Czech. */
+function czechJourney(colorScheme: 'light' | 'dark'): void {
+  test.describe(`in Czech, ${colorScheme} theme`, () => {
     test('runs a sample live in Czech, with the receipts, the hold and the recorded email in Czech', async ({ page }) => {
+      await page.emulateMedia({ colorScheme })
       await openBoard(page, '/cs/systems/lb-02/board', '10 z 10')
+      await expect(page.locator('html')).toHaveClass(colorScheme === 'dark' ? /\bdark\b/ : /\blight\b/)
       await page.getByRole('radio', { name: /Rezervace česky/ }).check()
       await page.getByTestId('start-sample').click()
       await expect(page.getByTestId('connection')).toHaveText('Připojeno')
