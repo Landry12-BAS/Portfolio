@@ -85,6 +85,16 @@ const askOnly: WorkflowGraph = {
   ],
 }
 
+/** A workflow of one action, so the step that fails is the step that ends the run. */
+const oneStep: WorkflowGraph = {
+  name: 'One step',
+  nodes: [
+    { id: 'start', type: 'trigger', label: 'Start', event: 'manual' },
+    { id: 'go', type: 'action', label: 'Go', connector: 'slack_alert', params: { channel: '#alerts', message: 'go' } },
+  ],
+  edges: [{ from: 'start', to: 'go' }],
+}
+
 /** A diamond workflow: the trigger feeds two Slack alerts, and a task waits for both. */
 const diamond: WorkflowGraph = {
   name: 'Diamond',
@@ -255,6 +265,21 @@ describe('the trace of a run', () => {
     expect(spans.filter(span => span.kind === 'system.run')).toHaveLength(1)
   })
 
+  it('writes the root, as an error, when a step that has no attempts left is what ends the run', async () => {
+    const session = newSession()
+    const workflowId = await createWorkflow(harness.deps, { sessionKey: session, graph: oneStep, origin: 'sample', description: null, modelCalls: 0, traceRunId: null })
+    const runId = await startRun(harness.deps, session, workflowId, { input: { note: 'Test run' } })
+    harness.scheduler.jobs.splice(0, harness.scheduler.jobs.length)
+    // The workers that took this step died three times; the next job finds it with no attempts left.
+    await harness.database.pool.query(`UPDATE run_steps SET status = 'running', attempts = 3 WHERE run_id = $1 AND node_id = 'go'`, [runId])
+
+    await runStep(harness.deps, runId, 'go')
+
+    expect((await view(session, runId)).status).toBe('failed')
+    expect(spansOf(runId)).toMatchObject([{ kind: 'system.run', status: 'error', spanId: rootSpanIdOf(runId), attrs: { outcome: 'failed', steps: 2, attempts: 3 } }])
+    harness.scheduler.jobs.splice(0, harness.scheduler.jobs.length)
+  })
+
   it('gives a replay a trace of its own, with its own root that says it is a replay', async () => {
     const session = newSession()
     const { runId } = await startSample(session, 'wholesale-order', { failures: [{ nodeId: 'alert_roastery', times: 3 }] })
@@ -269,6 +294,16 @@ describe('the trace of a run', () => {
     expect(replay.at(-1)).toMatchObject({ kind: 'system.run', status: 'ok', spanId: rootSpanIdOf(replayId), attrs: { outcome: 'succeeded', replay: true } })
     expect(replay.filter(span => span.kind === 'system.step').every(step => step.parentId === rootSpanIdOf(replayId))).toBe(true)
     expect(rootSpanIdOf(replayId)).not.toBe(rootSpanIdOf(runId))
+  })
+
+  it('writes the root of a replay that ends in the request that makes it', async () => {
+    const session = newSession()
+    const { workflowId, input } = await workflowFromSample(harness, session, 'wholesale-order')
+    const runId = await startRun(harness.deps, session, workflowId, { input: { ...input, totalEur: 300 } })
+
+    const replayId = await replayRun(harness.deps, session, runId)
+
+    expect(spansOf(replayId)).toMatchObject([{ kind: 'system.run', status: 'ok', spanId: rootSpanIdOf(replayId), attrs: { outcome: 'succeeded', attempts: 0, replay: true } }])
   })
 
   it('still ends the run when the root cannot be written', async () => {
