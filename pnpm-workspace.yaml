@@ -28,3 +28,13 @@ onlyBuiltDependencies:
 # to a patched release keeps `pnpm audit` clean.
 overrides:
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
+
+# GHSA-86w9-cpqp-85rv: node-forge (up to 1.4.0, the newest release) accepts a forged RSA PKCS#1 v1.5
+# signature. It has no patched release yet, so no pin can fix it. The only way in is
+# nuxt > @nuxt/cli > listhen, the development server's helper that makes a self-signed certificate
+# for `nuxt dev --https`; nothing verifies a signature with it, and the production build does not
+# contain node-forge (`grep -r node-forge apps/web/.output` finds nothing). Remove this entry, and
+# run `pnpm audit`, when node-forge or listhen publishes a fix.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv
