@@ -22,6 +22,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import F, Max
 
+from core.locks import lock_visitor
 from lb02.booking import DATABASE, BookingService
 from lb02.limits import (
     CONVERSATIONS_PER_VISITOR_PER_DAY,
@@ -42,16 +43,21 @@ def start_conversation(session_key: str, now: datetime) -> Conversation:
     """Start a conversation for a visitor, or refuse when they have started their ten for the day.
 
     The count is of the conversations the visitor started since midnight UTC, and the new
-    one carries its own run ID, so everything it makes the gateway do is one run.
+    one carries its own run ID, so everything it makes the gateway do is one run. One visitor's
+    starts take turns, so a visitor who opens many connections at once cannot count past the limit.
     """
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    if Conversation.objects.filter(session_key=session_key, created_at__gte=midnight).count() >= (
-        CONVERSATIONS_PER_VISITOR_PER_DAY
-    ):
-        raise ConversationLimitError(f"A visitor may start {CONVERSATIONS_PER_VISITOR_PER_DAY} conversations a day.")
-    return Conversation.objects.create(
-        session_key=session_key, run_id=new_run_id(), created_at=now, expires_at=now + VISITOR_DATA_LIFETIME
-    )
+    with transaction.atomic(using=DATABASE):
+        lock_visitor(DATABASE, "conversations", session_key)
+        if Conversation.objects.filter(session_key=session_key, created_at__gte=midnight).count() >= (
+            CONVERSATIONS_PER_VISITOR_PER_DAY
+        ):
+            raise ConversationLimitError(
+                f"A visitor may start {CONVERSATIONS_PER_VISITOR_PER_DAY} conversations a day."
+            )
+        return Conversation.objects.create(
+            session_key=session_key, run_id=new_run_id(), created_at=now, expires_at=now + VISITOR_DATA_LIFETIME
+        )
 
 
 def own_conversation(session_key: str, public_id: str) -> Conversation | None:

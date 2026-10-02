@@ -37,6 +37,7 @@ from tests.lb02_support import (
     reload,
     tomorrow_at,
 )
+from tests.support import held_until_all_have_counted
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb02"])]
 
@@ -81,6 +82,34 @@ def test_yesterdays_conversations_dont_count_against_today(clock: FakeClock) -> 
         start_conversation(SESSION, yesterday)
 
     assert start_conversation(SESSION, clock()).message_count == 0
+
+
+@pytest.mark.django_db(databases=["lb02"], transaction=True)
+def test_conversations_started_at_the_same_moment_cannot_pass_the_daily_limit(
+    clock: FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A visitor who opens twelve connections at once gets ten conversations, not twelve.
+
+    Every start is held just before it saves its conversation until all twelve have counted what
+    the visitor started, so each sees the same zero: the limit holds only if counting and saving
+    are one step for a visitor. (When they are, the first start waits alone and the hold times out.)
+    """
+    racers = CONVERSATIONS_PER_VISITOR_PER_DAY + 2
+    monkeypatch.setattr(
+        Conversation.objects, "create", held_until_all_have_counted(Conversation.objects.create, racers)
+    )
+
+    def start_one() -> Conversation:
+        """Start a conversation as the visitor, on this thread's own connection."""
+        return start_conversation(SESSION, clock())
+
+    outcomes = race([start_one for _ in range(racers)])
+
+    started = [outcome for outcome in outcomes if isinstance(outcome, Conversation)]
+    refused = [outcome for outcome in outcomes if isinstance(outcome, ConversationLimitError)]
+    assert len(started) == CONVERSATIONS_PER_VISITOR_PER_DAY
+    assert len(refused) == racers - CONVERSATIONS_PER_VISITOR_PER_DAY
+    assert Conversation.objects.filter(session_key=SESSION).count() == CONVERSATIONS_PER_VISITOR_PER_DAY
 
 
 def test_a_visitor_finds_their_own_conversation_and_nobody_elses(clock: FakeClock) -> None:
