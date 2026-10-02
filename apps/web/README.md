@@ -318,7 +318,10 @@ eleventh run, which two tabs of one visitor can reach.
   (`scripts/check-production-build.ts`), and runs the check the other way round on the test build
   (`--expect-test-code`) to prove it can see the code. A check that finds no build to look at fails with
   status 2, never passes. The test build goes to `.output-e2e`, and only a build writes there: the dev
-  server is a test build too (`just dev-mock`) and would otherwise empty it.
+  server is a test build too (`just dev-mock`) and would otherwise empty it. CI cannot see a build made on
+  Vercel, so the build refuses to be the test build there: with `VERCEL` set, `LB_TEST_BUILD=1` stops the
+  build, and a server built as a test build refuses to start (`shared/build-mode.ts`; tested in
+  `test/unit/build-mode.test.ts`, `nuxt-config.test.ts` and `site-config.test.ts`).
 - **Zod runs jitless** in the browser (`app/plugins/00.zod-jitless.ts`): its probe for `eval` is caught
   but reported by the browser as a Trusted Types violation, on the first schema of every page.
 - **Pages set no cookie**; the session cookie exists only after a call to `/api/*`, which a board makes

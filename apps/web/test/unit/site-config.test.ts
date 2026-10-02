@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { ConfigError, loadSiteState } from '../../server/lib/config.ts'
 import type { RawRuntimeConfig } from '../../server/lib/config.ts'
+import { TEST_BUILD_ON_VERCEL } from '../../shared/build-mode.ts'
 import { makeTestKeys } from '../support/site-app.ts'
 
 const keys = makeTestKeys()
@@ -131,5 +132,20 @@ describe('the end-to-end test build', () => {
 
   it('still needs everything else', () => {
     expect(problemsOf(settings({ lbApiUrl: '' }), true)).toEqual([expect.stringContaining('NUXT_LB_API_URL')])
+  })
+
+  it('refuses to start where VERCEL is set, with settings or without, so a server built as a test build never serves the production site', () => {
+    const onVercel = { VERCEL: '1' }
+
+    for (const raw of [settings(), {}]) {
+      expect(() => loadSiteState(raw, true, Date.now, onVercel)).toThrow(ConfigError)
+      expect(() => loadSiteState(raw, true, Date.now, onVercel)).toThrow(TEST_BUILD_ON_VERCEL)
+    }
+  })
+
+  it('starts anywhere else, and the production build starts on Vercel', () => {
+    expect(loadSiteState(settings(), true, Date.now, {}).status).toBe('ready')
+    expect(loadSiteState({}, true, Date.now, {}).status).toBe('disabled')
+    expect(loadSiteState(settings(), false, Date.now, { VERCEL: '1' }).status).toBe('ready')
   })
 })

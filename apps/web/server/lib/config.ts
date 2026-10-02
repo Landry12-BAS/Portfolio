@@ -8,6 +8,9 @@ import type { KeyObject } from 'node:crypto'
 import { privateKeyFromJwk, ServiceTokens } from '@lb/common/tokens'
 import { z } from 'zod'
 
+import { isOnVercel, TEST_BUILD_ON_VERCEL } from '../../shared/build-mode.ts'
+import type { ModeEnvironment } from '../../shared/build-mode.ts'
+
 /**
  * The runtime config as Nuxt hands it over: empty when the variable isn't set. Nitro reads an
  * environment variable that holds JSON as the JSON it holds, so a key file's contents arrive as an
@@ -130,10 +133,13 @@ const VARIABLE_RULES: Readonly<Record<string, string>> = {
  * Checks the runtime config and builds the site's settings. With none of the variables set, the
  * site is `disabled`: it serves its pages and answers the demos' routes with 503. With some set,
  * every one must be right, or this throws a ConfigError. `testBuild` is the end-to-end build,
- * which has no Turnstile to check against and so doesn't need its two keys. `now` is the clock,
- * in Unix milliseconds, the service tokens are dated by.
+ * which has no Turnstile to check against and so doesn't need its two keys, and which must never
+ * run where VERCEL is set, the production site's host: that is refused first, with settings or
+ * without, because a server built that way would accept a stand-in for Turnstile. `now` is the
+ * clock, in Unix milliseconds, the service tokens are dated by; `environment` is where VERCEL is read.
  */
-export function loadSiteState(raw: RawRuntimeConfig, testBuild: boolean, now: () => number = Date.now): SiteState {
+export function loadSiteState(raw: RawRuntimeConfig, testBuild: boolean, now: () => number = Date.now, environment: ModeEnvironment = process.env): SiteState {
+  if (testBuild && isOnVercel(environment)) throw new ConfigError([TEST_BUILD_ON_VERCEL])
   const values: Record<string, string> = {
     lbApiUrl: settingText(raw.lbApiUrl),
     lbGatewayUrl: settingText(raw.lbGatewayUrl),

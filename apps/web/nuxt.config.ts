@@ -3,6 +3,7 @@
 // the back ends (section 2): the session, Turnstile, the proxy and the Scope's route.
 import { fileURLToPath } from 'node:url'
 
+import { isTestBuild } from './shared/build-mode.ts'
 import { SERVER_ROUTES } from './server/api-routes'
 
 /** Resolves a path inside this app. */
@@ -10,8 +11,10 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
 // The end-to-end test build (`pnpm --filter @lb/web build:e2e`) is the only build that accepts the
 // fixed stand-in for a Turnstile token and bundles the test recordings. Every other build replaces
-// this flag with `false` (see shared/build-flags.d.ts), so none of that code is in its bundle.
-const testBuild = process.env.LB_TEST_BUILD === '1'
+// this flag with `false` (see shared/build-flags.d.ts), so none of that code is in its bundle. A build
+// where VERCEL is set, which is the production site's, refuses to be the test build (shared/build-mode.ts):
+// CI cannot see a build made there, so the build itself must stop.
+const testBuild = isTestBuild(process.env)
 
 // What a board page adds to the site's Content Security Policy: the Turnstile widget's frame and
 // the one Trusted Types policy that makes its script's address.

@@ -96,7 +96,11 @@ how a Vercel preview runs.
   `challenges.cloudflare.com`, and its script's address is made by one named Trusted Types
   policy, `lb-turnstile`, that hands out that address and no other. The test build accepts a
   fixed stand-in token instead of the widget's; the stand-in is compiled out of the production
-  bundle, and `just check-build` (run in CI) fails if any trace of it is left there.
+  bundle, and `just check-build` (run in CI) fails if any trace of it is left there. CI cannot
+  see a build made on Vercel, so that build refuses by itself: with `VERCEL` set, `LB_TEST_BUILD=1`
+  stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
+  that was built as a test build refuses to start where `VERCEL` is set
+  (`server/lib/config.ts`), with settings or without. Both are tested.
 - **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb05/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back

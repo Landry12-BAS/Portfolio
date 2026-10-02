@@ -524,6 +524,13 @@ one is right, and the log names the variable that is wrong and never its value. 
 widget mode stays Managed: the site draws it with `appearance: interaction-only`, so a visitor
 sees it only when Cloudflare needs them to do something.
 
+Never set `LB_TEST_BUILD` in Vercel. It makes the end-to-end test build, which accepts a fixed
+stand-in for a Turnstile token and shows recordings made on the mock, and CI's check of the
+production bundle cannot see a build made on Vercel. So the build refuses it: where `VERCEL` is
+set (Vercel sets it), `LB_TEST_BUILD=1` stops `nuxt build` with an error that names the variable,
+and a server built that way refuses to start. If a deployment fails with that error, remove the
+variable from the project's environment (Settings, Environment Variables) and deploy again.
+
 The site's server calls LB-05 and LB-08 and waits up to 95 seconds for them
 (`apps/web/server/lib/policy.ts`), so the Vercel plan must let a function run that long. Check
 the plan's maximum function duration (it is a Vercel setting, not something the repository
