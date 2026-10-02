@@ -691,7 +691,11 @@ config`, hadolint, shellcheck and actionlint.
   names a ticket's run only when its pipeline has finished, which the board now handles). The
   production build was run with the **real Turnstile widget** and Cloudflare's published
   always-pass test keys: the loader, the frame, the token and the server's check with
-  Cloudflare worked under the policy. They were never deployed, never run with a real Turnstile
+  Cloudflare worked under the policy. The build Vercel makes (`VERCEL=1 pnpm --filter @lb/web
+  build`, which uses Nitro's Vercel preset and writes `apps/web/.vercel/output`) was run once
+  here, by hand: it stopped with `EEXIST` because two routes of the API made the same function,
+  which is fixed, and `test/unit/api-routes.test.ts` now checks the route list for it; no CI step
+  makes that build. They were never deployed, never run with a real Turnstile
   site key, challenge and hostname, and never run with a model behind LB-01. So no
   **recording** exists: `just record-sample lb-01 torn-bag` needs the live back end and
   records nothing until it has run there, and until it has the boards say "No recording yet"

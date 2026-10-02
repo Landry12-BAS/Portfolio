@@ -36,8 +36,10 @@ export const SERVER_ROUTES: readonly ServerRoute[] = [
   { route: '/api/lb02/**', handler: 'handlers/proxy.ts' },
   { route: '/api/lb05/**', handler: 'handlers/proxy.ts' },
   { route: '/api/lb08/**', handler: 'handlers/proxy.ts' },
-  // Anything else under /api/, and the bare prefix, which the pattern below does not cover.
+  // Anything else under /api/, and the bare prefix, which the pattern below does not cover. The router answers
+  // `/api/` with the route `/api`, so it needs no entry of its own; it had one, and Nitro's Vercel preset, which
+  // makes a function for each route and gave both the name `api`, stopped the build there with EEXIST
+  // (test/unit/api-routes.test.ts keeps it from happening again).
   { route: '/api', handler: 'handlers/not-found.ts' },
-  { route: '/api/', handler: 'handlers/not-found.ts' },
   { route: '/api/**', handler: 'handlers/not-found.ts' },
 ]

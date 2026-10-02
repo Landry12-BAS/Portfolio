@@ -466,7 +466,10 @@ Each was fixed with a test that failed before the fix; the section it belongs to
 - **The site has one address, and the bare `/api` answers 404.** `NUXT_LB_SITE_ORIGIN` sends every
   other host on with a 308 (see "What the site's server does"). `GET /api` answered 503 because the
   test server attached the site's services to every path and the real middleware only to `/api/...`;
-  both now run one module, and an end-to-end test checks the real build.
+  both now run one module, and an end-to-end test checks the real build. Running the build Vercel
+  makes (`VERCEL=1`, Nitro's Vercel preset) for this found that it would have failed: the routes
+  `/api` and `/api/` made one function name, so `/api/` lost its entry (the router answers it with
+  `/api`) and a test checks the list.
 - **Cloudflare's per-IP rule is scoped to the WebSocket path** (documented, not code): section 1,
   the known gaps and `docs/DEPLOY.md`, part 5.
 - Section 2 now names the verifiers' real homes.

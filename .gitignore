@@ -4,6 +4,8 @@ dist/
 coverage/
 .nuxt/
 .output/
+# What Nitro's Vercel preset writes when the build runs with VERCEL set.
+.vercel/
 .env
 .env.*
 !.env.example
