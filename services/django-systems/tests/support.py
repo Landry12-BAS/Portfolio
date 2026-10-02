@@ -1,6 +1,8 @@
-"""Helpers the Django systems' tests share: stand-in vectors, and fakes of the gateway and the span store."""
+"""Helpers the Django systems' tests share: stand-in vectors, fakes of the gateway and span store, and a race hold."""
 
-from collections.abc import Sequence
+import contextlib
+import threading
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from core.structured import ChatMessage, Completion
@@ -112,3 +114,25 @@ class MemorySpanWriter:
     def named(self, name: str) -> Span:
         """Return the one span with this name."""
         return next(span for span in self.spans if span.name == name)
+
+
+def held_until_all_have_counted[Row](
+    create: Callable[..., Row], racers: int, patience_seconds: float = 2.0
+) -> Callable[..., Row]:
+    """Wrap a manager's `create` so each of `racers` threads waits before saving, until all have reached that point.
+
+    A limit that counts a visitor's rows and then saves a new one is only safe if no other request
+    can count in between. Holding every racer between the two steps makes them all count the same
+    number, which turns a rare interleaving into the one that always happens. Where the code
+    serialises a visitor's requests, only one racer ever reaches the hold, so it gives up after
+    `patience_seconds` and carries on, and so does every racer after it.
+    """
+    barrier = threading.Barrier(racers)
+
+    def hold_then_create(**fields: object) -> Row:
+        """Wait for the other racers, or give up waiting, and then save the row."""
+        with contextlib.suppress(threading.BrokenBarrierError):
+            barrier.wait(timeout=patience_seconds)
+        return create(**fields)
+
+    return hold_then_create

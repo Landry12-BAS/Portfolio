@@ -18,6 +18,8 @@ from lb01.api import TICKETS_PER_DAY
 from lb01.models import Customer, Decision, Draft, Ticket
 from lb01.seed import seed
 from lb01.tasks import run_ticket
+from tests.lb02_support import race
+from tests.support import held_until_all_have_counted
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb01"])]
 
@@ -170,6 +172,38 @@ def test_a_visitor_may_file_twenty_tickets_a_day(site_key: Ed25519PrivateKey, qu
     assert response.status_code == 429
     assert response.json()["error"]["code"] == "daily_limit"
     assert queued == []
+
+
+@pytest.mark.django_db(databases=["lb01"], transaction=True)
+def test_tickets_filed_at_the_same_moment_cannot_pass_the_daily_limit(
+    site_key: Ed25519PrivateKey, queued: list[int], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A visitor with one place left who files eight tickets at once gets that one ticket, not eight.
+
+    Every request is held just before it saves its ticket until all eight have counted what the
+    visitor filed, so each sees the same nineteen: the limit holds only if counting and saving are
+    one step for a visitor. (When they are, the first request waits alone and the hold times out.)
+    """
+    customer = Customer.objects.get(key="cus-0001")
+    for _ in range(TICKETS_PER_DAY - 1):
+        Ticket.objects.create(session_key=SAM, customer=customer, language="en", body="Hello.")
+    racers = 8
+    monkeypatch.setattr(Ticket.objects, "create", held_until_all_have_counted(Ticket.objects.create, racers))
+
+    def file_one() -> int:
+        """File a ticket as the visitor, from a thread of its own."""
+        response = visitor(site_key).post(
+            "/api/lb01/tickets",
+            {"customer": "cus-0001", "language": "en", "body": "One of eight."},
+            content_type="application/json",
+        )
+        return response.status_code
+
+    outcomes = race([file_one for _ in range(racers)])
+
+    assert sorted(str(outcome) for outcome in outcomes) == sorted(["202"] + ["429"] * (racers - 1))
+    assert Ticket.objects.filter(session_key=SAM).count() == TICKETS_PER_DAY
+    assert len(queued) == 1
 
 
 def test_a_visitor_sees_only_their_own_tickets(site_key: Ed25519PrivateKey) -> None:

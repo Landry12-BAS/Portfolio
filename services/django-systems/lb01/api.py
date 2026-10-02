@@ -20,6 +20,7 @@ from ninja.errors import AuthenticationError
 from pydantic import StringConstraints, model_validator
 
 from core.data_files import Key
+from core.locks import lock_visitor
 from core.visitors import Visitor, VisitorBearer
 from lb01.claims import ClaimProblem, ProblemCode, describe_problem
 from lb01.models import MAX_TICKET_LENGTH, Customer, Decision, Draft, PolicyPassage, Ticket
@@ -189,9 +190,11 @@ def file_ticket(request: HttpRequest, payload: TicketIn) -> Status[TicketOut] | 
     customer = Customer.objects.filter(key=payload.customer).first()
     if customer is None:
         return Status(404, error("unknown_customer", "There is no customer with that key."))
-    if filed_today(visitor) >= TICKETS_PER_DAY:
-        return Status(429, error("daily_limit", f"A visitor may file {TICKETS_PER_DAY} tickets a day."))
     with transaction.atomic(using="lb01"):
+        # One visitor's tickets take turns, so the count below can't be raced past the limit.
+        lock_visitor("lb01", "tickets", visitor.session_key)
+        if filed_today(visitor) >= TICKETS_PER_DAY:
+            return Status(429, error("daily_limit", f"A visitor may file {TICKETS_PER_DAY} tickets a day."))
         # The run's ID is known from the start, so the Scope can follow the run while it works.
         ticket = Ticket.objects.create(
             session_key=visitor.session_key,
