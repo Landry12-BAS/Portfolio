@@ -97,8 +97,12 @@ export interface Harness {
   close: () => Promise<void>
 }
 
-/** Builds the engine on a database of its own, with the migrations applied and the stock list loaded. */
-export async function createHarness(serverUrl: string, config: Lb08Config = TEST_CONFIG): Promise<Harness> {
+/**
+ * Builds the engine on a database of its own, with the migrations applied and the stock list
+ * loaded. Its spans are kept in memory (`harness.spans`) unless `writer` says where else they
+ * go, such as a real gateway's Redis, for a test that reads the trace back through the gateway.
+ */
+export async function createHarness(serverUrl: string, config: Lb08Config = TEST_CONFIG, writer?: SpanWriter): Promise<Harness> {
   const testDatabase = await createTestDatabase(serverUrl)
   const database = await testDatabase.open()
   await seedStock(database.db, loadStock())
@@ -106,13 +110,15 @@ export async function createHarness(serverUrl: string, config: Lb08Config = TEST
   const scheduler = new ManualScheduler()
   const hooks: Hooks = {}
   let offset = 0
+  // One clock for the engine and the tracer, so a test that moves time moves both and the root span still covers its steps.
+  const clock = (): number => Date.now() + offset
   const deps: EngineDeps = {
     db: database.db,
     config,
     scheduler,
-    tracer: new Tracer(spans),
+    tracer: new Tracer(writer ?? spans, clock),
     log: pino({ level: 'silent' }),
-    now: () => new Date(Date.now() + offset),
+    now: () => new Date(clock()),
     hooks,
   }
   return {

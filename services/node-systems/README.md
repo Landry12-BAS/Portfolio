@@ -53,6 +53,30 @@ race twelve times and fails without the lock. Every change also writes events, n
 without gaps, and the log is the whole story of the run: the site follows it with a cursor
 (`GET /runs/{id}/events?after=N`), and plays it back step by step afterwards.
 
+## The trace of a run
+
+A run's id is also its trace's id at the gateway, so the Scope can draw it. Every attempt at
+an action step writes a `system.step` span (`step.<step id>`, with its connector, its attempt
+and what became of it), and the run itself writes one `system.run` span, `workflow run`, the
+root of the trace. The gateway calls a trace finished once it holds that root, and the
+site's Scope stops reading then, so the root is how the site learns a run is over.
+
+The root is written last, once, by the process whose transaction ended the run: a worker
+when its step was the last one, the API when the run ends in the request that starts or
+replays it (every branch skipped) or in a person's answer to an approval. The transaction
+only notes that it ended the run; the span is written after it commits, so a trace never
+claims an end the database does not have. The steps, written minutes before, name the root
+as their parent, which works because the root's id is made from the run's id
+([`engine/trace.ts`](src/modules/lb08/engine/trace.ts)). The root spans the run from the
+moment it was made, so the wait for a worker shows in it, and carries counts and labels
+only (`outcome`, `steps`, `attempts`, `replay`), never a visitor's words. A replay is a new
+run, with a trace and a root of its own.
+
+A trace is telemetry, and a write that fails is logged and dropped. The cost is that a
+process killed between the commit and the write leaves a run whose trace never says it is
+finished; the site's Scope then calls it stalled after a few seconds, and the run itself,
+which the log and the database describe, is unaffected.
+
 ## A side effect happens once
 
 A write connector (Slack, email, webhook, task) works like this, in

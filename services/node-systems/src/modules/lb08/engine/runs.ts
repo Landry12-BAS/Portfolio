@@ -27,6 +27,8 @@ import { settle } from './settle.ts'
 import { loadLocked, nodeOf, statusOf, updateStep, workOn } from './state.ts'
 import { loadVersion, workflowNotFound } from './store.ts'
 import type { LoadedVersion } from './store.ts'
+import { endOf, recordRunEnd } from './trace.ts'
+import type { RunEnd } from './trace.ts'
 import { nextReset, reserve } from './usage.ts'
 import type { UsageKind } from './usage.ts'
 
@@ -90,8 +92,9 @@ interface NewRun {
  * Writes a run: the run, one row for each step (the trigger already done, with the payload
  * as its output), the failures asked for, and the first events. Then settles it, so the
  * steps after the trigger are ready, skipped or waiting before the transaction commits.
+ * Returns how the run ended if settling ended it, as it does for a run whose branches all skip.
  */
-async function insertRun(tx: Lb08Tx, deps: EngineDeps, run: NewRun): Promise<void> {
+async function insertRun(tx: Lb08Tx, deps: EngineDeps, run: NewRun): Promise<RunEnd | undefined> {
   const now = deps.now()
   const { graph } = run.workflow
   const trigger = graph.nodes.find(node => node.type === 'trigger')
@@ -110,6 +113,7 @@ async function insertRun(tx: Lb08Tx, deps: EngineDeps, run: NewRun): Promise<voi
   work.log.add({ type: 'step.succeeded', nodeId: trigger.id, attempt: 0, output: run.input })
   await settle(work)
   await work.log.flush(tx)
+  return endOf(work)
 }
 
 /**
@@ -125,10 +129,11 @@ export async function startRun(deps: EngineDeps, sessionKey: string, workflowId:
   checkFailures(workflow, request.failures)
 
   const id = randomUUID()
-  await deps.db.transaction(async (tx) => {
+  const ended = await deps.db.transaction(async (tx) => {
     if (!(await reserve(tx, sessionKey, 'run', deps.now()))) throw dailyLimit('run', deps.now())
-    await insertRun(tx, deps, { id, rootRunId: id, replayOf: null, sessionKey, workflow, input: payload.data, failures: request.failures ?? [] })
+    return insertRun(tx, deps, { id, rootRunId: id, replayOf: null, sessionKey, workflow, input: payload.data, failures: request.failures ?? [] })
   })
+  await recordRunEnd(deps, ended)
   await dispatchSafely(deps, id)
   return id
 }
@@ -152,16 +157,17 @@ export async function replayRun(deps: EngineDeps, sessionKey: string, runId: str
   const workflow = await loadRunnable(deps, sessionKey, original.workflowId, original.version)
 
   const id = randomUUID()
-  const replayed = await deps.db.transaction(async (tx) => {
+  const { replayed, ended } = await deps.db.transaction(async (tx) => {
     if (!(await reserve(tx, sessionKey, 'run', deps.now()))) throw dailyLimit('run', deps.now())
-    await insertRun(tx, deps, { id, rootRunId: original.rootRunId, replayOf: original.id, sessionKey, workflow, input: original.input, failures: [] })
+    const ended = await insertRun(tx, deps, { id, rootRunId: original.rootRunId, replayOf: original.id, sessionKey, workflow, input: original.input, failures: [] })
     // The dead letters of the original are answered by this replay: the one that was clicked, or all of them.
     const answered = and(eq(deadLetters.runId, original.id), isNull(deadLetters.replayedRunId), ...(deadLetterId === undefined ? [] : [eq(deadLetters.id, deadLetterId)]))
     const taken = await tx.update(deadLetters).set({ replayedRunId: id }).where(answered).returning({ nodeId: deadLetters.nodeId })
     if (deadLetterId !== undefined && taken.length === 0) throw new AppError(409, 'already_replayed', 'This dead letter was already replayed. Open the run that replayed it.')
-    return taken
+    return { replayed: taken, ended }
   })
   for (const letter of replayed) await deps.scheduler.unpark(original.id, letter.nodeId).catch(() => undefined)
+  await recordRunEnd(deps, ended)
   await dispatchSafely(deps, id)
   return id
 }
@@ -171,7 +177,7 @@ export async function replayRun(deps: EngineDeps, sessionKey: string, runId: str
  * chose, and the run carries on down it. Only a step that is waiting can be answered, once.
  */
 export async function decide(deps: EngineDeps, sessionKey: string, runId: string, nodeId: string, request: DecisionRequest): Promise<void> {
-  await deps.db.transaction(async (tx) => {
+  const ended = await deps.db.transaction(async (tx) => {
     const state = await loadLocked(tx, runId)
     if (!state || state.run.sessionKey !== sessionKey) throw runNotFound()
     const step = state.steps.get(nodeId)
@@ -185,6 +191,8 @@ export async function decide(deps: EngineDeps, sessionKey: string, runId: string
     work.log.add({ type: 'step.succeeded', nodeId, attempt: 0, output })
     await settle(work)
     await work.log.flush(tx)
+    return endOf(work)
   })
+  await recordRunEnd(deps, ended)
   await dispatchSafely(deps, runId)
 }
