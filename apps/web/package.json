@@ -6,33 +6,44 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "dev:mock": "node scripts/dev-with-mock.ts",
     "build": "nuxt build",
+    "build:e2e": "LB_TEST_BUILD=1 nuxt build",
     "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "check:build": "node scripts/check-production-build.ts"
   },
   "dependencies": {
+    "@lb/api-clients": "workspace:*",
+    "@lb/common": "workspace:*",
+    "@lb/contracts": "workspace:*",
     "@lb/icons": "workspace:*",
     "@lb/ui": "workspace:*",
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/nuxt": "^1.0.2",
+    "h3": "^1.15.11",
     "nuxt": "^4.5.2",
     "nuxt-security": "^2.6.0",
     "pinia": "^4.0.3",
-    "vue": "^3.5.43"
+    "vue": "^3.5.43",
+    "vue-i18n": "^11.4.12",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
+    "@testcontainers/redis": "^12.1.0",
     "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^20.14.5",
+    "ioredis": "^6.0.0",
     "vitest": "^5.0.2",
     "vue-tsc": "^3.3.11",
-    "zod": "^4.6.5"
+    "yaml": "^2.9.1"
   }
 }

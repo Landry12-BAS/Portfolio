@@ -16,6 +16,10 @@ dev:
 build:
     pnpm --filter @lb/web build
 
+# Run the site with hot reload against the mock back end on http://127.0.0.1:8120: every demo works with no back end, model or keys.
+dev-mock:
+    pnpm --filter @lb/web dev:mock
+
 # Run the AI gateway with reload on http://127.0.0.1:8080 (settings in services/gateway/.env).
 gateway:
     pnpm --filter @lb/gateway dev
@@ -150,9 +154,23 @@ audit:
     pnpm audit --audit-level high
     uv audit --preview-features audit-command
 
-# Build the site, then run the end-to-end, accessibility and security-header tests.
-e2e: build
+# The journeys run against a test build, which differs from the production build in one way: it accepts
+# a fixed stand-in for a Turnstile token and bundles the test recordings (`pnpm --filter @lb/web check:build`
+# proves the production build holds no trace of either). Both back ends are mocks.
+# Build the site for testing, then run the end-to-end, accessibility and security-header tests.
+e2e:
+    pnpm --filter @lb/web build:e2e
     pnpm --filter @lb/web e2e
+
+# Needs a live back end, the gateway and the site's keys (docs/DEPLOY.md, parts 6 and 10): set LB_API_URL,
+# LB_GATEWAY_URL, LB_WEB_SIGNING_KEY_FILE and LB_GATEWAY_SERVICE_KEY_FILE. Spends the sample's model calls once.
+# Run a curated sample against a live back end and save the recording the demo replays (apps/web/recordings).
+record-sample system sample:
+    pnpm --filter @lb/web record-sample {{system}} {{sample}}
+
+# Check that the production build holds no trace of the test build's Turnstile stand-in (run `just build` first).
+check-build:
+    pnpm --filter @lb/web check:build
 
 # Fail if any generated file is stale (the CI drift check).
 check:
