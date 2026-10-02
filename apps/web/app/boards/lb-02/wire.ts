@@ -25,6 +25,7 @@ export const CLOSE_CODES = {
   unsupported: 1003,
   tooBig: 1009,
   unavailable: 1011,
+  tryAgainLater: 1013,
   badFrame: 4400,
   unauthorized: 4401,
   notFound: 4404,
@@ -53,7 +54,7 @@ export const RECEIPTS = ['hold_placed', 'booking_confirmed', 'hold_expired', 'sl
 export const receiptSchema = z.enum(RECEIPTS)
 
 /** The codes of the events that say something can't be done (lb02/events.py, ErrorCode). */
-export const ERROR_CODES = ['invalid_frame', 'message_too_long', 'already_said_hello', 'conversation_gone', 'too_many_conversations', 'unavailable'] as const
+export const ERROR_CODES = ['invalid_frame', 'message_too_long', 'already_said_hello', 'conversation_gone', 'too_many_conversations', 'unavailable', 'turn_failed', 'too_many_pending', 'too_many_connections'] as const
 /** One code of an error event. */
 export const errorCodeSchema = z.enum(ERROR_CODES)
 
@@ -114,12 +115,18 @@ const stateShape = {
   booking: bookingSchema.nullable(),
 }
 
-/** The conversation is open: its ID, whether it resumed an earlier one, its whole transcript and where it stands. */
+/**
+ * The conversation is open: its ID, whether it resumed an earlier one, its whole transcript and where it stands.
+ * `pending` is true when the conversation was picked up while the concierge was still answering the last message,
+ * which an earlier connection sent: the answer follows as a `reply`, or as an `error` if the turn failed. A
+ * recording made before the field existed has none, and counts as not pending.
+ */
 export const readySchema = z.strictObject({
   type: z.literal('ready'),
   conversation: z.string().regex(CONVERSATION_ID),
   resumed: z.boolean(),
   transcript: z.array(lineSchema).max(200),
+  pending: z.boolean().default(false),
   ...stateShape,
 })
 

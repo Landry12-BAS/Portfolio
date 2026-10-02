@@ -311,10 +311,11 @@ export const useLb02Store = defineStore('lb02', () => {
 
   /**
    * Says what a picked-up conversation's last message needs, when it needs something. The drop that ended the
-   * earlier connection may have taken the concierge's answer with it, or the message itself.
+   * earlier connection may have taken the message itself, or the concierge's answer when the server lost the turn;
+   * an answer that is still on its way (`pending`) is not missing, and the server will send it.
    */
-  function noteLastMessage(last: LastMessage): void {
-    if (last.state === 'unanswered') notice.value = 'unanswered'
+  function noteLastMessage(last: LastMessage, pending: boolean): void {
+    if (last.state === 'unanswered' && !pending) notice.value = 'unanswered'
     if (last.state === 'lost') {
       notice.value = 'not_received'
       unsent.value = last.text
@@ -327,12 +328,14 @@ export const useLb02Store = defineStore('lb02', () => {
     conversationId.value = event.conversation
     state.value = stateOf(event)
     lines.value = linesFromTranscript(event.transcript, numbers)
-    working.value = false
+    // A turn that outlived the connection that sent its message is still being answered: wait for the answer.
+    working.value = event.pending
     notice.value = undefined
-    if (live && event.resumed && !event.closed) noteLastMessage(lastMessage(shown, lines.value))
+    if (live && event.resumed && !event.closed) noteLastMessage(lastMessage(shown, lines.value), event.pending)
     ending.value = undefined
     problem.value = undefined
     if (!live) return
+    if (event.pending) void followTrace()
     rememberConversation(event.conversation)
     remembered.value = undefined
     void loadCalendar(event.resumed ? 'reconnect' : 'open')
@@ -348,6 +351,8 @@ export const useLb02Store = defineStore('lb02', () => {
     state.value = stateOf(event)
     modelCalls.value = event.model_calls
     working.value = false
+    // An answer that arrives makes the notices about a missing one stale.
+    if (notice.value === 'interrupted' || notice.value === 'unanswered') notice.value = undefined
     if (!live) return
     restTraceSoon()
     if (event.closed || event.step === 'done' || event.step === 'handoff') void loadDetail()

@@ -327,7 +327,8 @@ class MockSite {
 
   /**
    * The controls of a test for LB-02, at `/__mock/lb02/<action>`: another visitor takes a slot, the clock
-   * moves on, the calendar is reset, the connections drop, the limits change. They take JSON, so a web page
+   * moves on, the calendar is reset, the connections drop, the turns being answered are lost (a restart), the
+   * limits change. They take JSON, so a web page
    * on another origin cannot send one without a preflight the mock never answers, and the mock listens on
    * the loopback address only; the site's proxy forwards nothing outside the documents' routes.
    */
@@ -363,6 +364,9 @@ class MockSite {
         return done
       case 'drop':
         lb02.hub.dropAll(typeof body.code === 'number' ? body.code : 1001)
+        return done
+      case 'lose-turns':
+        lb02.hub.loseTurns()
         return done
       case 'limits':
         lb02.hub.configure(body)

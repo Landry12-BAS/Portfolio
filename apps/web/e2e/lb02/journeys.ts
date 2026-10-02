@@ -134,6 +134,27 @@ export function journeys(): void {
       await expect(page.getByTestId('hold-timer')).toBeVisible()
     })
 
+    test('keeps waiting for the answer when the turn went on without the connection, and shows it when it comes', async ({ page }) => {
+      await openBoard(page)
+      await beginConversation(page)
+      await control(page, 'limits', { thinkMs: 4_000 })
+      await page.getByTestId('composer-field').fill('Hello there.')
+      await page.getByTestId('composer-field').press('Enter')
+      await expect(page.getByTestId('working')).toBeVisible()
+
+      await control(page, 'drop', { code: 1001 })
+      await expect(page.getByTestId('connection')).toHaveText('Connected')
+      await expect(page.getByTestId('working')).toBeVisible()
+      await expect(page.getByTestId('notice')).toHaveCount(0)
+      await expect(page.getByTestId('line-visitor')).toHaveCount(1)
+      await expect(page.getByTestId('line-concierge')).toHaveCount(0)
+
+      await expect(page.getByTestId('line-concierge')).toHaveCount(1, { timeout: 15_000 })
+      await expect(page.getByTestId('working')).toHaveCount(0)
+      await expect(page.getByTestId('notice')).toHaveCount(0)
+      await expect(page.getByTestId('messages-count')).toHaveText('29 of 30')
+    })
+
     test('says the last message has no answer when the drop took the answer, and sending it again is answered', async ({ page }) => {
       await openBoard(page)
       await beginConversation(page)
@@ -142,6 +163,7 @@ export function journeys(): void {
       await page.getByTestId('composer-field').press('Enter')
       await expect(page.getByTestId('working')).toBeVisible()
 
+      await control(page, 'lose-turns')
       await control(page, 'drop', { code: 1001 })
       await expect(page.getByTestId('connection')).toHaveText('Connected')
       await expect(page.getByTestId('notice')).toContainText('Your last message has no answer')
