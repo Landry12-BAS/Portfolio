@@ -18,6 +18,8 @@ const kit = {
   scope: {
     title: 'The Scope',
     idle: 'Start a run and its trace appears here, step by step.',
+    waiting: 'Waiting for the trace',
+    waitingText: 'The pipeline is working. Its trace appears here as soon as it is available.',
     following: 'Following the run',
     finished: 'The run is complete',
     recorded: 'Recorded trace of the replayed run',

@@ -10,6 +10,7 @@ import { useSessionStore } from '~/stores/session'
 
 import { FakeSite } from '../support/fake-site'
 import { recordLb01Sample } from '../support/recording'
+import { makeTicket } from '../support/tickets'
 
 const TICKET = { customer: 'cus-0001', language: 'en' as const, body: 'Hi, my order BB-1040 came with a ripped bag.' }
 
@@ -57,6 +58,52 @@ describe('LB-01\'s store: a live ticket', () => {
     expect(store.canDecide).toBe(true)
     expect(scope.phase).toBe('finished')
     expect(scope.timeline.rows[0]?.span.name).toBe('support ticket')
+  })
+
+  it('waits for the trace while the back end has not named the run, then reads all of it once it has (Django names a run only when its pipeline is done)', async () => {
+    const { site, store, scope } = await start({ verified: true })
+    await store.file(TICKET)
+    expect(store.ticket?.run_id).toBe('')
+    expect(scope.phase).toBe('waiting')
+
+    await poll(1)
+    expect(store.ticket?.status).toBe('processing')
+    expect(scope.phase).toBe('waiting')
+    expect(site.callsTo('/api/runs/')).toHaveLength(0)
+
+    await poll(2)
+    expect(store.ticket?.status).toBe('awaiting_approval')
+    expect(store.ticket?.run_id).not.toBe('')
+    expect(scope.runId).toBe(store.ticket?.run_id)
+    expect(scope.phase).toBe('finished')
+    expect(scope.timeline.rows[0]?.span.name).toBe('support ticket')
+  })
+
+  it('follows the trace from the start when the back end names the run in its answer to filing', async () => {
+    const { store, scope } = await start({ verified: true, runId: 'at-filing' })
+    const followed: string[] = []
+    scope.$onAction(({ name, args }) => {
+      if (name === 'follow') followed.push(String(args[0]))
+    })
+    await store.file(TICKET)
+    expect(store.ticket?.run_id).not.toBe('')
+    expect(scope.phase).toBe('following')
+    expect(scope.runId).toBe(store.ticket?.run_id)
+
+    await poll(3)
+    expect(scope.phase).toBe('finished')
+    // Reading the ticket again and again does not start the Scope over.
+    expect(followed).toEqual([store.ticket?.run_id])
+  })
+
+  it('says there is no trace for a ticket that failed before its run was named', async () => {
+    const { site, store, scope } = await start({ verified: true })
+    await store.file(TICKET)
+    site.failNext('GET /api/lb01/tickets/', { status: 200, body: { ...makeTicket({ stage: 'received' }), status: 'failed' } })
+    await poll(1)
+    expect(store.ticket?.status).toBe('failed')
+    expect(store.phase).toBe('done')
+    expect(scope.phase).toBe('missing')
   })
 
   it('stops reading the ticket once its pipeline has finished with it', async () => {

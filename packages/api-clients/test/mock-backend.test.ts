@@ -160,6 +160,18 @@ describe('LB-01', () => {
     expect(mock.violations).toEqual([])
   })
 
+  it('names the run only once the pipeline has finished, as Django does, and the Scope knows it then', async () => {
+    const filed = await file('torn-bag')
+    const id = filed.json.id as string
+
+    expect(filed.json.run_id).toBe('')
+    expect((await call('GET', `/api/lb01/tickets/${id}`)).json.run_id).toBe('')
+    const done = (await call('GET', `/api/lb01/tickets/${id}`)).json
+    expect(done.run_id).toMatch(/^run-[0-9a-f]{20}$/)
+    expect((await scope(done.run_id)).json.finished).toBe(true)
+    expect(mock.violations).toEqual([])
+  })
+
   it('writes a Czech ticket\'s sources in Czech', async () => {
     const id = (await file('stale-decaf')).json.id as string
     await call('GET', `/api/lb01/tickets/${id}`)
@@ -236,11 +248,40 @@ describe('LB-01', () => {
   })
 })
 
-describe('the Scope route', () => {
+// A run's trace can be asked for while the run goes only if the back end names the run when the ticket
+// is filed, so these tests use a mock that does (the default mock names it at the end, as Django does).
+describe('the Scope route, for a back end that names the run when the ticket is filed', () => {
+  let named: MockBackend
+  let usual: MockBackend
+
+  beforeAll(async () => {
+    usual = mock
+    named = await startMockBackend({
+      siteKey: site.publicKey.export({ format: 'jwk' }).x ?? '',
+      webKey: web.publicKey.export({ format: 'jwk' }).x ?? '',
+      now: () => clock,
+      runId: 'at-filing',
+    })
+    mock = named
+  })
+
+  afterAll(async () => {
+    mock = usual
+    await named.close()
+  })
+
   /** Files the torn-bag sample and returns its run's ID. */
   async function startedRun(): Promise<string> {
     return (await file('torn-bag')).json.run_id as string
   }
+
+  it('names the run in the answer to filing the ticket', async () => {
+    const filed = await file('torn-bag')
+
+    expect(filed.json.run_id).toMatch(/^run-[0-9a-f]{20}$/)
+    expect((await call('GET', `/api/lb01/tickets/${filed.json.id}`)).json.run_id).toBe(filed.json.run_id)
+    expect(mock.violations).toEqual([])
+  })
 
   it('knows no trace until the pipeline has written something, and then returns it, finished once the run ends', async () => {
     const id = (await file('torn-bag')).json

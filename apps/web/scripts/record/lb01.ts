@@ -30,6 +30,8 @@ export async function runLb01Sample(backend: Backend, sampleId: string): Promise
   const path = `/api/lb01/tickets/${first.id}`
   const startedAt = backend.clock.now()
   let status = first.status
+  // Django names the run only when the pipeline has finished, so the run's ID is whichever answer first has one.
+  let runId = first.run_id
   while (!FINISHED.has(status)) {
     if (status === 'failed') throw new Error('The pipeline failed on this ticket, so there is nothing worth recording. Look at the back end\'s logs and try again.')
     if (backend.clock.now() - startedAt > PIPELINE_PATIENCE_MS) throw new Error('The pipeline did not finish within three minutes.')
@@ -37,11 +39,13 @@ export async function runLb01Sample(backend: Backend, sampleId: string): Promise
     const answer = await backend.call('lb-01', 'GET', path)
     if (answer.status !== 200) throw new Error(`Reading the ticket answered status ${answer.status}.`)
     const ticket = ticketSchema.parse(answer.body)
+    if (ticket.run_id !== '') runId = ticket.run_id
     // Keep an answer only when it shows something new, so a replay has one step for each state of the ticket.
     if (ticket.status !== status) {
       exchanges.push({ request: { method: 'GET', path }, response: { status: answer.status, body: answer.body as Exchange['response']['body'] } })
       status = ticket.status
     }
   }
-  return { language: sample.language, exchanges, runId: first.run_id }
+  if (runId === '') throw new Error('The back end finished the ticket without naming its run, so there is no trace to record.')
+  return { language: sample.language, exchanges, runId }
 }

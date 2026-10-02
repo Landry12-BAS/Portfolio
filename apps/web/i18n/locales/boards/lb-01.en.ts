@@ -38,6 +38,7 @@ const lb01 = {
   pipeline: {
     title: 'Pipeline',
     label: 'Steps of the ticket pipeline',
+    unobserved: 'The steps are marked as soon as the run\'s trace is available.',
     states: {
       done: 'done',
       running: 'running',

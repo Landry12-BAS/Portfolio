@@ -37,6 +37,7 @@ const lb01 = {
   pipeline: {
     title: 'Pipeline',
     label: 'Kroky pipeline požadavku',
+    unobserved: 'Kroky se označí, jakmile bude k dispozici záznam běhu.',
     states: {
       done: 'hotovo',
       running: 'běží',

@@ -101,6 +101,16 @@ the limits table and the trace table.
 Live runs **poll** (the ticket and the trace, about once a second); nothing is streamed. A trace is
 404 for the first moments of a run, so the Scope reads for a grace period before it says there is none.
 
+**When does the back end name the run?** The Scope can only read a trace by its run ID, and a board
+learns the ID from the system's own API. LB-01's Django saves a ticket's run ID with the pipeline's
+outcome (`lb01/pipeline.py`, `save_result`), so the API says `run_id: ""` until the pipeline has
+finished, and the Scope can show the whole trace only then: until it, it says it is waiting
+(`scope.wait()`), and the board must not call a step running or done. A back end that names the run
+when it starts lets the Scope fill in step by step; LB-01's store follows the run as soon as any
+answer carries an ID (`followRun`), so it works with both. The mock back end plays Django as it is
+(`runId: 'when-finished'`) and can play the other (`'at-filing'`). Check what your system's API does
+before you design its live view.
+
 ## Adding a board
 
 Take LB-01's folder as the template. For a system `LB-0N`:
@@ -126,8 +136,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    check; Czech is typeset with `vlna` once, for the whole language, in `cs.ts`.
 5. **Calls.** Through `apiClients()` and `callApi(request, schema)`, never a bare `fetch`; the site's
    own routes through `getJson` and `postJson`. Before a run that spends quota, `await
-   session.ensureVerified()`. Follow a live run with `scope.follow(runId, { notFoundGraceMs })` and tell
-   the Scope the run is over with `scope.settle()`.
+   session.ensureVerified()`. Follow a live run with `scope.follow(runId, { notFoundGraceMs })` as soon
+   as an answer names the run (`scope.wait()` until then) and tell the Scope the run is over with
+   `scope.settle()`. Never take the run ID from the answer to filing alone: see the paragraph above.
 6. **Samples.** If the system has curated samples from a golden set, extend `scripts/samples.ts` to
    generate them (`pnpm check` fails when the file is stale) and type the locale titles by the sample's
    ID, as LB-01's are.

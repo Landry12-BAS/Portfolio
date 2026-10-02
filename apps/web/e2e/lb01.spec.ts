@@ -99,6 +99,9 @@ test.describe('a live ticket from the visitor\'s own text', () => {
     await openBoard(page)
     await fileOwnTicket(page, 'My order BB-1040 arrived with a torn bag and I want a refund.')
 
+    // Django names a run only when its pipeline has finished, so until then there is no trace to follow.
+    await expect(page.getByTestId('scope')).toContainText('Waiting for the trace')
+    await expect(page.getByTestId('steps-pending')).toContainText('marked as soon as the run\'s trace is available')
     await expect(page.getByTestId('quota')).toContainText('19 of 20')
     await expect(page.getByTestId('ticket-status')).toHaveText('Waiting for approval', { timeout: 20_000 })
     await expect(page.getByTestId('board-state')).toHaveText('Live')

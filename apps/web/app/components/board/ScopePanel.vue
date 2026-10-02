@@ -2,7 +2,8 @@
 // <BoardScopePanel>: the Scope, the trace of the run on the board. It lists every step, tool call
 // and model call with where it sits in the run, its model and tokens and how long it took, as a
 // table a screen reader can read row by row (the bars are decoration; the numbers are the data),
-// and it fills in as the run goes on. Only metadata is ever here: names, timings, models, counts.
+// and it fills in as the run goes on, or at its end where the back end names a run only then. Only
+// metadata is ever here: names, timings, models, counts.
 import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
@@ -77,7 +78,7 @@ function tokens(row: TimelineRow): string {
       >
         <template v-if="stateKey">
           <LbIcon
-            :name="phase === 'following' ? 'trace' : phase === 'finished' ? 'success' : 'warning'"
+            :name="phase === 'following' || phase === 'waiting' ? 'trace' : phase === 'finished' ? 'success' : 'warning'"
             :size="16"
             tone="mono"
           />
@@ -91,6 +92,13 @@ function tokens(row: TimelineRow): string {
       class="empty"
     >
       {{ t('board.scope.idle') }}
+    </p>
+
+    <p
+      v-else-if="phase === 'waiting'"
+      class="empty"
+    >
+      {{ t('board.scope.waitingText') }}
     </p>
 
     <dl

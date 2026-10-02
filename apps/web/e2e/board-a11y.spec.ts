@@ -1,15 +1,16 @@
 // End-to-end accessibility checks of the evaluation board and the trace page: axe finds no WCAG 2.2
 // AA violation in any state a visitor can reach (nothing run yet, a replay finished, a live run
-// finished with its draft and an open editor, a trace page, a notice), in both languages and both
-// themes. Every test also fails on a CSP violation or a console error (e2e/fixtures.ts).
+// waiting for its trace, a live run finished with its draft and an open editor, a trace page, a
+// notice), in both languages and both themes. Every test also fails on a CSP violation or a console
+// error (e2e/fixtures.ts).
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 
 import { expect, test } from './fixtures'
 
 const languages = [
-  { code: 'en', prefix: '', counted: '20 of 20', ownTicket: 'Your own ticket', body: 'What the customer writes', sample: /Torn bag/, waiting: 'Waiting for approval', edit: 'Edit' },
-  { code: 'cs', prefix: '/cs', counted: '20 z 20', ownTicket: 'Vlastní požadavek', body: 'Co zákazník píše', sample: /Roztržený sáček/, waiting: 'Čeká na schválení', edit: 'Upravit' },
+  { code: 'en', prefix: '', counted: '20 of 20', ownTicket: 'Your own ticket', body: 'What the customer writes', sample: /Torn bag/, waiting: 'Waiting for approval', edit: 'Edit', scopeWaiting: 'Waiting for the trace' },
+  { code: 'cs', prefix: '/cs', counted: '20 z 20', ownTicket: 'Vlastní požadavek', body: 'Co zákazník píše', sample: /Roztržený sáček/, waiting: 'Čeká na schválení', edit: 'Upravit', scopeWaiting: 'Čekám na záznam' },
 ] as const
 
 // The class the theme script puts on <html>, matched as a whole word.
@@ -59,6 +60,21 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await expect(page.locator('[data-testid="draft-sentence"][data-supported="false"]')).toHaveCount(1)
         await page.getByRole('button', { name: language.edit }).click()
         await expect(page.locator('#lb01-edit')).toBeVisible()
+        await expectNoViolations(page)
+      })
+
+      test('meets WCAG 2.2 AA while a live run waits for its trace', async ({ page }) => {
+        // Hold back the answers about the ticket, so the run stays in the state under test long enough to scan.
+        await page.route('**/api/lb01/tickets/*', async (route) => {
+          if (route.request().method() !== 'GET') return route.continue()
+          await new Promise(resolve => setTimeout(resolve, 4_000))
+          return route.continue().catch(() => undefined)
+        })
+        await page.getByRole('button', { name: language.ownTicket }).click()
+        await page.getByLabel(language.body).fill('My order BB-1040 arrived with a torn bag.')
+        await page.getByTestId('file-ticket').click()
+        await expect(page.getByTestId('steps-pending')).toBeVisible()
+        await expect(page.getByTestId('scope')).toContainText(language.scopeWaiting)
         await expectNoViolations(page)
       })
 

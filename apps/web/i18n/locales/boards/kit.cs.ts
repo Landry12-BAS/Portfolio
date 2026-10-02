@@ -18,6 +18,8 @@ const kit = {
   scope: {
     title: 'Scope',
     idle: 'Spusťte běh a jeho záznam se tu bude plnit krok za krokem.',
+    waiting: 'Čekám na záznam',
+    waitingText: 'Pipeline pracuje. Její záznam se tu objeví, jakmile bude k dispozici.',
     following: 'Sleduji běh',
     finished: 'Běh je dokončen',
     recorded: 'Zaznamenaný průběh přehrávaného běhu',

@@ -21,7 +21,9 @@ let site: TestSite
 const TICKET = { customer: 'cus-0001', language: 'en', body: 'Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?' }
 
 beforeAll(async () => {
-  mock = await startMockBackend({ siteKey: keys.sitePublic, webKey: keys.webPublic, now: () => clock.now })
+  // These tests ask for a run's trace while the run goes, which needs the run's ID from the start, so the
+  // mock names it when the ticket is filed (Django names it at the end; the board's tests cover that).
+  mock = await startMockBackend({ siteKey: keys.sitePublic, webKey: keys.webPublic, now: () => clock.now, runId: 'at-filing' })
   site = await startTestSite({ keys, backendUrl: mock.url, clock })
 })
 

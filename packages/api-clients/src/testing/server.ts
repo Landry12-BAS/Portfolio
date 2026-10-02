@@ -20,7 +20,7 @@ import type { Visitor, VisitorVerifier } from '@lb/common/visitors'
 import { MOCK_IDENTITY_PATH } from '../mock-identity.ts'
 import { MockGateway } from './gateway.ts'
 import { Lb01Mock, errorAnswer } from './lb01.ts'
-import type { Answer } from './lb01.ts'
+import type { Answer, RunIdDisclosure } from './lb01.ts'
 import { OpenApiDocuments } from './openapi.ts'
 import type { MockOperation } from './openapi.ts'
 import { readSeed } from './seed.ts'
@@ -41,6 +41,8 @@ export interface MockBackendOptions {
   port?: number
   // How many times a ticket is polled before its pipeline has finished.
   pollsToFinish?: number
+  // When the API names a ticket's run: `when-finished`, as Django does today, or `at-filing`.
+  runId?: RunIdDisclosure
   // Whether answers carry the headers a real framework adds (a server banner, a cookie, a
   // permissive CORS header), so tests can see the site's server drop them. On by default.
   leakyHeaders?: boolean
@@ -141,7 +143,7 @@ class MockSite {
   constructor(options: MockBackendOptions) {
     this.#options = options
     this.#now = options.now ?? Date.now
-    this.lb01 = new Lb01Mock(readSeed(), this.#now, options.pollsToFinish)
+    this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId))
   }
 

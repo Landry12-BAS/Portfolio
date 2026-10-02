@@ -69,11 +69,16 @@ const unavailable = computed(() => session.loading === 'ready' && !session.avail
 const disconnected = computed(() => session.loading === 'failed')
 const replaying = computed(() => runMode.value === 'replay' && replay.recording !== undefined)
 
+// The steps are read from the trace, so none can be called running, done or skipped before a span of
+// the run has been seen, and a step with no span is called skipped only once the whole trace is in.
+const unobserved = computed(() => scope.spans.length === 0)
 const steps = computed(() => {
-  const idle = phase.value === 'idle'
-  const marked = pipelineSteps(english?.chain ?? [], scope.spans, runOver.value)
-  return marked.map((step, index) => ({ label: system.value?.chain[index] ?? step.name, state: idle ? ('waiting' as const) : step.state }))
+  const blind = phase.value === 'idle' || unobserved.value
+  const marked = pipelineSteps(english?.chain ?? [], scope.spans, scope.phase === 'finished')
+  return marked.map((step, index) => ({ label: system.value?.chain[index] ?? step.name, state: blind ? ('waiting' as const) : step.state }))
 })
+// A live run is going and its trace has not arrived: say why the steps are not marked yet.
+const stepsPending = computed(() => runMode.value === 'live' && unobserved.value && (scope.phase === 'waiting' || scope.phase === 'following'))
 
 // The permalink exists for a live run only: a replay's run expired long ago.
 const permalink = computed(() => (runMode.value === 'live' && scope.runId ? props.permalinkFor(scope.runId) : undefined))
@@ -231,6 +236,13 @@ onBeforeUnmount(() => {
       <h2 class="lb-label">
         {{ t('lb01.pipeline.title') }}
       </h2>
+      <p
+        v-if="stepsPending"
+        class="pending"
+        data-testid="steps-pending"
+      >
+        {{ t('lb01.pipeline.unobserved') }}
+      </p>
       <PipelineSteps :steps="steps" />
     </section>
 
@@ -280,5 +292,10 @@ onBeforeUnmount(() => {
 .pipeline {
   display: grid;
   gap: 8px;
+}
+
+.pending {
+  font-size: 13px;
+  color: var(--lb-graphite);
 }
 </style>

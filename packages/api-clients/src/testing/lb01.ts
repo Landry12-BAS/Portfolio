@@ -15,6 +15,25 @@ export const TICKETS_PER_DAY = 20
 // A ticket is kept this long, as the real one is.
 const LIFETIME_MS = 24 * 60 * 60 * 1000
 
+/**
+ * When the API tells a visitor which run a ticket is. Django's pipeline gives a ticket its run ID
+ * when the run starts but saves it with the outcome (services/django-systems/lb01/pipeline.py), so
+ * the real API answers `run_id: ""` until the pipeline has finished, and a site cannot follow the
+ * run's trace while it is going. `when-finished` plays that, and is the default because a test
+ * double is only useful if it behaves like what it stands in for. `at-filing` plays the back end
+ * the site is built to be ready for, which names the run in the answer to filing the ticket.
+ */
+export type RunIdDisclosure = 'when-finished' | 'at-filing'
+
+/** What a test may choose about the mock's LB-01. */
+export interface Lb01MockOptions {
+  // How many times the site must ask for a ticket before the pipeline has finished with it: 2 by
+  // default, one for "received" and one for "processing"; 0 makes a ticket ready as it is filed.
+  pollsToFinish?: number
+  // When the API names a ticket's run (`when-finished` by default).
+  runId?: RunIdDisclosure
+}
+
 /** How the mock's pipeline ended a ticket. */
 interface Outcome {
   route: 'awaiting_approval' | 'escalated'
@@ -82,17 +101,15 @@ export class Lb01Mock {
   readonly #seed: Seed
   readonly #now: () => number
   readonly #pollsToFinish: number
+  readonly #runId: RunIdDisclosure
   readonly #tickets = new Map<string, Ticket>()
 
-  /**
-   * Starts with no tickets. `pollsToFinish` is how many times the site must ask for a ticket
-   * before the pipeline has finished with it: 2 by default, one for "received" and one for
-   * "processing"; 0 makes a ticket ready as it is filed.
-   */
-  constructor(seed: Seed, now: () => number, pollsToFinish = 2) {
+  /** Starts with no tickets. */
+  constructor(seed: Seed, now: () => number, options: Lb01MockOptions = {}) {
     this.#seed = seed
     this.#now = now
-    this.#pollsToFinish = pollsToFinish
+    this.#pollsToFinish = options.pollsToFinish ?? 2
+    this.#runId = options.runId ?? 'when-finished'
   }
 
   /** Forgets every ticket. */
@@ -287,7 +304,7 @@ export class Lb01Mock {
       body: ticket.body,
       order_number: finished ? ticket.outcome.order : '',
       escalation_reason: finished ? ticket.outcome.reason : '',
-      run_id: ticket.runId,
+      run_id: finished || this.#runId === 'at-filing' ? ticket.runId : '',
       expires_at: new Date(ticket.createdAt + LIFETIME_MS).toISOString(),
       draft: hasDraft ? { sentences, claims_supported: sentences.every(sentence => sentence.supported), model: 'mock/draft-model', sources: this.#sources(ticket) } : null,
       decision: ticket.decision ?? null,

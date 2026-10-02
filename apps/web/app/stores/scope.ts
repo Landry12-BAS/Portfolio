@@ -13,11 +13,12 @@ import { isApiProblem } from '~/board-kit/problem'
 import { buildTimeline } from '~/board-kit/timeline'
 
 /**
- * Where the Scope's reading stands: nothing to show, following a run, finished (the run's root span
+ * Where the Scope's reading stands: nothing to show, waiting (a run is going but the back end has
+ * not named it yet, so there is nothing to read), following a run, finished (the run's root span
  * arrived), stalled (the trace stopped arriving), missing (no trace exists for the run, or it has
  * expired) or failed (the site could not be reached).
  */
-export type ScopePhase = 'idle' | 'following' | 'finished' | 'stalled' | 'missing' | 'failed'
+export type ScopePhase = 'idle' | 'waiting' | 'following' | 'finished' | 'stalled' | 'missing' | 'failed'
 
 /** How the Scope follows one run. */
 export interface FollowOptions {
@@ -123,8 +124,24 @@ export const useScopeStore = defineStore('scope', () => {
     readAgainIn(FIRST_READ_DELAY_MS, reading, () => read(undefined, 0, 0))
   }
 
-  /** Tells the Scope the run is over, so it stops waiting for the root span after a few more seconds. */
+  /**
+   * Says that a run is going but cannot be read yet, because the back end has not named it. Some back
+   * ends name a run only when it has finished, so the Scope waits for the name instead of guessing.
+   */
+  function wait(): void {
+    clear()
+    phase.value = 'waiting'
+  }
+
+  /**
+   * Tells the Scope the run is over, so it stops waiting for the root span after a few more seconds.
+   * A Scope still waiting for the run's name will not get one, and says the run has no trace.
+   */
   function settle(): void {
+    if (phase.value === 'waiting') {
+      phase.value = 'missing'
+      return
+    }
     deadline = Math.min(deadline, Date.now() + SETTLE_AFTER_MS)
   }
 
@@ -137,5 +154,5 @@ export const useScopeStore = defineStore('scope', () => {
     phase.value = finished ? 'finished' : 'following'
   }
 
-  return { runId, spans, phase, replayed, timeline, follow, settle, showRecorded, stop, clear }
+  return { runId, spans, phase, replayed, timeline, follow, wait, settle, showRecorded, stop, clear }
 })

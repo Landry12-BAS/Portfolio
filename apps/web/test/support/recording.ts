@@ -20,16 +20,19 @@ export interface RecordingOptions {
 /** Records one LB-01 sample: the ticket filed, read twice as the pipeline moves on, and the run's spans. */
 export function recordLb01Sample(options: RecordingOptions = {}): Recording {
   const sample = LB01_SAMPLES.find(candidate => candidate.id === (options.sample ?? LB01_SAMPLES[0].id)) ?? LB01_SAMPLES[0]
-  const mock = new Lb01Mock(readSeed(), () => NOW, 2)
+  const mock = new Lb01Mock(readSeed(), () => NOW)
   const request = { customer: sample.customer, language: sample.language, body: sample.body }
   const filed = mock.file('recording', request)
-  const ticket = filed.body as { id: string, run_id: string }
+  const ticket = filed.body as { id: string }
   const exchanges: Exchange[] = [{ request: { method: 'POST', path: '/api/lb01/tickets', body: request }, response: { status: filed.status, body: filed.body as never } }]
+  // Like the real API, the mock names the run only once the pipeline has finished, so the run's ID is the last answer's.
+  let runId = ''
   for (let reads = 0; reads < 2; reads += 1) {
     const answer = mock.get('recording', ticket.id)
+    runId = (answer.body as { run_id: string }).run_id
     exchanges.push({ request: { method: 'GET', path: `/api/lb01/tickets/${ticket.id}` }, response: { status: answer.status, body: answer.body as never } })
   }
-  const spans = (mock.spansOf(ticket.run_id) ?? []) as Span[]
+  const spans = (mock.spansOf(runId) ?? []) as Span[]
   const summary = summariseTrace(spans)
   return recordingSchema.parse({
     v: 1,
@@ -39,7 +42,7 @@ export function recordLb01Sample(options: RecordingOptions = {}): Recording {
     recordedAt: new Date(NOW).toISOString(),
     language: sample.language,
     exchanges,
-    trace: { runId: ticket.run_id, spans },
+    trace: { runId, spans },
     stats: { modelCalls: summary.modelCalls, steps: summary.steps, durationMs: summary.durationMs },
   })
 }

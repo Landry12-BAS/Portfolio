@@ -10,9 +10,13 @@ import { useScopeStore } from '~/stores/scope'
 import { FakeSite } from '../support/fake-site'
 import { recordLb01Sample } from '../support/recording'
 
-/** Starts a fake site with a ticket already filed, and a fresh store reading through it. */
+/**
+ * Starts a fake site with a ticket already filed, and a fresh store reading through it. The site
+ * names the run when the ticket is filed, since these tests follow a run from its start; the
+ * board's tests cover a back end that names it only at the end.
+ */
 function start(options: ConstructorParameters<typeof FakeSite>[0] = {}) {
-  const site = new FakeSite({ verified: true, ...options })
+  const site = new FakeSite({ verified: true, runId: 'at-filing', ...options })
   vi.stubGlobal('fetch', site.fetch)
   setActivePinia(createPinia())
   const filed = site.mock.file('fake-session', { customer: 'cus-0001', language: 'en', body: 'Order BB-1040 arrived with a torn bag.' })
@@ -137,6 +141,33 @@ describe('the Scope store', () => {
     expect(scope.phase).toBe('finished')
     await vi.advanceTimersByTimeAsync(5_000)
     expect(site.callsTo('/api/runs/')).toHaveLength(0)
+  })
+
+  it('waits for a run the back end has not named, without reading anything', async () => {
+    const { scope, site } = start()
+    scope.wait()
+    expect(scope).toMatchObject({ phase: 'waiting', runId: undefined })
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(scope.phase).toBe('waiting')
+    expect(site.callsTo('/api/runs/')).toHaveLength(0)
+  })
+
+  it('says a run that is over without ever being named has no trace', () => {
+    const { scope } = start()
+    scope.wait()
+    scope.settle()
+    expect(scope.phase).toBe('missing')
+  })
+
+  it('follows the run once it is named, and leaves a waiting Scope\'s state behind', async () => {
+    const { site, scope, ticket } = start()
+    scope.wait()
+    advance(site, ticket.id)
+    advance(site, ticket.id)
+    scope.follow(ticket.run_id, { notFoundGraceMs: 10_000 })
+    expect(scope.phase).toBe('following')
+    await vi.advanceTimersByTimeAsync(3_000)
+    expect(scope.phase).toBe('finished')
   })
 
   it('empties itself for the next run', () => {

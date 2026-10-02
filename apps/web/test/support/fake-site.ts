@@ -4,7 +4,7 @@
 // replacement, so a test installs it with `vi.stubGlobal('fetch', site.fetch)`, and it keeps a log
 // of every call so a test can say what the board did and did not ask for.
 import { Lb01Mock, readSeed } from '@lb/api-clients/testing'
-import type { Answer, MockSpan } from '@lb/api-clients/testing'
+import type { Answer, MockSpan, RunIdDisclosure } from '@lb/api-clients/testing'
 import type { Recording } from '@lb/contracts'
 
 import { TEST_TURNSTILE_STAND_IN } from '#shared/turnstile-stand-in'
@@ -21,6 +21,9 @@ export interface FakeSiteOptions {
   recordings?: Recording[]
   // How many times a ticket is read before the mock's pipeline has finished with it.
   pollsToFinish?: number
+  // When the API names a ticket's run: once the pipeline has finished (the default, as Django does
+  // today) or in the answer to filing it.
+  runId?: RunIdDisclosure
 }
 
 /** One call the browser made. */
@@ -63,7 +66,7 @@ export class FakeSite {
   /** Starts a fake site with an empty mock back end. */
   constructor(options: FakeSiteOptions = {}) {
     this.#options = options
-    this.mock = new Lb01Mock(readSeed(), () => NOW, options.pollsToFinish ?? 2)
+    this.mock = new Lb01Mock(readSeed(), () => NOW, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.verified = options.verified ?? false
     this.available = options.available ?? true
   }

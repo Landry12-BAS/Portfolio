@@ -72,6 +72,26 @@ describe('recording a sample against the mock', () => {
     expect(recordingSchema.safeParse(recording).success).toBe(true)
   })
 
+  it('takes the run from the answer that names it: Django names a run only when its pipeline has finished', async () => {
+    const recording = await recordSample(new Backend(targetFor(mock.url)), 'lb-01', 'torn-bag')
+
+    const runIds = recording.exchanges.map(exchange => (exchange.response.body as { run_id: string }).run_id)
+    expect(runIds).toEqual(['', '', recording.trace.runId])
+    expect(recording.trace.runId).toMatch(/^run-[0-9a-f]{20}$/)
+    expect(recording.trace.spans.every(span => span.runId === recording.trace.runId)).toBe(true)
+  })
+
+  it('refuses to record a run the back end finished without ever naming, since it has no trace', async () => {
+    const nameless: typeof fetch = async (input, init) => {
+      const response = await fetch(input, init)
+      const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url)
+      if (init?.method !== 'GET' || !/^\/api\/lb01\/tickets\/tk/.test(url.pathname)) return response
+      return Response.json({ ...(await response.json() as object), run_id: '' })
+    }
+
+    await expect(recordSample(new Backend(targetFor(mock.url, { fetch: nameless })), 'lb-01', 'torn-bag')).rejects.toThrow('finished the ticket without naming its run')
+  })
+
   it('labels a recording made on the mock as the mock\'s, whatever else is true', async () => {
     const recording = await recordSample(new Backend(targetFor(mock.url)), 'lb-01', 'torn-bag')
 

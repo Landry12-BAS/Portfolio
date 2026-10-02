@@ -59,7 +59,9 @@ export const ticketSchema = z.object({
   body: z.string().max(2_100),
   order_number: z.string().max(40),
   escalation_reason: z.string().max(40),
-  run_id: z.string().regex(/^[\w-]{8,64}$/),
+  // Empty until the back end names the run: Django saves the run's ID with the pipeline's outcome,
+  // so a ticket that is still being worked on has none (services/django-systems/lb01/pipeline.py).
+  run_id: z.union([z.literal(''), z.string().regex(/^[\w-]{8,64}$/)]),
   expires_at: z.string().max(40),
   draft: draftSchema.nullable(),
   decision: decisionSchema.nullable(),

@@ -1,0 +1,164 @@
+{
+  "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+  "spans": [
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "5bd61d670c83f2ea",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "redact PII",
+      "status": "ok",
+      "startMs": 1790910110835,
+      "endMs": 1790910110835,
+      "attrs": {}
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "fe2bf202e078c275",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "screen for injection",
+      "status": "ok",
+      "startMs": 1790910110839,
+      "endMs": 1790910111240,
+      "attrs": {
+        "flagged": false,
+        "score": 0.01
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "6c03e9a35df8ac6b",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "classify",
+      "status": "ok",
+      "startMs": 1790910111241,
+      "endMs": 1790910111643,
+      "attrs": {
+        "category": "damaged",
+        "senior_agent": "none",
+        "attempts": 1
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "b117d9028ff85211",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "hybrid search",
+      "status": "ok",
+      "startMs": 1790910111643,
+      "endMs": 1790910112051,
+      "attrs": {
+        "candidates": 8,
+        "used_vectors": false
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "6ac9a00702cd3533",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "rerank",
+      "status": "ok",
+      "startMs": 1790910112051,
+      "endMs": 1790910112454,
+      "attrs": {
+        "reranked": true,
+        "top_relevance": 1
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "fadda6520b4d183a",
+      "parentId": "8721008330122331",
+      "kind": "system.tool",
+      "name": "look up order",
+      "status": "ok",
+      "startMs": 1790910112456,
+      "endMs": 1790910112460,
+      "attrs": {
+        "found": true
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "93d3fed1d11072c7",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "draft with citations",
+      "status": "ok",
+      "startMs": 1790910112464,
+      "endMs": 1790910112865,
+      "attrs": {
+        "answerable": true,
+        "sentences": 5,
+        "attempts": 1
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "873fd575620762f3",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "check claims",
+      "status": "ok",
+      "startMs": 1790910112865,
+      "endMs": 1790910112866,
+      "attrs": {
+        "supported": false,
+        "unsupported": 1
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "696d7ba0a5d34fe4",
+      "parentId": "8721008330122331",
+      "kind": "system.step",
+      "name": "route",
+      "status": "ok",
+      "startMs": 1790910112866,
+      "endMs": 1790910112866,
+      "attrs": {
+        "status": "awaiting_approval"
+      }
+    },
+    {
+      "v": 1,
+      "runId": "KIZrxjoKdlmBGWdl5Yc5Dw",
+      "system": "lb-01",
+      "spanId": "8721008330122331",
+      "kind": "system.run",
+      "name": "support ticket",
+      "status": "ok",
+      "startMs": 1790910110835,
+      "endMs": 1790910112866,
+      "attrs": {
+        "language": "en",
+        "status": "awaiting_approval"
+      }
+    }
+  ],
+  "cursor": "1790910112866-2",
+  "more": false,
+  "finished": true
+}

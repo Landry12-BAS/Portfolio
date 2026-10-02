@@ -20,7 +20,7 @@ export interface TicketOptions {
 
 /** Makes a ticket as the API would show it at a stage of its pipeline. */
 export function makeTicket(options: TicketOptions = {}): Ticket {
-  const mock = new Lb01Mock(readSeed(), () => NOW, 2)
+  const mock = new Lb01Mock(readSeed(), () => NOW)
   const filed = mock.file('tickets', {
     customer: options.customer ?? 'cus-0001',
     language: options.language ?? 'en',

@@ -3,7 +3,9 @@
 // their day. The board calls the site's API (`/api/lb01/...`) through the typed client and reads
 // the ticket by polling it once a second until the pipeline has finished with it: the pipeline
 // takes a few seconds to tens of seconds, and polling needs no connection to keep open, which
-// the site's serverless host could not do anyway. Every answer is checked with its schema.
+// the site's serverless host could not do anyway. Every answer is checked with its schema. The
+// run's trace is read once the ticket names its run, which Django does only when the pipeline has
+// finished; until then the Scope says it is waiting (followRun).
 import type { Exchange, Recording } from '@lb/contracts'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
@@ -148,6 +150,20 @@ export const useLb01Store = defineStore('lb01', () => {
     scope.settle()
   }
 
+  /**
+   * Starts reading the run's trace as soon as the ticket names the run. A back end may name it in
+   * the answer to filing, and the Scope then fills in step by step; Django names it only when the
+   * pipeline has finished, and the Scope then shows the whole trace at the end. Until the run has a
+   * name the Scope says it is waiting. A run that is already being followed is left alone.
+   */
+  function followRun(current: Ticket): void {
+    if (current.run_id === '') {
+      if (scope.phase === 'idle') scope.wait()
+      return
+    }
+    if (scope.runId !== current.run_id) scope.follow(current.run_id, { notFoundGraceMs: SCOPE_GRACE_MS })
+  }
+
   /** Reads the ticket until its pipeline has finished with it, once a second. */
   async function poll(id: string, reading: number, startedAt: number, failures: number): Promise<void> {
     let failed = failures
@@ -155,6 +171,7 @@ export const useLb01Store = defineStore('lb01', () => {
       const next = await callApi(apiClients().django.GET('/api/lb01/tickets/{ticket_id}', { params: { path: { ticket_id: id } } }), ticketSchema)
       if (reading !== generation) return
       ticket.value = next
+      followRun(next)
       failed = 0
       if (isFinished(next)) {
         finish()
@@ -180,7 +197,7 @@ export const useLb01Store = defineStore('lb01', () => {
   function begin(filed: Ticket): void {
     ticket.value = filed
     phase.value = 'running'
-    scope.follow(filed.run_id, { notFoundGraceMs: SCOPE_GRACE_MS })
+    followRun(filed)
     if (quota.value) quota.value = { ...quota.value, used: quota.value.used + 1, remaining: Math.max(quota.value.remaining - 1, 0) }
     const reading = generation
     timer = setTimeout(() => void poll(filed.id, reading, Date.now(), 0), TICKET_POLL_MS)
