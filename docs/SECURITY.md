@@ -107,6 +107,24 @@ how a Vercel preview runs.
   looked up by a name that must match `[a-z0-9-]{1,60}`. Only a recording whose `origin` is
   `live` is served; one made on the test mock is refused, except by the end-to-end build, which
   needs it to drive the replay player.
+- **LB-02's board: the WebSocket and the installable app.** A Vercel function cannot hold a
+  WebSocket, so the conversation connects from the visitor's browser straight to the API.
+  `POST /api/tokens/lb-02` gives the page a five-minute grant and the socket's address, taken
+  from the same setting (`NUXT_LB_API_URL`) the proxy uses; the token goes in the connection's
+  first frame, never in an address, and the page refuses an address that is not `ws:` or
+  `wss:` or that carries credentials. Only LB-02's two board pages (English and Czech) get a
+  longer Content Security Policy, and each addition is the smallest that works: `connect-src`
+  gains the API's `ws(s)://host` (no wildcard), `trusted-types` gains `lb-service-worker`, the
+  one policy that makes the service worker's address and hands out no other (there is never a
+  `default` policy), and `worker-src 'self'`. The additions are made when the server starts
+  (`apps/web/server/lib/lb02-csp.ts`) and are tested against the headers a browser gets
+  (`apps/web/e2e/security.spec.ts`). The service worker (`apps/web/public/lb02-sw.js`) keeps the
+  board's two pages (no query) and the content-named static files of the build, the app's icon
+  and its manifests, so the app opens without a connection, and nothing else: it looks only at
+  same-origin GET requests answered 200, refuses `/api/` by name, never keeps a token, a
+  conversation, the calendar or a recording, and a WebSocket does not pass through a service
+  worker at all. The page is fetched from the network first, so a visitor who is online always
+  gets the current page. A test fails if the worker ever stores an API or WebSocket address.
 
 ### Threat model of the proxy
 
@@ -154,7 +172,9 @@ how a Vercel preview runs.
   even if markup slips through. `nuxt-security` sets the headers and nonces. The only
   Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
   markup; the evaluation boards' pages alone add `lb-turnstile` (see "What the site's
-  server does") and Cloudflare's frame, and nothing else changes. Zod is told not to build
+  server does") and Cloudflare's frame, and LB-02's two board pages add `lb-service-worker`,
+  `worker-src 'self'` and the API's WebSocket origin to `connect-src` (same section), and
+  nothing else changes. Zod is told not to build
   its parsers with `new Function` (`apps/web/app/plugins/00.zod-jitless.ts`): the policy
   would report each probe as a violation.
 - **Headers:** `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy: same-origin`,
