@@ -257,3 +257,8 @@ secrets-test:
 # Print a random hex token (24 bytes by default), for a password or key you edit in by hand.
 secret-token *bytes:
     infra/scripts/secrets.sh token {{bytes}}
+
+# Speak LB-09's scripted meetings (data/seed/lb09) with Flite, an offline text-to-speech, into data/seed/lb09/audio
+# with a manifest of each turn's timing; `--check` only checks the committed audio against its manifest (CI runs it).
+tts-lb09 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py synth_lb09 {{args}}

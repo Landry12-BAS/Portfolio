@@ -231,6 +231,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just secrets-rekey` | After removing a key from `.sops.yaml`, lock every file to the keys that are left, with a new data key |
 | `just secrets-test` | Test the secrets tooling with the real `sops` and `age`, in a throwaway copy with throwaway keys |
 | `just secret-token [bytes]` | Print a random hex token, for a password or key you edit in by hand |
+| `just tts-lb09 [--meeting KEY] [--check]` | Speak LB-09's scripted meetings (`data/seed/lb09`) with Flite, an offline text-to-speech, into `data/seed/lb09/audio` with a manifest of each turn's timing; `--check` only compares the committed audio with its manifest and the scripts |
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
