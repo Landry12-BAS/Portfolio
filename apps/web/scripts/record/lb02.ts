@@ -239,7 +239,7 @@ export async function runLb02Sample(backend: Backend, sampleId: string): Promise
     if (detailAnswer.status !== 200) throw new Error(`Reading the conversation answered status ${detailAnswer.status}.`)
     const detail = conversationSchema.parse(detailAnswer.body)
     exchanges.push({ request: { method: 'GET', path }, response: { status: 200, body: json(detail) } })
-    return { language: sample.language, exchanges, runId: detail.run_id, rootless: true }
+    return { language: sample.language, exchanges, runId: detail.run_id, traceEnds: 'quiet' }
   }
   finally {
     visit.close()

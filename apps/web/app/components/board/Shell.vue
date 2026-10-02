@@ -57,6 +57,12 @@ const { t } = useI18n()
       </aside>
     </div>
     <div
+      v-if="$slots.wide"
+      class="wide"
+    >
+      <slot name="wide" />
+    </div>
+    <div
       v-if="$slots.scope"
       class="trace"
     >
@@ -141,6 +147,16 @@ const { t } = useI18n()
 .side {
   border-left: 1px solid var(--lb-rule);
   background: var(--lb-board-tint);
+}
+
+/* A board whose work needs more room than the main column (a canvas next to its form) puts it here, under both columns. */
+.wide {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  min-width: 0;
+  padding: 18px 16px;
+  border-top: 1px solid var(--lb-rule);
 }
 
 /* The Scope's trace is a wide table, so it gets the whole width of the board under both columns. */

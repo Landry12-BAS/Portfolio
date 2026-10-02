@@ -47,6 +47,9 @@ export const useScopeStore = defineStore('scope', () => {
   let timer: ReturnType<typeof setTimeout> | undefined
   // The moment past which the current reading gives up if the run has not ended.
   let deadline = 0
+  // Whether the board has said the run is over although no root span will come: the next read that
+  // brings nothing new then closes the trace as complete.
+  let closing = false
 
   /** Stops any reading in progress. */
   function stop(): void {
@@ -58,6 +61,7 @@ export const useScopeStore = defineStore('scope', () => {
   /** Empties the Scope, for a board that is about to start another run. */
   function clear(): void {
     stop()
+    closing = false
     runId.value = undefined
     spans.value = []
     phase.value = 'idle'
@@ -77,7 +81,7 @@ export const useScopeStore = defineStore('scope', () => {
     const merged = mergeSpans(spans.value, page.spans)
     spans.value = merged.spans
     const quiet = merged.added > 0 ? 0 : quietReads + 1
-    if (page.finished) {
+    if (page.finished || (closing && merged.added === 0 && !page.more)) {
       phase.value = 'finished'
       return { done: true, quietReads: quiet, delay: 0, cursor: page.cursor }
     }
@@ -158,6 +162,20 @@ export const useScopeStore = defineStore('scope', () => {
     if (spans.value.length > 0) phase.value = 'finished'
   }
 
+  /**
+   * Tells the Scope that the system's own log says the run is over, for a system whose runs write no root span
+   * (LB-08's step spans have none): the trace is then complete as soon as a read brings nothing new, instead
+   * of being called stalled when the wait for a root span runs out. A Scope still waiting for a run's name says there is none.
+   */
+  function closeWhenQuiet(): void {
+    if (phase.value === 'waiting') {
+      phase.value = 'missing'
+      return
+    }
+    closing = true
+    deadline = Math.min(deadline, Date.now() + SETTLE_AFTER_MS)
+  }
+
   /** Shows a recording's spans, as far as the replay has got. */
   function showRecorded(id: string, recorded: readonly Span[], finished: boolean): void {
     stop()
@@ -167,5 +185,5 @@ export const useScopeStore = defineStore('scope', () => {
     phase.value = finished ? 'finished' : 'following'
   }
 
-  return { runId, spans, phase, replayed, timeline, follow, wait, settle, finish, showRecorded, stop, clear }
+  return { runId, spans, phase, replayed, timeline, follow, wait, settle, finish, closeWhenQuiet, showRecorded, stop, clear }
 })

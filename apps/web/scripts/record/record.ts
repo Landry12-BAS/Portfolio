@@ -10,18 +10,19 @@ import { dirname, join } from 'node:path'
 import { recordingSchema, summariseTrace } from '@lb/contracts'
 import type { Exchange, Recording } from '@lb/contracts'
 
-import type { Backend } from './backend.ts'
+import type { Backend, TraceEnd } from './backend.ts'
 import { runLb01Sample } from './lb01.ts'
 import { runLb02Sample } from './lb02.ts'
 import { runLb05Sample } from './lb05.ts'
+import { runLb08Sample } from './lb08.ts'
 
 /** What a system's runner hands back: the language of the sample, what the board asked and was told, and the run's ID. */
 export interface RecordedRun {
   language: 'en' | 'cs'
   exchanges: Exchange[]
   runId: string
-  // True for a run that has no root span because it goes on in turns (a conversation): its trace is complete, not finished.
-  rootless?: boolean
+  // How the run's trace is known to be complete: by its root span, unless the system says otherwise.
+  traceEnds?: TraceEnd
 }
 
 /** Runs one sample of a system on a back end. */
@@ -32,6 +33,7 @@ const RUNNERS: Readonly<Record<string, SampleRunner>> = {
   'lb-01': runLb01Sample,
   'lb-02': runLb02Sample,
   'lb-05': runLb05Sample,
+  'lb-08': runLb08Sample,
 }
 
 // How long to wait for the gateway to have the whole trace once the run is over.
@@ -48,7 +50,7 @@ export async function recordSample(backend: Backend, system: string, sample: str
   if (!runner) throw new Error(`There is no recorder for ${system} yet. Systems that have one: ${recordableSystems().join(', ')}.`)
   const origin = await backend.isMock() ? 'mock' : 'live'
   const run = await runner(backend, sample)
-  const spans = await backend.readTrace(run.runId, TRACE_PATIENCE_MS, { rootless: run.rootless })
+  const spans = await backend.readTrace(run.runId, TRACE_PATIENCE_MS, run.traceEnds)
   const summary = summariseTrace(spans)
   return recordingSchema.parse({
     v: 1,

@@ -18,7 +18,8 @@ Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
 Czech: catalog, datasheets, themes, security headers; its Nitro server between the browser
 and the back ends, with the anonymous session, Turnstile and a proxy that forwards only the
 routes the back ends document; the evaluation-board kit with the Scope and the replay player;
-and LB-01's board at `/systems/lb-01/board`; see its [README](apps/web/README.md)),
+LB-01's board at `/systems/lb-01/board` and LB-08's at `/systems/lb-08/board`; see its
+[README](apps/web/README.md)),
 `packages/api-clients` (typed clients generated from the back ends' OpenAPI documents, and
 the mock back end the site's tests run against), `services/gateway` (the LB-00 AI
 gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
@@ -53,8 +54,10 @@ stopped each attack, and the semantic layer browser, in English and Czech (see t
 Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
 graphs checked by one schema, a BullMQ engine with retries, a dead-letter queue, replay and
 exactly-once side effects, and the visitor API (see its
-[README](services/node-systems/README.md)); next come the Vue Flow editor and LB-08's pages
-on the site, and the recorded sample runs.
+[README](services/node-systems/README.md)); LB-08's board is on the site (a lazily loaded Vue
+Flow canvas and a keyboard outline over one validated state, the run with its retries, dead
+letters and replay, and what the sandbox sent); next come its recorded sample runs
+(`just record-sample lb-08 <sample>`, which needs the live back end).
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)

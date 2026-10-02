@@ -35,7 +35,7 @@ export async function runLb05Sample(backend: Backend, sampleId: string): Promise
   if (!found) throw new Error(`LB-05 has no sample called "${sampleId}". ${knownIds()}`)
 
   const request = { question: found.question }
-  const answer = await backend.call('lb-05', 'POST', ASK_PATH, request, ASK_PATIENCE_MS)
+  const answer = await backend.call('lb-05', 'POST', ASK_PATH, request, { timeoutMs: ASK_PATIENCE_MS })
   if (answer.status !== 200) throw new Error(`The back end did not answer the question (status ${answer.status}).`)
   const parsed = answerSchema.safeParse(answer.body)
   if (!parsed.success) throw new Error('The back end\'s answer is not the shape the board reads, so it is not worth recording. Look at the back end and try again.')
