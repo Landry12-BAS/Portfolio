@@ -195,6 +195,13 @@ describe('AgentConsole', () => {
     expect(wrapper.get('[data-testid="ticket-status"]').text()).toBe('Escalated')
   })
 
+  it('says a step of the pipeline failed when it crashed and left the ticket failed with no reason written', () => {
+    const crashed = { ...makeTicket({ stage: 'received' }), status: 'failed' as const }
+    const wrapper = mountWithSite(AgentConsole, { props: { ...idle, ticket: crashed } })
+    expect(wrapper.get('[data-testid="handoff"]').text()).toContain('A step of the pipeline failed')
+    expect(wrapper.get('[data-testid="ticket-status"]').text()).toBe('Pipeline failed')
+  })
+
   it('shows what went wrong with a decision', () => {
     const wrapper = mountWithSite(AgentConsole, { props: { ...idle, ticket: makeTicket(), canDecide: true, decisionProblem: new ApiProblem(409, 'not_waiting', 'x') } })
     expect(wrapper.get('[data-testid="notice"]').attributes('data-kind')).toBe('conflict')

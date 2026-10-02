@@ -45,7 +45,13 @@ const editBox = ref<HTMLTextAreaElement>()
 
 const draftText = computed(() => props.ticket?.draft?.sentences.map(sentence => sentence.text).join(' ') ?? '')
 const categoryKey = computed(() => (props.ticket && CATEGORIES.has(props.ticket.category) ? props.ticket.category : 'other'))
-const reasonKey = computed(() => (props.ticket && REASONS.has(props.ticket.escalation_reason) ? props.ticket.escalation_reason : undefined))
+const reasonKey = computed(() => {
+  const current = props.ticket
+  if (current === undefined) return undefined
+  if (REASONS.has(current.escalation_reason)) return current.escalation_reason
+  // A pipeline that crashed leaves the ticket "failed" with no reason written, and it is handed on just the same.
+  return current.status === 'failed' ? 'pipeline_error' : undefined
+})
 const canSendEdit = computed(() => editText.value.trim().length > 0 && editText.value.length <= MAX_REPLY && !props.deciding)
 
 /** Opens the editor with the draft as its starting text, and puts the cursor in it. */
