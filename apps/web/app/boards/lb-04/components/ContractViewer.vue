@@ -372,7 +372,7 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-/* The page is white in both themes, as paper is, and the highlights are tinted for a white page. */
+/* The page is paper in both themes (--lb-paper is white in each), and the highlights are tinted for it. */
 .sheet {
   position: relative;
   min-width: 1px;
@@ -383,7 +383,7 @@ onBeforeUnmount(() => {
 
 .canvas {
   display: block;
-  background: white;
+  background: var(--lb-paper);
 }
 
 .overlay {
