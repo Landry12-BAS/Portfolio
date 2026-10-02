@@ -24,6 +24,9 @@ export type ScopePhase = 'idle' | 'waiting' | 'following' | 'finished' | 'stalle
 export interface FollowOptions {
   // How long a "not found" is taken to mean "not yet": a run's first span appears a moment after it starts.
   notFoundGraceMs?: number
+  // Keep the spans already shown when following the run that is on the Scope again, instead of starting
+  // its trace over: for a run that goes on in turns, such as a conversation, followed again after each message.
+  keepSpans?: boolean
 }
 
 // Reads that fail for another reason are tried again this many times in a row before the Scope gives up.
@@ -83,7 +86,8 @@ export const useScopeStore = defineStore('scope', () => {
 
   /** Starts following a live run: reads its trace now and keeps reading until its root span arrives. */
   function follow(id: string, options: FollowOptions = {}): void {
-    clear()
+    if (options.keepSpans === true && runId.value === id) stop()
+    else clear()
     runId.value = id
     phase.value = 'following'
     const reading = generation
@@ -145,6 +149,15 @@ export const useScopeStore = defineStore('scope', () => {
     deadline = Math.min(deadline, Date.now() + SETTLE_AFTER_MS)
   }
 
+  /**
+   * Tells the Scope that a run which never writes a root span, such as a conversation, is over:
+   * it stops reading and calls the trace complete, since no root span will ever say so.
+   */
+  function finish(): void {
+    stop()
+    if (spans.value.length > 0) phase.value = 'finished'
+  }
+
   /** Shows a recording's spans, as far as the replay has got. */
   function showRecorded(id: string, recorded: readonly Span[], finished: boolean): void {
     stop()
@@ -154,5 +167,5 @@ export const useScopeStore = defineStore('scope', () => {
     phase.value = finished ? 'finished' : 'following'
   }
 
-  return { runId, spans, phase, replayed, timeline, follow, wait, settle, showRecorded, stop, clear }
+  return { runId, spans, phase, replayed, timeline, follow, wait, settle, finish, showRecorded, stop, clear }
 })
