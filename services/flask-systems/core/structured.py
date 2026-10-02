@@ -28,7 +28,7 @@ from openai.types.chat import (
 )
 from pydantic import BaseModel, ValidationError
 
-from lb_common.gateway import Gateway
+from lb_common.gateway import Gateway, GuardVerdict
 
 # A reply wrapped in a Markdown code fence, as models often send JSON.
 FENCED = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
@@ -105,6 +105,26 @@ class GatewayChat:
         )
         text = reply.choices[0].message.content if reply.choices else None
         return Completion(text=text or "", model=reply.model)
+
+
+class InjectionGuard(Protocol):
+    """The gateway's prompt-injection check (`lb-guard`), for a system that reads text it did not write."""
+
+    def check(self, text: str) -> GuardVerdict:
+        """Say whether a text looks like an attempt to hijack a model; an `openai` error means no check was made."""
+        ...
+
+
+class GatewayGuard:
+    """The injection check through the AI gateway."""
+
+    def __init__(self, gateway: Gateway) -> None:
+        """Send checks through `gateway`."""
+        self.gateway = gateway
+
+    def check(self, text: str) -> GuardVerdict:
+        """Ask the gateway's guard about a text."""
+        return self.gateway.guard(text)
 
 
 def openai_message(message: ChatMessage) -> ChatCompletionMessageParam:

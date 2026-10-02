@@ -18,7 +18,7 @@ from sqlalchemy import Engine
 
 from config.environment import Environment, read_environment
 from core.platform import Platform
-from core.structured import ChatMessage, ChatModels, Completion
+from core.structured import ChatMessage, ChatModels, Completion, InjectionGuard
 from lb_common.gateway import GatewayResponseError
 from lb_common.run import Run, current_run
 from lb_common.tracing import Span, Tracer
@@ -155,14 +155,18 @@ def make_platform(
     writer: MemorySpanWriter | None = None,
     engines: Mapping[str, Engine] | None = None,
     environment: Environment | None = None,
+    guard: InjectionGuard | None = None,
 ) -> Platform:
-    """Build a platform of fakes: a fixed clock, the given chat and span store, and the given engines."""
+    """Build a platform of fakes: a fixed clock, the given chat, guard and span store, and the given engines."""
+    spans = writer or MemorySpanWriter()
     return Platform(
         environment=environment or make_environment(),
         engines=engines or {},
         chat=chat,
-        tracer=Tracer(writer or MemorySpanWriter()),
+        tracer=Tracer(spans),
         clock=lambda: TODAY,
+        guard=guard,
+        span_writer=spans,
     )
 
 

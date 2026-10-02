@@ -16,10 +16,10 @@ from sqlalchemy import Engine
 
 from config.environment import ConfigurationError, Environment
 from core.databases import system_engines
-from core.structured import ChatModels, GatewayChat
+from core.structured import ChatModels, GatewayChat, GatewayGuard, InjectionGuard
 from lb_common.gateway import Gateway, GatewaySettings
 from lb_common.tokens import ServiceKeyError, ServiceTokens, load_service_key
-from lb_common.tracing import RedisSpanWriter, Tracer
+from lb_common.tracing import RedisSpanWriter, SpanWriter, Tracer
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,10 @@ class Platform:
     chat: ChatModels | None
     tracer: Tracer
     clock: Callable[[], datetime] = utc_now
+    # The gateway's prompt-injection check, for the systems that read documents; None without a gateway.
+    guard: InjectionGuard | None = None
+    # Where finished spans go, for a system that records its own on a thread of its own (LB-03's queue); None in tests.
+    span_writer: SpanWriter | None = None
 
     def seed_directory(self) -> Path:
         """Return where the synthetic data files live: LB_SEED_DIR, else the repository's data/seed."""
@@ -88,11 +92,14 @@ def connect_platform(environment: Environment) -> Platform:
     redis = Redis.from_url(
         environment.redis_url, socket_timeout=REDIS_TIMEOUT_SECONDS, socket_connect_timeout=REDIS_TIMEOUT_SECONDS
     )
-    tracer = Tracer(RedisSpanWriter(redis, prefix=environment.redis_prefix))
+    span_writer = RedisSpanWriter(redis, prefix=environment.redis_prefix)
+    tracer = Tracer(span_writer)
     engines = system_engines(environment.database_url, {"lb05": environment.lb05_database_url})
     return Platform(
         environment=environment,
         engines=engines,
         chat=GatewayChat(gateway) if gateway is not None else None,
         tracer=tracer,
+        guard=GatewayGuard(gateway) if gateway is not None else None,
+        span_writer=span_writer,
     )
