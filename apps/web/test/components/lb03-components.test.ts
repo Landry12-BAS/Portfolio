@@ -225,7 +225,7 @@ describe('DocumentViewer', () => {
     expect(lit.map(box => box.attributes('data-path'))).toEqual(['total'])
     expect(boxes.at(-1)?.attributes('data-path')).toBe('total')
     expect(wrapper.get('[data-testid="page-picture"]').attributes('src')).toBe('/lb03/pages/planted-total-1.jpg')
-    expect(wrapper.get('[data-testid="page-picture"]').attributes('alt')).toBe('Page 1 of 1 of the document planted.pdf')
+    expect(wrapper.get('[data-testid="page-picture"]').attributes('alt')).toBe('Document planted.pdf, page 1 of 1')
     expect(wrapper.get('svg').attributes('aria-hidden')).toBe('true')
     expect(wrapper.get('svg').attributes('viewBox')).toBe('0 0 1 1')
   })

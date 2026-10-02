@@ -109,7 +109,7 @@ const lb03 = {
     counted: 'The document still counts against today\'s allowance.',
   },
   viewer: {
-    pageAlt: 'Page {page} of {pages} of the document {label}',
+    pageAlt: 'Document {label}, page {page} of {pages}',
     pages: 'Pages of the document',
     previous: 'Previous page',
     next: 'Next page',
