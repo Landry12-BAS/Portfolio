@@ -31,10 +31,11 @@ const MAX_SHELL_ENTRIES = 80
 // The board's pages, one for each language: the only pages the worker keeps.
 const BOARD_PAGES = ['/systems/lb-02/board', '/cs/systems/lb-02/board']
 
-// The folders of static files the build names by their content, and the one folder inside them that is not so
-// named: the build's own record of itself (/_nuxt/builds/latest.json) changes with every deploy under a fixed name.
+// The folders of static files the build names by their content, and the one file inside them that is not so
+// named: the build's pointer to its latest version (/_nuxt/builds/latest.json) changes with every deploy under
+// a fixed name. The record of one build (/_nuxt/builds/meta/<id>.json) is named by that build, so it is kept.
 const STATIC_FOLDERS = ['/_nuxt/']
-const UNNAMED_BY_CONTENT = ['/_nuxt/builds/']
+const UNNAMED_BY_CONTENT = ['/_nuxt/builds/latest.json']
 
 // The files of the app itself.
 const APP_FILES = ['/lb02-icon.svg', '/lb02.en.webmanifest', '/lb02.cs.webmanifest']
@@ -55,7 +56,7 @@ function isBoardPage(url) {
 /** Tells whether an address is a static file the worker keeps. The API is refused by name, whatever else is listed. */
 function isStaticFile(url) {
   if (url.pathname.startsWith('/api/')) return false
-  if (UNNAMED_BY_CONTENT.some(folder => url.pathname.startsWith(folder))) return false
+  if (UNNAMED_BY_CONTENT.includes(url.pathname)) return false
   if (APP_FILES.includes(url.pathname)) return true
   return STATIC_FOLDERS.some(folder => url.pathname.startsWith(folder))
 }

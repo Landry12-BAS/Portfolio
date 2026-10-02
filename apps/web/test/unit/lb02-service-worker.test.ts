@@ -201,7 +201,7 @@ describe('LB-02\'s service worker', () => {
       ['a page that is not the board', '/systems/lb-02'],
       ['the home page', '/'],
       ['a file nobody listed', '/robots.txt'],
-      ['the build\'s own record of itself', '/_nuxt/builds/latest.json'],
+      ['the build\'s pointer to its latest version', '/_nuxt/builds/latest.json'],
     ])('does not answer %s', async (_name, path) => {
       worker.network.set(path, ok('{}'))
       expect(await worker.fetchEvent(request(path))).toBeUndefined()
@@ -310,6 +310,12 @@ describe('LB-02\'s service worker', () => {
       worker.online = false
       expect(await (await worker.fetchEvent(request('/_nuxt/entry.abc123.js')))?.text()).toBe('script')
       expect(worker.requested).toHaveLength(1)
+    })
+
+    it('keeps the record of one build, which that build names, but not the pointer to the latest', async () => {
+      worker.network.set('/_nuxt/builds/meta/abc-123.json', ok('{}'))
+      expect(await (await worker.fetchEvent(request('/_nuxt/builds/meta/abc-123.json')))?.text()).toBe('{}')
+      expect(worker.caches.stores.get('lb02-shell-v1')?.entries.size).toBe(1)
     })
 
     it('keeps the app\'s icon and both manifests', async () => {
