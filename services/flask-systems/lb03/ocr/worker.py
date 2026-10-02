@@ -26,6 +26,7 @@ from PIL import Image
 from pydantic import ValidationError
 from rapidocr import RapidOCR
 
+from lb03.limits import PAGE_JPEG_QUALITY
 from lb03.ocr.decode import DecodeError, decode_document
 from lb03.ocr.engine import build_engine, read_words
 from lb03.ocr.protocol import MODEL_PICTURE, RESULT_FILE, OcrPage, OcrResult, SandboxReport, WorkerLimits, WorkerStatus
@@ -34,8 +35,6 @@ from lb03.states import FailureCode
 
 # The limits line is a short JSON object; a longer line is not the service speaking.
 MAX_LIMITS_LINE = 4_096
-# The JPEG quality of the page pictures the viewer shows.
-PAGE_QUALITY = 85
 # What the worker exits with when it could not even start, and when its cage would not hold.
 EXIT_BAD_REQUEST = 64
 EXIT_NO_CAGE = 66
@@ -71,7 +70,7 @@ def write_pages(document_pages: list[Image.Image], engine: RapidOCR, scratch: Pa
     pages = []
     for number, image in enumerate(document_pages, start=1):
         picture = f"page-{number}.jpg"
-        image.save(scratch / picture, "JPEG", quality=PAGE_QUALITY)
+        image.save(scratch / picture, "JPEG", quality=PAGE_JPEG_QUALITY)
         words = read_words(engine, image)
         pages.append(OcrPage(number=number, width=image.width, height=image.height, picture=picture, words=words))
     return pages

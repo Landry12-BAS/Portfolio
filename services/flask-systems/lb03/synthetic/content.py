@@ -959,8 +959,16 @@ def hostile() -> list[GoldenCase]:
 def planted_errors() -> list[GoldenCase]:
     """Documents that are wrong on paper in one way each: the reader must report it, and never repair it."""
 
-    def wrong(case_id: str, title: str, seed: int, look: Style3, check: CheckId, printed: Printed) -> GoldenCase:
-        """Make one planted-error case that must trip exactly one check."""
+    def wrong(
+        case_id: str,
+        title: str,
+        seed: int,
+        look: Style3,
+        check: CheckId,
+        printed: Printed,
+        sample: str | None = None,
+    ) -> GoldenCase:
+        """Make one planted-error case that must trip exactly one check, and perhaps open the board as a sample."""
         return _case(
             case_id,
             title,
@@ -968,6 +976,7 @@ def planted_errors() -> list[GoldenCase]:
             printed,
             _render(seed, look),
             Expect(outcome="needs_review", failing_checks=[check]),
+            sample=sample,
         )
 
     items = [
@@ -1081,6 +1090,7 @@ def planted_errors() -> list[GoldenCase]:
             CLASSIC_DE,
             CheckId.TOTAL_RECONCILES,
             total_error,
+            sample="planted-total",
         ),
         wrong(
             "planted-line-math-lowlands-2026-1400",

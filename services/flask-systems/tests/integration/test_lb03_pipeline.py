@@ -26,7 +26,7 @@ from lb03 import limits
 from lb03.accounts import read_chart
 from lb03.boxes import PageWords
 from lb03.duplicates import find_duplicate, identity_of, sample_identities
-from lb03.golden import SEED_DIRECTORY, GoldenCase, printed_as_reply, read_golden_set
+from lb03.golden import SEED_DIRECTORY, GoldenCase, printed_as_reply, read_golden_set, read_manifest
 from lb03.invoice import ExtractedInvoice
 from lb03.ocr.pool import OcrError, Reading
 from lb03.pipeline import Ended, Job, Parts, Pipeline
@@ -48,7 +48,7 @@ CLEAN = "bohemia-packaging-2026-0412"
 
 def first_plain_case() -> str:
     """Pick a golden document that reads cleanly and duplicates no sample, for the runs that need a first copy."""
-    samples = sample_identities(GOLDEN)
+    samples = sample_identities(GOLDEN, read_manifest())
     for case in GOLDEN.cases:
         if case.expect.outcome != "valid" or case.printed is None or case.expect.duplicate_of is not None:
             continue
@@ -125,7 +125,7 @@ def make_rig(
         repository=repository,
         tracer=Tracer(spans),
         chart=read_chart(SEED_DIRECTORY),
-        samples=sample_identities(GOLDEN),
+        samples=sample_identities(GOLDEN, read_manifest()),
         offload=inline,
         clock=lambda: NOW,
     )
@@ -139,15 +139,21 @@ def clean_rig(engine: Engine, tmp_path: Path, case_id: str | None = None, **opti
     return make_rig(engine, tmp_path, reader, {"lb-fast": [reply_of(invoice)], "lb-vision": [reply_of(invoice)]})
 
 
-def start_document(rig: Rig, kind: str = "pdf", session: str = SAM, data: bytes = b"%PDF-1.7 a file") -> Job:
+def start_document(
+    rig: Rig,
+    kind: str = "pdf",
+    session: str = SAM,
+    data: bytes = b"%PDF-1.7 a file",
+    file_sha256: str = "ab" * 32,
+) -> Job:
     """Store a file and make its document row, as the upload does, and return the job the pipeline is given."""
     document_id = secrets.token_urlsafe(16)
     extension = "pdf" if kind == "pdf" else "jpg"
     rig.store.put(original_key(document_id, extension), data, "application/octet-stream")
     rig.repository.create(
-        NewDocument(document_id, session, "invoice.pdf", kind, len(data), "ab" * 32, GOLDEN.today), NOW
+        NewDocument(document_id, session, "invoice.pdf", kind, len(data), file_sha256, GOLDEN.today), NOW
     )
-    return Job(document_id, session, kind, extension, GOLDEN.today, submitted=0.0)
+    return Job(document_id, session, kind, extension, GOLDEN.today, submitted=0.0, file_sha256=file_sha256)
 
 
 def run(rig: Rig, job: Job) -> Ended:
@@ -623,18 +629,51 @@ def test_a_second_copy_of_an_invoice_is_a_duplicate_and_gets_no_journal_entry(
     assert stored(rig, first).journal is not None
 
 
-def test_a_document_the_samples_hold_is_a_duplicate_of_the_sample(lb03_engine: Engine, tmp_path: Path) -> None:
-    """The board's own sample, uploaded again, is told from a first copy: it names the sample."""
+def test_a_copy_of_a_samples_invoice_in_another_file_is_a_duplicate_of_the_sample(
+    lb03_engine: Engine, tmp_path: Path
+) -> None:
+    """A re-scan or a re-issue of the clean sample's invoice (another file, the same invoice) names the sample."""
     rig = clean_rig(lb03_engine, tmp_path, case_id=CLEAN)
     job = start_document(rig)
 
     run(rig, job)
 
     document = stored(rig, job)
-    assert document.duplicate_of is not None
-    assert document.duplicate_of.startswith("sample:")
+    assert document.duplicate_of == "sample:clean-pdf"
+    assert document.duplicate_same_content is True
     assert check_status(document)["not_duplicate"] == ("failed", "error")
     assert document.journal is None
+
+
+def test_a_samples_own_file_is_that_sample_and_never_its_own_duplicate(lb03_engine: Engine, tmp_path: Path) -> None:
+    """The board reads a sample by uploading its file: that reading is clean, with a journal entry."""
+    rig = clean_rig(lb03_engine, tmp_path, case_id=CLEAN)
+    job = start_document(rig, file_sha256=read_manifest().entry(CLEAN).sha256)
+
+    run(rig, job)
+
+    document = stored(rig, job)
+    assert document.duplicate_of is None
+    assert check_status(document)["not_duplicate"] == ("passed", "error")
+    assert document.journal is not None
+
+
+def test_a_samples_own_file_uploaded_twice_is_still_a_duplicate_of_the_first_reading(
+    lb03_engine: Engine, tmp_path: Path
+) -> None:
+    """Being the sample exempts it from the sample, not from the visitor's own documents."""
+    rig = clean_rig(lb03_engine, tmp_path, case_id=CLEAN)
+    sha256 = read_manifest().entry(CLEAN).sha256
+    first = start_document(rig, file_sha256=sha256)
+    run(rig, first)
+    rig.chat.replies["lb-fast"].append(reply_of(invoice_of(CLEAN)))
+    second = start_document(rig, file_sha256=sha256)
+
+    run(rig, second)
+
+    document = stored(rig, second)
+    assert (document.duplicate_of, document.duplicate_same_content) == (f"document:{first.document_id}", True)
+    assert check_status(document)["not_duplicate"] == ("failed", "error")
 
 
 def test_another_visitors_document_is_never_compared_with_this_ones(lb03_engine: Engine, tmp_path: Path) -> None:

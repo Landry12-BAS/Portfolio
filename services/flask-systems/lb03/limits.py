@@ -24,6 +24,8 @@ MAX_PAGES = 5
 MAX_IMAGE_PIXELS = 40_000_000
 # The longest side of a page as the viewer and the OCR see it, in pixels. A page is rendered no larger.
 PAGE_LONG_SIDE_PIXELS = 1_800
+# The JPEG quality of the page pictures the viewer shows.
+PAGE_JPEG_QUALITY = 85
 # The longest side of the image sent to the vision model, in pixels, and the JPEG quality it is sent at.
 MODEL_IMAGE_LONG_SIDE_PIXELS = 1_568
 MODEL_IMAGE_QUALITY = 80

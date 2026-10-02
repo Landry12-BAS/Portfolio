@@ -2,14 +2,15 @@
 
 import hashlib
 import io
+from pathlib import Path
 
 import pypdfium2 as pdfium
 import pytest
 from PIL import Image, ImageOps
 
 from lb03.golden import SEED_DIRECTORY, GoldenSet, Manifest, read_golden_set, read_manifest
-from lb03.limits import MAX_IMAGE_PIXELS, MAX_PAGES, MAX_UPLOAD_BYTES
-from lb03.synthetic.build import check_seed
+from lb03.limits import MAX_IMAGE_PIXELS, MAX_PAGES, MAX_UPLOAD_BYTES, PAGE_LONG_SIDE_PIXELS
+from lb03.synthetic.build import check_pictures, check_seed
 
 MAGIC = {
     "application/pdf": b"%PDF-",
@@ -150,6 +151,47 @@ def test_every_image_decodes_to_the_size_the_manifest_says(manifest: Manifest) -
             upright = ImageOps.exif_transpose(image)
             assert upright is not None
             assert upright.size == (entry.width, entry.height), entry.id
+
+
+def test_each_sample_has_a_picture_of_each_of_its_pages_as_the_viewer_shows_them(
+    golden: GoldenSet, manifest: Manifest
+) -> None:
+    """The samples' page pictures are JPEGs within the page limit, with no metadata, and no others are there."""
+    folder = SEED_DIRECTORY / "pages"
+    expected = {
+        f"{case.sample}-{number}.jpg"
+        for case in golden.samples()
+        for number in range(1, manifest.entry(case.id).pages + 1)
+    }
+    found = {path.name for path in folder.glob("*")}
+    assert found == expected
+    for name in found:
+        with Image.open(folder / name) as picture:
+            assert picture.format == "JPEG"
+            assert max(picture.size) <= PAGE_LONG_SIDE_PIXELS
+            assert len(picture.getexif()) == 0
+
+
+def test_a_picture_that_is_missing_or_belongs_to_no_sample_is_reported(tmp_path: Path) -> None:
+    """The picture check names a missing file, a picture of nothing, and a picture that shows something else."""
+    folder = tmp_path / "pages"
+    folder.mkdir()
+    original = (SEED_DIRECTORY / "pages" / "clean-pdf-1.jpg").read_bytes()
+    other = (SEED_DIRECTORY / "pages" / "handwritten-receipt-1.jpg").read_bytes()
+    (folder / "stale-1.jpg").write_bytes(original)
+    (folder / "euro-vat-1.jpg").write_bytes(other)
+    fresh = {
+        "pages/clean-pdf-1.jpg": original,
+        "pages/euro-vat-1.jpg": (SEED_DIRECTORY / "pages" / "euro-vat-1.jpg").read_bytes(),
+    }
+
+    problems = check_pictures(tmp_path, fresh)
+
+    assert problems == [
+        "pages/stale-1.jpg is a picture of no sample",
+        "pages/clean-pdf-1.jpg is missing",
+        "pages/euro-vat-1.jpg is not what the generator draws now",
+    ]
 
 
 def test_the_seed_is_up_to_date() -> None:

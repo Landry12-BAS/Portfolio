@@ -35,7 +35,7 @@ from lb03.boxes import check_fields_on_page
 from lb03.checks import CheckResult, blocks_export, run_checks
 from lb03.duplicates import Known, duplicate_result, find_duplicate, identity_of, sample_identities
 from lb03.export import journal_csv, lines_csv
-from lb03.golden import read_golden_set
+from lb03.golden import read_golden_set, read_manifest
 from lb03.invoice import ExtractedInvoice, FieldPathError, get_field, set_field
 from lb03.ocr.pool import OcrPool, PoolSettings
 from lb03.pipeline import Job, Offload, Parts, Pipeline, Reader
@@ -208,6 +208,7 @@ class Lb03Service:
         if not admission.allowed:
             return self._not_admitted(admission)
         document_id = secrets.token_urlsafe(16)
+        file_sha256 = hashlib.sha256(data).hexdigest()
         try:
             self._store.put(original_key(document_id, kind.extension), data, kind.mime)
             stored = self._repository.create(
@@ -217,12 +218,15 @@ class Lb03Service:
                     label=clean_label(filename),
                     kind=kind.name,
                     byte_size=len(data),
-                    file_sha256=hashlib.sha256(data).hexdigest(),
+                    file_sha256=file_sha256,
                     admitted_on=admission.day,
                 ),
                 self._clock(),
             )
-            runner.submit(Job(document_id, session_key, kind.name, kind.extension, admission.day, time.monotonic()))
+            job = Job(
+                document_id, session_key, kind.name, kind.extension, admission.day, time.monotonic(), False, file_sha256
+            )
+            runner.submit(job)
         except RunnerBusyError:
             self._take_back(session_key, admission, document_id)
             return Refusal(503, "readers_busy", READERS_BUSY_MESSAGE)
@@ -353,7 +357,9 @@ class Lb03Service:
         results.append(check_fields_on_page(edited, set(placements), confirmed))
         identity = identity_of(edited)
         others = self._repository.known_identities(session_key, now, exclude=document_id)
-        match = find_duplicate(identity, [*others, *self._samples]) if identity is not None else None
+        match = (
+            find_duplicate(identity, [*others, *self._samples], stored.file_sha256) if identity is not None else None
+        )
         results.append(duplicate_result(identity, match))
         reading = EditedReading(
             invoice=edited,
@@ -418,8 +424,9 @@ def build_service(
         logger.error("LB-03 can't start: the platform has no database engine for its schema.")
         return None
     try:
-        chart = read_chart(platform.seed_directory() / "lb03")
-        samples = sample_identities(read_golden_set())
+        seed = platform.seed_directory() / "lb03"
+        chart = read_chart(seed)
+        samples = sample_identities(read_golden_set(), read_manifest(seed))
         store = build_store(environment)
     except (DataFileError, StorageError, OSError) as error:
         logger.error("LB-03 can't start: %s", describe_failure(error))

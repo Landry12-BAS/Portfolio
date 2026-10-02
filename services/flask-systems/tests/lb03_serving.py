@@ -94,6 +94,11 @@ class Served:
         assert response.status_code == 200, response.get_data(as_text=True)
         return dict(response.get_json())
 
+    def correct(self, document_id: str, path: str, value: str, session: str = SAM) -> TestResponse:
+        """Correct one field of a document, as the board's editable table does."""
+        url = f"/api/lb03/documents/{document_id}/corrections"
+        return self.request("POST", url, session, json={"path": path, "value": value})
+
     def wait_for_end(self, document_id: str, session: str = SAM, timeout: float = 15.0) -> dict[str, Any]:
         """Poll a document until it is ready or failed, as the board does, and return it."""
         deadline = time.monotonic() + timeout

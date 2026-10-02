@@ -120,7 +120,7 @@ def eval_lb03(arguments: Sequence[str], platform: Platform) -> int:
     from lb03 import limits
     from lb03.accounts import read_chart
     from lb03.duplicates import sample_identities
-    from lb03.golden import SEED_DIRECTORY, read_golden_set
+    from lb03.golden import SEED_DIRECTORY, read_golden_set, read_manifest
     from lb03.golden_eval import GoldenRun, select_cases
     from lb03.ocr.pool import OcrPool, PoolSettings
 
@@ -155,7 +155,7 @@ def eval_lb03(arguments: Sequence[str], platform: Platform) -> int:
         reader=pool,
         tracer=platform.tracer,
         chart=read_chart(SEED_DIRECTORY),
-        samples=sample_identities(golden),
+        samples=sample_identities(golden, read_manifest()),
         clock=platform.clock,
         pause_seconds=pause,
     )

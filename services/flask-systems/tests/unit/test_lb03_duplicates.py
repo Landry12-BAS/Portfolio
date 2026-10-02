@@ -16,7 +16,7 @@ from lb03.duplicates import (
     sample_identities,
     vendor_key,
 )
-from lb03.golden import GoldenCase, printed_as_reply, read_golden_set
+from lb03.golden import GoldenCase, printed_as_reply, read_golden_set, read_manifest
 from lb03.invoice import ExtractedInvoice
 
 
@@ -130,9 +130,9 @@ def test_another_vendor_or_another_number_is_not_a_duplicate() -> None:
     assert find_duplicate(identity, []) is None
 
 
-def test_the_samples_are_known_and_an_upload_of_a_sample_is_its_duplicate() -> None:
-    """The five curated samples are identities too, so uploading a sample's invoice names that sample."""
-    samples = sample_identities(read_golden_set())
+def test_the_samples_are_known_and_a_copy_of_a_samples_invoice_is_its_duplicate() -> None:
+    """The curated samples are identities too, so another file of a sample's invoice names that sample."""
+    samples = sample_identities(read_golden_set(), read_manifest())
     assert {item.reference for item in samples} >= {"clean-pdf", "crumpled-photo", "handwritten-receipt", "euro-vat"}
     assert all(item.source == "sample" for item in samples)
     identity = identity_of(original())
@@ -140,6 +140,39 @@ def test_the_samples_are_known_and_an_upload_of_a_sample_is_its_duplicate() -> N
     match = find_duplicate(identity, samples)
     assert match is not None
     assert (match.known.source, match.known.reference, match.same_content) == ("sample", "clean-pdf", True)
+    assert find_duplicate(identity, samples, "0" * 64) == match
+
+
+def test_a_samples_own_file_is_that_sample_and_not_its_duplicate() -> None:
+    """The hash of a sample's file comes from the manifest, and a file with it is never named as that sample's copy."""
+    golden, manifest = read_golden_set(), read_manifest()
+    samples = sample_identities(golden, manifest)
+    for case in golden.samples():
+        entry = manifest.entry(case.id)
+        known_sample = next(item for item in samples if item.reference == case.sample)
+        assert known_sample.file_sha256 == entry.sha256
+        assert case.printed is not None
+        identity = identity_of(golden_invoice(case))
+        assert identity is not None
+        assert find_duplicate(identity, samples, entry.sha256) is None, case.id
+
+
+def test_the_samples_are_not_duplicates_of_one_another() -> None:
+    """The sample list is a corpus of different invoices: no two samples share a vendor and number."""
+    samples = sample_identities(read_golden_set(), read_manifest())
+    keys = [(item.identity.vendor, item.identity.number) for item in samples]
+    assert len(set(keys)) == len(keys)
+
+
+def test_a_document_that_is_not_the_samples_file_still_matches_a_sample_by_its_own_hash_only() -> None:
+    """Only a sample whose file hash is the document's is set aside; another sample of the same invoice still counts."""
+    identity = identity_of(original())
+    assert identity is not None
+    twin = Known("sample", "twin", identity, file_sha256="b" * 64)
+    mine = Known("sample", "mine", identity, file_sha256="a" * 64)
+    match = find_duplicate(identity, [mine, twin], "a" * 64)
+    assert match is not None
+    assert match.known.reference == "twin"
 
 
 def test_the_golden_duplicates_are_the_sample_by_identity() -> None:

@@ -19,13 +19,13 @@ from core.structured import ChatMessage, Completion
 from lb03.accounts import read_chart
 from lb03.commands import eval_lb03
 from lb03.duplicates import sample_identities
-from lb03.golden import SEED_DIRECTORY, GoldenCase, printed_as_reply, read_golden_set
+from lb03.golden import SEED_DIRECTORY, GoldenCase, printed_as_reply, read_golden_set, read_manifest
 from lb03.golden_eval import (
     CaseGrade,
     EvalReport,
     GoldenRun,
     compare_fields,
-    in_order,
+    originals_first,
     printed_invoice,
     same_field,
     select_cases,
@@ -143,7 +143,7 @@ def make_run(
         reader=ByFileReader(scenario, wrong_code, read_anyway),
         tracer=Tracer(MemorySpanWriter()),
         chart=read_chart(SEED_DIRECTORY),
-        samples=sample_identities(GOLDEN),
+        samples=sample_identities(GOLDEN, read_manifest()),
         clock=lambda: NOW,
     )
     return run, scenario
@@ -206,21 +206,34 @@ def test_the_two_documents_that_give_up_do_so_with_their_codes(perfect_report: E
 
 
 def test_the_duplicates_are_told_from_their_originals_by_name(perfect_report: EvalReport) -> None:
-    """A copy of a sample fails `not_duplicate` naming the sample, and still passes as a read document."""
-    copy = grade_of(perfect_report, "dup-bohemia-0412-copy")
+    """A copy and a re-issue of the clean invoice fail `not_duplicate` naming their original, and still pass as read."""
+    for case_id in ("dup-bohemia-0412-copy", "dup-bohemia-0412-reissue"):
+        grade = grade_of(perfect_report, case_id)
 
-    assert copy.passed
-    assert copy.failed_checks == ["not_duplicate"]
+        assert grade.passed, grade.failures
+        assert grade.failed_checks == ["not_duplicate"]
 
 
 def test_a_sample_is_never_a_duplicate_of_itself() -> None:
-    """The curated samples are read with themselves left out of the known documents, so they read clean."""
+    """A sample's own file is that sample (its hash is the manifest's), so the samples read clean."""
     run, _ = make_run()
 
     report = grade_all(run, GOLDEN.samples())
 
     assert all(grade.passed for grade in report.grades), [grade.failures for grade in report.grades]
     assert all("not_duplicate" not in grade.failed_checks for grade in report.grades)
+
+
+def test_a_duplicate_asked_for_alone_is_read_after_its_original_and_still_graded() -> None:
+    """`--case` on a copy reads the clean invoice first (ungraded), so the copy has a document to be a duplicate of."""
+    run, _ = make_run()
+
+    report = grade_all(run, [GOLDEN.case("dup-bohemia-0412-copy")])
+
+    assert [grade.case_id for grade in report.grades] == ["dup-bohemia-0412-copy"]
+    assert report.grades[0].passed, report.grades[0].failures
+    assert report.grades[0].failed_checks == ["not_duplicate"]
+    assert set(run.document_ids) == {"dup-bohemia-0412-copy", "bohemia-packaging-2026-0412"}
 
 
 def test_a_model_that_obeys_a_hostile_document_is_held_by_the_validators_when_the_guard_misses_it() -> None:
@@ -335,7 +348,7 @@ def test_a_document_that_should_have_given_up_but_was_read_fails_the_case() -> N
 
 def test_the_originals_are_read_before_the_documents_that_repeat_them() -> None:
     """The order the run reads in: a copy comes after its original, and the rest keep their order."""
-    ordered = in_order(GOLDEN.cases)
+    ordered = originals_first(GOLDEN.cases, GOLDEN)
 
     repeats = [index for index, case in enumerate(ordered) if case.expect.duplicate_of is not None]
     assert repeats == list(range(len(ordered) - len(repeats), len(ordered)))
@@ -344,10 +357,19 @@ def test_the_originals_are_read_before_the_documents_that_repeat_them() -> None:
     ]
 
 
+def test_an_original_that_was_not_asked_for_is_put_in_front_of_its_duplicate() -> None:
+    """Asking for the copy alone adds the clean invoice before it; asking for both adds nothing."""
+    copy, original = GOLDEN.case("dup-bohemia-0412-copy"), GOLDEN.case("bohemia-packaging-2026-0412")
+
+    assert [case.id for case in originals_first([copy], GOLDEN)] == [original.id, copy.id]
+    assert [case.id for case in originals_first([copy, original], GOLDEN)] == [original.id, copy.id]
+    assert [case.id for case in originals_first([original], GOLDEN)] == [original.id]
+
+
 def test_cases_are_chosen_by_id_by_sample_or_all() -> None:
     """The command's selection."""
     assert [case.id for case in select_cases(GOLDEN, "blank-page", False)] == ["blank-page"]
-    assert len(select_cases(GOLDEN, None, True)) == len(GOLDEN.samples()) == 5
+    assert len(select_cases(GOLDEN, None, True)) == len(GOLDEN.samples()) == 6
     assert len(select_cases(GOLDEN, None, False)) == len(GOLDEN.cases)
     with pytest.raises(KeyError):
         select_cases(GOLDEN, "no-such-case", False)

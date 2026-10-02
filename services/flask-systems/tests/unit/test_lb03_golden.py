@@ -27,7 +27,7 @@ from lb03.golden import (
 from lb03.invoice import ExtractedInvoice
 from lb03.money import amount_text
 
-SAMPLES = {"clean-pdf", "crumpled-photo", "handwritten-receipt", "euro-vat", "prompt-injection"}
+SAMPLES = {"clean-pdf", "crumpled-photo", "handwritten-receipt", "euro-vat", "prompt-injection", "planted-total"}
 
 
 @pytest.fixture(scope="module")
@@ -56,7 +56,7 @@ def failing_checks(golden: GoldenSet, case: GoldenCase) -> list[CheckId]:
 
 
 def test_the_golden_set_reads_and_is_the_size_the_datasheet_needs(golden: GoldenSet) -> None:
-    """About forty documents, in every kind the task asks for, and the five curated samples."""
+    """About forty documents, in every kind the task asks for, and the six curated samples."""
     kinds = Counter(case.kind for case in golden.cases)
     assert 40 <= len(golden.cases) <= 50
     assert set(kinds) == {

@@ -11,7 +11,11 @@ a little differently each time. The content is compared by a hash of the amounts
 fixed order, so the same invoice read twice hashes alike however it was photographed.
 
 The documents compared are the visitor's own unexpired ones, and the curated samples (`sample_identities`), so
-an upload of a sample's invoice is named as that sample's duplicate.
+an upload of another copy of a sample's invoice (a re-scan, a re-issue in another layout) is named as that sample's
+duplicate. The sample's own file is the one exception: a document whose file is byte for byte a sample's file *is*
+that sample, which the board reads on a visitor's behalf, and it is never its own duplicate. Without that rule every
+reading of a sample, live or recorded, would fail the check against itself. Read twice by one visitor, it is still
+named a duplicate of the first reading, because the visitor's own documents are compared as well.
 """
 
 import hashlib
@@ -22,7 +26,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from lb03.checks import CheckId, CheckResult, failed, passed, skipped
-from lb03.golden import GoldenSet, printed_as_reply
+from lb03.golden import GoldenSet, Manifest, printed_as_reply
 from lb03.invoice import ExtractedInvoice
 from lb03.money import amount_text, quantity_text
 
@@ -61,11 +65,16 @@ class Identity:
 
 @dataclass(frozen=True)
 class Known:
-    """A document an upload is compared with: its identity, whether it is a document or a sample, and its ID."""
+    """A document an upload is compared with: its identity, whether it is a document or a sample, and its ID.
+
+    `file_sha256` is set for a sample: the hash of its file, so a document that is that very file can be told from
+    a copy of the invoice in some other file.
+    """
 
     source: Source
     reference: str
     identity: Identity
+    file_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -129,10 +138,17 @@ def identity_of(invoice: ExtractedInvoice) -> Identity | None:
     return Identity(vendor, number, content_hash(invoice))
 
 
-def find_duplicate(identity: Identity, known: list[Known]) -> Match | None:
-    """Find the document an invoice duplicates: the same vendor and number, an identical one in preference."""
+def find_duplicate(identity: Identity, known: list[Known], file_sha256: str | None = None) -> Match | None:
+    """Find the document an invoice duplicates: the same vendor and number, an identical one in preference.
+
+    `file_sha256` is the hash of the document's own file, when it has one. A sample with that same hash is the
+    document itself, so it is not a candidate.
+    """
     candidates = [
-        item for item in known if (item.identity.vendor, item.identity.number) == (identity.vendor, identity.number)
+        item
+        for item in known
+        if (item.identity.vendor, item.identity.number) == (identity.vendor, identity.number)
+        and not (file_sha256 is not None and item.file_sha256 == file_sha256)
     ]
     if not candidates:
         return None
@@ -142,15 +158,18 @@ def find_duplicate(identity: Identity, known: list[Known]) -> Match | None:
     return Match(candidates[0], same_content=False)
 
 
-def sample_identities(golden: GoldenSet) -> list[Known]:
-    """Return the identities of the curated samples' invoices, which an upload may duplicate."""
+def sample_identities(golden: GoldenSet, manifest: Manifest) -> list[Known]:
+    """Return the identities of the curated samples' invoices, which an upload may duplicate.
+
+    Each carries the hash of its file from the manifest, so that reading the sample itself is not a duplicate.
+    """
     found = []
     for case in golden.samples():
         if case.printed is None:
             continue
         identity = identity_of(ExtractedInvoice.from_reply(printed_as_reply(case.printed)))
         if identity is not None:
-            found.append(Known("sample", case.sample or case.id, identity))
+            found.append(Known("sample", case.sample or case.id, identity, manifest.entry(case.id).sha256))
     return found
 
 

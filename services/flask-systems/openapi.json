@@ -422,6 +422,26 @@
         "title": "ColumnOut",
         "type": "object"
       },
+      "CorrectionIn": {
+        "additionalProperties": false,
+        "description": "A correction: which field, and the text the visitor typed into it. Empty text empties the field.\n\nThe field's path is in the body and not in the address: a path such as `line_items.0.total` has dots in it, and\nthe site's server only forwards addresses whose parts are plain identifiers.",
+        "properties": {
+          "path": {
+            "$ref": "#/components/schemas/FieldPathText"
+          },
+          "value": {
+            "maxLength": 200,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "value"
+        ],
+        "title": "CorrectionIn",
+        "type": "object"
+      },
       "CorrectionOut": {
         "description": "One correction a visitor made: which field, what it was and what it became.",
         "properties": {
@@ -989,22 +1009,6 @@
           "message"
         ],
         "title": "FailureOut",
-        "type": "object"
-      },
-      "FieldEditIn": {
-        "additionalProperties": false,
-        "description": "A correction: the text the visitor typed into one field. Empty text empties the field.",
-        "properties": {
-          "value": {
-            "maxLength": 200,
-            "title": "Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "value"
-        ],
-        "title": "FieldEditIn",
         "type": "object"
       },
       "FieldKind": {
@@ -2007,6 +2011,103 @@
         ]
       }
     },
+    "/api/lb03/documents/{document_id}/corrections": {
+      "post": {
+        "description": "<br/>A corrected field counts as confirmed by the visitor and loses its box. The duplicate check and the journal<br/>entry are made again from the corrected reading. Answers 200 with the whole document as it now stands.",
+        "operationId": "lb03_correct_field_documents__document_id__corrections_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Correct one field of a read document: every check runs again, and the correction is recorded.",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
     "/api/lb03/documents/{document_id}/export": {
       "get": {
         "description": "<br/>The CSV exports are refused (409) while a failed check stops the export. The JSON always goes.",
@@ -2110,111 +2211,6 @@
           }
         ],
         "summary": "Export a read document: its lines or its journal entry as CSV, or everything as JSON.",
-        "tags": [
-          "lb-03"
-        ]
-      }
-    },
-    "/api/lb03/documents/{document_id}/fields/{field_path}": {
-      "patch": {
-        "description": "<br/>A corrected field counts as confirmed by the visitor and loses its box. The duplicate check and the journal<br/>entry are made again from the corrected reading.",
-        "operationId": "lb03_edit_field_documents__document_id__fields__field_path__patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "document_id",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/DocumentId"
-            }
-          },
-          {
-            "in": "path",
-            "name": "field_path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FieldPathText"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FieldEditIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocumentOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        },
-        "security": [
-          {
-            "visitor": []
-          }
-        ],
-        "summary": "Correct one field of a read document: every check runs again, and the correction is recorded.",
         "tags": [
           "lb-03"
         ]

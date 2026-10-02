@@ -17,7 +17,7 @@ from sqlalchemy import Engine
 from lb03 import limits
 from lb03.api import UPLOAD_PATH, limit_upload_before_reading
 from lb03.boxes import PageWords
-from lb03.golden import GoldenCase, printed_as_reply, read_golden_set
+from lb03.golden import SEED_DIRECTORY, GoldenCase, printed_as_reply, read_golden_set
 from lb03.invoice import ExtractedInvoice
 from lb03.ocr.pool import OcrError
 from lb03.states import FailureCode
@@ -298,7 +298,7 @@ def test_a_visitor_sees_only_their_own_documents_and_pictures(serve: Callable[..
         response = served.request(method, url, session=ALEX)
         assert response.status_code == 404, (method, url)
         assert response.get_json()["error"]["code"] == "not_found"
-    edit = served.request("PATCH", f"{path}/fields/vendor", session=ALEX, json={"value": "Hijacked Ltd"})
+    edit = served.correct(document["id"], "vendor", "Hijacked Ltd", session=ALEX)
     assert edit.status_code == 404
     assert served.request("GET", "/api/lb03/documents", session=ALEX).get_json() == {"documents": []}
     assert served.document(document["id"])["fields"][1]["value"] != "Hijacked Ltd"
@@ -378,9 +378,8 @@ def test_a_correction_runs_every_check_again_and_the_field_loses_its_box(serve: 
     """The visitor changes the total: the arithmetic fails, the export is blocked, and the correction is recorded."""
     served = serve()
     document = served.read()
-    url = f"/api/lb03/documents/{document['id']}/fields/total"
 
-    response = served.request("PATCH", url, json={"value": "999999.99"})
+    response = served.correct(document["id"], "total", "999999.99")
 
     assert response.status_code == 200
     changed = response.get_json()
@@ -404,10 +403,9 @@ def test_correcting_the_field_back_makes_the_checks_pass_and_the_journal_entry_a
     """Putting the right total back: the checks pass, the entry is made, and both corrections are on record."""
     served = serve()
     document = served.read()
-    url = f"/api/lb03/documents/{document['id']}/fields/total"
-    served.request("PATCH", url, json={"value": "999999.99"})
+    served.correct(document["id"], "total", "999999.99")
 
-    response = served.request("PATCH", url, json={"value": f"{INVOICE.total:.2f}"})
+    response = served.correct(document["id"], "total", f"{INVOICE.total:.2f}")
 
     changed = response.get_json()
     assert changed["can_export"] is True
@@ -422,10 +420,9 @@ def test_a_value_that_does_not_fit_the_field_is_refused_and_nothing_changes(serv
     """A word for an amount, an impossible date, and a field the invoice doesn't have: all 422."""
     served = serve()
     document = served.read()
-    base = f"/api/lb03/documents/{document['id']}/fields"
 
     for path, value in (("total", "lots"), ("issue_date", "31.02.2026"), ("line_items.99.total", "1.00")):
-        response = served.request("PATCH", f"{base}/{path}", json={"value": value})
+        response = served.correct(document["id"], path, value)
         assert response.status_code == 422, (path, value)
         assert response.get_json()["error"]["code"] == "invalid_field"
     assert served.document(document["id"])["corrections"] == []
@@ -439,9 +436,9 @@ def test_a_field_path_that_is_not_the_shape_of_one_is_a_malformed_request(
     served = serve()
     document = served.read()
 
-    response = served.request("PATCH", f"/api/lb03/documents/{document['id']}/fields/{path}", json={"value": "1"})
+    response = served.correct(document["id"], path, "1")
 
-    assert response.status_code in {404, 422}
+    assert response.status_code == 422
     assert served.document(document["id"])["corrections"] == []
 
 
@@ -450,9 +447,7 @@ def test_a_correction_that_changes_nothing_is_not_recorded(serve: Callable[..., 
     served = serve()
     document = served.read()
 
-    response = served.request(
-        "PATCH", f"/api/lb03/documents/{document['id']}/fields/total", json={"value": f"{INVOICE.total:.2f}"}
-    )
+    response = served.correct(document["id"], "total", f"{INVOICE.total:.2f}")
 
     assert response.status_code == 200
     assert response.get_json()["corrections"] == []
@@ -466,7 +461,7 @@ def test_a_value_with_control_characters_or_too_long_is_a_malformed_request(
     served = serve()
     document = served.read()
 
-    response = served.request("PATCH", f"/api/lb03/documents/{document['id']}/fields/vendor", json={"value": value})
+    response = served.correct(document["id"], "vendor", value)
 
     assert response.status_code == 422
 
@@ -477,7 +472,7 @@ def test_a_document_that_is_not_ready_cannot_be_corrected_or_exported(serve: Cal
     created = served.upload().get_json()
     base = f"/api/lb03/documents/{created['id']}"
 
-    edit = served.request("PATCH", f"{base}/fields/vendor", json={"value": "Someone"})
+    edit = served.correct(created["id"], "vendor", "Someone")
     export = served.request("GET", f"{base}/export?format=json")
 
     assert (edit.status_code, edit.get_json()["error"]["code"]) == (409, "not_ready")
@@ -513,7 +508,7 @@ def test_a_document_that_fails_a_check_is_not_exported_as_csv_but_its_json_goes(
     served = serve()
     document = served.read()
     base = f"/api/lb03/documents/{document['id']}"
-    served.request("PATCH", f"{base}/fields/total", json={"value": "1.00"})
+    served.correct(document["id"], "total", "1.00")
 
     csv_export = served.request("GET", f"{base}/export?format=csv")
     journal = served.request("GET", f"{base}/export?format=journal")
@@ -530,7 +525,7 @@ def test_a_vendor_that_is_a_spreadsheet_formula_is_exported_as_text(serve: Calla
     served = serve()
     document = served.read()
     base = f"/api/lb03/documents/{document['id']}"
-    served.request("PATCH", f"{base}/fields/vendor", json={"value": '=HYPERLINK("http://evil.example","x")'})
+    served.correct(document["id"], "vendor", '=HYPERLINK("http://evil.example","x")')
 
     export = served.request("GET", f"{base}/export?format=csv")
 
@@ -673,3 +668,39 @@ def test_the_spans_of_a_document_reach_the_trace_without_any_of_its_words(serve:
     assert INVOICE.vendor is not None
     assert INVOICE.vendor not in everything
     assert str(INVOICE.total) not in everything
+
+
+def sample_reading(sample: str) -> tuple[bytes, FakeReader, str]:
+    """Return a curated sample's file, a reader that prints its invoice, and the reply a perfect model gives for it."""
+    case = next(item for item in GOLDEN.cases if item.sample == sample)
+    assert case.printed is not None
+    invoice = ExtractedInvoice.from_reply(printed_as_reply(case.printed))
+    data = (SEED_DIRECTORY / case.file).read_bytes()
+    return data, FakeReader([invoice_page(invoice)]), json.dumps(printed_as_reply(case.printed))
+
+
+def test_a_sample_is_read_as_itself_and_its_second_reading_is_a_duplicate_of_the_first(
+    serve: Callable[..., Served],
+) -> None:
+    """The board reads a sample by uploading its file: clean the first time, a duplicate of that document the second."""
+    data, reader, reply = sample_reading("clean-pdf")
+    served = serve(reader=reader, replies=[reply] * 10)
+
+    first = served.read(data=data, filename="bohemia-packaging-2026-0412.pdf")
+    second = served.read(data=data, filename="bohemia-packaging-2026-0412.pdf")
+
+    assert (first["state"], first["duplicate"], first["can_export"]) == ("ready", None, True)
+    assert first["journal_status"] == "made"
+    assert second["duplicate"] == {"of": first["id"], "source": "document", "same_content": True}
+    assert second["can_export"] is False
+
+
+def test_the_same_invoice_in_another_file_is_a_duplicate_of_the_sample(serve: Callable[..., Served]) -> None:
+    """A re-scan of a sample's invoice is not the sample's file, so the sample is named as the original."""
+    _, reader, reply = sample_reading("clean-pdf")
+    served = serve(reader=reader, replies=[reply] * 10)
+
+    document = served.read(data=PDF, filename="rescan.pdf")
+
+    assert document["duplicate"] == {"of": "clean-pdf", "source": "sample", "same_content": True}
+    assert document["can_export"] is False

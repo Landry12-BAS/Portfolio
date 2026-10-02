@@ -25,6 +25,7 @@ a fake model that answers from the printed truth, with the fake check flagging w
 """
 
 import asyncio
+import hashlib
 import tempfile
 import time
 from collections.abc import Callable, Sequence
@@ -353,9 +354,19 @@ def grade_case(
     )
 
 
-def in_order(cases: Sequence[GoldenCase]) -> list[GoldenCase]:
-    """Put the documents that repeat another after the ones they repeat, so the original is read first."""
-    return sorted(cases, key=lambda case: case.expect.duplicate_of is not None)
+def originals_first(cases: Sequence[GoldenCase], golden: GoldenSet) -> list[GoldenCase]:
+    """List the cases to read, each document that repeats another after the one it repeats.
+
+    An original that the run was not asked for is added in front (it is read, and not graded), because a duplicate
+    can only be told for what it is when the visitor already holds the document it repeats.
+    """
+    ordered = sorted(cases, key=lambda case: case.expect.duplicate_of is not None)
+    originals = [
+        golden.case(reference)
+        for reference in dict.fromkeys(case.expect.duplicate_of for case in ordered if case.expect.duplicate_of)
+        if all(case.id != reference for case in ordered)
+    ]
+    return [*originals, *ordered]
 
 
 @dataclass
@@ -375,10 +386,8 @@ class GoldenRun:
     documents: MemoryDocuments = field(default_factory=MemoryDocuments)
     document_ids: dict[str, str] = field(default_factory=dict)
 
-    def parts_for(self, case: GoldenCase, store: LocalFileStore) -> Parts:
-        """Make the parts to read one case with: the samples without the case itself, and the eval's own documents."""
-        own = case.sample or case.id
-        others = [known for known in self.samples if known.source != "sample" or known.reference != own]
+    def parts_for(self, store: LocalFileStore) -> Parts:
+        """Make the parts to read a case with: every sample (a sample's own file is told by its hash)."""
         return Parts(
             chat=self.chat,
             guard=self.guard,
@@ -387,13 +396,13 @@ class GoldenRun:
             repository=self.documents,
             tracer=self.tracer,
             chart=self.chart,
-            samples=others,
+            samples=self.samples,
             offload=inline,
             clock=self.clock,
         )
 
-    async def grade(self, case: GoldenCase, store: LocalFileStore) -> CaseGrade:
-        """Read one case through the pipeline and grade what came of it."""
+    async def read(self, case: GoldenCase, store: LocalFileStore) -> tuple[Ended, Record, float]:
+        """Put one case's file through the pipeline as an upload, and return how it ended and how long it took."""
         data = (self.data_directory / case.file).read_bytes()
         kind = sniff_kind(data[:HEAD_BYTES])
         if kind is None:
@@ -402,20 +411,34 @@ class GoldenRun:
         store.put(original_key(document_id, kind.extension), data, kind.mime)
         self.documents.create(document_id)
         self.document_ids[case.id] = document_id
-        job = Job(document_id, EVAL_SESSION, kind.name, kind.extension, self.golden.today, time.monotonic(), True)
+        sha256 = hashlib.sha256(data).hexdigest()
+        job = Job(
+            document_id, EVAL_SESSION, kind.name, kind.extension, self.golden.today, time.monotonic(), True, sha256
+        )
         started = time.monotonic()
-        ended = await Pipeline(self.parts_for(case, store)).process(job)
-        record = self.documents.records[document_id]
-        return grade_case(case, self.golden, record, ended, self.document_ids, time.monotonic() - started)
+        ended = await Pipeline(self.parts_for(store)).process(job)
+        return ended, self.documents.records[document_id], time.monotonic() - started
+
+    async def grade(self, case: GoldenCase, store: LocalFileStore) -> CaseGrade:
+        """Read one case through the pipeline and grade what came of it."""
+        ended, record, seconds = await self.read(case, store)
+        return grade_case(case, self.golden, record, ended, self.document_ids, seconds)
 
     async def run(self, cases: Sequence[GoldenCase]) -> EvalReport:
-        """Read each case in turn (originals before their duplicates), pausing between them, and grade it."""
+        """Read each case in turn (originals before their duplicates), pausing between them, and grade it.
+
+        A duplicate is a duplicate of a document the visitor already uploaded, so a case that repeats another is
+        always read after it: when the original is not among the cases asked for it is read first and not graded.
+        """
         started = time.monotonic()
         grades: list[CaseGrade] = []
         with tempfile.TemporaryDirectory(prefix="lb03-eval-") as folder:
             store = LocalFileStore(Path(folder) / "files")
-            for case in in_order(cases):
-                grades.append(await self.grade(case, store))
+            for case in originals_first(cases, self.golden):
+                if case in cases:
+                    grades.append(await self.grade(case, store))
+                else:
+                    await self.read(case, store)
                 if self.pause_seconds:
                     await asyncio.sleep(self.pause_seconds)
         order = {case.id: index for index, case in enumerate(cases)}

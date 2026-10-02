@@ -78,12 +78,6 @@ class PagePath(DocumentPath):
     number: Annotated[int, Field(ge=1, le=limits.MAX_PAGES)]
 
 
-class FieldAddress(DocumentPath):
-    """A field of a document: its ID and the field's path, such as `total` or `line_items.0.quantity`."""
-
-    field_path: FieldPathText
-
-
 class ExportQuery(BaseModel):
     """Which export to make: the lines as CSV, the journal entry as CSV, or everything as JSON."""
 
@@ -92,11 +86,16 @@ class ExportQuery(BaseModel):
     format: Literal["csv", "journal", "json"] = "json"
 
 
-class FieldEditIn(BaseModel):
-    """A correction: the text the visitor typed into one field. Empty text empties the field."""
+class CorrectionIn(BaseModel):
+    """A correction: which field, and the text the visitor typed into it. Empty text empties the field.
+
+    The field's path is in the body and not in the address: a path such as `line_items.0.total` has dots in it, and
+    the site's server only forwards addresses whose parts are plain identifiers.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
+    path: FieldPathText
     value: Annotated[str, StringConstraints(strip_whitespace=True, max_length=MAX_FIELD_VALUE_CHARS)]
 
     @field_validator("value")
@@ -187,19 +186,19 @@ def build_blueprint(service: Lb03Service | None, web_token_key: str | None) -> A
             return refusal_response(Refusal(404, "not_found", "There is no such document."))
         return document_out(stored, service.queued_ahead(stored)).model_dump(mode="json")
 
-    @blueprint.patch(
-        "/documents/<document_id>/fields/<field_path>",
+    @blueprint.post(
+        "/documents/<document_id>/corrections",
         responses={200: DocumentOut, 404: ErrorOut, 409: ErrorOut, 422: ErrorOut},
     )
-    def edit_field(path: FieldAddress, body: FieldEditIn) -> Response | dict[str, Any]:
+    def correct_field(path: DocumentPath, body: CorrectionIn) -> Response | dict[str, Any]:
         """Correct one field of a read document: every check runs again, and the correction is recorded.
 
         A corrected field counts as confirmed by the visitor and loses its box. The duplicate check and the journal
-        entry are made again from the corrected reading.
+        entry are made again from the corrected reading. Answers 200 with the whole document as it now stands.
         """
         if service is None:
             return error_response(503, "unavailable", NOT_SERVING_MESSAGE)
-        result = service.edit_field(visitor_of_request().session_key, path.document_id, path.field_path, body.value)
+        result = service.edit_field(visitor_of_request().session_key, path.document_id, body.path, body.value)
         if isinstance(result, Refusal):
             return refusal_response(result)
         return document_out(result).model_dump(mode="json")

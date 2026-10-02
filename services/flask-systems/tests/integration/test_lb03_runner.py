@@ -24,7 +24,7 @@ from lb03 import limits
 from lb03.accounts import read_chart
 from lb03.boxes import PageWords
 from lb03.duplicates import find_duplicate, identity_of, sample_identities
-from lb03.golden import SEED_DIRECTORY, printed_as_reply, read_golden_set
+from lb03.golden import SEED_DIRECTORY, printed_as_reply, read_golden_set, read_manifest
 from lb03.invoice import ExtractedInvoice
 from lb03.models import QuotaUsage
 from lb03.pipeline import Job, Offload, Parts, Pipeline
@@ -55,7 +55,7 @@ def clock() -> datetime:
 
 def plain_invoice() -> ExtractedInvoice:
     """Return the invoice of a golden document that reads cleanly and duplicates no sample."""
-    samples = sample_identities(GOLDEN)
+    samples = sample_identities(GOLDEN, read_manifest())
     for case in GOLDEN.cases:
         if case.expect.outcome != "valid" or case.printed is None or case.expect.duplicate_of is not None:
             continue
@@ -162,7 +162,7 @@ def make_harness(lb03_engine: Engine, tmp_path: Path) -> Iterator[Callable[..., 
                     repository=repository,
                     tracer=Tracer(queue),
                     chart=read_chart(SEED_DIRECTORY),
-                    samples=sample_identities(GOLDEN),
+                    samples=sample_identities(GOLDEN, read_manifest()),
                     offload=offload,
                     clock=clock,
                     cleanup=queue.close,

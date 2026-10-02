@@ -1509,6 +1509,7 @@ cases:
 - id: planted-total-hanse-2026-4700
   title: A total that is not the subtotal plus the VAT
   kind: planted_error
+  sample: planted-total
   file: documents/planted-total-hanse-2026-4700.pdf
   printed:
     document_type: invoice

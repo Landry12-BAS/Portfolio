@@ -10,6 +10,10 @@ PDFs are compared byte for byte: ReportLab's invariant mode makes them reproduci
 compared by what it shows: it is decoded, and must have the same size and differ from the committed one by
 less than two grey levels on average, because a float in OpenCV or a JPEG encoder may differ in the last
 bit between machines and a drift check that fails on the owner's laptop and passes in CI is worse than none.
+The curated samples also get the pictures of their pages (`pages/<sample>-<n>.jpg`), made with the service's own
+decoder and quality, which the site's mock back end and the board's replays show beside the fields (the real service
+makes its own, from the file a visitor uploads). They are compared by what they show, like a photograph.
+
 This is development tooling; the service never imports it.
 """
 
@@ -26,6 +30,7 @@ import yaml
 from numpy.typing import NDArray
 from PIL import Image
 
+from lb03 import limits
 from lb03.golden import (
     EVALS_DIRECTORY,
     SEED_DIRECTORY,
@@ -36,6 +41,8 @@ from lb03.golden import (
     Manifest,
     read_manifest,
 )
+from lb03.ocr.decode import decode_document
+from lb03.ocr.pool import default_worker_limits
 from lb03.synthetic.content import build_cases
 from lb03.synthetic.handwriting import draw_handwritten
 from lb03.synthetic.layout import LAYOUTS, Page
@@ -55,6 +62,8 @@ PHOTO_RENDER_SCALE = 2.2
 PIXEL_TOLERANCE = 2.0
 BOX_TOLERANCE = 0.003
 MIME_BY_FORMAT = {"jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+# Where the samples' page pictures are written, under the seed folder.
+PICTURES_FOLDER = "pages"
 type Quad = tuple[float, float, float, float, float, float, float, float]
 
 
@@ -262,6 +271,22 @@ def render_golden(golden: GoldenSet) -> str:
     )
 
 
+def sample_pictures(golden: GoldenSet, rendered: dict[str, Rendered]) -> dict[str, bytes]:
+    """Draw the pictures of the samples' pages as the viewer shows them: file name under the seed folder, and its JPEG.
+
+    The service's own decoder makes them (upright, no larger than the page limit) and its own JPEG quality saves them,
+    so a picture here is what the viewer shows for the same file. A sample is named by its key: `clean-pdf-1.jpg`.
+    """
+    worker_limits = default_worker_limits()
+    pictures: dict[str, bytes] = {}
+    for case in golden.samples():
+        for number, page in enumerate(decode_document(rendered[case.id].content, worker_limits).pages, start=1):
+            buffer = io.BytesIO()
+            page.save(buffer, "JPEG", quality=limits.PAGE_JPEG_QUALITY)
+            pictures[f"{PICTURES_FOLDER}/{case.sample}-{number}.jpg"] = buffer.getvalue()
+    return pictures
+
+
 def build_seed(seed_directory: Path = SEED_DIRECTORY, evals_directory: Path = EVALS_DIRECTORY) -> Manifest:
     """Draw the golden set's documents and write them, the manifest and golden.yaml; return the manifest."""
     golden = build_cases()
@@ -270,6 +295,13 @@ def build_seed(seed_directory: Path = SEED_DIRECTORY, evals_directory: Path = EV
         path = seed_directory / case.file
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(rendered[case.id].content)
+    pictures = sample_pictures(golden, rendered)
+    folder = seed_directory / PICTURES_FOLDER
+    folder.mkdir(parents=True, exist_ok=True)
+    for stale in folder.glob("*.jpg"):
+        stale.unlink()
+    for name, content in pictures.items():
+        (seed_directory / name).write_bytes(content)
     manifest = manifest_of(golden, rendered)
     (seed_directory / "manifest.json").write_text(render_manifest(manifest), encoding="utf-8")
     evals_directory.mkdir(parents=True, exist_ok=True)
@@ -317,6 +349,23 @@ def check_seed(seed_directory: Path = SEED_DIRECTORY, evals_directory: Path = EV
         problems.append("the manifest lists other documents than the golden set")
     for case in golden.cases:
         problems.extend(check_file(seed_directory, case, rendered[case.id], by_id.get(case.id)))
+    problems.extend(check_pictures(seed_directory, sample_pictures(golden, rendered)))
+    return problems
+
+
+def check_pictures(seed_directory: Path, fresh: dict[str, bytes]) -> list[str]:
+    """Compare the committed page pictures of the samples with fresh ones: the same files, showing the same pages."""
+    problems = []
+    folder = seed_directory / PICTURES_FOLDER
+    committed = {f"{PICTURES_FOLDER}/{path.name}" for path in folder.glob("*.jpg")} if folder.is_dir() else set()
+    for name in sorted(committed - set(fresh)):
+        problems.append(f"{name} is a picture of no sample")
+    for name, content in sorted(fresh.items()):
+        path = seed_directory / name
+        if not path.exists():
+            problems.append(f"{name} is missing")
+        elif not same_picture(path.read_bytes(), content):
+            problems.append(f"{name} is not what the generator draws now")
     return problems
 
 

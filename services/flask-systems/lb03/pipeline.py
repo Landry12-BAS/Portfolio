@@ -137,6 +137,8 @@ class Job:
     # A document of the eval or of a recorded sample, not a visitor's: its run has no session, so no visitor's
     # daily quota at the gateway is counted for it.
     synthetic: bool = False
+    # The SHA-256 of the file, so that a sample's own file is not named as that sample's duplicate (duplicates.py).
+    file_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -557,7 +559,7 @@ class Pipeline:
                 )
                 known = [*others, *self.parts.samples]
                 compared = len(known)
-                match = find_duplicate(identity, known)
+                match = find_duplicate(identity, known, work.job.file_sha256)
             span.set("compared", compared)
             span.set("duplicate", match is not None)
         result = duplicate_result(identity, match)
