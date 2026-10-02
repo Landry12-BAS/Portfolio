@@ -70,6 +70,21 @@ describe('the committed routing table', () => {
     expect(reranker?.scores).toBe('logits')
   })
 
+  it('transcribes with Groq\'s Whisper, then Workers AI\'s, limited in seconds of audio', () => {
+    const stt = routing.aliases.get('lb-stt')!
+    expect(stt.kind).toBe('transcription')
+    expect(stt.chain.map(model => model.ref)).toEqual(['groq/whisper-large-v3-turbo', 'workers-ai/whisper-large-v3-turbo'])
+    expect(stt.maxAudioSeconds).toBe(60)
+    expect(stt.maxInputTokens).toBe(0)
+
+    const [groq, workers] = stt.chain
+    expect(groq?.api).toBe('openai')
+    expect(groq?.limits?.hour?.audioSeconds).toBe(7200)
+    expect(groq?.limits?.day).toEqual({ requests: 2000, audioSeconds: 28_800 })
+    expect(workers?.api).toBe('run')
+    expect(workers?.neuronsPerAudioMinute).toBe(46.63)
+  })
+
   it('gives LB-01 every alias its ticket pipeline needs', () => {
     expect(routing.systems.get('lb-01')?.aliases).toEqual(['lb-fast', 'lb-tools', 'lb-embed', 'lb-rerank', 'lb-guard'])
   })
@@ -197,6 +212,52 @@ describe('mistakes the loader catches', () => {
       doc.aliases['lb-fast'].threshold = 0.5
     }))
     expect(issues).toEqual(['aliases.lb-fast: only guard aliases have a threshold', 'aliases.lb-guard: guard aliases need a threshold'])
+  })
+
+  it('refuses a speech-to-text alias with no length limit, or with one in tokens', () => {
+    const issues = issuesOf(edited((doc) => {
+      delete doc.aliases['lb-stt'].maxAudioSeconds
+      doc.aliases['lb-stt'].maxInputTokens = 3000
+    }))
+    expect(issues).toEqual([
+      'aliases.lb-stt: speech-to-text aliases need maxAudioSeconds',
+      'aliases.lb-stt: speech-to-text aliases are limited in seconds, not tokens',
+    ])
+  })
+
+  it('refuses a length limit on any other kind of alias, and a chat alias without a token limit', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.aliases['lb-fast'].maxAudioSeconds = 60
+      delete doc.aliases['lb-tools'].maxInputTokens
+    }))
+    expect(issues).toEqual([
+      'aliases.lb-fast: only speech-to-text aliases have maxAudioSeconds',
+      'aliases.lb-tools: aliases need maxInputTokens',
+    ])
+  })
+
+  it('refuses a speech-to-text model that could never take the longest recording its alias allows', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.providers.groq.models['whisper-large-v3-turbo'].limits.hour.audioSeconds = 50
+      doc.providers.groq.models['whisper-large-v3-turbo'].limits.day.audioSeconds = 59
+    }))
+    expect(issues).toEqual([
+      'aliases.lb-stt: groq/whisper-large-v3-turbo allows 45 audio seconds a hour, less than the alias maximum of 60',
+      'aliases.lb-stt: groq/whisper-large-v3-turbo allows 56 audio seconds a day, less than the alias maximum of 60',
+    ])
+  })
+
+  it('refuses audio rates on the wrong kind of model, and a speech-to-text model with no rate', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.providers['workers-ai'].models['gpt-oss-20b'].neuronsPerAudioMinute = 46.63
+      doc.providers['workers-ai'].models['whisper-large-v3-turbo'].neurons = { input: 1, output: 1 }
+      delete doc.providers['workers-ai'].models['whisper-large-v3-turbo'].neuronsPerAudioMinute
+    }))
+    expect(issues).toEqual([
+      'workers-ai/gpt-oss-20b: neuronsPerAudioMinute only applies to speech-to-text models',
+      'workers-ai/whisper-large-v3-turbo is metered in Neurons but has no neurons rates',
+      'workers-ai/whisper-large-v3-turbo: a speech-to-text model is priced by neuronsPerAudioMinute, not by token',
+    ])
   })
 
   it('refuses plain HTTP to a provider\'s own endpoint too', () => {
