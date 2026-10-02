@@ -26,13 +26,19 @@ function sharedMock(): Lb04Mock {
   return shared
 }
 
-/** Opens each of these samples once with the real timers, so the tests that follow, which run on fake ones, never wait for a worker thread. */
+/**
+ * Opens each of these samples once with the real timers, so the tests that follow, which run on fake ones,
+ * never wait for a worker thread. Each sample is opened by a visitor of its own, because one visitor may
+ * start only three contracts in a day and a sample refused for the limit would not be opened at all.
+ */
 export async function warmUp(sampleIds: readonly string[]): Promise<void> {
   const mock = sharedMock()
-  for (const sampleId of sampleIds) {
-    const created = mock.create('warm-up-session-0123', { from: 'sample', sampleId })
+  for (const [index, sampleId] of sampleIds.entries()) {
+    const visitor = `warm-up-session-${String(index).padStart(4, '0')}`
+    const created = mock.create(visitor, { from: 'sample', sampleId })
+    if (created.status >= 300) throw new Error(`The sample ${sampleId} could not be started for the warm-up: ${created.status}.`)
     const id = (created.body as { id: string }).id
-    for (let poll = 0; poll < 6; poll += 1) await mock.get('warm-up-session-0123', id)
+    for (let poll = 0; poll < 6; poll += 1) await mock.get(visitor, id)
   }
   mock.reset()
 }
@@ -82,6 +88,11 @@ export class Lb04Site {
   /** The calls made to paths that start with a prefix, in order. */
   callsTo(prefix: string, method?: string): FakeCall[] {
     return this.calls.filter(call => call.path.startsWith(prefix) && (method === undefined || call.method === method))
+  }
+
+  /** The calls that fetched a contract's PDF, in order: they are the ones with the file's name at the end of the path. */
+  fileCalls(): FakeCall[] {
+    return this.calls.filter(call => call.path.startsWith('/api/lb04/contracts/') && call.path.endsWith('/file'))
   }
 
   /** The browser's `fetch`, as this site answers it. */

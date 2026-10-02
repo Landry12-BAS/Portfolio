@@ -130,7 +130,7 @@ describe('LB-04\'s board', () => {
       await reviewSample(store, session, 'wholesale-supply')
       await until(() => store.report !== undefined)
 
-      expect(site.callsTo('/file')).toEqual([])
+      expect(site.fileCalls()).toEqual([])
       const first = store.report?.findings.find(finding => finding.kind === 'risk')
       store.show(first?.id ?? '')
       store.show(first?.id ?? '')
@@ -252,7 +252,7 @@ describe('LB-04\'s board', () => {
       expect(store.pdf).toEqual(bytes)
       expect(store.pdfStatus).toBe('ready')
       expect(store.contract?.origin).toBe('upload')
-      expect(site.callsTo('/file')).toEqual([])
+      expect(site.fileCalls()).toEqual([])
     })
   })
 
@@ -355,11 +355,12 @@ describe('LB-04\'s board', () => {
       const { site, store, session } = start()
       await reviewSample(store, session, 'clean-supply')
       await until(() => store.report !== undefined)
+      const id = store.contract?.id ?? ''
       await store.deleteContract()
       await store.loadLimits()
 
-      expect(site.callsTo(`/api/lb04/contracts/${site.mock.list('fake-session-0123456789').body && ''}`)).toBeDefined()
-      expect(site.calls.some(call => call.method === 'DELETE')).toBe(true)
+      expect(site.callsTo(`/api/lb04/contracts/${id}`, 'DELETE')).toHaveLength(1)
+      expect((await site.mock.get('fake-session-0123456789', id)).status).toBe(404)
       expect(store.contract).toBeUndefined()
       expect(store.report).toBeUndefined()
       expect(store.quota?.used).toBe(1)
