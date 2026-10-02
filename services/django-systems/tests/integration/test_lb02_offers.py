@@ -230,6 +230,19 @@ def test_the_migration_gives_a_conversation_already_open_the_numbers_it_was_show
     assert reload(conversation).shown_slots == [40, 7, 22]
 
 
+def test_the_registry_column_keeps_an_empty_default_so_the_previous_release_still_works() -> None:
+    """The release before this one does not know `shown_slots`; after a rollback it inserts rows without it."""
+    with connections["lb02"].cursor() as cursor:
+        cursor.execute(
+            "SELECT column_default FROM information_schema.columns"
+            " WHERE table_schema = 'lb02' AND table_name = 'lb02_conversation' AND column_name = 'shown_slots'"
+        )
+        row = cursor.fetchone()
+
+    assert row is not None
+    assert row[0] is not None
+
+
 # The limit
 
 

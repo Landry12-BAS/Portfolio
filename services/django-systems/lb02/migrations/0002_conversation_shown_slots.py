@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             model_name="conversation",
             name="shown_slots",
             field=django.contrib.postgres.fields.ArrayField(
-                base_field=models.BigIntegerField(), blank=True, default=list, size=128
+                base_field=models.BigIntegerField(), blank=True, db_default=[], default=list, size=128
             ),
         ),
         migrations.RunPython(number_the_slots_on_offer, migrations.RunPython.noop),

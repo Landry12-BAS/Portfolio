@@ -211,7 +211,9 @@ class Conversation(models.Model):
     # Every slot the conversation was ever shown, in the order it was first shown. A slot's
     # number is its place in this list, counting from 1, so a number means the same slot for
     # the whole conversation, whichever tab the visitor reads it in (lb02/offers.py).
-    shown_slots = ArrayField(models.BigIntegerField(), default=list, blank=True, size=MAX_SHOWN_SLOTS)
+    # The database keeps an empty list as the column's own default, so the previous release of the
+    # service, which does not know this column, can still create conversations after a rollback.
+    shown_slots = ArrayField(models.BigIntegerField(), default=list, db_default=[], blank=True, size=MAX_SHOWN_SLOTS)
 
     # Limits, counted as they are used.
     message_count = models.PositiveSmallIntegerField(default=0)
