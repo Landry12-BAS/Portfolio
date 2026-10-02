@@ -16,6 +16,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible'
 import { APICallError } from 'ai'
 import type { LanguageModel } from 'ai'
+import { z } from 'zod'
 
 import { currentRun, currentSpanId, OutsideRunError } from './run.ts'
 import type { Run } from './run.ts'
@@ -148,6 +149,21 @@ export function runHeaders(run: Run, parentSpanId: string | undefined): Record<s
   return headers
 }
 
+// The gateway's answer to a guard check (services/gateway/src/routes/guard.ts). Strict about the numbers that matter: an answer without a readable verdict is a failure.
+const guardVerdictSchema = z.object({
+  flagged: z.boolean(),
+  score: z.number().min(0).max(1),
+  threshold: z.number().gt(0).max(1),
+  segments: z.int().min(1),
+})
+
+/**
+ * The gateway's verdict on whether a text looks like a prompt injection. `score` is the highest injection
+ * probability found anywhere in the text, `flagged` means it reached `threshold`, and `segments` is how many
+ * pieces the gateway read it in (each is a request to the guard model).
+ */
+export type GuardVerdict = z.infer<typeof guardVerdictSchema>
+
 /** Where the gateway is, and how long a call may take. */
 export interface GatewaySettings {
   url: string
@@ -205,6 +221,29 @@ export class Gateway {
   /** Returns the model behind a virtual alias such as `lb-tools`, for the AI SDK's `generateObject` and `generateText`. */
   chat(alias: string): LanguageModel {
     return this.provider.chatModel(alias)
+  }
+
+  /**
+   * Asks the gateway whether a text looks like a prompt injection (`POST /v1/guard`), as part of the current run. The
+   * text must fit the alias (about 2,800 characters for `lb-guard`: the gateway answers 413 `input_too_large` past that).
+   * It fails closed: when the gateway can't be reached, refuses, or answers without a readable verdict, this throws a
+   * GatewayCallError, and the caller must treat the text as unchecked.
+   */
+  async guard(text: string, alias = 'lb-guard'): Promise<GuardVerdict> {
+    const response = await this.#labelled(`${this.#origin}/v1/guard`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: alias, input: text }),
+    })
+    const body: unknown = await response.json().catch(() => undefined)
+    if (!response.ok) {
+      const code = codeOf(body)
+      const retryAfter = Number.parseInt(response.headers.get('retry-after') ?? '', 10)
+      throw new GatewayCallError(isGatewayCode(code) ? code : 'unknown', response.status, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined)
+    }
+    const verdict = guardVerdictSchema.safeParse(body)
+    if (!verdict.success) throw new GatewayCallError('unknown', response.status, undefined)
+    return verdict.data
   }
 
   /**
