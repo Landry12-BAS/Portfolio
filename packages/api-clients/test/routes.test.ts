@@ -40,7 +40,7 @@ describe('the table of routes', () => {
       expect(route.path.startsWith(`/api/lb${route.system.slice(3)}/`), route.path).toBe(true)
       expect(['GET', 'POST', 'PUT', 'DELETE']).toContain(route.method)
     }
-    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-05', 'lb-08']))
+    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-04']))
   })
 
   it('has no route twice', () => {
@@ -58,6 +58,24 @@ describe('the table of routes', () => {
       'GET /api/lb01/tickets/{ticket_id}',
       'POST /api/lb01/tickets/{ticket_id}/decision',
     ])
+  })
+
+  it('serves LB-04 with its eleven routes, and a redline is a POST that takes no body', () => {
+    expect(API_ROUTES.filter(route => route.system === 'lb-04').map(route => `${route.method} ${route.path}`)).toEqual([
+      'GET /api/lb04/contracts',
+      'POST /api/lb04/contracts',
+      'DELETE /api/lb04/contracts/{id}',
+      'GET /api/lb04/contracts/{id}',
+      'GET /api/lb04/contracts/{id}/file',
+      'POST /api/lb04/contracts/{id}/findings/{findingId}/redline',
+      'GET /api/lb04/contracts/{id}/pages',
+      'GET /api/lb04/contracts/{id}/report',
+      'GET /api/lb04/limits',
+      'GET /api/lb04/playbook',
+      'GET /api/lb04/samples',
+    ])
+    expect(matchRoute('POST', '/api/lb04/contracts/3b241101-e2bb-4255-8caf-4136c566a962/findings/f2/redline')?.route.body).toBe(false)
+    expect(matchRoute('POST', '/api/lb04/contracts')?.route.body).toBe(true)
   })
 })
 

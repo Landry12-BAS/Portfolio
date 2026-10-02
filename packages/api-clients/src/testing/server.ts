@@ -21,6 +21,9 @@ import { MOCK_IDENTITY_PATH } from '../mock-identity.ts'
 import { MockGateway } from './gateway.ts'
 import { Lb01Mock, errorAnswer } from './lb01.ts'
 import type { Answer, RunIdDisclosure } from './lb01.ts'
+import { Lb04Mock } from './lb04.ts'
+import type { Lb04MockOptions } from './lb04.ts'
+import { readLb04Seed } from './lb04-seed.ts'
 import { Lb08Mock } from './lb08.ts'
 import { readLb08Seed } from './lb08-seed.ts'
 import { OpenApiDocuments } from './openapi.ts'
@@ -32,8 +35,11 @@ import { attachSockets } from './lb02/socket-server.ts'
 import { Lb05Mock } from './lb05.ts'
 import { readLb05Seed } from './lb05-seed.ts'
 
-// Nothing the site sends is bigger than this; a bigger body is refused unread.
+// Nothing the site sends is bigger than this; a bigger body is refused unread. The one exception is the
+// upload of a contract: a PDF of 2 MiB as base64 in JSON, which the real service takes in a body of about
+// 2.8 MB (the edge allows that one route 3 MB, and every other route 1 MB).
 const MAX_BODY_BYTES = 1_048_576
+const MAX_UPLOAD_BODY_BYTES = 3 * 1_048_576
 
 /** What the mock was set up with. */
 export interface MockBackendOptions {
@@ -55,6 +61,8 @@ export interface MockBackendOptions {
   // LB-02's conversation: how long a connection has to say hello and may be silent, how many messages and
   // conversations are allowed, and how long the concierge "thinks". The real service's limits by default.
   lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
+  // LB-04's review: how many times a contract is polled before it moves on to its next state.
+  lb04?: Lb04MockOptions
 }
 
 /** Something the mock should do instead of answering normally, once or several times. */
@@ -99,6 +107,8 @@ export interface MockBackend {
   lb01: Lb01Mock
   // LB-02's state and controls: other visitors, the clock, the connections.
   lb02: Lb02Mock
+  // LB-04's state and controls: its contracts and the reviews of them, and the failure the next review ends with.
+  lb04: Lb04Mock
   // LB-05's state, for tests that look inside.
   lb05: Lb05Mock
   // LB-08's state: its workflows, runs and sandbox.
@@ -121,15 +131,20 @@ const LEAKY_HEADERS: Record<string, string> = {
 }
 
 /** Reads a request's body, or returns undefined when it is bigger than the limit. */
-async function readBody(request: IncomingMessage): Promise<string | undefined> {
+async function readBody(request: IncomingMessage, limit: number): Promise<string | undefined> {
   const chunks: Buffer[] = []
   let length = 0
   for await (const chunk of request) {
     length += (chunk as Buffer).length
-    if (length > MAX_BODY_BYTES) return undefined
+    if (length > limit) return undefined
     chunks.push(chunk as Buffer)
   }
   return Buffer.concat(chunks).toString('utf8')
+}
+
+/** The most bytes a request to this route may carry: a contract's upload takes more than anything else the site sends. */
+function bodyLimitOf(method: string, path: string): number {
+  return method === 'POST' && path === '/api/lb04/contracts' ? MAX_UPLOAD_BODY_BYTES : MAX_BODY_BYTES
 }
 
 /** Turns the header values of a request into one lower-case map of single values. */
@@ -148,6 +163,7 @@ class MockSite {
   readonly violations: string[] = []
   readonly lb01: Lb01Mock
   readonly lb02: Lb02Mock
+  readonly lb04: Lb04Mock
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
   readonly #documents = new OpenApiDocuments()
@@ -163,9 +179,10 @@ class MockSite {
     this.#now = options.now ?? Date.now
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
+    this.lb04 = new Lb04Mock(readLb04Seed(), this.#now, options.lb04)
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId))
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -180,6 +197,7 @@ class MockSite {
     this.#scripts.length = 0
     this.lb01.reset()
     this.lb02.reset()
+    this.lb04.reset()
     this.lb05.reset()
     this.lb08.reset()
   }
@@ -194,7 +212,7 @@ class MockSite {
     return script
   }
 
-  /** Sends an answer: a status, a JSON body when there is one, and the headers a framework would add. */
+  /** Sends an answer: a status, a JSON body when there is one, and the headers a framework would add, with the headers the answer itself carries. */
   #send(response: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}): void {
     const text = typeof body === 'string' ? body : body === undefined ? undefined : JSON.stringify(body)
     const headers: Record<string, string> = { ...(this.#options.leakyHeaders === false ? {} : LEAKY_HEADERS), ...extra }
@@ -234,7 +252,7 @@ class MockSite {
   async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? '/', 'http://mock.local')
     const method = request.method ?? 'GET'
-    const body = await readBody(request)
+    const body = await readBody(request, bodyLimitOf(method, url.pathname))
     this.requests.push({ method, path: url.pathname, query: url.search, headers: flatten(request.headers), body: body ?? '' })
     if (body === undefined) return this.#send(response, 413, errorAnswer(413, 'payload_too_large', 'The request is too big.').body)
 
@@ -253,12 +271,12 @@ class MockSite {
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
-    const answer = this.#answer(found.operation, found.params, url, request.headers.authorization, body)
-    this.#send(response, answer.status, answer.body)
+    const answer = await this.#answer(found.operation, found.params, url, request.headers.authorization, body)
+    this.#send(response, answer.status, answer.body, answer.headers)
   }
 
   /** Answers a documented operation: the visitor's token, the body, the handler or an example, and a check of the answer. */
-  #answer(operation: MockOperation, params: Record<string, string>, url: URL, authorization: string | undefined, text: string): Answer {
+  async #answer(operation: MockOperation, params: Record<string, string>, url: URL, authorization: string | undefined, text: string): Promise<Answer> {
     const system = /^\/api\/lb(\d{2})\//.exec(url.pathname)?.[1]
     if (system === undefined) return this.#example(operation)
     const visitor = this.#visitor(authorization, `lb-${system}`)
@@ -274,13 +292,13 @@ class MockSite {
     }
     const problems = this.#documents.checkRequest(operation, json)
     if (problems.length > 0) return { status: 422, body: { error: { code: 'invalid_request', message: 'The request does not fit its schema.', fields: problems.join('; ') } } }
-    const answer = this.#handler(operation, params, visitor, json, url.searchParams) ?? this.#example(operation)
+    const answer = (await this.#handler(operation, params, visitor, json, url.searchParams)) ?? this.#example(operation)
     this.#check(operation, answer)
     return answer
   }
 
-  /** Runs the handler written for an operation, if there is one: LB-01's, LB-02's, LB-05's and LB-08's. */
-  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown, search: URLSearchParams): Answer | undefined {
+  /** Runs the handler written for an operation, if there is one: LB-01's, LB-02's, LB-04's, LB-05's and LB-08's. */
+  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown, search: URLSearchParams): Promise<Answer | undefined> | Answer | undefined {
     const session = visitor.sessionKey
     switch (`${operation.method} ${operation.template}`) {
       case 'GET /api/lb01/customers': return this.lb01.customers()
@@ -296,6 +314,25 @@ class MockSite {
       case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
       case 'GET /api/lb05/quota': return this.lb05.quota(session)
       case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
+      default: return this.#lb04Handler(operation, params, session, json, search)
+    }
+  }
+
+  /** Runs the handler written for one of LB-04's operations, if there is one, and otherwise LB-08's. */
+  #lb04Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown, search: URLSearchParams): Promise<Answer | undefined> | Answer | undefined {
+    const id = params.id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb04/limits': return this.lb04.limits(session)
+      case 'GET /api/lb04/samples': return this.lb04.samples()
+      case 'GET /api/lb04/playbook': return this.lb04.playbook()
+      case 'POST /api/lb04/contracts': return this.lb04.create(session, json as Parameters<Lb04Mock['create']>[1])
+      case 'GET /api/lb04/contracts': return this.lb04.list(session)
+      case 'GET /api/lb04/contracts/{id}': return this.lb04.get(session, id)
+      case 'GET /api/lb04/contracts/{id}/pages': return this.lb04.pages(session, id)
+      case 'GET /api/lb04/contracts/{id}/file': return this.lb04.file(session, id)
+      case 'GET /api/lb04/contracts/{id}/report': return this.lb04.report(session, id)
+      case 'POST /api/lb04/contracts/{id}/findings/{findingId}/redline': return this.lb04.redline(session, id, params.findingId ?? '')
+      case 'DELETE /api/lb04/contracts/{id}': return this.lb04.delete(session, id)
       default: return this.#lb08Handler(operation, params, session, json, search)
     }
   }
@@ -415,6 +452,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     violations: site.violations,
     lb01: site.lb01,
     lb02: site.lb02,
+    lb04: site.lb04,
     lb05: site.lb05,
     lb08: site.lb08,
     script: answer => site.script(answer),
