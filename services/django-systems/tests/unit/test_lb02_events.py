@@ -150,6 +150,7 @@ def test_every_error_code_has_a_sentence_and_the_event_carries_both() -> None:
 def test_the_close_codes_are_the_standard_ones_and_a_range_of_our_own() -> None:
     """1003, 1009 and 1011 mean what RFC 6455 says; ours sit in the range applications may use."""
     assert (CloseCode.UNSUPPORTED, CloseCode.TOO_BIG, CloseCode.UNAVAILABLE) == (1003, 1009, 1011)
+    assert int(CloseCode.TRY_AGAIN_LATER) == 1013
     assert all(4000 <= code < 5000 for code in CloseCode if code >= 4000)
     assert len({int(code) for code in CloseCode}) == len(CloseCode)
 
@@ -190,6 +191,26 @@ def test_ready_describes_the_conversation_and_what_was_said() -> None:
     assert (event["booking"], event["options"], event["messages_left"], event["closed"]) == (None, [], 27, False)
 
 
+def test_ready_says_whether_the_answer_to_the_last_message_is_still_on_its_way() -> None:
+    """A resumed page waits for the answer only when it is told to; a conversation that is not mid-turn says no."""
+    waiting = json.loads(ready_event(PUBLIC_ID, True, snapshot(), [], pending=True).model_dump_json())
+    quiet = json.loads(ready_event(PUBLIC_ID, True, snapshot(), []).model_dump_json())
+
+    assert (waiting["pending"], quiet["pending"]) == (True, False)
+
+
+def test_the_errors_a_failed_turn_and_a_flooding_client_earn_are_typed() -> None:
+    """Each has a code that stays the same and a sentence that says what to do, with nothing of the error in it."""
+    failed = json.loads(problem(ErrorCode.TURN_FAILED).model_dump_json())
+    flood = json.loads(problem(ErrorCode.TOO_MANY_PENDING).model_dump_json())
+    crowd = json.loads(problem(ErrorCode.TOO_MANY_CONNECTIONS).model_dump_json())
+
+    assert (failed["type"], failed["code"]) == ("error", "turn_failed")
+    assert "send it again" in failed["message"]
+    assert flood["code"] == "too_many_pending"
+    assert crowd["code"] == "too_many_connections"
+
+
 def test_a_line_with_a_role_the_protocol_doesnt_know_is_an_error() -> None:
     """Lines come from the database, and the boundary checks them anyway."""
     with pytest.raises(ValidationError):
@@ -203,6 +224,7 @@ def test_a_reply_carries_the_text_the_receipt_the_tools_and_where_things_stand()
         **snapshot(step="done", options=[], booking=booking).__dict__,
         reply="You're booked.",
         receipt=Receipt.BOOKING_CONFIRMED,
+        position=12,
         tools=[ToolOutcome("confirm_booking", True, True, {"ok": True})],
         model_calls=7,
     )
@@ -223,7 +245,7 @@ def test_a_reply_carries_the_text_the_receipt_the_tools_and_where_things_stand()
 
 def test_a_reply_that_isnt_a_receipt_has_none() -> None:
     """The model's own words carry no receipt."""
-    result = TurnResult(**snapshot().__dict__, reply="Which day suits you?", receipt=None)
+    result = TurnResult(**snapshot().__dict__, reply="Which day suits you?", receipt=None, position=4)
 
     assert reply_event(result).receipt is None
 

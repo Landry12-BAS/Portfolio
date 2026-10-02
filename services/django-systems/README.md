@@ -112,6 +112,8 @@ quotas in `routing.yaml` by a test:
 | Conversations a visitor may start a day | 10 |
 | A message | 500 characters; a party of at most 12, and at most what the offering takes |
 | A WebSocket frame | 4 KB; a connection has 10 seconds to say hello and 15 minutes of silence |
+| Messages one connection has in hand | 2: the one being answered and one waiting behind it; a third is refused with `too_many_pending` |
+| Connections one visitor may hold | 4 at a time, in one server process (two tabs, the installed app and one still being torn down); the fifth is refused with `too_many_connections` and closed with 1013 |
 
 ## The API
 
@@ -161,16 +163,50 @@ and more proxies log headers than message bodies. After that:
 | Client sends | Server answers |
 |---|---|
 | `{"type": "message", "text": "..."}` (1 to 500 characters) | `working`, then `reply`: the text, the `receipt` when the code wrote it, the tools called, the step, language, options, hold, booking, `messages_left`, `model_calls` |
-| the hello | `ready`: the conversation, whether it resumed, and its whole transcript and state |
+| the hello | `ready`: the conversation, whether it resumed, its whole transcript and state, and `pending` (below) |
 | nothing | `calendar`: slots that changed, each `free`, `held` or `booked`, and `mine` for this conversation; `calendar_reset`: load the snapshot again |
 
-A frame that isn't in the protocol gets an `error` event with a code (`invalid_frame`,
-`message_too_long`, `already_said_hello`, `conversation_gone`, `too_many_conversations`,
-`unavailable`) and the connection goes on. These close it, with the code that says why:
+Frames are read as they arrive, and a message is not answered where it is read: it joins a
+line of two (the one being answered and one behind it) that a worker task of the connection
+answers one at a time, so the calendar keeps moving during a long turn and a client that never
+waits cannot pile work up in memory. Calendar events may therefore arrive between `working`
+and `reply`.
+
+**A turn outlives its connection.** If the network cuts a connection while the concierge is
+answering, the turn still ends and its answer is saved in the transcript. A connection that
+resumes the conversation meanwhile is told in `ready` that the answer is on its way
+(`"pending": true`: the last line of the transcript is the visitor's and a turn of the
+conversation is running) and is sent it as a `reply` when the turn ends, or an `error` if
+the turn failed, through a channel-layer group of the conversation. One that resumes after the
+turn ended finds the answer in the transcript, with `pending` false, and is not sent it again
+(each answer carries its place in the transcript, and a connection ignores one it already
+holds). Only a connection that is waiting for an answer is sent one: a second, idle tab of the
+conversation is not shown a reply to a question it never saw, and catches up when it resumes.
+If the server process is lost mid-turn, nothing can send the answer; the resumed page finds
+the visitor's message last with `pending` false, and says so.
+
+A frame that isn't in the protocol, or can't be taken, gets an `error` event with a code
+(`invalid_frame`, `message_too_long`, `already_said_hello`, `conversation_gone`,
+`too_many_conversations`, `unavailable`, and these three:
+`turn_failed`, `too_many_pending`, `too_many_connections`) and the connection goes on, except
+where the table below closes it.
+
+- `turn_failed`: the turn raised an error nobody planned for. The visitor's message stays in
+  the transcript with a note that the concierge could not answer it, the failure counts like a
+  model that said nothing (the second in a row hands the conversation to a person, and that
+  arrives as a `reply` with the `unavailable` receipt instead), and the conversation, and the
+  connection, go on: the visitor can send the message again. The log holds the error's type and
+  the conversation's ID, never what the error said, since that may hold anything.
+- `too_many_pending`: a third message while two are in hand. It is dropped; nothing is queued.
+- `too_many_connections`: the visitor already holds four connections. It is followed by a close
+  with 1013 ("try again later"), which a page treats as a drop and retries with a growing wait.
+
+These close the connection, with the code that says why:
 4400 (not a hello first, or not JSON), 4401 (the token is missing, malformed, expired,
 signed by anyone else or for another system, or there is no key to check it with; nothing
 more is said), 4404 (no such conversation of theirs), 4408 (no hello in 10 seconds, or 15
-minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB) and 1011 (the service itself isn't set up).
+minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB), 1011
+(the service itself isn't set up) and 1013 (too many connections from this visitor).
 
 ## Data and evals
 
@@ -280,8 +316,9 @@ Short notes, as the playbook asks (step 8).
 - **Denial of service.** 30 messages and 64 gateway calls a conversation, counted by the
   database in one statement each; 10 conversations a visitor a day, counted under the same
   per-visitor lock as LB-01's tickets (`core/locks.py`); 500 characters a
-  message and 4 KB a frame; one turn at a time per connection and per conversation; 10
-  seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
+  message and 4 KB a frame; two messages in hand per connection, with the rest refused
+  rather than queued; four connections per visitor in a process; one turn at a time per
+  conversation; 10 seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
   adds 68 calls a run, 128 a visitor a day and 425 a day. Each turn holds a worker thread
   while the model answers, so the thread pool bounds concurrent turns.
 - **Privilege escalation.** Six tools, gated by step; none reads another conversation, sends
@@ -303,7 +340,14 @@ Known gaps, stated rather than hidden:
   are up.
 - Two tabs of one conversation take turns only within one server process. With several
   workers their turns can overlap; the limits, the constraint and the idempotent confirm
-  still hold, but the transcript's order of lines is then whichever got there first.
+  still hold, but the transcript's order of lines is then whichever got there first. The
+  cap on a visitor's connections is also kept per process, so with several workers a visitor
+  can hold the cap on each, and `pending` is known only to the process running the turn (a
+  page resumed on another process still gets the answer, but is not told it is on its way).
+- A turn that is lost with its process (a restart in the middle of one) is not recovered:
+  the visitor's message stays in the transcript without an answer, and the page says so on
+  resume. The caps on messages and connections are in memory, so they start again from zero
+  when the process does.
 - Calendar events are best effort: if Redis is down, a committed booking stays committed and
   the next snapshot is right, but a tab misses the live change. A client should load the
   snapshot again after it reconnects.

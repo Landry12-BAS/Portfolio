@@ -91,6 +91,8 @@ OUT_OF_QUOTA = frozenset({"quota_exceeded", "budget_exhausted"})
 # The longest reply the concierge shows, in characters.
 MAX_REPLY_CHARS = 1_200
 BLANK_LINES = re.compile(r"\n{3,}")
+# What the transcript says when a turn failed unexpectedly: nothing of the error itself, which may hold anything.
+TURN_FAILED_NOTE = "The concierge hit an error and could not answer the last message."
 REAL_ADDRESS_NOTE = (
     "The visitor gave an email address that isn't an example address, so it was not kept. "
     "Ask for an example one, such as name@example.test."
@@ -139,6 +141,8 @@ class TurnResult(Snapshot):
 
     reply: str
     receipt: Receipt | None
+    # Where the reply stands in the transcript, so a connection knows what it has been told.
+    position: int
     # Every tool call the model made this turn, in order, those the state machine refused included.
     tools: list[ToolOutcome] = field(default_factory=list)
     model_calls: int = 0
@@ -480,6 +484,21 @@ class Concierge:
             return self.end(conversation, Handoff.Reason.UNAVAILABLE, Receipt.UNAVAILABLE, language, outcomes)
         return self.lost_the_thread(conversation, language, outcomes)
 
+    def turn_crashed(self, conversation: Conversation) -> TurnResult | None:
+        """Make a conversation usable again after a turn failed in a way nobody planned for.
+
+        The failure is written in the transcript, where a person who takes over will read it, and
+        counted like a model that said nothing: the second in a row hands the conversation over, with
+        the code's own wording, and that reply is returned. The first returns nothing, and the visitor
+        is told by an error that the message wasn't answered and can be sent again.
+        """
+        record(conversation, "action", TURN_FAILED_NOTE, self.clock())
+        conversation.failed_turns += 1
+        conversation.save(update_fields=["failed_turns", "updated_at"])
+        if conversation.failed_turns < FAILURES_BEFORE_HANDOFF:
+            return None
+        return self.end(conversation, Handoff.Reason.UNAVAILABLE, Receipt.UNAVAILABLE, language_of(conversation))
+
     # Ending, and describing
 
     def end(
@@ -497,7 +516,7 @@ class Concierge:
 
     def view(self, conversation: Conversation, reply: Reply, outcomes: list[ToolOutcome] | None = None) -> TurnResult:
         """Record the reply in the transcript and describe where the conversation stands now."""
-        record(conversation, "concierge", reply.text, self.clock())
+        line = record(conversation, "concierge", reply.text, self.clock())
         sync_step(conversation, self.bookings)
         where = snapshot_of(conversation, self.bookings)
         if where.closed:
@@ -505,6 +524,7 @@ class Concierge:
         return TurnResult(
             reply=reply.text,
             receipt=reply.receipt,
+            position=line.position,
             step=where.step,
             language=where.language,
             options=where.options,

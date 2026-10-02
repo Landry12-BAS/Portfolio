@@ -10,12 +10,18 @@ lb02/consumers.py says why the token travels there and not in the address.
         {"type": "message", "text": "Hi! I'd like a cupping for two tomorrow afternoon."}
 
     server to client
-        ready           the conversation is open: transcript, step, slots on offer, hold, booking
+        ready           the conversation is open: transcript, step, slots on offer, hold, booking,
+                        and whether the answer to the last message is still on its way
         working         the message was accepted and the concierge is on it
         reply           the concierge's answer, and where the booking stands now
         calendar        slots that changed, held, booked or free, from this visitor's point of view
         calendar_reset  the demo calendar was laid out afresh: load the snapshot again
         error           something that can't be done, with a code that stays the same
+
+A message is answered on whichever connection sent it. If that connection drops while the
+concierge is answering, the answer is kept in the transcript and also sent to the connection
+that resumes the conversation, if that one was told in `ready` that the answer was on its way
+(`pending`); an answer that is already in the `ready` transcript is not sent again.
 
 Times are ISO 8601 in UTC; a client shows them in Prague time, the roastery's. A slot's
 `mine` is true for the slot this conversation holds or has booked, and everyone else's
@@ -47,10 +53,11 @@ type Role = Literal["visitor", "concierge", "action"]
 class CloseCode(IntEnum):
     """Why the server closes a connection: the standard codes where one fits, and 4xxx codes of our own."""
 
-    # Standard (RFC 6455).
+    # Standard (RFC 6455 and the IANA registry).
     UNSUPPORTED = 1003
     TOO_BIG = 1009
     UNAVAILABLE = 1011
+    TRY_AGAIN_LATER = 1013
     # Ours: the 4xxx range is for applications. The numbers echo the HTTP statuses they stand for.
     BAD_FRAME = 4400
     UNAUTHORIZED = 4401
@@ -68,6 +75,9 @@ class ErrorCode(StrEnum):
     CONVERSATION_GONE = "conversation_gone"
     TOO_MANY_CONVERSATIONS = "too_many_conversations"
     UNAVAILABLE = "unavailable"
+    TURN_FAILED = "turn_failed"
+    TOO_MANY_PENDING = "too_many_pending"
+    TOO_MANY_CONNECTIONS = "too_many_connections"
 
 
 ERROR_SENTENCES: Final = {
@@ -77,6 +87,9 @@ ERROR_SENTENCES: Final = {
     ErrorCode.CONVERSATION_GONE: "That conversation doesn't exist, or it has ended and its data has been removed.",
     ErrorCode.TOO_MANY_CONVERSATIONS: "You have started as many conversations today as you may. Come back tomorrow.",
     ErrorCode.UNAVAILABLE: "The concierge can't answer right now.",
+    ErrorCode.TURN_FAILED: "Something went wrong while the concierge answered that message. Please send it again.",
+    ErrorCode.TOO_MANY_PENDING: "The concierge is still answering. Wait for its reply before you send more.",
+    ErrorCode.TOO_MANY_CONNECTIONS: "This browser has too many connections open. Close another tab and try again.",
 }
 
 
@@ -190,12 +203,18 @@ class State(Wire):
 
 
 class Ready(State):
-    """The conversation is open. `transcript` is everything said so far, oldest first."""
+    """The conversation is open. `transcript` is everything said so far, oldest first.
+
+    `pending` is true when the conversation was resumed while the concierge was still answering the
+    last message, which was sent on an earlier connection: the answer follows as a `reply` (or an
+    `error` if the turn failed), and the page should wait for it instead of asking for the message again.
+    """
 
     type: Literal["ready"] = "ready"
     conversation: str
     resumed: bool
     transcript: list[Line]
+    pending: bool = False
 
 
 class Working(Wire):
@@ -300,10 +319,18 @@ def state_event(snapshot: Snapshot) -> State:
     )
 
 
-def ready_event(conversation_id: str, resumed: bool, snapshot: Snapshot, transcript: Sequence[Message]) -> Ready:
+def ready_event(
+    conversation_id: str, resumed: bool, snapshot: Snapshot, transcript: Sequence[Message], pending: bool = False
+) -> Ready:
     """Build the `ready` event for a conversation that has just opened or resumed."""
     lines = [Line.model_validate({"role": line.role, "text": line.text}) for line in transcript]
-    return Ready(conversation=conversation_id, resumed=resumed, transcript=lines, **dict(state_event(snapshot)))
+    return Ready(
+        conversation=conversation_id,
+        resumed=resumed,
+        transcript=lines,
+        pending=pending,
+        **dict(state_event(snapshot)),
+    )
 
 
 def reply_event(result: TurnResult) -> Reply:

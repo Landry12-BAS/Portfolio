@@ -59,3 +59,11 @@ FAILURES_BEFORE_HANDOFF: Final = 2
 HELLO_TIMEOUT_SECONDS: Final = 10.0
 IDLE_TIMEOUT_SECONDS: Final = 900.0
 MAX_FRAME_BYTES: Final = 4_096
+# Messages one connection may have in hand: the one being answered and one waiting behind it. The
+# page waits for each answer, so a client that sends more is not the page, and its frames are
+# refused instead of piling up in memory.
+MAX_PENDING_MESSAGES: Final = 2
+# Connections one visitor may have open at once in one server process: two tabs and the installed
+# app, and one still being torn down after a drop (a connection the network cut can stay open on
+# the server for the length of its ping timeout).
+MAX_CONNECTIONS_PER_VISITOR: Final = 4

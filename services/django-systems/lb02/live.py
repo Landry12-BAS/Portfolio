@@ -1,4 +1,6 @@
-"""The live calendar: how a change to a slot reaches every conversation that is open.
+"""The live calendar, and the answers that follow a conversation from one connection to the next.
+
+The live calendar: how a change to a slot reaches every conversation that is open.
 
 Whoever holds, books or releases a slot, the booking service (lb02/booking.py) hands the
 changes to a notifier once their transaction has committed. The notifier here sends them
@@ -8,6 +10,10 @@ the slot they hold is theirs, and everyone else's is simply taken.
 
 Telling the calendar is best effort. A booking that has been committed stays committed
 when Redis is down; the next snapshot the page loads is right either way.
+
+A conversation has a group of its own too. When a turn finishes, the connection that ran it
+tells the group, so a connection that resumed the conversation while the turn was running (the
+network cut the first one) gets the answer it was told was on its way.
 """
 
 import logging
@@ -27,6 +33,12 @@ CALENDAR_GROUP = "lb02.calendar"
 # The event types the consumer handles; Channels finds the handler by turning the dot into an underscore.
 CHANGED = "calendar.changed"
 RESET = "calendar.reset"
+ANSWERED = "conversation.answered"
+
+
+def conversation_group(public_id: str) -> str:
+    """Name the group of the open connections of one conversation; a public ID is made of URL-safe characters."""
+    return f"lb02.conversation.{public_id}"
 
 
 def change_payload(change: SlotChange) -> dict[str, object]:

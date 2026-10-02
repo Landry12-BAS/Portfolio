@@ -11,21 +11,18 @@ with its own database connection, which can't see what an open test transaction 
 """
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Iterator
 from datetime import date, timedelta
-from typing import Any
 
 import pytest
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from django.db.models import QuerySet
 from pytest_django.fixtures import Settings
 from redis import Redis
 
 from config.asgi import application
 from config.channel_layer import BLOCK_SECONDS
-from core.blocking import closing_connections, run_blocking
 from lb02 import consumers
 from lb02.booking import BookingService
 from lb02.events import ERROR_SENTENCES, ErrorCode
@@ -38,100 +35,39 @@ from tests.lb02_support import (
     SECOND_MESSAGE,
     THIRD_MESSAGE,
     Rig,
-    build_rig,
     call,
     calling,
     make_conversation,
     mint_token,
     say,
 )
+from tests.lb02_websocket import (
+    DAN,
+    JANA,
+    Gate,
+    Tab,
+    count,
+    fetch,
+    forget_connections,
+    in_another_thread,
+    serve_concierge,
+)
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db(databases=["lb02"], transaction=True)]
 
-JANA = "session-of-jana-visitor-01"
-DAN = "session-of-dan-visitor-002"
-# How long a test waits for the server, so a hang fails the test instead of stalling it.
-PATIENCE_SECONDS = 10
+
+@pytest.fixture(autouse=True)
+def no_connections_counted() -> Iterator[None]:
+    """Start each test with no visitor's connections counted, and leave none behind."""
+    forget_connections()
+    yield
+    forget_connections()
 
 
 @pytest.fixture(autouse=True)
 def rig(monkeypatch: pytest.MonkeyPatch) -> Rig:
-    """Build the concierge on fakes, with its calendar changes sent through the channel layer, and serve it."""
-    built = build_rig(notifier=ChannelLayerNotifier())
-    monkeypatch.setattr(consumers, "shared_concierge", lambda: built.concierge)
-    return built
-
-
-class Tab:
-    """One browser tab: a WebSocket to the concierge, the frames it sends, and the events it gets."""
-
-    def __init__(self, key: Ed25519PrivateKey, session: str = JANA) -> None:
-        """Prepare a connection for a visitor, with a token the site would mint for them."""
-        self.communicator = WebsocketCommunicator(application, "/ws/lb02/")
-        self.token = mint_token(key, session)
-        self.calendar: list[dict[str, Any]] = []
-
-    async def connect(self) -> None:
-        """Open the WebSocket handshake."""
-        connected, _ = await self.communicator.connect()
-        assert connected
-
-    async def hello(self, conversation: str | None = None, token: str | None = None) -> dict[str, Any]:
-        """Open the connection and say hello; return the first event the server sends."""
-        await self.connect()
-        await self.send({"type": "hello", "token": token or self.token, "conversation": conversation})
-        return await self.event()
-
-    async def send(self, frame: dict[str, object]) -> None:
-        """Send a frame."""
-        await self.communicator.send_json_to(frame)
-
-    async def event(self) -> dict[str, Any]:
-        """Wait for the next event."""
-        event: dict[str, Any] = await self.communicator.receive_json_from(timeout=PATIENCE_SECONDS)
-        return event
-
-    async def say(self, text: str) -> dict[str, Any]:
-        """Send a message, check the server says it is working on it, and return its reply.
-
-        Calendar events may arrive in between, since the whole calendar is watched while a message is
-        answered; they are kept in `calendar`, and this waits through them.
-        """
-        await self.send({"type": "message", "text": text})
-        expected = ["working", "reply"]
-        while True:
-            event = await self.event()
-            if event["type"] in ("calendar", "calendar_reset"):
-                self.calendar.append(event)
-                continue
-            assert event["type"] == expected.pop(0), event
-            if not expected:
-                return event
-
-    async def close_code(self) -> int:
-        """Wait for the server to close the connection, and return its code."""
-        output = await self.communicator.receive_output(timeout=PATIENCE_SECONDS)
-        assert output["type"] == "websocket.close", output
-        code: int = output["code"]
-        return code
-
-    async def quiet(self) -> bool:
-        """Tell whether nothing more is waiting to be sent to this tab."""
-        return bool(await self.communicator.receive_nothing(timeout=0.3))
-
-    async def leave(self) -> None:
-        """Close the connection from the client's side."""
-        await self.communicator.disconnect()
-
-
-async def count(rows: Callable[[], QuerySet[Any]]) -> int:
-    """Count rows from a coroutine, which may not touch the database directly."""
-    return await run_blocking(lambda: rows().count())
-
-
-async def fetch[Row](read: Callable[[], Row]) -> Row:
-    """Run a database read from a coroutine."""
-    return await run_blocking(read)
+    """Serve a concierge on fakes, with its calendar changes sent through the channel layer."""
+    return serve_concierge(monkeypatch)
 
 
 # The first frame
@@ -550,10 +486,10 @@ async def test_a_second_tab_watches_the_slot_move_from_held_to_booked(
     assert await watcher.quiet()
     hold_reply = await booker.say(SECOND_MESSAGE)
     watcher_sees_hold = await watcher.event()
-    booker_sees_hold = await booker.event()
+    booker_sees_hold = await booker.calendar_event()
     await booker.say(THIRD_MESSAGE)
     watcher_sees_booking = await watcher.event()
-    booker_sees_booking = await booker.event()
+    booker_sees_booking = await booker.calendar_event()
 
     slot = hold_reply["hold"]["slot"]
     assert watcher_sees_hold["type"] == "calendar"
@@ -645,7 +581,7 @@ async def test_a_hold_that_runs_out_is_announced_when_the_sweep_runs(
     await booker.say(FIRST_MESSAGE)
     await booker.say(SECOND_MESSAGE)
     await watcher.event()
-    await booker.event()
+    await booker.calendar_event()
 
     rig.clock.advance(6)
     swept = await fetch(lambda: [rig.concierge.bookings.expire_stale_holds()])
@@ -653,7 +589,7 @@ async def test_a_hold_that_runs_out_is_announced_when_the_sweep_runs(
     assert swept == [1]
     freed = await watcher.event()
     assert [(change["status"], change["mine"]) for change in freed["changes"]] == [("free", False)]
-    assert (await booker.event())["changes"][0]["status"] == "free"
+    assert (await booker.calendar_event())["changes"][0]["status"] == "free"
     await booker.leave()
     await watcher.leave()
 
@@ -683,11 +619,6 @@ async def test_a_connection_that_has_not_said_hello_hears_nothing_of_the_calenda
 
 
 # The real channel layer
-
-
-async def in_another_thread[Result](work: Callable[[], Result]) -> Result:
-    """Run work on a thread that has nothing to do with the server's event loop, as a Celery worker's code does."""
-    return await asyncio.get_running_loop().run_in_executor(None, closing_connections(work))
 
 
 async def test_the_calendar_reaches_a_tab_through_real_redis_from_a_worker_thread(
@@ -742,3 +673,28 @@ async def test_an_idle_tab_stays_connected_past_the_layers_blocking_read(web_sig
 
     assert await tab.event() == {"type": "calendar_reset"}
     await tab.leave()
+
+
+@pytest.mark.usefixtures("redis_channel_layer")
+async def test_an_answer_reaches_the_connection_that_resumed_through_real_redis(
+    rig: Rig, web_signing_key: Ed25519PrivateKey
+) -> None:
+    """The answer to a dropped connection's message crosses Redis as plain values, which only Redis can check."""
+    gate = Gate()
+    rig.models.meanwhile[0] = gate.hold
+    rig.models.replies += [say("Welcome! What would you like to book?")]
+    first, second = Tab(web_signing_key), Tab(web_signing_key)
+    ready = await first.hello()
+    await first.send({"type": "message", "text": FIRST_MESSAGE})
+    assert (await first.event())["type"] == "working"
+    await gate.arrival()
+    await first.drop()
+    resumed = await second.hello(conversation=ready["conversation"])
+
+    gate.release()
+    answer = await second.event()
+
+    assert resumed["pending"] is True
+    assert (answer["type"], answer["text"]) == ("reply", "Welcome! What would you like to book?")
+    await first.communicator.wait(timeout=10)
+    await second.leave()
