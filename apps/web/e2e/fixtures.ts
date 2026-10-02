@@ -29,14 +29,18 @@ export const test = base.extend<{ problems: PageProblems }>({
     await page.addInitScript(() => {
       window.__cspViolations = []
       document.addEventListener('securitypolicyviolation', (event) => {
-        window.__cspViolations.push(`${event.violatedDirective} blocked ${event.blockedURI || event.sample}`)
+        window.__cspViolations.push(`${event.violatedDirective} blocked ${event.blockedURI} ${event.sample}`.trim())
       })
     })
     page.on('pageerror', error => problems.errors.push(error.message))
     page.on('console', (message) => {
       if (message.type() !== 'error') return
-      const expected404 = message.text().includes('status of 404') && notFoundDocuments.has(message.location().url)
-      if (!expected404) problems.errors.push(message.text())
+      const notFound = message.text().includes('status of 404')
+      const expected404 = notFound && notFoundDocuments.has(message.location().url)
+      // A run's trace does not exist for the first moments of the run, and the Scope reads it until it does:
+      // that 404 is how the trace route says "not yet", and the browser logs every one.
+      const traceNotYet = notFound && /\/api\/runs\/[\w-]+\/spans/.test(message.location().url)
+      if (!expected404 && !traceNotYet) problems.errors.push(message.text())
     })
     await use(problems)
     if (!page.isClosed() && page.url().startsWith('http')) {

@@ -75,9 +75,17 @@ jobs:
       - name: Generated files are up to date
         run: pnpm check
 
+      # The production build must hold no trace of the stand-in the test build accepts in place of a
+      # Turnstile token, and the same check must find it in the test build, or it looks at nothing.
       - run: pnpm --filter @lb/web build
+      - name: The production build holds no trace of the test build's Turnstile stand-in
+        run: pnpm --filter @lb/web check:build
+      - run: pnpm --filter @lb/web build:e2e
+      - name: The check does find the stand-in in the test build
+        run: '! pnpm --filter @lb/web exec node scripts/check-production-build.ts .output-e2e'
+
       - run: pnpm --filter @lb/web exec playwright install --with-deps chromium
-      - name: End-to-end, accessibility and security headers
+      - name: End-to-end, accessibility and security headers, against the test build and the mock back end
         run: pnpm --filter @lb/web e2e
 
       - if: failure()

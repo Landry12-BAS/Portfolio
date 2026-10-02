@@ -1,5 +1,6 @@
-// Playwright setup for the site's end-to-end tests. They run against the production
-// build (`pnpm build` first), so they check the real security headers and bundles.
+// Playwright setup for the site's end-to-end tests. They run against the test build of the site
+// (`pnpm --filter @lb/web build:e2e` first), which is the production build plus a stand-in for
+// Cloudflare's Turnstile and the mock recordings, so they check the real security headers and bundles.
 import { defineConfig, devices } from '@playwright/test'
 
 // The port the production server listens on during the tests.
@@ -26,10 +27,12 @@ export default defineConfig({
       },
     },
   ],
+  // The test build of the site and the mock back end it talks to, started together with throwaway
+  // keys (e2e/support/serve.ts). Nothing needs a network, a model or Cloudflare.
   webServer: {
-    command: 'node .output/server/index.mjs',
+    command: 'node e2e/support/serve.ts',
     url: `http://127.0.0.1:${port}`,
-    env: { PORT: String(port), HOST: '127.0.0.1' },
+    env: { E2E_PORT: String(port) },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
