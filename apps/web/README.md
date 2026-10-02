@@ -120,8 +120,10 @@ Take LB-01's folder as the template. For a system `LB-0N`:
 2. **The folder** `app/boards/lb-0n/`:
    - `Lb0nBoard.vue`, a component with two props, `permalinkFor: (runId) => string` and an optional
      `now`, that renders `<BoardShell :part :name :state>` with the default slot (the demo), `#aside`
-     (limits, counters) and `#scope` (`<BoardScopePanel :brief :permalink>`). Its `<script setup>`
-     opens with a comment that says what it is, like every file.
+     (limits, counters) and `#scope` (`<BoardScopePanel :brief :permalink>`). A board whose work
+     needs more room than the main column (LB-08's canvas beside its form) puts it in `#wide`, which
+     has the board's whole width under both columns. Its `<script setup>` opens with a comment that
+     says what it is, like every file.
    - `schemas.ts`: a Zod schema for every answer the board reads, bounded, with the `Assert<...>`
      type checks against the generated OpenAPI types (see LB-01's) so the back end changing a field
      fails the type check, not the page.
@@ -139,6 +141,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    session.ensureVerified()`. Follow a live run with `scope.follow(runId, { notFoundGraceMs })` as soon
    as an answer names the run (`scope.wait()` until then) and tell the Scope the run is over with
    `scope.settle()`. Never take the run ID from the answer to filing alone: see the paragraph above.
+   A system whose runs write no root span (LB-08's step spans have none, so the gateway never calls
+   their trace `finished`) tells the Scope with `scope.closeWhenQuiet()` once its own log says the run
+   is over, and the Scope then closes the trace at the first read that brings nothing new.
 6. **Samples.** If the system has curated samples from a golden set, extend `scripts/samples.ts` to
    generate them (`pnpm check` fails when the file is stale) and type the locale titles by the sample's
    ID, as LB-01's are.
@@ -147,12 +152,19 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    none says so and offers the live run, which spends quota and so needs the check.
 8. **A recorder.** Add `scripts/record/lb0n.ts` (what a sample's run does and which answers to keep) and
    list it in `RUNNERS` in `scripts/record/record.ts`. Then `just record-sample lb-0n <sample>` on the
-   live back end writes the recording; commit it with the system.
+   live back end writes the recording; commit it with the system. A runner that makes a call with a
+   query uses `backend.call(system, method, path, body, query)`, and keeps the path without it (a
+   recording's paths have no query string). A runner whose system writes no root span returns
+   `traceEnds: 'quiet'`, so the trace is read until it stops growing instead of until it is `finished`.
 9. **Tests.** The store against `FakeSite` (`test/support/fake-site.ts`: add the system's routes), the
    components with `mountWithSite`, and a Playwright spec like `e2e/lb01.spec.ts` and
    `e2e/board-a11y.spec.ts` (replay, a live run, each failure, both languages, the keyboard, axe in
    both themes). The mock back end (`packages/api-clients/src/testing`) must play the system's flow;
-   `scripts/record-fixtures.ts` makes the recordings the journeys replay.
+   `scripts/record-fixtures.ts` makes the recordings the journeys replay (`pnpm --filter @lb/web
+   record:fixtures lb-0n` makes one system's alone, and a system whose mock moves with time, such as
+   LB-08's retries, is listed in `TIMED` there so the recorder's waiting moves the mock's clock). A
+   board that loads a large library on demand (LB-08's Vue Flow canvas) stands in for it in component
+   tests, which run in happy-dom, and leaves it to Playwright.
 10. **Streaming systems** (LB-02's WebSocket): get the grant from `POST /api/tokens/lb-02`, open the
     connection to the API's origin, and add that origin to `connect-src` for that board's route in
     `nuxt.config.ts` only.
@@ -212,6 +224,16 @@ command yet, because it needs a Postgres with pgvector and a Redis:
    `NUXT_LB_GATEWAY_URL` pointing at them, and a browser. Watch what the board shows every second, not
    only at the end, and file the day's twenty-one tickets.
 
+For a Node system (LB-08) the same steps are shorter: a scratch database and a Redis key prefix of
+your own, `node src/cli/migrate.ts` and `seed.ts` in `services/node-systems`, then its API
+(`src/main.ts`) and its worker (`src/worker.ts`) as two processes, behind the real gateway
+(`buildGateway` from `services/gateway`, in your own process) in front of a scripted provider. Take the
+routing table from `services/node-systems/test/support/routing.lb08.yaml` and add the block that lets
+the site's server read the system's traces (`traceReaders: web: systems: [lb-08]`), or every read of
+the Scope is a 502. Then drive the board in a browser: every state of a run, a step made to fail three
+times, the dead letter and its replay, the approval, a described process and a refused one, and the
+eleventh run, which two tabs of one visitor can reach.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -230,3 +252,18 @@ command yet, because it needs a Postgres with pgvector and a Redis:
   in place of the models; the production build ran with the real Turnstile widget and Cloudflare's
   published test keys. Not run: a real model, a real Turnstile site key and challenge, Vercel. What
   that leaves open is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 12.
+- **LB-08's board** ran against the real Node service: its API and its BullMQ worker as processes on a
+  scratch Postgres database and a Redis prefix, the real gateway on a scripted provider, the real
+  tracer's spans and the test build of the site. Not run there: a real model (every description was
+  answered by a script), the real Turnstile, and a recording made on a live back end (the recorder ran
+  against the real service once and its output was thrown away).
+- **LB-08's canvas** (Vue Flow) is a separate chunk, fetched when the canvas view is first shown, which
+  a wide screen with a pointer does at once and a phone does not (it starts on the outline). It costs
+  about 52 KB gzipped of script and 1.6 KB of style, and nothing else on the page pays for it. It
+  needed no change to the policy: the places of the steps are inline styles, which `style-src` already
+  allows site-wide, it writes no script, and the Trusted Types list is still `vue lb-turnstile` (the
+  end-to-end tests fail on any violation). Two things of its own are set aside because they are wrong
+  for this page: its hidden help texts and live message are English (the page's own are in the
+  visitor's language), and its global key handlers for Backspace, Space, Control and Shift would stop
+  those keys working anywhere on the page while the canvas is open, so they are switched off and
+  Delete, Space and the arrow keys are handled on the steps themselves.
