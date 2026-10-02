@@ -3,35 +3,26 @@
 // requests the pipeline builds are ones the gateway accepts, that the calls land in the right quotas and
 // the right trace, or that the worst case a review can make is one the gateway lets through. This can: what
 // the service sends is checked by the gateway's own checks, and what the provider receives is read off the wire.
-import { randomBytes, randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
 
 import { createRun, gatewayErrorOf, RedisSpanWriter, runScope, Tracer } from '@lb/common'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest'
 
-import { segmentSize, segmentsOf } from '../../../gateway/src/routes/guard.ts'
-import { loadRouting } from '../../../gateway/src/routing/load.ts'
-import { startContractGateway } from '../../../../packages/common/test/support/contract-gateway.ts'
 import type { ContractGateway } from '../../../../packages/common/test/support/contract-gateway.ts'
-
 import { ALIASES, GatewayJsonModel, MAX_OUTPUT_TOKENS } from '../../src/modules/lb04/analysis/model.ts'
-import type { JsonModel } from '../../src/modules/lb04/analysis/model.ts'
-import { reviewContract } from '../../src/modules/lb04/analysis/pipeline.ts'
-import { findInstructionPassages, guardInput } from '../../src/modules/lb04/analysis/screen.ts'
-import { buildSourceIndex } from '../../src/modules/lb04/analysis/source.ts'
-import { startContract, makeRedline } from '../../src/modules/lb04/engine/service.ts'
+import { makeRedline, startContract } from '../../src/modules/lb04/engine/service.ts'
 import { readContractView, readReportView } from '../../src/modules/lb04/engine/store.ts'
 import { reviewServices } from '../../src/modules/lb04/index.ts'
-import { createLb04Harness, drive, referenceReview } from '../support/lb04-engine.ts'
+import { createLb04Harness, drive } from '../support/lb04-engine.ts'
 import type { Lb04Harness } from '../support/lb04-engine.ts'
-import { extractedPages, inTestRun, loadPlaybook, Recorder } from '../support/lb04.ts'
+import { guardSegments, referenceReplies, scriptReview, startLb04Gateway } from '../support/lb04-gateway.ts'
 
 let gw: ContractGateway
 let harness: Lb04Harness
 
 /** Starts a gateway on a fake provider and points the engine at it: the models, the guard and the tracer all go through it. */
 async function useNewGateway(): Promise<void> {
-  gw = await startContractGateway(inject('redisUrl'), new URL('../support/routing.lb04.yaml', import.meta.url))
+  gw = await startLb04Gateway(inject('redisUrl'))
   harness.deps.review = reviewServices(gw.client)
   harness.deps.tracer = new Tracer(new RedisSpanWriter(gw.redis, gw.prefix))
 }
@@ -56,44 +47,6 @@ function newVisitor(): string {
   return `session-${randomBytes(8).toString('hex')}`
 }
 
-/** How many requests the gateway's guard makes of its model for a contract: one for each overlapping segment of what the guard reads. */
-async function guardSegments(sampleId: string): Promise<number> {
-  const routing = loadRouting(readFileSync(new URL('../support/routing.lb04.yaml', import.meta.url), 'utf8'), { ALPHA_URL: 'http://127.0.0.1:1', ALPHA_KEY: 'k' })
-  const alias = routing.aliases.get('lb-guard')
-  if (!alias) throw new Error('The test routing table has no guard.')
-  const index = buildSourceIndex(await extractedPages(sampleId))
-  return segmentsOf(guardInput(index, findInstructionPassages(index)), segmentSize(alias), 100).length
-}
-
-/** What the reference models say for a sample, as the JSON text a provider would send, found by running the pipeline once in this process. */
-async function referenceReplies(sampleId: string): Promise<{ long: string, reason: string | undefined }> {
-  const { scripts } = referenceReview(sampleId)
-  const said: { long?: string, reason?: string } = {}
-  const recording = (label: 'long' | 'reason', model: JsonModel): JsonModel => ({
-    ask: async (messages) => {
-      const reply = await model.ask(messages)
-      if (reply.kind === 'json') said[label] ??= JSON.stringify(reply.value)
-      return reply
-    },
-  })
-  await inTestRun(async () => reviewContract(
-    { models: { long: recording('long', scripts.long), reason: recording('reason', scripts.reason), fast: scripts.fast }, guard: undefined, tracer: new Tracer(new Recorder()), playbook: loadPlaybook() },
-    { contractId: randomUUID(), pages: await extractedPages(sampleId) },
-    { calls: 0 },
-    { onState: async () => {}, save: async () => {}, lastAttempt: false },
-  ))
-  if (said.long === undefined) throw new Error('The reference reviewer did not read the contract.')
-  return { long: said.long, reason: said.reason }
-}
-
-/** Queues what the fake provider answers to a whole review: the guard's segments, the reading and the rating. */
-async function scriptReview(sampleId: string, guardScore = '0.0004'): Promise<void> {
-  const replies = await referenceReplies(sampleId)
-  for (let segment = 0; segment < await guardSegments(sampleId); segment += 1) gw.provider.answerNext(guardScore)
-  gw.provider.answerNext(replies.long)
-  if (replies.reason !== undefined) gw.provider.answerNext(replies.reason)
-}
-
 /** Starts the review of a sample as a visitor of its own. */
 async function start(session: string, sampleId: string): Promise<string> {
   return (await startContract(harness.deps, session, { from: 'sample', sampleId })).id
@@ -109,7 +62,7 @@ describe('a review through the gateway', () => {
   })
 
   it('makes the three calls a contract needs, as the gateway expects them, and finishes with the report the reference reviewer would write', async () => {
-    await scriptReview('wholesale-supply')
+    await scriptReview(gw, 'wholesale-supply')
     const session = newVisitor()
     const id = await start(session, 'wholesale-supply')
 
@@ -169,7 +122,7 @@ describe('a review through the gateway', () => {
   })
 
   it('writes one trace under the contract\'s id: the root span, the pipeline\'s steps under it, and the gateway\'s calls under their steps, finished for the Scope', async () => {
-    await scriptReview('wholesale-supply')
+    await scriptReview(gw, 'wholesale-supply')
     const session = newVisitor()
     const id = await start(session, 'wholesale-supply')
 
@@ -193,7 +146,7 @@ describe('a review through the gateway', () => {
   })
 
   it('carries nothing the contract says into the trace: not a clause, not a quote, not the title', async () => {
-    await scriptReview('wholesale-supply')
+    await scriptReview(gw, 'wholesale-supply')
     const session = newVisitor()
     const id = await start(session, 'wholesale-supply')
 
@@ -209,7 +162,7 @@ describe('a review through the gateway', () => {
   })
 
   it('flags a contract that talks to its reviewer when the guard says so, and still reports only what the verifier kept', async () => {
-    await scriptReview('hostile-supply', '0.97')
+    await scriptReview(gw, 'hostile-supply', '0.97')
     const session = newVisitor()
     const id = await start(session, 'hostile-supply')
 
