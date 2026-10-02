@@ -6,8 +6,8 @@ from collections.abc import Callable
 import pytest
 from redis import Redis
 
-from lb_common.run import Run, run_scope
-from lb_common.tracing import RedisSpanWriter, Span, Tracer
+from lb_common.run import Run, run_scope, span_scope
+from lb_common.tracing import RedisSpanWriter, Span, Tracer, root_span_id
 
 pytestmark = pytest.mark.integration
 
@@ -29,6 +29,26 @@ def test_spans_reach_the_runs_stream_and_the_stream_of_every_run(
     assert all_spans == run_spans
     assert run_spans[0].attrs == {"category": "damaged"}
     assert run_spans[0].parent_id == run_spans[1].span_id
+
+
+def test_a_root_written_when_a_run_ends_is_last_in_the_stream_and_has_no_parent(
+    redis: Redis, prefix: str, read_spans: Callable[[str], list[Span]]
+) -> None:
+    """A run in turns (a conversation) names its root in advance and writes it last: what the gateway calls finished."""
+    tracer = Tracer(RedisSpanWriter(redis, prefix))
+
+    with run_scope(RUN):
+        with span_scope(root_span_id(RUN.run_id)), tracer.span("visitor message"):
+            pass
+        tracer.finish_run("booking conversation", 1_790_000_000_000, messages=2, booked=False)
+
+    spans = read_spans(f"{prefix}run:run-redis-0001:spans")
+    assert [span.name for span in spans] == ["visitor message", "booking conversation"]
+    assert spans[0].parent_id == spans[1].span_id == root_span_id(RUN.run_id)
+    [*_, (_, fields)] = redis.xrange(f"{prefix}run:run-redis-0001:spans")
+    assert fields is not None
+    assert '"kind":"system.run"' in fields["span"]
+    assert "parentId" not in fields["span"]
 
 
 def test_a_runs_stream_expires_after_a_day(redis: Redis, prefix: str) -> None:

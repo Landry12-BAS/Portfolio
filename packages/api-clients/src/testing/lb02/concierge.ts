@@ -375,6 +375,8 @@ export class MockConcierge {
    * its first model call, so a turn that dies leaves the message behind with no answer. Says whether it was the first.
    */
   receive(conversation: MockConversation, text: string): boolean {
+    // A conversation that is over takes nothing in: nothing is counted or kept, as in the service.
+    if (conversation.handoff) return false
     conversation.messagesUsed += 1
     const wasFirst = conversation.lines.length === 0
     this.#record(conversation, 'visitor', hideEmails(text))
@@ -390,7 +392,7 @@ export class MockConcierge {
       conversation.modelCalls += guard + answer.chat
       return { text: answer.text, receipt: answer.receipt, tools: answer.tools ?? [], calls: { guard, chat: answer.chat }, detectedLanguage: wasFirst, changes: answer.changes ?? [] }
     }
-    if (conversation.handoff) return finish({ text: receipt('closed', conversation.language), receipt: 'closed', chat: 0 }, 0)
+    if (conversation.handoff) return { text: receipt('closed', conversation.language), receipt: 'closed', tools: [], calls: { guard: 0, chat: 0 }, detectedLanguage: false, changes: [] }
     if (conversation.messagesUsed > this.#limit()) return finish(this.#handOff(conversation, 'message_limit', 'message_limit'), 0)
     const said = understand(text)
     if (said.language !== undefined) conversation.language = said.language

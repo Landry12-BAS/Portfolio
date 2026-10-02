@@ -50,7 +50,13 @@ a third when an answer needs its repair. Escalation reasons: `injection`, `unche
 ## LB-02: from a message to a booking
 
 A conversation is one run of up to 30 visitor messages, and each message is a span of
-it. A booking takes three messages and 7 gateway calls in the offline eval: an injection
+it. The run's root span (`booking conversation`, a `system.run` span with no parent and
+only counts and a reason in it) is written once, when the conversation is handed to a
+person, so the trace route says `finished` then and not before; the turns name that root
+as their parent in advance, so the Scope shows them under it once it arrives. A booked
+conversation is still open (the visitor may write again), so it has no root, and a message
+to a conversation that is over writes no span, no transcript line and no copy of the
+handoff, so such a client cannot make any of them grow. A booking takes three messages and 7 gateway calls in the offline eval: an injection
 check for each message and four calls to `lb-tools`. That is what scripted models cost;
 the datasheet's "6 to 10" stays an estimate until `just eval-lb02` has run live.
 

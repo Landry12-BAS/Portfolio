@@ -5,8 +5,8 @@ from collections.abc import Iterator, Sequence
 
 import pytest
 
-from lb_common.run import Run, run_scope
-from lb_common.tracing import Span, Tracer
+from lb_common.run import Run, run_scope, span_scope
+from lb_common.tracing import Span, Tracer, root_span_id
 
 RUN = Run(system="lb-01", run_id="run-0001", session="session-0123456789abcdef")
 
@@ -77,6 +77,60 @@ def test_nested_spans_point_at_their_parent(tracer: Tracer, writer: MemoryWriter
     assert classify.parent_id == outer.span_id
     assert lookup.parent_id == outer.span_id
     assert lookup.kind == "system.tool"
+
+
+def test_a_run_that_goes_on_in_turns_is_closed_by_a_root_span_written_last(
+    tracer: Tracer, writer: MemoryWriter
+) -> None:
+    """The turns name the root they will have as their parent; the root comes last, from when the run began."""
+    root_id = root_span_id(RUN.run_id)
+    with span_scope(root_id), tracer.span("visitor message"):
+        pass
+
+    tracer.finish_run("booking conversation", 1_789_999_999_000, messages=3, booked=True)
+
+    turn, root = writer.spans
+    assert turn.parent_id == root_id
+    assert (root.span_id, root.kind, root.parent_id, root.name) == (root_id, "system.run", None, "booking conversation")
+    assert root.start_ms == 1_789_999_999_000
+    assert root.end_ms > turn.end_ms
+    assert root.attrs == {"messages": 3, "booked": True}
+
+
+def test_the_root_of_a_run_is_what_the_gateway_calls_a_root() -> None:
+    """The gateway reads a run as finished when it finds a `system.run` span with no `parentId`, so this has none."""
+    run = Run(system="lb-02", run_id="run-conversation-01", session="session-0123456789abcdef")
+    writer = MemoryWriter()
+    with run_scope(run):
+        Tracer(writer, StepClock()).finish_run("booking conversation", 1_789_999_999_000)
+
+    sent = json.loads(writer.spans[0].to_json())
+
+    assert sent["kind"] == "system.run"
+    assert "parentId" not in sent
+    assert sent["spanId"] == root_span_id("run-conversation-01")
+
+
+def test_the_roots_id_belongs_to_the_run_and_is_a_span_id() -> None:
+    """Every process finds the same ID for a run, different runs differ, and it has the form the gateway accepts."""
+    assert root_span_id("run-0001") == root_span_id("run-0001")
+    assert root_span_id("run-0001") != root_span_id("run-0002")
+    assert len(root_span_id("run-0001")) == 16
+    assert int(root_span_id("run-0001"), 16) >= 0
+
+
+def test_a_root_never_ends_before_it_began(writer: MemoryWriter) -> None:
+    """If the clock the run began on is ahead of the tracer's, the span is empty rather than backwards."""
+    with run_scope(RUN):
+        Tracer(writer, StepClock()).finish_run("booking conversation", 1_800_000_000_000)
+
+    assert writer.spans[0].end_ms == writer.spans[0].start_ms == 1_800_000_000_000
+
+
+def test_a_root_needs_a_run() -> None:
+    """Like every span, it belongs to a run."""
+    with pytest.raises(RuntimeError, match="run_scope"):
+        Tracer(MemoryWriter(), StepClock()).finish_run("booking conversation", 1)
 
 
 def test_a_failed_step_records_the_error_type_but_not_its_message(tracer: Tracer, writer: MemoryWriter) -> None:

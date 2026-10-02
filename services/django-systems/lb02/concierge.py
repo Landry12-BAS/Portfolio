@@ -41,6 +41,7 @@ from core.tool_chat import GatewayToolChat, ToolChat, ToolChatMessage, ToolReply
 from lb02.booking import DATABASE, BookingService, CalendarNotifier, Clock, bookable_days, local_day
 from lb02.conversations import (
     language_of,
+    last_position,
     record,
     spend_call,
     spend_message,
@@ -80,8 +81,8 @@ from lb02.snapshot import Snapshot, options_of, snapshot_of
 from lb02.states import Step
 from lb02.tools import ToolExecutor, ToolOutcome, TurnContext, email_status, hold_expiry_note
 from lb_common.gateway import Gateway
-from lb_common.run import DataClass, Run, run_scope
-from lb_common.tracing import RedisSpanWriter, Tracer
+from lb_common.run import DataClass, Run, run_scope, span_scope
+from lb_common.tracing import RedisSpanWriter, Tracer, root_span_id
 
 # The virtual models: the strongest chat model for the conversation, and a fast one for the language check.
 CHAT_ALIAS = "lb-tools"
@@ -210,7 +211,26 @@ class Concierge:
         """
         session = conversation.session_key if data_class == "visitor" else None
         run = Run(system="lb-02", run_id=conversation.run_id, data_class=data_class, session=session)
-        with run_scope(run), self.tracer.span("visitor message", step=conversation.step) as span:
+        was_open = conversation.step != Step.HANDOFF
+        with run_scope(run):
+            result = self.run_turn(conversation, text, was_open)
+            if was_open and result.closed:
+                self.end_run(conversation)
+        return result
+
+    def run_turn(self, conversation: Conversation, text: str, was_open: bool) -> TurnResult:
+        """Answer the message as a span of the conversation's run.
+
+        While the conversation is open its turns sit under the root span it will have when it ends, which
+        the Scope shows once that arrives. A message to a conversation that is already over is not part of
+        the run any more: it is answered, and nothing is written about it.
+        """
+        if not was_open:
+            return self.work_through(conversation, text)
+        with (
+            span_scope(root_span_id(conversation.run_id)),
+            self.tracer.span("visitor message", step=conversation.step) as span,
+        ):
             result = self.work_through(conversation, text)
             span.set("step", result.step)
             span.set("calls", conversation.model_calls)
@@ -219,10 +239,32 @@ class Concierge:
                 span.set("receipt", str(result.receipt))
         return result
 
+    def end_run(self, conversation: Conversation) -> None:
+        """Write the conversation's root span as it ends, so that its trace says the run is finished.
+
+        A conversation is one run of up to 30 messages, so its root is written once, when it is handed to
+        a person (the visitor asked, the request wasn't a booking, a limit was reached, or the screen gave
+        up on them). A booked conversation is not over: the visitor may still write. The span holds counts
+        and a reason, never what was said.
+        """
+        handoff = Handoff.objects.filter(conversation=conversation).first()
+        started_ms = int(conversation.created_at.timestamp() * 1000)
+        self.tracer.finish_run(
+            "booking conversation",
+            started_ms,
+            messages=conversation.message_count,
+            calls=conversation.model_calls,
+            reason=handoff.reason if handoff else "none",
+            booked=self.bookings.current_booking(conversation) is not None,
+        )
+
     def work_through(self, conversation: Conversation, text: str) -> TurnResult:
         """Take the message through every stage, stopping at the first that answers it."""
         if conversation.step == Step.HANDOFF:
-            return self.view(conversation, Reply(render(Receipt.CLOSED, language_of(conversation)), Receipt.CLOSED))
+            # Nothing is written, not the visitor's words and not this line: a client that keeps writing to a
+            # conversation that is over can't grow its transcript, its handoff or its trace without end.
+            reply = Reply(render(Receipt.CLOSED, language_of(conversation)), Receipt.CLOSED)
+            return self.view(conversation, reply, keep=False)
         masked = mask(text)
         accepted = spend_message(conversation)
         record(conversation, "visitor", masked.text, self.clock())
@@ -514,17 +556,30 @@ class Concierge:
         reply = Reply(render(receipt, language, limit=MESSAGES_PER_SESSION), receipt)
         return self.view(conversation, reply, outcomes or [])
 
-    def view(self, conversation: Conversation, reply: Reply, outcomes: list[ToolOutcome] | None = None) -> TurnResult:
-        """Record the reply in the transcript and describe where the conversation stands now."""
-        line = record(conversation, "concierge", reply.text, self.clock())
-        sync_step(conversation, self.bookings)
+    def view(
+        self,
+        conversation: Conversation,
+        reply: Reply,
+        outcomes: list[ToolOutcome] | None = None,
+        *,
+        keep: bool = True,
+    ) -> TurnResult:
+        """Record the reply in the transcript and describe where the conversation stands now.
+
+        A reply that is not kept (the closing line to a conversation that is over) is shown and written nowhere.
+        """
+        if keep:
+            position = record(conversation, "concierge", reply.text, self.clock()).position
+            sync_step(conversation, self.bookings)
+        else:
+            position = last_position(conversation)
         where = snapshot_of(conversation, self.bookings)
-        if where.closed:
+        if keep and where.closed:
             refresh_transcript(conversation)
         return TurnResult(
             reply=reply.text,
             receipt=reply.receipt,
-            position=line.position,
+            position=position,
             step=where.step,
             language=where.language,
             options=where.options,

@@ -37,6 +37,11 @@ with run_scope(Run(system="lb-01", run_id=new_run_id(), session=session_key)):
   (`OutsideRunError`) before anything leaves the process.
 - **Spans nest across runtimes.** A call made inside a span carries that span's ID, so
   the gateway's spans for the call appear under the step that made it.
+- **A run's root span says it is finished.** A run that is one `with` block (a ticket)
+  opens its root first. A run that goes on in turns (LB-02's conversation) has no such
+  block: its turns open under `span_scope(root_span_id(run_id))`, which is the ID the root
+  will have, and `tracer.finish_run(name, started_ms, **details)` writes the root when
+  the run ends. The trace route then reports `finished`; until then it does not.
 - **Samples are synthetic.** A run over the site's curated samples uses
   `data_class="synthetic"` and needs no session; a visitor's run needs their hashed
   session key, never the raw cookie.

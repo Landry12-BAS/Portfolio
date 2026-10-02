@@ -12,7 +12,7 @@ import { MockCalendar } from './calendar.ts'
 import type { OfferingSeed, SlotChange } from './calendar.ts'
 import { MESSAGES_PER_CONVERSATION, MockConcierge, newConversation, stepOf } from './concierge.ts'
 import type { MockConversation, TurnOutput } from './concierge.ts'
-import { turnSpans } from './spans.ts'
+import { conversationSpan, turnSpans } from './spans.ts'
 import type { MockSpan } from '../spans.ts'
 import { isoMoment } from './time.ts'
 
@@ -199,13 +199,24 @@ export class Lb02Hub {
     return this.#concierge.receive(conversation, text)
   }
 
-  /** Answers a message that was taken in and writes the turn's spans. */
+  /**
+   * Answers a message that was taken in and writes the turn's spans. A turn that ends the conversation (it is handed
+   * to a person) is followed by the run's root span, which tells the trace route the run is finished. A message to a
+   * conversation that is already over writes nothing.
+   */
   respond(conversation: MockConversation, text: string, wasFirst: boolean): { output: TurnOutput, step: string } {
     const startedAt = this.options.now()
+    const wasOpen = conversation.handoff === undefined
     const output = this.#concierge.respond(conversation, text, wasFirst)
-    this.#turns += 1
     const step = stepOf(conversation, this.calendar)
-    this.#spans.set(conversation.runId, [...(this.#spans.get(conversation.runId) ?? []), ...turnSpans(conversation.runId, this.#turns, startedAt, output, step)])
+    if (!wasOpen) return { output, step }
+    this.#turns += 1
+    const spans = turnSpans(conversation.runId, this.#turns, startedAt, output, step)
+    if (conversation.handoff !== undefined) {
+      const booked = this.calendar.bookingOf(conversation.id) !== undefined
+      spans.push(conversationSpan(conversation.runId, conversation.createdAt, this.options.now(), { messages: conversation.messagesUsed, calls: conversation.modelCalls, reason: conversation.handoff.reason, booked }))
+    }
+    this.#spans.set(conversation.runId, [...(this.#spans.get(conversation.runId) ?? []), ...spans])
     return { output, step }
   }
 

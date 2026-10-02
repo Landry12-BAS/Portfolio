@@ -539,7 +539,7 @@ describe('over a real WebSocket on the mock back end', () => {
     expect((await fetch(`${mock.url}/__mock/lb02/drop`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: '{}' })).status).toBe(415)
   })
 
-  it('writes the conversation\'s spans for the Scope, none of them a root, so its trace never says it is finished', async () => {
+  it('writes the conversation\'s spans for the Scope, none of them a root while it is open, so its trace does not say it is finished', async () => {
     const { socket, events } = await connect()
     socket.send(JSON.stringify({ type: 'hello', token: token(), conversation: null }))
     await until(events, 1)
@@ -550,6 +550,29 @@ describe('over a real WebSocket on the mock back end', () => {
     const detail = await (await fetch(`${mock.url}/api/lb02/conversations/${id}`, { headers: { authorization } })).json() as Loose
     expect(mock.lb02.spansOf(detail.run_id)?.map(span => span.name)).toContain('visitor message')
     expect(mock.lb02.spansOf(detail.run_id)?.some(span => span.kind === 'system.run')).toBe(false)
+    socket.close()
+  })
+
+  it('writes the root span when the conversation is handed over, last and once, under which the turns sit, and nothing for what is said after', async () => {
+    const { socket, events } = await connect()
+    socket.send(JSON.stringify({ type: 'hello', token: token(), conversation: null }))
+    await until(events, 1)
+    const id = events[0]!.conversation as string
+    socket.send(JSON.stringify({ type: 'message', text: 'Can I speak to a real person please?' }))
+    await until(events, 3)
+    const authorization = `Bearer ${token()}`
+    const detail = await (await fetch(`${mock.url}/api/lb02/conversations/${id}`, { headers: { authorization } })).json() as Loose
+    const spans = mock.lb02.spansOf(detail.run_id)!
+    const roots = spans.filter(span => span.kind === 'system.run')
+    expect(roots).toHaveLength(1)
+    expect(spans.at(-1)).toBe(roots[0])
+    expect(roots[0]).toMatchObject({ name: 'booking conversation', attrs: { messages: 1, reason: 'asked_for_person', booked: false } })
+    expect(roots[0]!.parentId).toBeUndefined()
+    expect(spans.find(span => span.name === 'visitor message')?.parentId).toBe(roots[0]!.spanId)
+
+    socket.send(JSON.stringify({ type: 'message', text: 'Hello? Anyone there?' }))
+    await until(events, 5)
+    expect(mock.lb02.spansOf(detail.run_id)).toHaveLength(spans.length)
     socket.close()
   })
 })

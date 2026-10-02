@@ -9,8 +9,14 @@ written is logged and dropped.
     with tracer.span("hybrid search") as span:
         chunks = search(query)
         span.set("chunks", len(chunks))
+
+A run that is one `with` block opens its root span first and everything nests under it. A run
+that goes on in turns, such as a conversation, has no such block: its turns name the root they
+will have (`root_span_id`) as their parent, and the root is written when the run ends
+(`Tracer.finish_run`), which is how the trace route and the Scope learn the run is over.
 """
 
+import hashlib
 import logging
 import math
 import re
@@ -87,6 +93,15 @@ def new_span_id() -> str:
     return secrets.token_hex(8)
 
 
+def root_span_id(run_id: str) -> str:
+    """Return the span ID the run's root span will have, so spans can name it as their parent before it is written.
+
+    It is made from the run's ID, so every turn of a run, in any process, names the same root. The Scope
+    shows a span whose parent has not arrived at the top, and under the root once the root does.
+    """
+    return hashlib.sha256(f"{run_id}:root".encode()).hexdigest()[:16]
+
+
 def epoch_ms() -> int:
     """Return the current Unix time in milliseconds, the clock spans are stamped with."""
     return time.time_ns() // 1_000_000
@@ -137,12 +152,17 @@ class RedisSpanWriter:
 class OpenSpan:
     """A span being recorded: where it sits in its run, and the details its step adds."""
 
-    def __init__(self, run: Run, name: str, kind: SpanKind, parent_id: str | None, start_ms: int) -> None:
-        """Open a span of `run` called `name`, nested under `parent_id`, started at `start_ms`."""
+    def __init__(
+        self, run: Run, name: str, kind: SpanKind, parent_id: str | None, start_ms: int, span_id: str | None = None
+    ) -> None:
+        """Open a span of `run` called `name`, nested under `parent_id`, started at `start_ms`.
+
+        The span gets a new random ID unless `span_id` gives it one.
+        """
         if not SPAN_NAME.fullmatch(name):
             raise ValueError(f"{name!r} is not a span name: 1 to 100 letters, digits, spaces or . : / - _.")
         self.run = run
-        self.span_id = new_span_id()
+        self.span_id = span_id or new_span_id()
         self.parent_id = parent_id
         self.name = name
         self.kind = kind
@@ -216,3 +236,18 @@ class Tracer:
             raise
         finally:
             self._writer.write([span.finish(self._clock())])
+
+    def finish_run(self, name: str, started_ms: int, **attrs: AttrValue) -> None:
+        """Write the root span of the current run, which is over now, for a run that is not one `with` block.
+
+        The span is a `system.run` with no parent, from `started_ms` to now, and it has the ID the run's turns
+        named as their parent (`root_span_id`). Written last, it is what tells the trace route, and the Scope,
+        that the run is finished. Like every span it carries metadata only, and it never ends before it began.
+        """
+        run = current_run()
+        if run is None:
+            raise RuntimeError("Spans belong to a run: open one with run_scope() first.")
+        root = OpenSpan(run, name, "system.run", None, started_ms, span_id=root_span_id(run.run_id))
+        for key, value in attrs.items():
+            root.set(key, value)
+        self._writer.write([root.finish(max(self._clock(), started_ms))])
