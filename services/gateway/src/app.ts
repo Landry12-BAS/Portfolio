@@ -22,7 +22,8 @@ import { registerEmbeddings } from './routes/embeddings.ts'
 import { registerGuard } from './routes/guard.ts'
 import { registerHealth, registerInfo } from './routes/info.ts'
 import { registerRerank } from './routes/rerank.ts'
-import { RedisSpanSink } from './spans.ts'
+import { registerRuns } from './routes/runs.ts'
+import { RedisSpanReader, RedisSpanSink } from './spans.ts'
 
 declare module 'fastify' {
   /** Fastify's request, plus the identity of the service that sent it. */
@@ -68,6 +69,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     meters: new MeterStore(options.redis),
     breaker: new CircuitBreaker(now, options.breaker),
     spans: new RedisSpanSink(options.redis, options.prefix, app.log),
+    spanReader: new RedisSpanReader(options.redis, options.prefix, app.log),
     log: app.log,
   }
 
@@ -116,6 +118,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     registerRerank(v1, ctx)
     registerGuard(v1, ctx)
     registerInfo(v1, ctx)
+    registerRuns(v1, ctx)
   }, { prefix: '/v1' })
 
   return app

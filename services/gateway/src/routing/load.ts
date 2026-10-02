@@ -59,6 +59,17 @@ export interface System extends SystemConfig {
   key: string
 }
 
+/**
+ * A service allowed to read run traces (`GET /v1/runs/{runId}/spans`) and do nothing
+ * else. It may read the runs of the listed systems only, and it owns no system, so its
+ * token can never make a model call.
+ */
+export interface TraceReader {
+  service: string
+  name: string
+  systems: ReadonlySet<string>
+}
+
 /** The whole routing table, ready to route with. */
 export interface Routing {
   budgets: RoutingFile['budgets']
@@ -66,6 +77,8 @@ export interface Routing {
   models: ReadonlyMap<string, Model>
   aliases: ReadonlyMap<string, Alias>
   systems: ReadonlyMap<string, System>
+  // The services that may read traces, by service name.
+  traceReaders: ReadonlyMap<string, TraceReader>
 }
 
 /** Thrown when routing.yaml breaks a rule; `issues` lists every problem found. */
@@ -133,6 +146,26 @@ function hasNeuronLimit(limits: Limits | undefined): boolean {
 /** Returns the tokens-per-minute limit in a set of limits, if there is one. */
 function minuteTokens(limits: Limits | undefined): number | undefined {
   return limits?.minute?.tokens
+}
+
+/**
+ * Checks the trace readers against the systems. A reader may only name systems that
+ * exist, and it must own none: a service that makes model calls never reads traces, and
+ * a service that reads traces can never make a model call, because the model routes
+ * serve a system only to the service that owns it. Problems are added to `issues`.
+ */
+function checkTraceReaders(configs: RoutingFile['traceReaders'], systems: ReadonlyMap<string, System>, issues: string[]): Map<string, TraceReader> {
+  const readers = new Map<string, TraceReader>()
+  for (const [service, config] of Object.entries(configs)) {
+    for (const key of config.systems) {
+      if (!systems.has(key)) issues.push(`traceReaders.${service}: unknown system ${key}`)
+    }
+    if (new Set(config.systems).size !== config.systems.length) issues.push(`traceReaders.${service}: a system is listed twice`)
+    const owned = [...systems.values()].filter(system => system.service === service).map(system => system.key)
+    if (owned.length > 0) issues.push(`traceReaders.${service}: owns ${owned.join(', ')}, so it makes model calls and may not read traces`)
+    readers.set(service, { service, name: config.name, systems: new Set(config.systems) })
+  }
+  return readers
 }
 
 /**
@@ -269,6 +302,8 @@ export function loadRouting(text: string, env: Env): Routing {
     systems.set(key, { ...config, key })
   }
 
+  const traceReaders = checkTraceReaders(file.traceReaders, systems, issues)
+
   if (issues.length > 0) throw new RoutingError(issues)
-  return { budgets: file.budgets, providers, models, aliases, systems }
+  return { budgets: file.budgets, providers, models, aliases, systems, traceReaders }
 }

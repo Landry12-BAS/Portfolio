@@ -57,7 +57,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
   }
 
   // A fresh key pair per service, so no test depends on a key checked into the repo.
-  const services = ['django-systems', 'flask-systems']
+  const services = ['django-systems', 'flask-systems', 'web']
   const privateKeys = new Map<string, CryptoKey>()
   const publicKeys: Record<string, string> = {}
   for (const service of services) {

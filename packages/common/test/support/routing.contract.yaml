@@ -62,3 +62,9 @@ systems:
     maxCallsPerRun: 3
     sessionDailyCalls: 6
     dailyCalls: 50
+
+# The site's server reads LB-08's traces for the Scope, and nothing else.
+traceReaders:
+  web:
+    name: The site's server
+    systems: [lb-08]

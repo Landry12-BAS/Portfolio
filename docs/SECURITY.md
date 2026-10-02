@@ -114,7 +114,12 @@ attempts. Every prompt change must pass it.
   the listed hosts and refuse everything else.
 - **Service tokens.** Each service signs short-lived JWTs (EdDSA) with its own private
   key; the gateway holds only the public keys, refuses tokens older than 10 minutes,
-  ties each system to one service, and rejects everything else. A service refuses a
+  ties each system to one service, and rejects everything else. The site's server has a
+  token of its own, `web`, with one permission: it reads a run's trace for the Scope
+  (`GET /v1/runs/{id}/spans`, metadata only, for the systems `routing.yaml` lists under
+  `traceReaders`). It owns no system, so it cannot call a model, and no service that does
+  call models may read traces: `pnpm check` refuses a routing table that lets one service
+  do both. A service refuses a
   key file other users could read, and its gateway client never follows a redirect or
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it

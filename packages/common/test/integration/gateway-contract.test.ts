@@ -195,6 +195,54 @@ describe('the trace', () => {
     expect(JSON.stringify(spans)).not.toContain('private')
   })
 
+  it('reads back through the gateway\'s Scope route, nested and finished, with nothing a visitor or a model said', async () => {
+    const run = visitorRun()
+    gw.provider.enqueue({ status: 500, body: { error: { message: 'bad request: my gate code is 4471-PRIVATE-TICKET-TEXT' } } })
+    gw.provider.answerNext('PRIVATE-ANSWER-TEXT: refund approved for Sam Carter')
+
+    await runScope(run, () => tracer().span('support ticket', async () => {
+      await tracer().span('classify', async (step) => {
+        step.set('category', 'damaged')
+        await generateText({ model: gw.client.chat('lb-fast'), prompt: 'my gate code is 4471-PRIVATE-TICKET-TEXT', maxRetries: 0 }).catch(() => undefined)
+        await ask()
+      })
+    }, { kind: 'system.run', attrs: { language: 'en' } }))
+
+    const response = await gw.readTrace(run.runId)
+    const page = await response.json() as { runId: string, spans: unknown[], cursor: string, more: boolean, finished: boolean }
+
+    expect(response.status).toBe(200)
+    // The route's own checks and this package's schema describe one format.
+    const spans = page.spans.map(span => spanSchema.parse(span))
+    expect(page).toMatchObject({ runId: run.runId, more: false, finished: true })
+    expect(spans.map(span => span.kind).filter(kind => kind.startsWith('system'))).toEqual(['system.step', 'system.run'])
+    const root = spans.find(span => span.kind === 'system.run')
+    const step = spans.find(span => span.name === 'classify')
+    const calls = spans.filter(span => span.kind === 'gateway.call')
+    expect(root).toMatchObject({ name: 'support ticket', attrs: { language: 'en' } })
+    expect(root?.parentId).toBeUndefined()
+    expect(step?.parentId).toBe(root?.spanId)
+    expect(calls).toHaveLength(2)
+    expect(calls.every(call => call.parentId === step?.spanId)).toBe(true)
+    // The cursor of a finished run hands back nothing new.
+    const later = await (await gw.readTrace(run.runId, `after=${page.cursor}`)).json() as typeof page
+    expect(later).toMatchObject({ spans: [], finished: true, cursor: page.cursor })
+    const body = JSON.stringify(page)
+    for (const words of ['PRIVATE-TICKET-TEXT', 'PRIVATE-ANSWER-TEXT', 'Sam Carter', 'gate code']) expect(body).not.toContain(words)
+  })
+
+  it('shows a reader nothing of a run of a system it may not read, as if the run were not there', async () => {
+    const other = createRun({ system: 'lb-08', runId: newRunId(), session: 'session-0123456789abcdef' })
+    await runScope(other, () => tracer().span('support ticket', () => ask(), { kind: 'system.run' }))
+    // The contract routing lets `web` read LB-08, so write a run of a system it does not list.
+    await gw.redis.xadd(`${gw.prefix}run:other-system-run:spans`, '*', 'span', JSON.stringify({
+      v: 1, runId: 'other-system-run', system: 'lb-03', spanId: '00000000000000a1', kind: 'system.run', name: 'invoice', status: 'ok', startMs: 1, endMs: 2, attrs: {},
+    }))
+
+    expect((await gw.readTrace(other.runId)).status).toBe(200)
+    expect((await gw.readTrace('other-system-run')).status).toBe(404)
+  })
+
   it('keeps two runs that overlap apart, each with its own spans and its own calls', async () => {
     const [first, second] = [visitorRun(), visitorRun()]
 

@@ -33,6 +33,9 @@ export interface ContractGateway {
   client: Gateway
   // The spans recorded for a run, oldest first.
   runSpans: (runId: string) => Promise<Record<string, unknown>[]>
+  // Reads a run's trace from the gateway's Scope route as `web`, the site's server, would.
+  // `query` is the text after the `?`.
+  readTrace: (runId: string, query?: string) => Promise<Response>
   close: () => Promise<void>
 }
 
@@ -49,6 +52,9 @@ export async function startContractGateway(redisUrl: string, routingFile: URL = 
   const keyDirectory = mkdtempSync(join(tmpdir(), 'lb-common-contract-'))
   const keyFile = join(keyDirectory, 'node-systems.jwk.json')
   writeFileSync(keyFile, JSON.stringify({ ...privateKey.export({ format: 'jwk' }), kid: 'node-systems' }), { mode: 0o600 })
+  // A second pair for `web`, the site's server: it reads traces and calls no model.
+  const web = generateKeyPairSync('ed25519')
+  const webTokens = new ServiceTokens('web', web.privateKey)
 
   const prefix = `lbtest-${randomBytes(6).toString('hex')}:`
   const redis = new Redis(redisUrl, { enableOfflineQueue: false, maxRetriesPerRequest: 1, lazyConnect: true })
@@ -57,7 +63,7 @@ export async function startContractGateway(redisUrl: string, routingFile: URL = 
   const app = await buildGateway({
     routing,
     profile: 'production',
-    serviceKeys: await importServiceKeys({ 'node-systems': publicKey.export({ format: 'jwk' }).x ?? '' }),
+    serviceKeys: await importServiceKeys({ 'node-systems': publicKey.export({ format: 'jwk' }).x ?? '', 'web': web.publicKey.export({ format: 'jwk' }).x ?? '' }),
     redis,
     prefix,
   })
@@ -77,6 +83,7 @@ export async function startContractGateway(redisUrl: string, routingFile: URL = 
       const entries = await redis.xrange(`${prefix}run:${runId}:spans`, '-', '+')
       return entries.map(([, fields]) => JSON.parse(fields[1] ?? '{}') as Record<string, unknown>)
     },
+    readTrace: (runId, query = '') => fetch(`${url}/v1/runs/${runId}/spans${query === '' ? '' : `?${query}`}`, { headers: { authorization: `Bearer ${webTokens.current()}` } }),
     close: async () => {
       const closing = app.close()
       // A client may leave an idle keep-alive socket open; don't wait out its timeout.

@@ -102,6 +102,15 @@ const system = z.strictObject({
   dailyCalls: z.int().min(1),
 })
 
+// The name of a system, such as `lb-01`.
+const systemKey = z.string().regex(/^lb-\d{2}$/, 'lb-NN')
+
+// A service that reads run traces and does nothing else: the systems whose runs it may read.
+const traceReader = z.strictObject({
+  name: z.string().min(1),
+  systems: z.array(systemKey).min(1),
+})
+
 /** The whole routing.yaml file. */
 export const routingSchema = z.strictObject({
   version: z.literal(1),
@@ -113,7 +122,9 @@ export const routingSchema = z.strictObject({
   timeouts,
   providers: z.record(slug, provider),
   aliases: z.record(z.string().regex(/^lb-[a-z0-9-]+$/, 'lb-<name>'), alias),
-  systems: z.record(z.string().regex(/^lb-\d{2}$/, 'lb-NN'), system),
+  systems: z.record(systemKey, system),
+  // Absent means no service may read traces, which is the safe default.
+  traceReaders: z.record(slug, traceReader).default({}),
 })
 
 /** routing.yaml after validation, before cross-references are resolved. */
@@ -122,6 +133,8 @@ export type RoutingFile = z.infer<typeof routingSchema>
 export type ProviderConfig = RoutingFile['providers'][string]
 /** One system entry in routing.yaml. */
 export type SystemConfig = RoutingFile['systems'][string]
+/** One trace reader entry in routing.yaml. */
+export type TraceReaderConfig = RoutingFile['traceReaders'][string]
 /** The four timeouts of an alias, after defaults are applied. */
 export type Timeouts = z.infer<typeof timeouts>
 /** Per-minute and per-day limits of a provider or model. */

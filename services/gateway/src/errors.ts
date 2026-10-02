@@ -9,6 +9,7 @@ export type ErrorCode
     | 'invalid_service_token'
     | 'system_not_allowed'
     | 'alias_not_allowed'
+    | 'permission_denied'
     | 'model_not_found'
     | 'input_too_large'
     | 'quota_exceeded'
@@ -18,6 +19,7 @@ export type ErrorCode
     | 'upstream_timeout'
     | 'gateway_unavailable'
     | 'not_found'
+    | 'run_not_found'
     | 'internal_error'
 
 // The OpenAI `type` field for each HTTP status; anything else is an `api_error`.

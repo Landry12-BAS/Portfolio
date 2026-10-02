@@ -10,7 +10,7 @@ const standIns = new Proxy<Record<string, string>>({}, { get: () => 'check' })
 
 try {
   const routing = loadRouting(readFileSync(path, 'utf8'), standIns)
-  console.log(`routing.yaml is valid: ${routing.providers.size} providers, ${routing.models.size} models, ${routing.aliases.size} aliases, ${routing.systems.size} systems`)
+  console.log(`routing.yaml is valid: ${routing.providers.size} providers, ${routing.models.size} models, ${routing.aliases.size} aliases, ${routing.systems.size} systems, ${routing.traceReaders.size} trace readers`)
 }
 catch (error) {
   if (!(error instanceof RoutingError)) throw error

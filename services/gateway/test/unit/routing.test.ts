@@ -213,6 +213,55 @@ describe('mistakes the loader catches', () => {
   })
 })
 
+describe('trace readers', () => {
+  it('lets the site\'s server read the traces of the four demo systems, and no other service', () => {
+    const routing = loadRouting(committed, allKeys)
+
+    expect([...routing.traceReaders.keys()]).toEqual(['web'])
+    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+  })
+
+  it('never lets a reader own a system, so no reader can make a model call', () => {
+    const routing = loadRouting(committed, allKeys)
+    const owners = new Set([...routing.systems.values()].map(system => system.service))
+
+    for (const reader of routing.traceReaders.keys()) expect(owners.has(reader)).toBe(false)
+  })
+
+  it('reads no traces when the file lists no readers', () => {
+    const routing = loadRouting(edited((doc) => {
+      delete doc.traceReaders
+    }), allKeys)
+
+    expect(routing.traceReaders.size).toBe(0)
+  })
+
+  it('refuses a service that owns a system and reads traces', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.traceReaders['django-systems'] = { name: 'Django', systems: ['lb-01'] }
+    }))
+
+    expect(issues).toEqual(['traceReaders.django-systems: owns lb-01, lb-02, so it makes model calls and may not read traces'])
+  })
+
+  it('refuses a reader that names a system that does not exist, or names one twice', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.traceReaders.web.systems = ['lb-01', 'lb-01', 'lb-77']
+    }))
+
+    expect(issues).toEqual(['traceReaders.web: unknown system lb-77', 'traceReaders.web: a system is listed twice'])
+  })
+
+  it('refuses a reader without systems, and a field nobody planned for', () => {
+    expect(issuesOf(edited((doc) => {
+      doc.traceReaders.web.systems = []
+    }))).toEqual(['traceReaders.web.systems: Too small: expected array to have >=1 items'])
+    expect(issuesOf(edited((doc) => {
+      doc.traceReaders.web.canCallModels = true
+    }))).toEqual([expect.stringContaining('traceReaders.web')])
+  })
+})
+
 describe('planning a chain', () => {
   const routing = loadRouting(committed, allKeys)
   const tools = routing.aliases.get('lb-tools')!

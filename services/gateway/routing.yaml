@@ -369,3 +369,14 @@ systems:
     # set (39 cases, at most 2 calls each) when a prompt changes. Rebalanced as each system
     # ships (docs/STACK.md, Capacity).
     dailyCalls: 160
+
+# The services that read run traces and do nothing else: the site's server, for the Scope
+# (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
+# owns no system above, so the model routes refuse it (system_not_allowed); a service that
+# owns a system never reads traces (permission_denied). `pnpm check` fails when a reader
+# owns a system or names one that isn't listed above. A system joins a reader's list in
+# the change that builds its demo.
+traceReaders:
+  web:
+    name: The site's server (the Scope)
+    systems: [lb-01, lb-02, lb-05, lb-08]

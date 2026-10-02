@@ -15,7 +15,7 @@ import type { Alias, Model, Routing, System } from './routing/load.ts'
 import type { DataClass, Plan, Profile } from './routing/plan.ts'
 import type { Capability } from './routing/schema.ts'
 import { newSpanId } from './spans.ts'
-import type { Span, SpanSink, SpanStatus } from './spans.ts'
+import type { RedisSpanReader, Span, SpanSink, SpanStatus } from './spans.ts'
 import type { Failure } from './upstream/client.ts'
 
 /** Everything a call needs from the running gateway, shared by every request. */
@@ -27,6 +27,8 @@ export interface GatewayContext {
   meters: MeterStore
   breaker: CircuitBreaker
   spans: SpanSink
+  // Reads a run's spans back, for the Scope route.
+  spanReader: RedisSpanReader
   log: FastifyBaseLogger
 }
 

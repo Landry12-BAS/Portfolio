@@ -13,7 +13,7 @@ routing. Threat model: [`docs/SECURITY.md`](../../docs/SECURITY.md), sections 4 
 | Parameter | Value |
 |---|---|
 | API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
-| Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers) |
+| Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers). The Scope's route: `GET /v1/runs/{runId}/spans` (a run's trace, for the site's server only) |
 | Providers | Groq, Cloudflare Workers AI, OpenRouter; NVIDIA in the `dev` profile only |
 | Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard` |
 | Routing table | [`routing.yaml`](routing.yaml), validated in CI by `pnpm check` |
@@ -95,6 +95,61 @@ each provider.
   (502, 503 or 504), and the caller must treat the text as unchecked: skip the steps
   that can call tools, or serve a replay.
 
+## Reading a run's trace
+
+`GET /v1/runs/{runId}/spans` is what the site's server reads for the Scope: one run's spans
+from its Redis stream (`<prefix>run:<runId>:spans`), as metadata-only JSON, in the order
+they were written. The site hands them to the visitor's browser, which polls it while a
+run is live and opens it again for a permalink. `infra/caddy/Caddyfile` lets exactly this
+path through, as a `GET`, and nothing else under `/v1`.
+
+```sh
+curl -H "authorization: Bearer $WEB_TOKEN" "localhost:8080/v1/runs/run-0123456789/spans?limit=100&after=1790000000123-0"
+```
+
+```json
+{
+  "runId": "run-0123456789",
+  "spans": [{ "v": 1, "runId": "run-0123456789", "system": "lb-01", "spanId": "9c1f...", "kind": "gateway.call", "name": "lb-fast", "status": "ok", "startMs": 1790000000123, "endMs": 1790000000610, "attrs": { "alias": "lb-fast", "attempts": 1 } }],
+  "cursor": "1790000000611-0",
+  "more": false,
+  "finished": false
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `spans` | Up to `limit` spans (1 to 500, default 200) written after `after`, oldest first. A parent is written after its children, because a span is written when it ends |
+| `cursor` | The ID of the last entry looked at. Send it back as `after` to poll a live run: the next page holds only what was written since, and an empty page returns the same cursor |
+| `more` | Spans were already waiting beyond this page, or the page hit its byte budget (256 KB). Ask again at once |
+| `finished` | The run's root span has been written: a `system.run` span with no parent, which a system writes last. It stays `true` for a client that is already past the root. A run with no root span, such as LB-02's conversation (one run, a span for every message), never finishes, so the client decides when to stop |
+
+- **Who may call it.** Only a service listed under `traceReaders` in `routing.yaml`
+  (`web`, the site's server). Any other valid service token gets `403 permission_denied`,
+  so a service that makes model calls can't read traces by accident. A reader owns no
+  system, so every model route answers it `system_not_allowed`: it can read traces and
+  can't call a model. `pnpm check` fails when a reader owns a system or names one that
+  isn't listed. The reader may read only the systems it lists (`web`: LB-01, LB-02, LB-05,
+  LB-08), and a run of any other system answers like a run that isn't there.
+- **Unknown runs.** A run ID is 8 to 64 letters, digits, `_` or `-`. A run that has no
+  stream answers `404 run_not_found`: it never existed, its 24 hours are up, or it
+  belongs to a system the reader can't see, and the three read the same. A run that
+  hasn't written its first span yet is also unknown, so a client that has just started a
+  run keeps asking for a few seconds before it believes the 404.
+- **Metadata only.** Spans carry names, timings, models, token counts and scores. The
+  route reads each stream entry with a strict schema ([`src/spans.ts`](src/spans.ts)): no
+  unknown field, details that are short labels (200 characters), numbers or flags, at most
+  64 of them, and at most 8 KB a span. An entry that doesn't fit is passed over, and the
+  cursor moves past it. The schema checks the shape and the size, not the meaning:
+  keeping a visitor's words out of a span is the writers' rule (`lb-common`'s tracers
+  record an error's name, never its message), and a test reads real spans, written by the
+  gateway and by `@lb/common`'s tracer around calls whose prompts and answers carry marker
+  words, and finds none of them.
+- **Bounded.** At most 500 spans and 256 KB a response, and a stream holds at most about
+  1,000 spans. The route reads with `XRANGE` and `XREVRANGE` on the one run's key and
+  nothing else, which the gateway's Redis user may do there (`infra/redis/users.acl.tmpl`).
+  Without Redis the route answers `503 gateway_unavailable` and says nothing about why.
+
 ## How a call is routed
 
 1. **Check.** The token, the headers and the body are validated. Unknown fields are
@@ -128,6 +183,8 @@ is stable:
 | 400 | `upstream_rejected` | The provider refused the request itself; its reason is in the message |
 | 401 | `invalid_service_token` | Mint a fresh token |
 | 403 | `system_not_allowed`, `alias_not_allowed` | The service or system may not make this call |
+| 403 | `permission_denied` | The service may not read run traces (only a `traceReaders` service may) |
+| 404 | `run_not_found` | No trace for that run: unknown, expired, or a system the reader may not see |
 | 404 | `model_not_found` | Ask for an `lb-` alias of the right kind |
 | 413 | `input_too_large` | Shorten the prompt |
 | 429 | `quota_exceeded` | The run, visitor or system quota is spent; `Retry-After` when it frees up |
@@ -150,6 +207,11 @@ minute limit and 95% of a day limit, and `/v1/usage` flags any daily budget past
   `kid` and `iss` both the service name) with its own private key. The gateway holds
   only public keys, refuses tokens older than 10 minutes, and ties each system to one
   service.
+- **Trace readers are not callers.** Reading traces and calling models are separate
+  permissions that no service holds together: `traceReaders` in `routing.yaml` lists the
+  readers, a reader owns no system, and the loader refuses a file that says otherwise.
+  Any valid service token can still read `GET /v1/models` (only its own aliases, so a
+  reader sees none) and `GET /v1/usage` (budget counters, no visitor data).
 - **Fails closed.** Without Redis there is no budget check, so calls are refused, not
   sent unmetered.
 - **No content in logs or spans.** Request logs carry no headers or bodies, and
@@ -196,7 +258,9 @@ curl -N localhost:8080/v1/chat/completions \
 `pnpm --filter @lb/gateway test` runs the unit tests and the integration tests. The
 integration tests use a real Redis from Testcontainers and scripted fake providers on
 local ports, and cover fallback, streaming, budgets, quotas, data classes, access
-control, a client disconnecting mid-stream, reranking and the guard's segments. Without Docker, point them at any Redis:
+control, a client disconnecting mid-stream, reranking and the guard's segments, and the
+Scope's route (who may read a trace, cursors, size limits, what is refused, and spans that
+hold no visitor's words). Without Docker, point them at any Redis:
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379 pnpm --filter @lb/gateway test`. Each test
 uses its own key prefix and removes its keys afterwards.
 
@@ -206,4 +270,5 @@ These arrive with the system that first needs them:
 
 - `lb-stt` (speech to text), with LB-09.
 - A response cache for synthetic samples, and the persister that drains the span
-  stream into `platform.run_spans`, with the Scope.
+  stream into `platform.run_spans`. Until it exists a trace lives in Redis for 24 hours
+  after its last span, so a permalink to an older run answers 404.

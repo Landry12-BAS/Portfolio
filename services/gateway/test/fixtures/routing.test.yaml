@@ -187,3 +187,9 @@ systems:
     maxCallsPerRun: 4
     sessionDailyCalls: 20
     dailyCalls: 50
+
+# A trace reader that may see LB-01's runs and not LB-05's, to test the per-system limit.
+traceReaders:
+  web:
+    name: Test site
+    systems: [lb-01]
