@@ -102,6 +102,8 @@ describe('folding a run\'s log', () => {
     expect(retryLeftMs(step, seenAt)).toBe(1_000)
     expect(retryLeftMs(step, seenAt + 400)).toBe(600)
     expect(retryLeftMs(step, seenAt + 5_000)).toBe(0)
+    // A timer that last ticked a moment before the failure was seen must not add to the wait the queue gave.
+    expect(retryLeftMs(step, seenAt - 250)).toBe(1_000)
 
     const done = follow(mock, started)
     const finished = done.steps.find(candidate => candidate.nodeId === 'tell_purchasing')!

@@ -340,7 +340,7 @@ test.describe('running a workflow', () => {
 
     await page.getByTestId('run').click()
 
-    await expect(page.getByTestId('retry-countdown').first()).toContainText(/Next attempt in \d s|Trying again now/, { timeout: 15_000 })
+    await expect(page.getByTestId('retry-countdown').first()).toContainText(/Next attempt in [12] s|Trying again now/, { timeout: 15_000 })
     await expectRunStatus(page, 'succeeded', 30_000)
     await expect(page.locator('[data-testid="run-step"][data-step="tell_purchasing"]')).toContainText('3 of 3')
     await expect(page.getByTestId('dead-letter')).toHaveCount(0)
@@ -449,6 +449,11 @@ test.describe('describing a process in words', () => {
     await expect(page.getByTestId('canvas-step').first()).toBeVisible()
     await expect(page.getByTestId('versions')).toContainText('The model')
     await expect(page.getByTestId('generations')).toContainText('9 of 10')
+    await expect(page.getByTestId('scope-row').first()).toBeVisible({ timeout: 15_000 })
+
+    // The version names the trace of its description, which opens on its own page.
+    await page.getByRole('link', { name: 'Open the trace' }).click()
+    await expect(page).toHaveURL(/\/runs\/[\w-]+$/)
     await expect(page.getByTestId('scope-row').first()).toBeVisible({ timeout: 15_000 })
   })
 

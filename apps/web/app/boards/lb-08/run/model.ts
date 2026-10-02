@@ -178,10 +178,15 @@ export function reconcile(model: RunModel, view: RunView, now: number): RunModel
   return { ...fresh, steps: fresh.steps.map(step => ({ ...step, retry: step.status === 'queued' ? retrying.get(step.nodeId) ?? step.retry : undefined })) }
 }
 
-/** How long is left before the queue tries a waiting step again, in milliseconds; zero when it is not waiting. */
+/**
+ * How long is left before the queue tries a waiting step again, in milliseconds; zero when it is not
+ * waiting. The wait is never more than the queue said: a clock that was read a moment before the
+ * failure was seen (a timer ticks only now and then) would otherwise show a second too many.
+ */
 export function retryLeftMs(step: StepRun, now: number): number {
   if (step.retry === undefined || step.status !== 'queued') return 0
-  return Math.max(step.retry.inMs - (now - step.retry.seenAt), 0)
+  const elapsed = Math.max(now - step.retry.seenAt, 0)
+  return Math.max(step.retry.inMs - elapsed, 0)
 }
 
 /** The steps that wait for a person to approve or reject them. */
