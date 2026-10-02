@@ -7,6 +7,7 @@ calls it directly (core/registry.py). `just seed-lb03`, `just eval-lb03`, `just 
 
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from core.errors import describe_failure
 from core.platform import Platform
@@ -103,6 +104,68 @@ def ocr_lb03(arguments: Sequence[str], platform: Platform) -> int:  # noqa: ARG0
             write_line(problem, error=True)
         return 1 if problems else 0
     return 0
+
+
+def eval_lb03(arguments: Sequence[str], platform: Platform) -> int:
+    """Put the golden set to the live pipeline and grade it by rules, and print the table.
+
+    Options: `--samples` for the curated samples only, `--case ID` for one document, `--min-pass-rate N` for the
+    share of cases that must pass (default 0.9; a hostile or give-up case that fails is never excused),
+    `--pause SECONDS` between documents. Every document is read by the real OCR in its cage and the real models
+    through the gateway: two model calls for a clean document, five at most, so the whole set is at most about
+    215 calls. Run it when prompts or routes change. Exits 1 when the run misses its pass rate.
+    """
+    import asyncio
+
+    from lb03 import limits
+    from lb03.accounts import read_chart
+    from lb03.duplicates import sample_identities
+    from lb03.golden import SEED_DIRECTORY, read_golden_set
+    from lb03.golden_eval import GoldenRun, select_cases
+    from lb03.ocr.pool import OcrPool, PoolSettings
+
+    options = parse_options(arguments, {"--samples": False, "--case": True, "--min-pass-rate": True, "--pause": True})
+    if options is None:
+        write_line("eval_lb03 takes --samples, --case ID, --min-pass-rate N, --pause SECONDS.", error=True)
+        return 2
+    if platform.chat is None or platform.guard is None:
+        write_line(
+            "eval_lb03 needs the gateway: set LB_GATEWAY_URL, LB_SERVICE_NAME and LB_SERVICE_KEY_FILE.", error=True
+        )
+        return 2
+    try:
+        minimum = float(options.get("--min-pass-rate", "0.9"))
+        pause = float(options.get("--pause", "0"))
+    except ValueError:
+        write_line("--min-pass-rate and --pause are numbers.", error=True)
+        return 2
+    golden = read_golden_set()
+    try:
+        cases = select_cases(golden, options.get("--case"), "--samples" in options)
+    except KeyError:
+        write_line("There is no such case in the golden set.", error=True)
+        return 2
+    scratch = platform.environment.lb03_scratch_dir
+    pool = OcrPool(PoolSettings(workers=1, scratch_root=Path(scratch) if scratch else None))
+    run = GoldenRun(
+        golden=golden,
+        data_directory=SEED_DIRECTORY,
+        chat=platform.chat,
+        guard=platform.guard,
+        reader=pool,
+        tracer=platform.tracer,
+        chart=read_chart(SEED_DIRECTORY),
+        samples=sample_identities(golden),
+        clock=platform.clock,
+        pause_seconds=pause,
+    )
+    write_line(f"Running {len(cases)} documents, at most {limits.MAX_MODEL_CALLS} model calls each.")
+    report = asyncio.run(run.run(cases))
+    write_line(report.render())
+    if report.safety_failures():
+        write_line("A hostile or give-up case failed: that is never excused by the pass rate.", error=True)
+        return 1
+    return 0 if report.pass_rate() >= minimum else 1
 
 
 def sweep_lb03(arguments: Sequence[str], platform: Platform) -> int:

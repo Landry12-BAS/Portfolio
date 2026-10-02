@@ -43,7 +43,7 @@ from lb03.extraction import CallBudget, LimitError, extract, repair
 from lb03.invoice import ExtractedInvoice
 from lb03.ocr.pool import OcrError, Reading
 from lb03.prompts import EXTRACT_ALIAS, VISION_ALIAS, Slot, extraction_messages, guard_segments, new_code, reading_text
-from lb03.repository import DocumentRepository, FinishedReading
+from lb03.repository import FinishedReading
 from lb03.states import DocumentState, FailureCode
 from lb03.storage import FileStore, StorageError, original_key, page_key
 from lb_common.run import Run, new_run_id, run_scope
@@ -65,6 +65,34 @@ class Offload(Protocol):
         ...
 
 
+class Documents(Protocol):
+    """Where the pipeline keeps a document's progress and its ending: Postgres in the service, memory in the eval."""
+
+    def advance(self, document_id: str, state: DocumentState, steps: Sequence[dict[str, Any]], now: datetime) -> bool:
+        """Move a document that is still being read to its next state; False if it has ended or is gone."""
+        ...
+
+    def finish_ready(self, document_id: str, reading: FinishedReading, now: datetime) -> bool:
+        """Save a finished reading and mark the document `ready`; False if it had already ended."""
+        ...
+
+    def finish_failed(
+        self,
+        document_id: str,
+        code: FailureCode,
+        now: datetime,
+        model_calls: int,
+        run_id: str | None,
+        steps: list[dict[str, Any]],
+    ) -> bool:
+        """Mark a document `failed` with the code that says why; False if it had already ended."""
+        ...
+
+    def known_identities(self, session_key: str, now: datetime, exclude: str) -> list[Known]:
+        """Return the identities of the visitor's other finished documents of the hour, for the duplicate check."""
+        ...
+
+
 class Reader(Protocol):
     """Reads a file's pages: the OCR pool, or a stand-in for it in tests."""
 
@@ -81,7 +109,7 @@ class Parts:
     guard: InjectionGuard | None
     reader: Reader
     store: FileStore
-    repository: DocumentRepository
+    repository: Documents
     tracer: Tracer
     chart: ChartOfAccounts
     samples: Sequence[Known]
@@ -104,6 +132,9 @@ class Job:
     extension: str
     admitted_on: date
     submitted: float
+    # A document of the eval or of a recorded sample, not a visitor's: its run has no session, so no visitor's
+    # daily quota at the gateway is counted for it.
+    synthetic: bool = False
 
 
 @dataclass(frozen=True)
@@ -205,7 +236,12 @@ class Pipeline:
 
         Raises only for a bug: every way a document can fail by itself is a failure code written to the document.
         """
-        run = Run(system=SYSTEM_KEY, run_id=new_run_id(), data_class="visitor", session=job.session_key)
+        run = Run(
+            system=SYSTEM_KEY,
+            run_id=new_run_id(),
+            data_class="synthetic" if job.synthetic else "visitor",
+            session=None if job.synthetic else job.session_key,
+        )
         work = Work(job=job, run_id=run.run_id)
         with run_scope(run), self.parts.tracer.span("invoice reading", kind="system.run") as root:
             ended = await self.guarded(work)
