@@ -20,6 +20,8 @@ from typing import Any, Literal, Protocol
 
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
+    ChatCompletionContentPartImageParam,
+    ChatCompletionContentPartTextParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -41,12 +43,25 @@ REPAIR_REQUEST = (
 )
 
 
+# The only form a picture may take in a request: inline, as a data URL. The gateway refuses a link, and so does
+# this: a link would make a provider fetch whatever address a document managed to name.
+IMAGE_DATA_URL = re.compile(r"^data:image/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$")
+
+
 @dataclass(frozen=True)
 class ChatMessage:
-    """One message of a chat request."""
+    """One message of a chat request, with the pictures a user message sends along (as base64 data URLs)."""
 
     role: Literal["system", "user", "assistant"]
     content: str
+    images: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        """Refuse a picture on a message that isn't the user's, and any picture that isn't an inline data URL."""
+        if self.images and self.role != "user":
+            raise ValueError("Only a user message carries pictures.")
+        if not all(IMAGE_DATA_URL.fullmatch(image) for image in self.images):
+            raise ValueError("A picture is sent inline, as a base64 data URL of a JPEG, PNG or WebP.")
 
 
 @dataclass(frozen=True)
@@ -98,7 +113,15 @@ def openai_message(message: ChatMessage) -> ChatCompletionMessageParam:
         return ChatCompletionSystemMessageParam(role="system", content=message.content)
     if message.role == "assistant":
         return ChatCompletionAssistantMessageParam(role="assistant", content=message.content)
-    return ChatCompletionUserMessageParam(role="user", content=message.content)
+    if not message.images:
+        return ChatCompletionUserMessageParam(role="user", content=message.content)
+    parts: list[ChatCompletionContentPartTextParam | ChatCompletionContentPartImageParam] = [
+        ChatCompletionContentPartTextParam(type="text", text=message.content)
+    ]
+    parts.extend(
+        ChatCompletionContentPartImageParam(type="image_url", image_url={"url": image}) for image in message.images
+    )
+    return ChatCompletionUserMessageParam(role="user", content=parts)
 
 
 class StructuredOutputError(Exception):

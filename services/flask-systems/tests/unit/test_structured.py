@@ -9,6 +9,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 
 from core.structured import (
+    IMAGE_DATA_URL,
     ChatMessage,
     Completion,
     GatewayChat,
@@ -135,6 +136,62 @@ def test_messages_become_the_sdks_typed_messages() -> None:
     assert openai_message(ChatMessage("system", "rules")) == {"role": "system", "content": "rules"}
     assert openai_message(ChatMessage("user", "question")) == {"role": "user", "content": "question"}
     assert openai_message(ChatMessage("assistant", "{}")) == {"role": "assistant", "content": "{}"}
+
+
+PICTURE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBD"
+
+
+def test_a_user_message_can_carry_pictures_as_inline_data_urls() -> None:
+    """A message with pictures becomes a text part followed by one image part for each, the form vision models take."""
+    message = ChatMessage("user", "Read this invoice.", images=(PICTURE,))
+
+    assert openai_message(message) == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Read this invoice."},
+            {"type": "image_url", "image_url": {"url": PICTURE}},
+        ],
+    }
+
+
+def test_a_message_without_pictures_is_still_plain_text() -> None:
+    """The picture support changes nothing for the messages that already existed."""
+    assert ChatMessage("user", "hello").images == ()
+    assert openai_message(ChatMessage("user", "hello")) == {"role": "user", "content": "hello"}
+
+
+@pytest.mark.parametrize("role", ["system", "assistant"])
+def test_only_a_user_message_may_carry_a_picture(role: str) -> None:
+    """A picture on a system or assistant message is refused when the message is made."""
+    with pytest.raises(ValueError, match="user message"):
+        ChatMessage(cast(Any, role), "text", images=(PICTURE,))
+
+
+@pytest.mark.parametrize(
+    "picture",
+    [
+        "https://example.com/invoice.jpg",
+        "http://169.254.169.254/latest/meta-data",
+        "file:///etc/passwd",
+        "data:text/html;base64,PGh0bWw+",
+        "data:image/svg+xml;base64,PHN2Zz4=",
+        "data:image/jpeg;base64,not base64!",
+        "data:image/jpeg,raw",
+        "",
+    ],
+)
+def test_a_picture_that_is_a_link_or_not_inline_is_refused(picture: str) -> None:
+    """A link would make a provider fetch an address a document named, and other data types are not pictures."""
+    with pytest.raises(ValueError, match="inline"):
+        ChatMessage("user", "text", images=(picture,))
+
+
+def test_the_picture_pattern_accepts_the_three_image_types_and_padding() -> None:
+    """JPEG, PNG and WebP data URLs, with or without base64 padding, are accepted."""
+    for kind in ("jpeg", "png", "webp"):
+        assert IMAGE_DATA_URL.fullmatch(f"data:image/{kind};base64,QUJD")
+        assert IMAGE_DATA_URL.fullmatch(f"data:image/{kind};base64,QUI=")
+        assert IMAGE_DATA_URL.fullmatch(f"data:image/{kind};base64,QQ==")
 
 
 def fake_gateway(calls: list[dict[str, Any]]) -> Gateway:
