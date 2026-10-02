@@ -162,11 +162,11 @@ e2e:
     pnpm --filter @lb/web build:e2e
     pnpm --filter @lb/web e2e
 
-# Regenerate LB-01's curated samples from the golden set's `sample: true` cases (`just check` fails while they are stale).
+# Regenerate the boards' curated samples from each golden set's `sample: true` cases (`just check` fails while they are stale).
 samples:
     pnpm --filter @lb/web samples
 
-# Make the recordings the end-to-end tests replay, by running LB-01 samples on the mock (apps/web/e2e/fixtures/recordings).
+# Make the recordings the end-to-end tests replay, by running samples of the boards on the mock (apps/web/e2e/fixtures/recordings).
 record-fixtures:
     pnpm --filter @lb/web record:fixtures
 
