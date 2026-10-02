@@ -24,6 +24,7 @@ from pytest_django.fixtures import Settings
 from redis import Redis
 
 from config.asgi import application
+from config.channel_layer import BLOCK_SECONDS
 from core.blocking import closing_connections, run_blocking
 from lb02 import consumers
 from lb02.booking import BookingService
@@ -716,4 +717,24 @@ async def test_the_calendar_reaches_a_tab_through_real_redis_from_a_worker_threa
     assert {change["status"] for change in freed["changes"]} == {"free"}
     keys = Redis.from_url(redis_url).keys(f"{redis_channel_layer}*")
     assert keys, "the channel layer wrote nothing under the test's own prefix"
+    await tab.leave()
+
+
+@pytest.mark.usefixtures("redis_channel_layer")
+async def test_an_idle_tab_stays_connected_past_the_layers_blocking_read(web_signing_key: Ed25519PrivateKey) -> None:
+    """A tab that does nothing waits on Redis in blocks, and its socket may not give up when a block ends.
+
+    redis-py's default socket timeout is the same five seconds as channels-redis's block, so on the
+    default settings the layer raised a TimeoutError out of an idle consumer about every five seconds
+    and the WebSocket closed with 1006. The in-memory layer can't show that, so this runs on the
+    settings production uses, waits one block and a little more, and checks the tab still hears
+    the calendar.
+    """
+    tab = Tab(web_signing_key)
+    await tab.hello()
+
+    await asyncio.sleep(BLOCK_SECONDS + 1)
+    await in_another_thread(announce_reset)
+
+    assert await tab.event() == {"type": "calendar_reset"}
     await tab.leave()
