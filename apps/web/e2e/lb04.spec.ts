@@ -564,9 +564,11 @@ test.describe('the policy of LB-04\'s board pages (docs/SECURITY.md, section 3)'
           results[name] = error instanceof Error ? error.name : 'threw'
         }
       }
+      // The TypeScript DOM library does not describe Trusted Types, so the part this uses is described here.
+      const factory = (window as unknown as { trustedTypes?: { createPolicy: (name: string, rules: { createScriptURL: (input: string) => string }) => unknown } }).trustedTypes
       attempt('a worker from a plain string', () => new Worker('/_nuxt/anything.js'))
-      attempt('a policy named default', () => window.trustedTypes?.createPolicy('default', { createScriptURL: input => input }))
-      attempt('a policy of another name', () => window.trustedTypes?.createPolicy('lb-evil', { createScriptURL: input => input }))
+      attempt('a policy named default', () => factory?.createPolicy('default', { createScriptURL: input => input }))
+      attempt('a policy of another name', () => factory?.createPolicy('lb-evil', { createScriptURL: input => input }))
       return results
     })
 

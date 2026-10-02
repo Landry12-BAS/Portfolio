@@ -215,7 +215,9 @@ describe('the real queue', () => {
     release({ kind: 'json', value: { notes: [], missing: [] } })
     await new Promise(resolve => setTimeout(resolve, 500))
     expect(await readReportView(harness.deps.db, VISITOR_A, id, harness.clock.now())).toEqual(before)
-    expect(harness.spans.spans.filter(span => span.name === 'contract review')).toHaveLength(1)
+    // Which run each root span belongs to and how it ended is shown with the count, so a second one says whose it was.
+    const roots = harness.spans.spans.filter(span => span.name === 'contract review').map(span => ({ runId: span.runId, outcome: span.attrs.outcome }))
+    expect(roots, 'the root spans written while this test ran').toEqual([{ runId: id, outcome: 'done' }])
     await second.close()
     await doomedScheduler.close()
   })
