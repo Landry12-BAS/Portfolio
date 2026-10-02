@@ -28,12 +28,17 @@ class QuotaUsage(Base):
 
     `busy_until` is set while a question is being answered and cleared when it ends, so a visitor
     has one question running at a time; if the process dies mid-question, the flag expires.
+    `refunds` counts the questions given back today, which the ledger caps (lb05/safety.py).
     """
 
     __tablename__ = "quota_usage"
-    __table_args__ = (CheckConstraint(f"used >= 0 AND used <= {MAX_COUNTER}", name="quota_usage_used_range"),)
+    __table_args__ = (
+        CheckConstraint(f"used >= 0 AND used <= {MAX_COUNTER}", name="quota_usage_used_range"),
+        CheckConstraint(f"refunds >= 0 AND refunds <= {MAX_COUNTER}", name="quota_usage_refunds_range"),
+    )
 
     session_key: Mapped[str] = mapped_column(String(128), primary_key=True)
     day: Mapped[date] = mapped_column(Date, primary_key=True)
     used: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     busy_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refunds: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

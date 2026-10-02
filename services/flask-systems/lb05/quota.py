@@ -10,7 +10,10 @@ admitted and clears it when it ends, so one visitor can't hold every worker with
 If a process dies mid-question the flag expires on its own.
 
 A question the service itself fails to answer (the models are down, the warehouse is busy) is
-refunded: it is not the visitor's fault, and it should not cost them one of their 25.
+refunded, so it does not cost the visitor one of their 25. Almost any such failure can be caused on
+purpose, though (a question that makes the model's reply unreadable, or slow enough to run out of time),
+so the refunds are capped at a few a day. The cap is what keeps the work a visitor can cause bounded:
+the answers a visitor is given are limited to 25 a day by the count itself, whatever fails.
 
 No history of a visitor is kept: the first question each day deletes the counters of days that are
 over, so retention does not depend on a scheduler (`manage.py sweep_lb05` does the same by hand).
@@ -28,7 +31,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from core.errors import describe_failure
 from lb05.models import QuotaUsage
-from lb05.safety import QUESTION_DEADLINE_SECONDS, QUESTIONS_PER_DAY
+from lb05.safety import MAX_REFUNDS_PER_DAY, QUESTION_DEADLINE_SECONDS, QUESTIONS_PER_DAY
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +81,12 @@ class Ledger(Protocol):
         """Admit a question from a visitor if they have one left today and none running."""
         ...
 
-    def finish(self, admission: Admission, refund: bool) -> None:
-        """End an admitted question, giving the visitor their place back when `refund` is true."""
+    def finish(self, admission: Admission, refund: bool) -> bool:
+        """End an admitted question. Return whether the visitor got their place back.
+
+        A place is given back only when `refund` is true and the visitor's allowance of refunds for the
+        day is not used up; otherwise the question stays counted.
+        """
         ...
 
     def usage(self, session_key: str) -> Usage:
@@ -101,12 +108,14 @@ class PostgresLedger:
         clock: Callable[[], datetime],
         limit: int = QUESTIONS_PER_DAY,
         busy_seconds: int = BUSY_SECONDS,
+        max_refunds: int = MAX_REFUNDS_PER_DAY,
     ) -> None:
         """Count on the schema `engine` is bound to, dating each day by `clock` (aware, in UTC)."""
         self._engine = engine
         self._clock = clock
         self._limit = limit
         self._busy_seconds = busy_seconds
+        self._max_refunds = max_refunds
         self._swept_day: date | None = None
 
     def today(self) -> date:
@@ -140,20 +149,26 @@ class PostgresLedger:
         reason: Reason = "daily_limit" if used >= self._limit else "busy"
         return Admission(False, reason, session_key, day, used, self._limit)
 
-    def finish(self, admission: Admission, refund: bool) -> None:
-        """End an admitted question: clear the busy flag, and take the count back down by one when it is refunded."""
+    def finish(self, admission: Admission, refund: bool) -> bool:
+        """End an admitted question: clear the busy flag, and give the place back if a refund is asked for and allowed.
+
+        The allowance is checked by the statement that gives the place back (its WHERE clause), so it is
+        kept exactly even when answers arrive together.
+        """
         if not admission.allowed:
-            return
-        values: dict[str, object] = {"busy_until": None}
-        if refund:
-            values["used"] = func.greatest(QuotaUsage.used - 1, 0)
-        statement = (
-            update(QuotaUsage)
-            .where(QuotaUsage.session_key == admission.session_key, QuotaUsage.day == admission.day)
-            .values(**values)
-        )
+            return False
+        this_visitor_today = (QuotaUsage.session_key == admission.session_key, QuotaUsage.day == admission.day)
         with self._engine.begin() as connection:
-            connection.execute(statement)
+            if refund:
+                given_back = connection.execute(
+                    update(QuotaUsage)
+                    .where(*this_visitor_today, QuotaUsage.refunds < self._max_refunds)
+                    .values(used=func.greatest(QuotaUsage.used - 1, 0), refunds=QuotaUsage.refunds + 1, busy_until=None)
+                ).rowcount
+                if given_back:
+                    return True
+            connection.execute(update(QuotaUsage).where(*this_visitor_today).values(busy_until=None))
+        return False
 
     def usage(self, session_key: str) -> Usage:
         """Return how many questions a visitor has used today."""

@@ -30,7 +30,7 @@ export interface paths {
         put?: never;
         /**
          * Answer a question about the sales data, synchronously: the SQL, the table, a chart and an explanation.
-         * @description <br/>Counts against the visitor's 25 questions a day, which the service enforces itself, and a<br/>visitor has one question running at a time. A question the service itself fails to answer is not counted.
+         * @description <br/>Counts against the visitor's 25 questions a day, which the service enforces itself, and a<br/>visitor has one question running at a time. A question the service itself fails to answer is not<br/>counted, for up to five such questions a day: after that a failed question counts too.
          */
         post: operations["lb05_ask_ask_post"];
         delete?: never;

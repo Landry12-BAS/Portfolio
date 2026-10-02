@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 
 from lb05.models import QuotaUsage
 from lb05.quota import BUSY_SECONDS, KEEP_DAYS, Admission, PostgresLedger, midnight_after
-from lb05.safety import QUESTIONS_PER_DAY
+from lb05.safety import MAX_REFUNDS_PER_DAY, QUESTIONS_PER_DAY
 from tests.support import TODAY
 
 pytestmark = pytest.mark.integration
@@ -48,6 +48,14 @@ def count_of(engine: Engine, session_key: str = VISITOR, day: date = DAY) -> int
         ).scalar_one_or_none()
 
 
+def refunds_of(engine: Engine, session_key: str = VISITOR, day: date = DAY) -> int | None:
+    """Read how many of a visitor's questions were given back on a day, or None when they have no row."""
+    with engine.connect() as connection:
+        return connection.execute(
+            select(QuotaUsage.refunds).where(QuotaUsage.session_key == session_key, QuotaUsage.day == day)
+        ).scalar_one_or_none()
+
+
 def busy_until_of(engine: Engine, session_key: str = VISITOR, day: date = DAY) -> datetime | None:
     """Read when a visitor's running question stops holding their place, or None when none is running."""
     with engine.connect() as connection:
@@ -56,10 +64,10 @@ def busy_until_of(engine: Engine, session_key: str = VISITOR, day: date = DAY) -
         ).scalar_one()
 
 
-def put_row(engine: Engine, session_key: str, day: date, used: int) -> None:
+def put_row(engine: Engine, session_key: str, day: date, used: int, refunds: int = 0) -> None:
     """Write a counter directly, as an earlier day's questions would have left it."""
     with engine.begin() as connection:
-        connection.execute(insert(QuotaUsage).values(session_key=session_key, day=day, used=used))
+        connection.execute(insert(QuotaUsage).values(session_key=session_key, day=day, used=used, refunds=refunds))
 
 
 def test_a_visitor_is_let_in_twenty_five_times_and_the_twenty_sixth_is_refused(engine: Engine) -> None:
@@ -121,6 +129,67 @@ def test_a_refund_gives_the_place_back_and_frees_the_visitor(engine: Engine) -> 
     assert count_of(engine) == 1
     assert (again.allowed, again.used) == (True, 1)
     assert busy_until_of(engine) is not None
+
+
+def test_only_a_few_refunds_a_day_are_given_and_the_rest_stay_counted(engine: Engine) -> None:
+    """The allowance is kept by the statement that gives the place back: the sixth failure of a day counts."""
+    ledger = PostgresLedger(engine, MovableClock())
+
+    outcomes = []
+    for _ in range(MAX_REFUNDS_PER_DAY + 2):
+        admission = ledger.admit(VISITOR)
+        outcomes.append(ledger.finish(admission, refund=True))
+
+    assert outcomes == [True] * MAX_REFUNDS_PER_DAY + [False, False]
+    assert count_of(engine) == 2
+    assert refunds_of(engine) == MAX_REFUNDS_PER_DAY
+    assert busy_until_of(engine) is None
+
+
+def test_failures_cannot_be_tried_without_end_the_day_stops_at_thirty_attempts(engine: Engine) -> None:
+    """A visitor whose every question fails gets 25 counted attempts and five free ones, then no more."""
+    ledger = PostgresLedger(engine, MovableClock())
+
+    attempts = 0
+    while True:
+        admission = ledger.admit(VISITOR)
+        if not admission.allowed:
+            break
+        attempts += 1
+        ledger.finish(admission, refund=True)
+        assert attempts <= 10 * QUESTIONS_PER_DAY, "the refunds never ran out"
+
+    assert attempts == QUESTIONS_PER_DAY + MAX_REFUNDS_PER_DAY
+    assert (admission.reason, admission.used) == ("daily_limit", QUESTIONS_PER_DAY)
+    assert count_of(engine) == QUESTIONS_PER_DAY
+    assert refunds_of(engine) == MAX_REFUNDS_PER_DAY
+
+
+def test_the_allowance_of_refunds_is_per_visitor_and_per_day(engine: Engine) -> None:
+    """One visitor using up their refunds leaves another's, and tomorrow's, whole."""
+    clock = MovableClock()
+    ledger = PostgresLedger(engine, clock, max_refunds=1)
+    first = ledger.admit(VISITOR)
+    ledger.finish(first, refund=True)
+    second = ledger.admit(VISITOR)
+    other = ledger.admit(OTHER_VISITOR)
+    clock.move(days=1)
+    tomorrow = ledger.admit(VISITOR)
+
+    assert ledger.finish(second, refund=True) is False
+    assert ledger.finish(other, refund=True) is True
+    assert ledger.finish(tomorrow, refund=True) is True
+
+
+def test_a_question_that_was_not_asked_to_be_refunded_is_not_counted_against_the_allowance(engine: Engine) -> None:
+    """Only a refund that is given uses the allowance: answers and refused questions leave it alone."""
+    ledger = PostgresLedger(engine, MovableClock())
+
+    admission = ledger.admit(VISITOR)
+    given_back = ledger.finish(admission, refund=False)
+
+    assert given_back is False
+    assert refunds_of(engine) == 0
 
 
 def test_a_refund_never_takes_a_count_below_zero(engine: Engine) -> None:
@@ -318,8 +387,8 @@ def test_a_sweep_that_fails_does_not_fail_the_question_and_is_tried_again(
     assert len(attempts) == 2
 
 
-@pytest.mark.parametrize("used", [-1, 1001])
-def test_the_database_itself_refuses_a_count_out_of_range(engine: Engine, used: int) -> None:
-    """A bug elsewhere can't write a nonsense count: the table's check constraint holds the line."""
+@pytest.mark.parametrize(("used", "refunds"), [(-1, 0), (1001, 0), (0, -1), (0, 1001)])
+def test_the_database_itself_refuses_a_count_out_of_range(engine: Engine, used: int, refunds: int) -> None:
+    """A bug elsewhere can't write a nonsense count: the table's check constraints hold the line."""
     with pytest.raises(IntegrityError):
-        put_row(engine, VISITOR, DAY, used)
+        put_row(engine, VISITOR, DAY, used, refunds)

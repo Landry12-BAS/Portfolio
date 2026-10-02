@@ -53,7 +53,7 @@ behind it nest under it.
 | Self-correct | `lb-reason` | Once, for a mistake only: told which layer stopped the query and why, and asked for a new one | Refused, with both attempts shown |
 | Chart | code ([`chart.py`](lb05/chart.py)) | A Vega-Lite spec (bar, line or point) built from the result's shape by this service; the model never writes a spec | No chart when the result doesn't suit one |
 | Explain | `lb-fast` | One short explanation from the question, the SQL and a preview of the result | A fixed sentence built from the numbers (`explanation_source: "fallback"`) |
-| Finish | Postgres | Frees the visitor, and gives the question back if the service itself failed | |
+| Finish | Postgres | Frees the visitor, and gives the question back if the service itself failed, up to five a day | |
 
 **Model calls.** A question that goes straight through costs two: the SQL and the
 explanation. A correction adds one, and a reply that isn't valid JSON adds one for its single
@@ -68,7 +68,8 @@ twice are all a normal 200 with an `outcome`: the visitor is meant to see which 
 them. Only a request the service can't take at all (no token, no questions left, a malformed
 body, the service not ready) is an HTTP error. When the service itself fails (the models are
 down, the day's model capacity is used, the question took too long, the data engine is busy)
-the outcome is `unavailable` and the question is **not counted**.
+the outcome is `unavailable` and the question is **not counted**, for up to five such questions a day
+(see the quota, below); after that a failed question counts, and the message says so.
 
 ## The layers of SQL safety
 
@@ -148,7 +149,12 @@ in one SQL statement ([`quota.py`](lb05/quota.py)): a question is admitted by an
 raises the visitor's counter only while it is below 25 and nothing of theirs is running, so
 questions that arrive together can't both take the last place. The same row holds a running
 mark that expires on its own, so a visitor has one question at a time and a dead process
-can't lock them out. A question the service fails to answer is refunded. The first question
+can't lock them out. A question the service fails to answer is refunded, but only five a day
+([`MAX_REFUNDS_PER_DAY`](lb05/safety.py)). Almost any such failure can be caused on purpose (a question that
+makes the model's reply unreadable, or slow enough to run out of its 90 seconds), and unlimited free attempts
+would be unlimited work. The count itself keeps the answers a visitor is given to 25 a day whatever fails;
+the cap keeps the attempts that cost them nothing to five, so a visitor has 30 attempts a day at most. The
+gateway's per-session call quota bounds the model calls behind them either way. The first question
 each day deletes the counters older than two days, so no history of a visitor is kept and
 retention doesn't depend on a scheduler (`manage.py sweep_lb05` does it by hand). The gateway's
 own per-session quota is a second line behind this one.
@@ -206,7 +212,7 @@ since an exception's message can quote a visitor.
   fallback and what spans may hold, with a scripted fake in place of the gateway. No test calls
   a provider, and none can: no key exists in this repository.
 - **The API.** The visitor guard, a question's whole way, refusals and declines, refunds, the
-  twenty-sixth question, malformed bodies and every 503 path, over an in-memory ledger.
+  twenty-sixth question, the cap on refunds, malformed bodies and every 503 path, over an in-memory ledger.
 - **On real servers** (integration; `LB_TEST_DATABASE_URL` and `LB_TEST_REDIS_URL`, or Docker
   with Testcontainers): the ledger on a real Postgres, including sixty simultaneous questions
   that must admit exactly 25 and thirty from one visitor that must admit one; the Alembic
@@ -238,7 +244,7 @@ its reply is untrusted input however it is written.
 | Exhausting the machine: cross joins, `generate_series`, `UNNEST`, `repeat`, regex backtracking, deep nesting, huge literals | No table-generating or string-multiplying functions and no regex in the allowlist; limits on length, nodes, depth and columns; the plan check refuses cross products and giant estimates; a 5 s interrupt; 1 GB with no spilling; two threads; three queries at a time | **DuckDB's `memory_limit` does not cap everything**: measured here, `UNNEST(GENERATE_SERIES(…))` and `REPEAT` ignore it, so the function allowlist is the guard and the limit is not. Run the worker under a cgroup memory limit as the outer wall |
 | Prompt injection in the question ("ignore your rules and…") | The question is quoted as data in the prompt; but whatever the model is persuaded to write meets the same layers, so an obedient model changes nothing; the explainer sees only a bounded preview of the result | The live rate at which the prompt keeps the model from trying is unmeasured; the guarantee does not depend on it |
 | Model output as an attack: SQL, chart, explanation | SQL: above. The chart is built by code from the result in a closed Vega-Lite subset, never written by the model. The explanation is plain text, stripped of control characters and bounded, with a fixed fallback | The site must render every field as text, never as markup (`v-html` is banned) |
-| Quota abuse: many questions, parallel questions, many sessions | 25 a day per visitor counted atomically in Postgres, one at a time, refunds only for the service's own failures; the gateway's per-session quota and daily pool behind it; Turnstile at the site | A fresh session is a fresh count: the gateway's pool is the hard cap on cost |
+| Quota abuse: many questions, parallel questions, many sessions, failures caused on purpose | 25 a day per visitor counted atomically in Postgres, one at a time; refunds for the service's own failures capped at five a day, so questions made to fail (an unreadable or slow reply, a crash) buy five free attempts and no more, and the answers given stay within 25; the gateway's per-session quota and daily pool behind it; Turnstile at the site | A fresh session is a fresh count: the gateway's pool is the hard cap on cost |
 | Forged or replayed tokens, wrong audience | Ed25519 signature checked against the site's public key, audience must be `lb-05`, short life, no key configured means nobody gets in | A stolen token works until it expires, for one session's quota |
 | Leaks through logs, spans and errors | Spans hold counts and codes only; errors are logged by type and place; 4xx and 5xx never echo the request; the access log has method, path, status and seconds, no address or query string | |
 | Host header, oversized bodies, framing, caching | Trusted hosts, an 8 KiB body limit, the security headers of `docs/SECURITY.md` on every response including errors | |
