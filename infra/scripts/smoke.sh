@@ -4,11 +4,13 @@
 # stack. It needs nothing but docker: every request is made from a container that is
 # already there, so it needs no published port, no token and no secret.
 #
-#   1. Every long-running service is healthy, and the one-shot jobs (provisioning and
-#      migrating) finished cleanly.
+#   1. Every long-running service is healthy, and the one-shot jobs (provisioning,
+#      migrating, seeding and LB-05's data: the services whose restart policy is `no`)
+#      finished cleanly.
 #   2. Through Caddy, the way the tunnel comes in: the API's own routes reach their
-#      service, and the health checks, the OpenAPI schema and the rest of the gateway are
-#      404, as is any other Host.
+#      service (LB-01, LB-02, LB-05 and LB-08 each ask for a visitor token), LB-02's
+#      WebSocket upgrades, and the health checks, the OpenAPI schema and the rest of the
+#      gateway are 404, as is any other Host.
 #   3. Nothing leaves except through a proxy: from the gateway and from a Django container,
 #      a raw connection to a public address and a public DNS lookup both fail, and the
 #      proxy refuses a host that is not on its list. (Skipped where the proxies aren't
@@ -35,15 +37,20 @@ echo "Services"
 # One JSON object per container, including the ones that have finished.
 containers="$("$compose" ps --all --format json)"
 running_services="$(jq -r 'select(.State == "running") | .Service' <<<"$containers" | sort -u)"
+# The one-shot jobs are the services that are not restarted: a new job needs no change here.
+jobs="$("$compose" config --format json | jq -r '.services | to_entries[] | select((.value.restart // "no") == "no") | .key')"
 # A '|' separates the fields: a tab would swallow the empty Health of a finished job.
 while IFS='|' read -r service state health exit_code; do
     case "$service" in
-        postgres-provision | django-migrate)
-            if [ "$state" = exited ] && [ "$exit_code" = 0 ]; then pass "$service finished cleanly"; else fail "$service is $state (exit $exit_code), not finished cleanly"; fi
-            ;;
         *-run-* | backup) ;;
         *)
-            if [ "$state" = running ] && [ "$health" = healthy ]; then pass "$service is running and healthy"; else fail "$service is $state ($health)"; fi
+            if grep -qx "$service" <<<"$jobs"; then
+                if [ "$state" = exited ] && [ "$exit_code" = 0 ]; then pass "$service finished cleanly"; else fail "$service is $state (exit $exit_code), not finished cleanly"; fi
+            elif [ "$state" = running ] && [ "$health" = healthy ]; then
+                pass "$service is running and healthy"
+            else
+                fail "$service is $state ($health)"
+            fi
             ;;
     esac
 done < <(jq -r '[.Service, .State, .Health, (.ExitCode | tostring)] | join("|")' <<<"$containers")
@@ -67,6 +74,28 @@ expect_status "the OpenAPI schema is not exposed" 404 "$api_host" /api/openapi.j
 expect_status "the gateway's model list is not exposed" 404 "$api_host" /v1/models
 expect_status "another Host is refused" 404 "evil.invalid" /api/lb01/customers
 expect_status "LB-01's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb01/customers
+expect_status "LB-02's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb02/offerings
+expect_status "LB-05's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb05/quota
+expect_status "LB-08's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb08/limits
+
+# LB-02's WebSocket, the way the site opens it: the upgrade must be accepted (101) through
+# Caddy, which asks for the site's origin. The probe runs in the Django container, on the
+# same network as Caddy, and closes before the hello the service waits for.
+site_origin="$("$compose" exec -T caddy printenv LB_SITE_ORIGIN | tr -d '\r\n')"
+websocket_probe="
+import base64, os, socket, sys
+host, origin = sys.argv[1], sys.argv[2]
+key = base64.b64encode(os.urandom(16)).decode()
+request = ('GET /ws/lb02/ HTTP/1.1\\r\\nHost: ' + host + '\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\n'
+           'Sec-WebSocket-Key: ' + key + '\\r\\nSec-WebSocket-Version: 13\\r\\nOrigin: ' + origin + '\\r\\n\\r\\n')
+try:
+    with socket.create_connection(('caddy', 8080), timeout=5) as connection:
+        connection.sendall(request.encode())
+        print(connection.recv(200).split(b'\\r\\n')[0].decode())
+except OSError as error:
+    print('failed: ' + type(error).__name__)"
+upgrade="$("$compose" exec -T django-api python -c "$websocket_probe" "$api_host" "$site_origin" 2>&1 | tail -1 | tr -d '\r')"
+if [[ "$upgrade" == "HTTP/1.1 101"* ]]; then pass "LB-02's WebSocket is upgraded through Caddy"; else fail "LB-02's WebSocket answered '$upgrade', not 101"; fi
 
 if [ "${1:-}" = "--public" ]; then
     echo "Through the public hostname"

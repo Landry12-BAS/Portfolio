@@ -11,6 +11,24 @@ def has_healthcheck: ((.healthcheck // null) != null) and ((.healthcheck.disable
 def outbound_members: if $dev then ["egress-gateway", "egress-systems", "cloudflared", "caddy"]
                       else ["egress-gateway", "egress-systems", "cloudflared"] end;
 
+# The box's memory budget, in MiB (docker-compose.yml, Resources). A limit is a ceiling, not a
+# reservation, but the ceilings of everything that can run at once, the one-shot jobs of a
+# deploy included, must fit in what the host leaves; and the services that run all the time
+# must leave room for what is still to come (the Playwright sandbox, Whisper). Adding a
+# service that does not fit fails here, and the fix is a decision, not an edit of these numbers.
+def total_budget_mib: 11264;
+def running_budget_mib: 8192;
+def limits_mib(selector): [ .services | to_entries[] | select(.value | selector) | ((.value.mem_limit // "0" | tonumber) / 1048576) ] | add // 0;
+
+( limits_mib(true) as $all
+  | if $all > total_budget_mib
+    then "the memory limits add up to \($all) MiB, over the \(total_budget_mib) MiB the box has to give (12 GiB less 1 for the host)"
+    else empty end ),
+( limits_mib(long_running) as $running
+  | if $running > running_budget_mib
+    then "the services that run all the time have \($running) MiB of memory limits, over the budget of \(running_budget_mib) MiB that leaves room for what is still to come"
+    else empty end ),
+
 # The networks: every one but `outbound` has no route out.
 ( .networks | to_entries[]
   | select(.key != "outbound" and ((.value.internal // false) != true))

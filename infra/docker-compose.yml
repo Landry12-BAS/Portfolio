@@ -1,5 +1,5 @@
-# The platform on one box: gateway, Django systems, Postgres, Redis, the edge and the proxies
-# that are the only way out. docs/DEPLOY.md is the owner's runbook; docs/SECURITY.md,
+# The platform on one box: the gateway, the Django, Flask and Node systems, Postgres, Redis,
+# the edge and the proxies that are the only way out. docs/DEPLOY.md is the owner's runbook; docs/SECURITY.md,
 # sections 5 and 6, says why it is shaped this way.
 #
 # Run it through infra/scripts/compose.sh, which hands compose the decrypted secrets
@@ -9,28 +9,51 @@
 #
 # --- Networks: nothing reaches the internet except by the two doors named at the end ------
 #   edge             cloudflared <-> caddy. Internal: no route out.
-#   app              caddy, the gateway and the systems. Internal.
+#   app              caddy, the gateway and the systems' APIs. Internal.
 #   data             postgres, redis and the services that use them. Internal.
 #   egress-gateway   the gateway <-> its proxy. Internal.
-#   egress-systems   the systems and the backup <-> their proxy. Internal.
+#   egress-systems   the Django systems and the backup <-> their proxy. Internal. (The Flask
+#                    and Node systems reach no outside host: their model calls go through
+#                    the gateway. LB-05's data job has no network at all.)
 #   outbound         the only network with a route to the internet: cloudflared (the
 #                    tunnel to Cloudflare) and the two egress proxies (Squid, each with its
 #                    own host allowlist). An internal network resolves no outside name and
 #                    reaches no outside address, so a compromised container can't dial out.
 #
 # --- Resources: one 2-OCPU, 12 GB Ampere A1 box shared by everything ----------------------
-#   Limits, not reservations: services rarely peak together. Memory is capped without swap.
-#   Steady state: postgres 2.0 + redis 0.5 + gateway 0.4 + django-api 0.5 + django-worker
-#   0.8 + caddy 0.13 + cloudflared 0.13 + two proxies 0.26 = 4.7 GB of the 12, with about
-#   1 GB for the host. The rest, 6 GB or so, is the room for the Flask and Node systems, the
-#   Playwright sandbox and Whisper that are still to come. CPU limits cap a service at that
-#   many cores; the sum is above 2 on purpose, and cpu_shares lets the request path win a
-#   contested core over the worker and the one-shot jobs.
+#   Limits, not reservations: a service is capped at its limit and takes only what it uses,
+#   and they rarely peak together. Memory is capped without swap. compose-policy.jq holds the
+#   two budgets below and fails the checks (`just infra-check`) when a change breaks them.
+#
+#   Memory of what runs all the time, in MiB: postgres 2048, flask-api 1536, django-worker
+#   768, django-api 512, redis 512, gateway 384, node-api 384, node-worker 384, caddy 128,
+#   cloudflared 128, the two egress proxies 128 each = 7040 (6.9 GiB). The budget is 8192:
+#   of the 12 GiB the host keeps 1 and about 3 stay free for what is still to come (the
+#   Playwright sandbox, Whisper, the other systems).
+#   Memory of the jobs a deploy runs beside them, which wait for Postgres and for each other
+#   and so rarely overlap: flask-seed 1536, django-migrate 384, flask-migrate, node-migrate
+#   and node-seed 256 each, postgres-provision 128, and the nightly backup 768 = 3584. All
+#   that can run at once, 10624 (10.4 GiB), fits in the 11 GiB the box has to give.
+#   Where the numbers come from: on a local stack the same services idle at about 0.7 GiB
+#   (without cloudflared and the proxies). LB-05's data job peaks at 923 MB when it makes the
+#   full dataset, and the service's warehouse code at 452 MB while it answers the 100
+#   reference questions on that dataset, with DuckDB's own limit of 1 GB. flask-api's 1536 is
+#   that limit and a margin for the Python process and for what DuckDB's limit does not cap. The Node services get 384, because V8 lets a heap
+#   grow to 259 MB whatever the container's size, and the process needs room beside it.
+#   CPU limits cap a service at that many cores. They add up to 10 for the services and 15
+#   with the jobs, on 2 cores, on purpose: services rarely use their cap together, and when
+#   they contend, cpu_shares decides: 1536 for the request path (the databases, the gateway,
+#   the APIs and the edge) against 1024 for the workers, the tunnel and the jobs.
+#   Process limits (a runaway service cannot fill the process table) add up to 1644 for the
+#   services and 448 for the jobs. A Node process has about 12 threads when idle, and a
+#   Python one under ten, so the limits leave a wide margin.
 #
 # --- Adding a service ---------------------------------------------------------------------
-#   One block here, one route in caddy/Caddyfile, one entry in .github/workflows/images.yml,
-#   one Dockerfile in docker/. Copy a block that looks like it: django-api for a web
-#   service, django-worker for a worker. docs/DEPLOY.md has the checklist.
+#   One block here (and one for each job it needs: a migration, a seed), one route in
+#   caddy/Caddyfile, one entry in .github/workflows/images.yml, one Dockerfile in docker/,
+#   and its credentials: a Postgres role, a Redis user, a gateway key. Copy the blocks of a
+#   service that looks like yours: flask-api for a web service with data of its own,
+#   node-api and node-worker for a service with a queue. docs/DEPLOY.md has the checklist.
 
 name: lb
 
@@ -502,7 +525,7 @@ services:
     memswap_limit: 384m
     cpus: 1.0
     cpu_shares: 1536
-    pids_limit: 256
+    pids_limit: 128
 
   # BullMQ's workers with their sweep: one job per workflow step. It serves no HTTP, makes no
   # model call and so has no gateway and no key. Its health check reads a heartbeat file that
@@ -536,7 +559,7 @@ services:
     mem_limit: 384m
     memswap_limit: 384m
     cpus: 1.0
-    pids_limit: 256
+    pids_limit: 128
 
   # ------------------------------------------------------------------------------------
   # Edge
@@ -608,7 +631,7 @@ services:
   # ------------------------------------------------------------------------------------
   # The only ways out: one proxy per caller group, each allowing HTTPS tunnels to its own
   # host names (infra/egress). A new provider in services/gateway/routing.yaml needs its
-  # host here; `just check-infra` fails until it has one.
+  # host here; `just infra-check` fails until it has one.
   # ------------------------------------------------------------------------------------
   egress-gateway:
     <<: *hardening

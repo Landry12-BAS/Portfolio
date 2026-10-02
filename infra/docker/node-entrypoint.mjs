@@ -9,9 +9,10 @@
 //                           handed over by the deploy (infra/secrets). @lb/common's gateway
 //                           client reads the key from a file and refuses one other users can
 //                           read, so this writes it, mode 0600, to a tmpfs, tells the service
-//                           where with LB_SERVICE_KEY_FILE, and drops the variable so the
-//                           service never holds the key twice. A process that is given no key
-//                           (the worker, a migration) starts as it is.
+//                           where with LB_SERVICE_KEY_FILE, and removes the variable from
+//                           process.env, so neither the service's code nor a process it starts
+//                           finds the key there. A process that is given no key (the worker,
+//                           a migration) starts as it is.
 //   LB_HEARTBEAT_FILE       when set, a file whose modification time is renewed every ten
 //                           seconds for as long as the event loop turns. The worker has no
 //                           port to ask, so its health check reads this file's age: a worker

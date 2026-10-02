@@ -109,6 +109,8 @@ expect_rule "a network with a route out" '.networks.data.internal = false' "netw
 expect_rule "a service that joins outbound" '.services.web.networks.outbound = null' "web: joins the outbound network, which only the egress proxies and the tunnel may"
 expect_rule "Postgres on another network" '.services.postgres.networks.app = null' "postgres: is on networks other than data"
 expect_rule "Redis on another network" '.services.redis.networks = {"app": null}' "redis: is on networks other than data"
+expect_rule "memory limits that add up to more than the box has" '.services.web.mem_limit = "12582912000"' "the memory limits add up to 12512 MiB, over the 11264 MiB the box has to give (12 GiB less 1 for the host)"
+expect_rule "services that run all the time and leave no room for what is to come" '.services.web.mem_limit = "8598323200"' "the services that run all the time have 8712 MiB of memory limits, over the budget of 8192 MiB that leaves room for what is still to come"
 expect_rule "the local stack publishing on every address" '.services.web.ports = [{"published": "8180", "host_ip": "0.0.0.0"}]' "web: publishes port 8180 on 0.0.0.0, not on 127.0.0.1" true
 
 expect_clean "the local stack publishing on 127.0.0.1 passes" "$(jq '.services.web.ports = [{"published": "8180", "host_ip": "127.0.0.1"}]' <<<"$good")" true

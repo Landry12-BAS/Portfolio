@@ -18,7 +18,7 @@ Part 12 lists exactly what is unverified.
 | Where | What | Reached by |
 |---|---|---|
 | Vercel | The site (`apps/web`) | `https://example.com` |
-| The box (one Oracle Cloud VM) | The whole back end, as one Docker Compose project named `lb`: Caddy, `cloudflared`, the gateway, the Django systems, Postgres, Redis, two egress proxies | Visitors only through Cloudflare's tunnel to Caddy; you only over Tailscale |
+| The box (one Oracle Cloud VM) | The whole back end, as one Docker Compose project named `lb`: Caddy, `cloudflared`, the gateway, the Django, Flask and Node systems, Postgres, Redis, two egress proxies | Visitors only through Cloudflare's tunnel to Caddy; you only over Tailscale |
 | Cloudflare | DNS, the tunnel, the WAF, Turnstile, and R2 (the backup bucket) | |
 | GitHub | The code, CI, and GHCR (the signed images) | |
 | Tailscale | The private network that CI and you use to reach the box | |
@@ -86,7 +86,7 @@ allowance since Oracle's June 2026 cut (`STACK.md`, Infrastructure and hosting).
    known way around a shortage; it needs a reboot.
 4. **Mind the reclaim rule.** Oracle reclaims an Always Free VM whose CPU, network and
    memory all stay under 20% (at the 95th percentile) for 7 days. In testing, the stack
-   used about 0.6 GB when idle, which is 5% of 12 GB, so memory alone does not clear the
+   used about 0.7 GB when idle, which is 6% of 12 GB, so memory alone does not clear the
    line, and a quiet portfolio will not clear it on CPU or network either. In the first
    week, read the instance's metrics (Compute, Instance, Metrics). If all three stay
    under 20%, decide before Oracle does: keep memory above 2.4 GB on purpose (a larger
@@ -318,6 +318,8 @@ that is not in the repository:
 ```sh
 mkdir -p ~/lb-keys && chmod 700 ~/lb-keys
 just gateway-token keygen django-systems ~/lb-keys/django-systems.jwk.json
+just gateway-token keygen flask-systems ~/lb-keys/flask-systems.jwk.json
+just gateway-token keygen node-systems ~/lb-keys/node-systems.jwk.json
 just gateway-token keygen web ~/lb-keys/web.jwk.json
 just gateway-token keygen site ~/lb-keys/site.jwk.json
 ```
@@ -328,12 +330,15 @@ base64url string. The private half stays in the file. Where each goes:
 | Key | Public half | Private half |
 |---|---|---|
 | `django-systems`: the Django systems calling the gateway | An entry of `LB_SERVICE_KEYS` in the gateway's secrets | `LB_SERVICE_KEY_JWK_B64` in the Django secrets: the file, as one line of base64 |
+| `flask-systems`: the Flask systems (LB-05) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Flask secrets |
+| `node-systems`: the Node systems (LB-08) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API only: the worker makes no model call and is given no key |
 | `web`: the site's server calling the gateway (the run-spans route) | An entry of `LB_SERVICE_KEYS` | Vercel: `NUXT_LB_GATEWAY_SERVICE_KEY` |
-| `site`: the site signing its visitors' tokens | `LB_WEB_TOKEN_KEY` in the Django secrets: the public key alone | Vercel: `NUXT_LB_WEB_SIGNING_KEY` |
+| `site`: the site signing its visitors' tokens | `LB_WEB_TOKEN_KEY` in the compose settings: the public key alone, which all three back ends verify visitor tokens against | Vercel: `NUXT_LB_WEB_SIGNING_KEY` |
 
 `LB_SERVICE_KEYS` is one JSON object holding every entry:
-`{"django-systems":"<public key>","web":"<public key>"}`. The `site` pair is not a gateway
-service: only its public key is used, and by the Django systems. To get the one-line
+`{"django-systems":"<public key>","flask-systems":"<public key>","node-systems":"<public key>","web":"<public key>"}`.
+The `site` pair is not a gateway service: only its public key is used, and by the Django,
+Flask and Node systems alike, from the one value in the compose settings. To get the one-line
 base64 of a key file without it ever reaching your terminal's scrollback, copy it
 straight to the clipboard:
 
@@ -342,7 +347,7 @@ base64 -w0 ~/lb-keys/django-systems.jwk.json | xclip -selection clipboard      #
 base64 -i ~/lb-keys/django-systems.jwk.json | tr -d '\n' | pbcopy              # macOS
 ```
 
-Keep the three private key files in your password manager and delete them from disk
+Keep the five private key files in your password manager and delete them from disk
 once the secrets and Vercel have them. The gateway serves the run-spans route
 (`GET /v1/runs/<id>/spans`) when the Scope arrives; Caddy already lets exactly that path
 through, so the `web` key is ready for it.
@@ -365,20 +370,27 @@ and opens your editor for the rest. The values are the ones from parts 5 and 6:
 
 ```sh
 just secrets-new compose         # LB_API_HOST=api.example.com, LB_SITE_ORIGIN=https://example.com,
+                                 #   LB_WEB_TOKEN_KEY (the site key's public half),
                                  #   LB_EGRESS_SYSTEMS_ALLOW=<account id>.r2.cloudflarestorage.com
 just secrets-new postgres        # nothing to type
 just secrets-new postgres-roles  # nothing to type
 just secrets-new redis           # nothing to type
 just secrets-new gateway         # LB_SERVICE_KEYS, GROQ_API_KEY, CLOUDFLARE_ACCOUNT_ID,
                                  #   CLOUDFLARE_API_TOKEN, OPENROUTER_API_KEY
-just secrets-new django-systems  # LB_WEB_TOKEN_KEY (the site key's public half),
-                                 #   LB_SERVICE_KEY_JWK_B64 (the django-systems file, in base64)
+just secrets-new django-systems  # LB_SERVICE_KEY_JWK_B64 (the django-systems file, in base64)
+just secrets-new flask-systems   # LB_SERVICE_KEY_JWK_B64 (the flask-systems file, in base64)
+just secrets-new node-systems    # LB_SERVICE_KEY_JWK_B64 (the node-systems file, in base64)
 just secrets-new cloudflared     # TUNNEL_TOKEN
 just secrets-new backup          # see below
 ```
 
 `LB_EGRESS_SYSTEMS_ALLOW` lists the hosts the Django systems and the backup may reach, comma
 separated; add Sentry's ingest host (`.ingest.sentry.io`) when a system sends errors there.
+
+The site's public key, `LB_WEB_TOKEN_KEY`, used to be a line of `django-systems`. It is one
+value in `compose` now, so that the three back ends cannot hold different ones; an older
+`django-systems` file that still has it fails `just secrets-check` with "LB_WEB_TOKEN_KEY is
+not a variable of the template": move the line to `just secrets-edit compose`.
 
 **The backup's own key.** Backups are encrypted to a key that is not on the box, so a
 stolen box cannot read its own backups:
@@ -395,7 +407,7 @@ In `backup`: `LB_BACKUP_AGE_RECIPIENTS` is that public key, `LB_BACKUP_DESTINATI
 
 ```sh
 just secrets-add-recipient box age1...        # the box's public key
-just secrets-check                            # eight lines of "ok"
+just secrets-check                            # ten lines of "ok"
 ```
 
 Commit the encrypted files and `.sops.yaml` through a pull request, as for any change:
@@ -436,11 +448,11 @@ change and the box.
 
 1. Merge the infrastructure change to `main`. CI runs; when it passes, **Deploy** starts
    by itself.
-2. The `images` job builds the four images for amd64 and arm64 under QEMU (the first time
+2. The `images` job builds the six images for amd64 and arm64 under QEMU (the first time
    it takes a while, since nothing is cached), pushes them to GHCR, scans them, signs
    them, and checks its own signature.
 3. **The first run stops at the box's pull.** GHCR creates each package private. Make the
-   four packages public (GitHub, your profile, Packages, each `lb-*` package, Package
+   six packages public (GitHub, your profile, Packages, each `lb-*` package, Package
    settings, Change visibility): the images hold the code of this public repository and
    its synthetic data, and no secret. Then, in the failed Deploy run, choose **Re-run
    failed jobs**. (If you would rather keep them private, log the `deploy` user in once
@@ -450,8 +462,10 @@ change and the box.
    runs `deploy.sh`. It decrypts the secrets, pulls, checks the signatures, starts
    everything, waits for every health check, runs the smoke test (through the public
    hostname too), and marks the release current. The first one takes several minutes:
-   Postgres initialises, the roles and schemas are provisioned, LB-01's tables are
-   migrated and its synthetic data seeded.
+   Postgres initialises, the roles and schemas are provisioned, the Django, Flask and Node
+   systems' tables are migrated and their synthetic data seeded, and LB-05's warehouse
+   (about two million orders) is generated into its volume, which takes some tens of
+   seconds. Later deploys find the warehouse there and skip it.
 5. **Install the units**, once, from the release that is now live:
 
    ```sh
@@ -517,7 +531,8 @@ From a machine **outside** the tailnet:
       in the headers and no `server: Caddy` or `x-powered-by` (Cloudflare adds its own
       `server: cloudflare`).
 - [ ] `curl -si https://api.example.com/api/lb01/customers` is `401`: LB-01's API is
-      reached, and asks for a visitor token.
+      reached, and asks for a visitor token. So are `/api/lb02/offerings` (LB-02),
+      `/api/lb05/quota` (LB-05) and `/api/lb08/limits` (LB-08).
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' https://api.example.com/api/healthz` is `404`,
       and so are `/api/openapi.json` and `/v1/models`: only the routes in the Caddyfile
       exist.
@@ -528,8 +543,12 @@ From a machine **outside** the tailnet:
 On the box (`tailscale ssh deploy@lb-box`; `compose` below is
 `/opt/lb/current/infra/scripts/compose.sh`):
 
-- [ ] `compose ps` lists every service `healthy`, and `postgres-provision` and
-      `django-migrate` exited `0`.
+- [ ] `compose ps` lists every service `healthy`, and the one-shot jobs
+      (`postgres-provision`, `django-migrate`, `flask-migrate`, `flask-seed`,
+      `node-migrate`, `node-seed`) exited `0`.
+- [ ] LB-05's data is in place and cannot be written by its API: `compose exec flask-api
+      ls -l /warehouse/lb05` shows `lb05.duckdb` and `meta.json`, and `compose exec
+      flask-api touch /warehouse/lb05/x` fails with "Read-only file system".
 - [ ] `/opt/lb/current/infra/scripts/smoke.sh --public` ends with "All checks passed.": the
       routes through Caddy, no way out except through the proxies, an empty Redis ACL
       log, and the public hostname.
@@ -547,34 +566,43 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
 - [ ] `cosign verify --certificate-identity-regexp '^https://github\.com/<owner>/<repo>/\.github/workflows/(images|deploy)\.yml@refs/heads/main$' --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/<owner>/lb-gateway:<commit>`
       succeeds (the owner in lowercase in the image name).
 
-In GitHub: the Deploy run is green, and the four packages show the commit's tag.
+In GitHub: the Deploy run is green, and the six packages show the commit's tag.
 
 ## 12. What is not verified
 
-Run and tested in this repository: the four images build and run hardened (non-root,
+Run and tested in this repository: the six images build and run hardened (non-root,
 read-only filesystem, no capabilities, limits); the Compose stack comes up through Caddy
-with real visitor tokens, the real database role and the egress proxies; every Compose
-service passes the security rules (`infra/scripts/check-compose.sh`, which also has tests
-that show each rule can fail); the Postgres roles cannot reach each other's schemas
-(`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's and a
-Celery worker's own tests with an empty ACL log (`infra/redis/test-acl.sh`); Caddy's
-routes, headers, streaming and bypass attempts (`infra/caddy/test.sh`); a backup is
-encrypted, restores into a scratch database and over the live one, and a wrong key cannot
-open it; the secrets tooling with the real `sops` and `age`
-(`infra/scripts/test-secrets.sh`); the deploy script's order, signature check, rollback
-and clean-up with stand-ins for Docker and cosign (`infra/scripts/test-deploy.sh`); image
-pinning against the real registries; `docker compose config`, hadolint, shellcheck and
-actionlint.
+with real visitor tokens, the real database roles and the egress proxies, and LB-01, LB-02
+(its calls and a WebSocket conversation through the Redis channel layer), LB-05 (from the
+read-only warehouse) and LB-08 (a workflow run through BullMQ to its worker) answer
+through it; every Compose service passes the security rules and the memory budgets
+(`infra/scripts/check-compose.sh`, which also has tests that show each rule can fail); the
+Postgres roles cannot reach each other's schemas, for every pair of the four systems
+(`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
+consumer, LB-05's integration and LB-08's whole test suites and a Celery worker's, with an
+empty ACL log (`infra/redis/test-acl.sh`); Caddy's routes, headers, streaming, timeouts, a
+quiet WebSocket and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
+restores into a scratch database and over the live one, and a wrong key cannot open it; the
+secrets tooling with the real `sops` and `age` (`infra/scripts/test-secrets.sh`); the deploy
+script's order, signature check, rollback and clean-up with stand-ins for Docker and cosign
+(`infra/scripts/test-deploy.sh`); image pinning against the real registries; `docker compose
+config`, hadolint, shellcheck and actionlint.
 
 **Not verified, because it needs the real thing:**
 
 - Building and running on **arm64**: the box's architecture. The images are built for
   both, but only amd64 was built and run in development, since the machine here has no
-  QEMU. The first arm64 build runs in CI.
+  QEMU. The first arm64 build runs in CI. The two new images carry native wheels (DuckDB,
+  numpy, cryptography, psycopg) and BullMQ's optional speed-up: all publish arm64 builds,
+  but nobody has run them on one.
 - Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
-  list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The containers'
-  memory limits add up to 4.7 GB; idle, the stack used about 0.6 GB here (without
-  `cloudflared`), and nothing was measured under visitor traffic.
+  list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
+  limits of what runs all the time add up to 7040 MiB (6.9 GiB; the sums are at the top of
+  `infra/docker-compose.yml`); idle, the stack used about 0.7 GiB here (without `cloudflared`
+  and the proxies), LB-05's data job peaked at 923 MB, and the service's warehouse code at
+  452 MB while it answered the 100 reference questions on the full dataset, on a four-core
+  x86 machine; nothing was measured under visitor traffic or on the box's cores. LB-05's questions and LB-08's descriptions need a model, so
+  their answers through the stack were not tried; everything that does not call one was.
 - **Cloudflare**: the tunnel actually carrying traffic (`cloudflared` was not started),
   the DNS records, the WAF and rate-limit rule, Turnstile, R2 (the upload was tested
   against a local folder).
@@ -628,19 +656,35 @@ previous release's code still works with it (add a column before code uses it, s
 a column before dropping it). A migration that cannot work that way needs a backup
 restore, not a rollback.
 
+Going back to a release from before a service existed removes that service (`up
+--remove-orphans`), and keeps its data: the Flask warehouse volume stays on the box. LB-05's
+data job also runs when a release is rolled back, and regenerates the warehouse if the
+volume holds one that release's API would not accept (a newer generator version, say), so a
+rollback does not strand LB-05 on data it cannot read.
+
 ### Logs and a shell on the box
 
 ```sh
 tailscale ssh deploy@lb-box
 alias compose=/opt/lb/current/infra/scripts/compose.sh
 compose ps
-compose logs --since 30m gateway django-api caddy
+compose logs --since 30m gateway django-api flask-api node-api node-worker caddy
 compose exec -u postgres postgres psql -d lb
 compose exec redis sh -c 'REDISCLI_AUTH="$LB_REDIS_PASSWORD_ADMIN" redis-cli --user admin --no-auth-warning acl log'
 ```
 
 `compose` always means the live release: the script reads the release's name from the
 `RELEASE` file in its own folder.
+
+**LB-05's data.** The warehouse (Parquet and a DuckDB file, about 80 MB) is generated, not
+backed up: it lives in the `lb05-warehouse` volume, which only `flask-seed` can write. To
+make it again with today as its last day, for example after the months have made "last
+quarter" look old, make it on purpose and restart the API:
+
+```sh
+compose run --rm flask-seed python seed_warehouse.py --force
+compose up -d --force-recreate flask-api
+```
 
 ### Backups
 
@@ -685,8 +729,8 @@ recreates every container whose settings changed.
 | A provider key (Groq, Workers AI, OpenRouter) | In the provider's console | `just secrets-edit gateway` | Revoke the old key |
 | A Postgres role's password | `just secret-token` | `just secrets-edit postgres-roles`: the provision job applies it on the deploy, and the services that use it restart | |
 | A Redis user's password | `just secret-token` | `just secrets-edit redis`: Redis restarts, and so do the services | |
-| A service key pair (`django-systems`, `web`) | `just gateway-token keygen <name> <new file>` | The public entry in `LB_SERVICE_KEYS` (`just secrets-edit gateway`), the private half where part 6 says | Delete the old file. The gateway and Django restart in the same deploy; calls fail for the seconds between |
-| The site's pair (`site`) | `just gateway-token keygen site <new file>` | `LB_WEB_TOKEN_KEY` (`just secrets-edit django-systems`) and `NUXT_LB_WEB_SIGNING_KEY` in Vercel, together | Visitor tokens live five minutes |
+| A service key pair (`django-systems`, `flask-systems`, `node-systems`, `web`) | `just gateway-token keygen <name> <new file>` | The public entry in `LB_SERVICE_KEYS` (`just secrets-edit gateway`), the private half where part 6 says | Delete the old file. The gateway and the service restart in the same deploy; calls fail for the seconds between |
+| The site's pair (`site`) | `just gateway-token keygen site <new file>` | `LB_WEB_TOKEN_KEY` (`just secrets-edit compose`) and `NUXT_LB_WEB_SIGNING_KEY` in Vercel, together | Visitor tokens live five minutes |
 | Django's secret key | `just secret-token 32` | `just secrets-edit django-systems` | |
 | The tunnel token | Cloudflare, the tunnel, refresh the token | `just secrets-edit cloudflared` | |
 | The R2 token | Cloudflare, R2, a new API token | `just secrets-edit backup` | Delete the old token |
@@ -701,52 +745,62 @@ the box (below), and check Cloudflare's security events.
 
 ### Adding a service
 
-Adding a system is one small block in each of a few files. The order that works:
+Adding a system is one small block in each of a few files. The Flask systems (LB-05) and
+the Node systems (LB-08) are the examples to copy: `flask-api` for a web service with data
+of its own, `node-api` and `node-worker` for a service with a queue. A new system on a
+runtime that is already there (LB-03 on Flask, LB-04 on Node) is a module of that service
+and needs only steps 3 to 6; a new runtime needs all of them. The order that works:
 
 1. **Image.** A Dockerfile in `infra/docker/<name>.Dockerfile` with its own
-   `<name>.Dockerfile.dockerignore`, in the shape of `django-systems.Dockerfile`: pinned
-   base by digest (`just pin-images`), a non-root user, and a health check script if the
-   base has no shell tools. Add one line to the matrix in `.github/workflows/images.yml`:
+   `<name>.Dockerfile.dockerignore`, in the shape of `flask-systems.Dockerfile` (Python) or
+   `node-systems.Dockerfile` (Node): pinned base by digest (`just pin-images`), a non-root
+   user, and the key-file entrypoint if the service calls the gateway. Add one line to the
+   matrix in `.github/workflows/images.yml`:
    `- { name: <name>, dockerfile: infra/docker/<name>.Dockerfile }`. The image is then
-   `ghcr.io/<owner>/lb-<name>`, and pull requests build it for amd64 and arm64.
-2. **Compose block.** In `infra/docker-compose.yml`, copy the `django-api` block:
-   `<<: *hardening`, the image `${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-<name>:${LB_TAG:?...}`,
-   `env_file: ${LB_SECRETS_DIR:-/run/lb/secrets}/<name>.env`, the networks it needs (`app`
-   always; `data` for Postgres and Redis; `egress-systems` if it calls out), a health check,
-   memory, CPU and process limits, and a line in the memory budget at the top of the file.
-   Add its build block to `infra/docker-compose.dev.yml`. `just infra-check` holds the new
-   block to the same rules as the others.
-3. **Caddy.** In `infra/caddy/Caddyfile`, a path matcher and one line, `import proxy
-   @<name> <service>:<port>`, in the ordered `route` before the final 404. The Flask
-   systems (LB-03, LB-05, LB-10) and the Node systems (LB-04, LB-06, LB-07, LB-08) are
-   documented here and not yet routed, because they do not exist yet:
-
-   ```caddyfile
-   @flask path /api/lb03/* /api/lb05/* /api/lb10/*
-   @node path /api/lb04/* /api/lb06/* /api/lb07/* /api/lb08/*
-   ...
-   import proxy @flask flask-systems:8000
-   import proxy @node node-systems:8000
-   ```
-
-   Add the same routes to `infra/caddy/test.sh`, and run `just infra-test`.
+   `ghcr.io/<owner>/lb-<name>`, pull requests build it for amd64 and arm64, and the deploy
+   signs it and checks the signature on the box (it reads the image list from Compose).
+2. **Compose blocks.** In `infra/docker-compose.yml`, one block for the service and one for
+   each job it needs before it starts (a migration, a seed; `restart: "no"`, which is also
+   how `smoke.sh` knows to expect them to have exited): `<<: *hardening` (or an anchor like
+   `x-flask` and `x-node`), the image `${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-<name>:${LB_TAG:?...}`,
+   an `environment` that names only what that block needs, `env_file:
+   ${LB_SECRETS_DIR:-/run/lb/secrets}/<name>.env` for the service that holds a secret and
+   nobody else, the networks it needs (`app` for an API, `data` for Postgres and Redis,
+   `egress-systems` only if it calls out, none for a job that needs no network), a health
+   check, and memory, CPU and process limits. The memory budgets at the top of the file are
+   enforced: `just infra-check` fails when the new limits make the sums too big, and the
+   fix is a decision about the box, not an edit of the budget. Add the build blocks to
+   `infra/docker-compose.dev.yml`, and give Caddy's `depends_on` the new API.
+3. **Caddy.** In `infra/caddy/Caddyfile`, a system on an existing runtime adds its prefix
+   to that runtime's matcher (`@flask path /api/lb05/* /api/lb03/*`); a new runtime gets a
+   matcher and a line in the ordered `route`, before the final 404:
+   `import proxy @<name> <service>:<port> <time to the first byte>`. The time is a minute
+   for a service that answers quickly, and 95 seconds for one that waits for a model (under
+   Cloudflare's 100). Add the routes to `infra/caddy/test.sh` (a stand-in service per
+   upstream), and add the first-byte check if the time differs.
 4. **Postgres.** Add the system's name (`lb03`) to `infra/postgres/systems.txt`, add
    `LB_PG_PASSWORD_LB03=@token` to `infra/secrets/postgres-roles.example.env`, run
    `just secrets-edit postgres-roles` and put a new `just secret-token` value there, and
-   give the service its database URL in its Compose block, built from that password.
+   give the service its database URL in its Compose block, built from that password, and
+   named `LB03_DATABASE_URL`. `infra/postgres/test-roles.sh` then proves the new role
+   against every other.
 5. **Redis.** Add the service's user to `infra/redis/users.acl.tmpl`, limited to the key
-   prefixes and commands its code uses (watch it with `MONITOR` against a dev Redis, and
-   keep the rules as tight as the existing users'), with its password variable in
-   `redis.example.env`. Extend `infra/redis/test-acl.sh` to run the service's own
-   integration tests, so an ACL that is too tight fails a real test.
+   prefixes and commands its code uses (record them with `MONITOR` while its own tests
+   run against a dev Redis, as the existing users were, and keep the rules as tight as
+   theirs), with its password variable in `redis.example.env` and in `start_redis` and the
+   ownership table of `infra/redis/test-acl.sh`. Add the service's own integration tests to
+   that script's second proof, so an ACL that is too tight fails a real test.
 6. **Gateway key.** `just gateway-token keygen <service> <file>`: the public entry goes into
    `LB_SERVICE_KEYS`, the private half into the service's secrets, and the system is tied
-   to the service in `services/gateway/routing.yaml`.
-7. **Secrets.** `infra/secrets/<name>.example.env` lists the service's variables; then
+   to the service in `services/gateway/routing.yaml`. A service that makes no model call
+   needs none.
+7. **Secrets.** `infra/secrets/<name>.example.env` lists the service's variables (only what
+   is secret: the site's public key and the hostnames come from `compose`); then
    `just secrets-new <name>`. The deploy refuses a release whose template has no
-   encrypted file, which is the reminder.
+   encrypted file, which is the reminder. `infra/scripts/dev-secrets.sh` makes the same
+   files for a local stack and for the Compose checks, so teach it the new variables too.
 8. **Egress.** If it calls an outside host, add the host to `LB_EGRESS_SYSTEMS_ALLOW`
-   (`just secrets-edit compose`).
+   (`just secrets-edit compose`) and put the service on `egress-systems`.
 9. Update the table of what runs where, if the service changes it, and run
    `just infra-check` and `just infra-test` before the pull request.
 
@@ -782,7 +836,10 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | `the signature of ... does not verify` | The image was not built by this repository's workflow from `main`, or `LB_SIGNER_REPOSITORY` is wrong, or the box's cosign is older than the one that signed (`infra/scripts/install-tool.sh cosign`) |
 | `docker compose pull` says `denied` | The GHCR packages are private and the box is not logged in (part 9, step 3) |
 | A container is `unhealthy` in `compose ps` | `compose logs <service>`. For Redis, `acl log` shows what the ACL refused |
-| `502` or `503` from the API | A Django container is unhealthy or restarting; Caddy answers 5xx while it is |
+| `502` or `503` from the API | A back-end container is unhealthy or restarting; Caddy answers 5xx while it is |
+| `flask-api` is `unhealthy`, and its log says the data isn't ready | The warehouse volume is empty or from another generator version: `compose logs flask-seed`, then `compose run --rm flask-seed python seed_warehouse.py --force` and recreate `flask-api` |
+| `node-worker` is `unhealthy` | Its heartbeat file is older than 30 seconds: the worker's event loop is stuck or it is crash-looping. `compose logs node-worker`; Redis's `acl log` shows a command its user may not run |
+| A WebSocket to LB-02 is refused with `403` | The `Origin` is not `LB_SITE_ORIGIN` (Caddy checks it); with `1009` or a drop, a frame was over 8192 bytes (`--ws-max-size`) |
 | `cloudflared` keeps restarting | The `TUNNEL_TOKEN` is wrong or was refreshed in Cloudflare |
 | Backups stop appearing | `journalctl -u lb-backup.service`; usually `LB_EGRESS_SYSTEMS_ALLOW` lacks the R2 host, or the R2 token changed |
 | The box is slow or killed processes | `docker stats --no-stream`, then `dmesg \| grep -i oom`: a container hit its memory limit; raise it in the Compose file and the budget at its top |

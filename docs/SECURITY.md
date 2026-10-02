@@ -119,15 +119,27 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system, granted only its own schema; the gateway's role
-  sees only `platform`. The superuser can log in only over the container's own socket,
-  and every deploy re-applies the roles and passwords, so a role is never created by
-  hand. `infra/postgres/test-roles.sh` proves that one role cannot read, write, create
-  in or drop another's schema.
-- **Redis:** one ACL user per service, limited to its key prefix, with dangerous
-  commands disabled. The ACL was derived from what the services run, and
-  `infra/redis/test-acl.sh` runs their own test suites against it and then checks that
-  Redis's ACL log is empty.
+- **Postgres:** one role per system (LB-01, LB-02, LB-05 and LB-08 so far), granted only
+  its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
+  object, not data); the gateway's role sees only `platform`. The superuser can log in
+  only over the container's own socket, and every deploy re-applies the roles and
+  passwords, so a role is never created by hand. `infra/postgres/test-roles.sh` proves,
+  for every pair of systems, that one role cannot read, write, create in or drop
+  another's schema.
+- **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
+  commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
+  channel layer, the Node systems' BullMQ queues, and for every service its own run
+  spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
+  runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
+  consumers, LB-05's and LB-08's, and a Celery worker) and then checks that Redis's ACL
+  log is empty. It also tries every service on every other service's keys.
+- **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
+  that has no network, no secret and no database, and the API mounts that volume
+  read-only: a compromised API cannot change the data it answers from. The volume holds
+  nothing but synthetic data, is not backed up, and is made again when it is missing.
+- **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
+  to the rest), the visitor token travels in the first frame and never in the address, and
+  uvicorn refuses a frame over 8192 bytes before the service reads it.
 - **R2:** one scoped token per bucket.
 - **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box, to
   public keys whose private halves stay off the box: a stolen box cannot read its own

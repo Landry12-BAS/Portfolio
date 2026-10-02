@@ -20,8 +20,9 @@ gateway: routing, fallback, budgets, quotas, service tokens, run spans, rerankin
 prompt-injection guard; see its [README](services/gateway/README.md)),
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
 see its [README](python/lb-common/README.md)) and `infra/` (the deployable platform:
-signed multi-arch images, the hardened Compose stack, Postgres roles, the Redis ACL, the
-Caddy edge, SOPS secrets and the deploy workflow; see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
+signed multi-arch images, the hardened Compose stack with the Django, Flask and Node
+systems (LB-01, LB-02, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
+secrets and the deploy workflow; see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
 (`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
@@ -194,7 +195,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
 | `just stack-secrets [--again]` | Make throwaway secrets for the local stack in `infra/.dev` (git-ignored) |
 | `just stack <docker compose command>` | Run the whole platform locally, hardened as on the box: `just stack up -d --wait`, then Caddy answers on http://127.0.0.1:8180; `just stack down -v` removes it (needs Docker) |
-| `just stack-smoke` | Check a running local stack from the inside: health, the routes through Caddy, an empty Redis ACL log |
+| `just stack-smoke` | Check a running local stack from the inside: health, the routes through Caddy (LB-02's WebSocket included), an empty Redis ACL log |
 | `just infra-check` | Static checks of `infra/` and the workflows: shellcheck, hadolint, actionlint, image digest pins, the Compose security rules, the Caddyfile, the systemd units |
 | `just infra-test` | The infrastructure's tests: secrets, deploy decisions and pinning, then (Docker) Postgres roles, Caddy routing and the Redis ACL proof against the services' own suites |
 | `just pin-images` | Pin every third-party image to the digest its tag names today; CI fails on an unpinned one |
@@ -223,7 +224,10 @@ pull the image through `mirror.gcr.io` (such as `mirror.gcr.io/library/redis:8.1
 and tag it with its Docker Hub name.
 
 The infrastructure tests (`just infra-test`) start their own containers with plain
-`docker run`, named after the test and its process, and remove them. The secrets tests and
+`docker run`, named after the test and its process, and remove them. The Redis ACL proof
+also starts a throwaway Postgres for the suites that need one, and takes step names
+(`infra/redis/test-acl.sh node django`: gateway, lb-common, django, flask, node, celery) to
+run only those suites after its first proof. The secrets tests and
 `just infra-check` need `sops`, `age`, `jq`, `shellcheck`, `hadolint` and `actionlint`;
 on Linux `infra/scripts/install-tool.sh` installs checksum-verified `sops`, `cosign`,
 `hadolint` and `actionlint`.
