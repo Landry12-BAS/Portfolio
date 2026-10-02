@@ -27,7 +27,7 @@ prompt-injection guard; see its [README](services/gateway/README.md)),
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
 see its [README](python/lb-common/README.md)) and `infra/` (the deployable platform:
 signed multi-arch images, the hardened Compose stack with the Django, Flask and Node
-systems (LB-01, LB-02, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
+systems (LB-01, LB-02, LB-03, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
 secrets and the deploy workflow; see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
@@ -48,7 +48,20 @@ on the site at `/systems/lb-05/board`: a question in plain words, the long wait 
 answer with its SQL, table, chart and chain of steps, the safety demo that names the layer which
 stopped each attack, and the semantic layer browser, in English and Czech (see the
 [web README](apps/web/README.md)); next come LB-05's recorded sample runs (`just record-sample lb-05
-<sample>`, which needs the live back end with a model behind it). The Node side: `packages/contracts`
+<sample>`, which needs the live back end with a model behind it). The same monolith holds LB-03
+Invoice Reader's back end: the file read in a locked-down OCR subprocess (never in the web
+process), a pipeline on one asyncio loop with at most five model calls a document, eleven
+checks (the arithmetic in `Decimal`) that return a failing document with its failing checks and
+never fix it silently, duplicates by vendor, number and content hash, a balanced journal entry from a
+chart-of-accounts file, CSV and JSON export, files that expire after an hour behind a disk or S3
+store, the prompt-injection defence, a 10-a-day visitor API, and a seeded set of 43 synthetic
+documents with its golden set and an offline strict reader (see the same README). LB-03's demo is on
+the site at `/systems/lb-03/board`: the page of the document with each field's box lit and its
+confidence said in words and drawn with its own line, a table of fields that can be corrected so
+every check runs again, the checklist, the duplicate verdict, the journal entry, the exports, an
+upload behind Turnstile and six curated samples, in English and Czech (see the web README); next
+come LB-03's recorded sample runs (`just record-sample lb-03 <sample>`, which needs the live back
+end with a model behind it). The Node side: `packages/contracts`
 (the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
 `lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
 Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
@@ -215,7 +228,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
-| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set), and LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) |
+| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set), LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) and LB-03's sample files and page pictures (`apps/web/public/lb03`, copied from `data/seed/lb03`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
 | `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite, the visitor-token corpus) or `routing.yaml` is invalid (the CI drift check) |

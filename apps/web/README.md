@@ -10,7 +10,10 @@ Built so far: the catalog, the datasheets, the server (session, Turnstile, the p
 route, the recordings), the evaluation-board kit, **LB-01's board**, the reference every other
 board follows, **LB-02's board**, the one that streams (a WebSocket) and can be installed as an app, and
 **LB-05's board** (the Data Analyst: a question that takes up to 90 seconds in one request, a result table, a chart
-drawn in the browser, and the safety demo).
+drawn in the browser, and the safety demo), **LB-08's board** (the Workflow Automator: a graph on a canvas and as an
+outline, and a run with its retries and dead letters) and **LB-03's board** (the Invoice Reader: a file uploaded,
+the page of the document with the place of every field drawn over it, a table of fields that can be corrected,
+and the checks, the journal entry and the exports).
 
 ## Run it
 
@@ -22,7 +25,7 @@ All of it through the root `justfile` (see the Commands table in `AGENTS.md`):
 | `just dev` | The site alone. With no `NUXT_*` settings the demos say they are not connected |
 | `just build` / `just check-build` | The production build, and the proof that it holds no trace of the test build's Turnstile stand-in |
 | `just e2e` | The test build, then the Playwright journeys against it and the mock back end |
-| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's and LB-05's) and LB-02's installable-app files: icon, manifests, offline pages (`just check` fails while they are stale) |
+| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's and LB-03's), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
 | `just record-sample <system> <sample>` | Record a sample's run on a live back end (see "Replay and recordings") |
 
 The settings are the `NUXT_*` variables of [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 10;
@@ -62,12 +65,25 @@ only once the board is in `app/boards/registry.ts`.
 |---|---|
 | `GET /api/session` | Creates the anonymous session on first use and says whether this deployment has a back end, whether the Turnstile check has passed today and when the day turns over |
 | `POST /api/session/verify` | Checks a Turnstile token with Cloudflare; a pass marks the session verified for the day |
-| `/api/lb01/**`, `lb02`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `/api/lb01/**`, `lb02`, `lb03`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
 | `POST /api/tokens/lb-02` | The five-minute grant for LB-02's WebSocket |
 | `GET /api/runs/:runId/spans` | A run's trace from the gateway, for the Scope. Needs no session: the run's ID is the capability |
 | `GET /api/recordings/:system[/:sample]` | The recordings of the curated samples |
 
 Every route answers failures in the platform's error shape and never in the words of what failed.
+
+**A file in, and files out (LB-03).** The Invoice Reader is the one system a visitor sends a file to, and
+the one whose routes answer with files (a page's picture, a CSV or JSON export). Going in, the proxy
+reads a `multipart/form-data` body of up to 4 MiB of file and a 16 KiB envelope (`shared/lb03-limits.ts`)
+and passes the bytes on without decoding them: the site never reads an untrusted document, and the
+service reads it in a cage. The service takes 10 MB; a Vercel function takes a request body of 4.5 MB, so
+the hosted site takes less than the service, and the board checks the same limit before it sends. Coming
+out, a route whose OpenAPI document lists media types may answer with a file of exactly those types and
+no other (anything else is a 502), and only a plain file name is passed on (`attachment; filename="invoice.json"`).
+A picture and an export are plain links, `<img src>` and `<a download href>`, to the site's own path: the
+page's policy needs only `img-src 'self'`, no script handles the bytes, and the visitor's session cookie
+goes with the request as it does with every other call. The pictures and exports are `no-store`, and a
+visitor with no session of their own gets a 404 for a document that is not theirs, not a 403.
 
 ## The evaluation-board kit
 
@@ -175,7 +191,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    list it in `RUNNERS` in `scripts/record/record.ts`. Then `just record-sample lb-0n <sample>` on the
    live back end writes the recording; commit it with the system. A runner that makes a call with a
    query uses `backend.call(system, method, path, body, query)`, and keeps the path without it (a
-   recording's paths have no query string). A runner whose system writes no root span, or only sometimes
+   recording's paths have no query string). A runner that sends a file (LB-03's) uses `backend.upload(system,
+   path, { name, type, bytes })`, which writes the multipart form as the board does and records the request as
+   the file's name, since a recording cannot hold its bytes. A runner whose system writes no root span, or only sometimes
    (LB-02's conversation writes one only when it is handed over), returns `traceEnds: 'quiet'`, so the trace
    is read until it stops growing instead of until it is `finished`.
 9. **Tests.** The store against `FakeSite` (`test/support/fake-site.ts`: add the system's routes), the
