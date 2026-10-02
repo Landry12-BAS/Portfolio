@@ -44,6 +44,13 @@ export interface CallOptions {
   timeoutMs?: number
 }
 
+/** A file to upload: the name it goes under, its media type and its bytes. */
+export interface UploadedFile {
+  name: string
+  type: string
+  bytes: Uint8Array
+}
+
 /** What a back end answered: the status and the JSON body, if it had one. */
 export interface Answer {
   status: number
@@ -115,6 +122,34 @@ export class Backend {
       query,
       token,
       body: body === undefined ? undefined : JSON.stringify(body),
+      timeoutMs,
+      maxResponseBytes: MAX_ANSWER_BYTES,
+      fetch: target.fetch,
+    })
+    return { status: answer.status, body: answer.body === undefined ? undefined : JSON.parse(answer.body) as unknown }
+  }
+
+  /**
+   * Uploads a file to the system's API as the visitor, in the multipart form the board's own upload makes: one
+   * part, named `file`, with the file's name and media type. The file's name is written into the form as it is,
+   * so it must be a plain one (word characters, dots and dashes), which the curated samples' files are.
+   */
+  async upload(system: string, path: string, file: UploadedFile, options: CallOptions = {}): Promise<Answer> {
+    if (!/^\w[\w.-]{0,79}$/.test(file.name) || !/^[\w.+-]+\/[\w.+-]+$/.test(file.type)) throw new Error('The file\'s name and type must be plain ones to be written into a form.')
+    const { timeoutMs = CALL_TIMEOUT_MS } = options
+    const target = this.#target
+    const boundary = `----lbrecorder${randomBytes(12).toString('hex')}`
+    const head = Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.name}"\r\nContent-Type: ${file.type}\r\n\r\n`, 'latin1')
+    const tail = Buffer.from(`\r\n--${boundary}--\r\n`, 'latin1')
+    const token = mintVisitorToken(target.signingKey, { system, sessionKey: this.#sessionKey }, target.clock.now() / 1_000)
+    const answer = await callService({
+      method: 'POST',
+      origin: target.apiUrl,
+      path,
+      query: [],
+      token,
+      body: new Uint8Array(Buffer.concat([head, file.bytes, tail])),
+      contentType: `multipart/form-data; boundary=${boundary}`,
       timeoutMs,
       maxResponseBytes: MAX_ANSWER_BYTES,
       fetch: target.fetch,

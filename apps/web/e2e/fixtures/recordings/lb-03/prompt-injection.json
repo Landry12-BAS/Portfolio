@@ -1,0 +1,332 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "prompt-injection",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T21:08:18.691Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "hostile-total-zero.pdf"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "state": "uploaded",
+          "failure": null,
+          "label": "hostile-total-zero.pdf",
+          "kind": "pdf",
+          "byte_size": 5423,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.679Z",
+          "updated_at": "2026-10-02T21:08:18.679Z",
+          "expires_at": "2026-10-02T22:08:18.679Z",
+          "queued_ahead": 0,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "state": "ocr",
+          "failure": null,
+          "label": "hostile-total-zero.pdf",
+          "kind": "pdf",
+          "byte_size": 5423,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.679Z",
+          "updated_at": "2026-10-02T21:08:18.682Z",
+          "expires_at": "2026-10-02T22:08:18.679Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "state": "extract",
+          "failure": null,
+          "label": "hostile-total-zero.pdf",
+          "kind": "pdf",
+          "byte_size": 5423,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.679Z",
+          "updated_at": "2026-10-02T21:08:18.684Z",
+          "expires_at": "2026-10-02T22:08:18.679Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "state": "failed",
+          "failure": {
+            "code": "injection_suspected",
+            "message": "The injection check flagged the text, so no model was shown it."
+          },
+          "label": "hostile-total-zero.pdf",
+          "kind": "pdf",
+          "byte_size": 5423,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.679Z",
+          "updated_at": "2026-10-02T21:08:18.686Z",
+          "expires_at": "2026-10-02T22:08:18.679Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 1,
+          "run_id": "run-4873f8ad29ddf92c7ff6",
+          "ocr_ms": 3200,
+          "elapsed_ms": 3490,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "error",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": true,
+                "score": 0.99
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-4873f8ad29ddf92c7ff6",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-4873f8ad29ddf92c7ff6",
+        "system": "lb-03",
+        "spanId": "f82ca57fdf6ce188",
+        "parentId": "894821ba368e6b57",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1790975298679,
+        "endMs": 1790975301879,
+        "attrs": {
+          "pages": 1,
+          "words": 120,
+          "worker_ms": 2900,
+          "wall_ms": 3150,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4873f8ad29ddf92c7ff6",
+        "system": "lb-03",
+        "spanId": "1f1575012fc6a734",
+        "parentId": "91c1e5cbefe88100",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "error",
+        "startMs": 1790975301883,
+        "endMs": 1790975302065,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4873f8ad29ddf92c7ff6",
+        "system": "lb-03",
+        "spanId": "91c1e5cbefe88100",
+        "parentId": "76475ad18ca73812",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "error",
+        "startMs": 1790975301881,
+        "endMs": 1790975302067,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4873f8ad29ddf92c7ff6",
+        "system": "lb-03",
+        "spanId": "76475ad18ca73812",
+        "parentId": "894821ba368e6b57",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "error",
+        "startMs": 1790975301879,
+        "endMs": 1790975302069,
+        "attrs": {
+          "segments": 1,
+          "flagged": true,
+          "score": 0.99
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4873f8ad29ddf92c7ff6",
+        "system": "lb-03",
+        "spanId": "894821ba368e6b57",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1790975298679,
+        "endMs": 1790975302074,
+        "attrs": {
+          "kind": "pdf",
+          "outcome": "failed",
+          "failure": "injection_suspected",
+          "model_calls": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 1,
+    "steps": 2,
+    "durationMs": 3395
+  }
+}
