@@ -137,7 +137,6 @@ async function bringIntoView(id: string): Promise<void> {
 function ask(request: AskRequest): void {
   lastRequest.value = request
   void store.ask(request)
-  void bringIntoView(RUN_ID)
 }
 
 /** Runs a curated question live. */
@@ -191,6 +190,11 @@ function askAgain(): void {
   if (lastRequest.value) ask(lastRequest.value)
 }
 
+// A live question is shown once it has been sent: before that the check that the visitor is a person may
+// still open and close above it, and the page would be scrolled to where the question was a moment ago.
+watch(askedAt, (sent) => {
+  if (sent !== undefined) void bringIntoView(RUN_ID)
+})
 // When the answer is in, it is what the visitor came for. A failure is announced where the run would be.
 watch(phase, (next) => {
   if (next === 'done') void bringIntoView('lb05-answer')

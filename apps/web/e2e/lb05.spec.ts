@@ -143,6 +143,25 @@ test.describe('replaying a recorded question', () => {
     }
   })
 
+  test('draws a time axis the same in every time zone, so a day is never shown on the evening before', async ({ browser }) => {
+    /** Replays the monthly revenue in a browser set to a time zone, and returns the pixels of its chart. */
+    async function drawnIn(timezoneId: string): Promise<string> {
+      const context = await browser.newContext({ baseURL: `http://127.0.0.1:${process.env.E2E_PORT ?? 3100}`, timezoneId, viewport: { width: 1280, height: 900 } })
+      const page = await context.newPage()
+      await openBoard(page)
+      await page.getByRole('radio', { name: /Revenue by month/ }).check()
+      await page.getByTestId('start-sample').click()
+      await expect(page.getByTestId('chart-canvas')).toHaveAttribute('data-status', 'ready', { timeout: 30_000 })
+      const pixels = await page.locator('[data-testid="chart-canvas"] canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())
+      await context.close()
+      return pixels
+    }
+    const [utc, losAngeles, tokyo] = [await drawnIn('UTC'), await drawnIn('America/Los_Angeles'), await drawnIn('Asia/Tokyo')]
+    expect(utc.length).toBeGreaterThan(2_000)
+    expect(losAngeles).toBe(utc)
+    expect(tokyo).toBe(utc)
+  })
+
   test('says a question without a recording has none, and offers the live run', async ({ page }) => {
     await openBoard(page)
     await page.getByRole('radio', { name: /Top five products/ }).check()

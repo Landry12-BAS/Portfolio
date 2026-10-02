@@ -113,7 +113,8 @@ describe('the curated questions', () => {
   it('counts a year back from the day the mock is on, so "last year" is a year with sales', async () => {
     const answer = (await ask(curated('monthly-revenue-last-year'))).json
 
-    expect(answer.result.rows[0][0]).toBe('2025-01-01')
+    // As the real API writes a month DATE_TRUNC gave: a timestamp, with the time of day.
+    expect(answer.result.rows[0][0]).toBe('2025-01-01T00:00:00')
     expect(answer.result.rows).toHaveLength(12)
     expect(answer.as_of).toBe('2026-10-04')
   })

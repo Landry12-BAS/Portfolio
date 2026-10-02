@@ -3,7 +3,7 @@
 // text from outside gets before it goes on a chart.
 import { describe, expect, it } from 'vitest'
 
-import { formatCell, formatNumber, isNumeric, nextShown, ROWS_PER_PAGE, rowsToShow } from '~/boards/lb-05/table'
+import { formatCell, formatMoment, formatNumber, isNumeric, nextShown, ROWS_PER_PAGE, rowsToShow } from '~/boards/lb-05/table'
 import { plainText } from '~/boards/lb-05/text'
 
 const WORDS = { empty: 'no value', yes: 'yes', no: 'no' }
@@ -25,11 +25,32 @@ describe('writing a cell', () => {
     expect(formatCell(false, 'boolean', 'en', WORDS)).toBe('no')
   })
 
-  it('writes text and dates as the database wrote them', () => {
+  it('writes text as it is, even text that looks like a date', () => {
     expect(formatCell('Basalt Blend', 'text', 'en', WORDS)).toBe('Basalt Blend')
-    expect(formatCell('2026-09-30', 'date', 'cs', WORDS)).toBe('2026-09-30')
+    expect(formatCell('2026-09-30', 'text', 'en', WORDS)).toBe('2026-09-30')
   })
 
+  it('writes a date as the visitor\'s language writes a day, whether the warehouse gave it as a day or as midnight of that day', () => {
+    expect(formatCell('2026-09-30', 'date', 'en', WORDS)).toBe('Sep 30, 2026')
+    expect(formatCell('2026-09-30T00:00:00', 'date', 'en', WORDS)).toBe('Sep 30, 2026')
+    expect(formatCell('2026-09-30T00:00:00', 'date', 'cs', WORDS).replaceAll(/\s+/g, ' ')).toBe('30. 9. 2026')
+  })
+})
+
+describe('writing a moment', () => {
+  it('adds the time of day when there is one, and never shifts it into another zone', () => {
+    const written = formatMoment('2026-09-30T08:30:00', 'en')
+    expect(written).toContain('Sep 30, 2026')
+    expect(written).toContain('8:30')
+    expect(formatMoment('2026-09-30T23:59:00Z', 'en')).toContain('Sep 30, 2026')
+  })
+
+  it('leaves text that is not a day or not a real one as it came', () => {
+    for (const text of ['soon', '2026-02-31', '2026-13-01', '2026-09-30T25:00:00', '2026-09-30T08:30:00+02:00', '']) expect(formatMoment(text, 'en')).toBe(text)
+  })
+})
+
+describe('what a column is', () => {
   it('calls integers and numbers numeric, and nothing else', () => {
     expect(['text', 'integer', 'number', 'date', 'boolean', 'other'].filter(kind => isNumeric(kind as never))).toEqual(['integer', 'number'])
   })

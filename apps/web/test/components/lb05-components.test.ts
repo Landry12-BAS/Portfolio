@@ -327,6 +327,17 @@ describe('the chart panel', () => {
     expect(wrapper.find('[data-testid="chart-table"]').exists()).toBe(false)
   })
 
+  it('writes the moments of a time axis as the visitor\'s language writes a day, in the summary and in the table', async () => {
+    const english = mountWithSite(ChartPanel, { props: { chart: lineChart() } })
+    await flushPromises()
+    expect(english.get('[data-testid="chart-summary"]').text()).toMatch(/Highest: [A-Z][a-z]{2} \d{1,2}, \d{4}, /)
+    await english.get('[data-testid="chart-table-toggle"]').trigger('click')
+    expect(english.get('[data-testid="chart-table"] tbody td').text()).toMatch(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/)
+    const czech = mountWithSite(ChartPanel, { locale: 'cs', props: { chart: lineChart() } })
+    await flushPromises()
+    expect(czech.get('[data-testid="chart-summary"]').text().replaceAll(/\s+/g, ' ')).toMatch(/Nejvyšší: \d{1,2}\. \d{1,2}\. \d{4}: /)
+  })
+
   it('draws a point chart, and says when it left points out', async () => {
     const chart = { ...pointChart(), omitted_rows: 40 }
     const wrapper = mountWithSite(ChartPanel, { props: { chart } })

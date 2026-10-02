@@ -159,13 +159,18 @@ export const useLb05Store = defineStore('lb05', () => {
     scope.settle()
   }
 
-  /** Shows why a live question has no answer. */
+  /**
+   * Shows why a live question has no answer. The service counts a question when it takes it and gives it back
+   * only if the service itself failed, so a question that was sent and failed leaves the count to be read again.
+   */
   function fail(reason: unknown): void {
+    const sent = askedAt.value !== undefined
     scope.clear()
     phase.value = 'idle'
     runMode.value = 'idle'
     problem.value = isApiProblem(reason) ? reason : unavailableProblem()
     if (problem.value.code === 'daily_limit') useUp(problem.value.resetsAt)
+    else if (sent) void loadQuota()
   }
 
   /** Makes the request that asks, with a deadline: past it the board stops waiting and says the system took too long. */
@@ -256,6 +261,8 @@ export const useLb05Store = defineStore('lb05', () => {
     runMode.value = 'idle'
     askedAt.value = undefined
     stoppedWaiting.value = sent
+    // The service counted the question when it took it, so the count is read again to show that.
+    if (sent) void loadQuota()
   }
 
   /** Holds a recorded answer back until the replay has played out, so a replay shows the work first and the answer at its end. */

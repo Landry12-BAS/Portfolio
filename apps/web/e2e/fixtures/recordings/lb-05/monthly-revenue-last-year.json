@@ -3,7 +3,7 @@
   "system": "lb-05",
   "sample": "monthly-revenue-last-year",
   "origin": "mock",
-  "recordedAt": "2026-10-02T04:47:34.608Z",
+  "recordedAt": "2026-10-02T05:38:29.978Z",
   "language": "en",
   "exchanges": [
     {
@@ -17,7 +17,7 @@
       "response": {
         "status": 200,
         "body": {
-          "run_id": "run-1b7f97c0865eac512c1d",
+          "run_id": "run-63c904e21183139a8520",
           "outcome": "answered",
           "as_of": "2026-10-01",
           "model_calls": 2,
@@ -45,51 +45,51 @@
             ],
             "rows": [
               [
-                "2025-01-01",
+                "2025-01-01T00:00:00",
                 610200
               ],
               [
-                "2025-02-01",
+                "2025-02-01T00:00:00",
                 598400
               ],
               [
-                "2025-03-01",
+                "2025-03-01T00:00:00",
                 642900
               ],
               [
-                "2025-04-01",
+                "2025-04-01T00:00:00",
                 655100
               ],
               [
-                "2025-05-01",
+                "2025-05-01T00:00:00",
                 671800
               ],
               [
-                "2025-06-01",
+                "2025-06-01T00:00:00",
                 640300
               ],
               [
-                "2025-07-01",
+                "2025-07-01T00:00:00",
                 622700
               ],
               [
-                "2025-08-01",
+                "2025-08-01T00:00:00",
                 659400
               ],
               [
-                "2025-09-01",
+                "2025-09-01T00:00:00",
                 688100
               ],
               [
-                "2025-10-01",
+                "2025-10-01T00:00:00",
                 702600
               ],
               [
-                "2025-11-01",
+                "2025-11-01T00:00:00",
                 745300
               ],
               [
-                "2025-12-01",
+                "2025-12-01T00:00:00",
                 812900
               ]
             ],
@@ -111,51 +111,51 @@
               "data": {
                 "values": [
                   {
-                    "x": "2025-01-01",
+                    "x": "2025-01-01T00:00:00",
                     "y": 610200
                   },
                   {
-                    "x": "2025-02-01",
+                    "x": "2025-02-01T00:00:00",
                     "y": 598400
                   },
                   {
-                    "x": "2025-03-01",
+                    "x": "2025-03-01T00:00:00",
                     "y": 642900
                   },
                   {
-                    "x": "2025-04-01",
+                    "x": "2025-04-01T00:00:00",
                     "y": 655100
                   },
                   {
-                    "x": "2025-05-01",
+                    "x": "2025-05-01T00:00:00",
                     "y": 671800
                   },
                   {
-                    "x": "2025-06-01",
+                    "x": "2025-06-01T00:00:00",
                     "y": 640300
                   },
                   {
-                    "x": "2025-07-01",
+                    "x": "2025-07-01T00:00:00",
                     "y": 622700
                   },
                   {
-                    "x": "2025-08-01",
+                    "x": "2025-08-01T00:00:00",
                     "y": 659400
                   },
                   {
-                    "x": "2025-09-01",
+                    "x": "2025-09-01T00:00:00",
                     "y": 688100
                   },
                   {
-                    "x": "2025-10-01",
+                    "x": "2025-10-01T00:00:00",
                     "y": 702600
                   },
                   {
-                    "x": "2025-11-01",
+                    "x": "2025-11-01T00:00:00",
                     "y": 745300
                   },
                   {
-                    "x": "2025-12-01",
+                    "x": "2025-12-01T00:00:00",
                     "y": 812900
                   }
                 ]
@@ -188,19 +188,19 @@
     }
   ],
   "trace": {
-    "runId": "run-1b7f97c0865eac512c1d",
+    "runId": "run-63c904e21183139a8520",
     "spans": [
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "5f1c8bc33218f76f",
-        "parentId": "94544fc368f64567",
+        "spanId": "3cc58084068df230",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.step",
         "name": "resolve metrics",
         "status": "ok",
-        "startMs": 1790916454604,
-        "endMs": 1790916454607,
+        "startMs": 1790919509973,
+        "endMs": 1790919509976,
         "attrs": {
           "metrics": "revenue",
           "dimensions": "",
@@ -209,15 +209,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "b0d930ab70cdef9a",
-        "parentId": "28b075fdc8539259",
+        "spanId": "8e64a200bbf99e6d",
+        "parentId": "3cd8da39774c7503",
         "kind": "gateway.attempt",
         "name": "groq/gpt-oss-120b",
         "status": "ok",
-        "startMs": 1790916454611,
-        "endMs": 1790916456403,
+        "startMs": 1790919509980,
+        "endMs": 1790919511772,
         "attrs": {
           "provider": "groq",
           "model": "groq/gpt-oss-120b",
@@ -227,15 +227,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "28b075fdc8539259",
-        "parentId": "0384376a6e17da1a",
+        "spanId": "3cd8da39774c7503",
+        "parentId": "7b66ed5be3929eb8",
         "kind": "gateway.call",
         "name": "lb-reason",
         "status": "ok",
-        "startMs": 1790916454609,
-        "endMs": 1790916456405,
+        "startMs": 1790919509978,
+        "endMs": 1790919511774,
         "attrs": {
           "alias": "lb-reason",
           "dataClass": "visitor",
@@ -250,15 +250,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "0384376a6e17da1a",
-        "parentId": "94544fc368f64567",
+        "spanId": "7b66ed5be3929eb8",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.step",
         "name": "write SQL",
         "status": "ok",
-        "startMs": 1790916454607,
-        "endMs": 1790916456407,
+        "startMs": 1790919509976,
+        "endMs": 1790919511776,
         "attrs": {
           "attempts": 1,
           "answerable": true,
@@ -267,15 +267,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "511a8e0eda092cd3",
-        "parentId": "94544fc368f64567",
+        "spanId": "f2568da164dd1fa9",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.step",
         "name": "parse and allowlist",
         "status": "ok",
-        "startMs": 1790916456407,
-        "endMs": 1790916456410,
+        "startMs": 1790919511776,
+        "endMs": 1790919511779,
         "attrs": {
           "tables": "orders,order_lines",
           "joins": 1,
@@ -285,15 +285,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "71a4be05111f4305",
-        "parentId": "94544fc368f64567",
+        "spanId": "94787818c5f5fa2a",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.tool",
         "name": "explain plan",
         "status": "ok",
-        "startMs": 1790916456410,
-        "endMs": 1790916456436,
+        "startMs": 1790919511779,
+        "endMs": 1790919511805,
         "attrs": {
           "operators": 6,
           "estimated_rows": 1200
@@ -301,15 +301,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "7ad0214c58783b46",
-        "parentId": "94544fc368f64567",
+        "spanId": "451e8f4edaf6fd96",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.tool",
         "name": "run read-only",
         "status": "ok",
-        "startMs": 1790916456436,
-        "endMs": 1790916456477,
+        "startMs": 1790919511805,
+        "endMs": 1790919511846,
         "attrs": {
           "rows": 12,
           "columns": 2,
@@ -319,15 +319,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "3c371733ba08c3db",
-        "parentId": "94544fc368f64567",
+        "spanId": "1260db7ff119d6ce",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.step",
         "name": "build chart",
         "status": "ok",
-        "startMs": 1790916456477,
-        "endMs": 1790916456480,
+        "startMs": 1790919511846,
+        "endMs": 1790919511849,
         "attrs": {
           "kind": "line",
           "omitted_rows": 0
@@ -335,15 +335,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "bc86d9ab3a964454",
-        "parentId": "f91c5494758778ad",
+        "spanId": "dc1c76166b6e9047",
+        "parentId": "ef824195d515ee7a",
         "kind": "gateway.attempt",
         "name": "groq/gpt-oss-20b",
         "status": "ok",
-        "startMs": 1790916456484,
-        "endMs": 1790916457376,
+        "startMs": 1790919511853,
+        "endMs": 1790919512745,
         "attrs": {
           "provider": "groq",
           "model": "groq/gpt-oss-20b",
@@ -353,15 +353,15 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "f91c5494758778ad",
-        "parentId": "cf00c47b1be30b74",
+        "spanId": "ef824195d515ee7a",
+        "parentId": "2c753d1942adee1a",
         "kind": "gateway.call",
         "name": "lb-fast",
         "status": "ok",
-        "startMs": 1790916456482,
-        "endMs": 1790916457378,
+        "startMs": 1790919511851,
+        "endMs": 1790919512747,
         "attrs": {
           "alias": "lb-fast",
           "dataClass": "visitor",
@@ -376,29 +376,29 @@
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "cf00c47b1be30b74",
-        "parentId": "94544fc368f64567",
+        "spanId": "2c753d1942adee1a",
+        "parentId": "e0e6b635d73bad31",
         "kind": "system.step",
         "name": "explain result",
         "status": "ok",
-        "startMs": 1790916456480,
-        "endMs": 1790916457380,
+        "startMs": 1790919511849,
+        "endMs": 1790919512749,
         "attrs": {
           "source": "model"
         }
       },
       {
         "v": 1,
-        "runId": "run-1b7f97c0865eac512c1d",
+        "runId": "run-63c904e21183139a8520",
         "system": "lb-05",
-        "spanId": "94544fc368f64567",
+        "spanId": "e0e6b635d73bad31",
         "kind": "system.run",
         "name": "data question",
         "status": "ok",
-        "startMs": 1790916454604,
-        "endMs": 1790916457385,
+        "startMs": 1790919509973,
+        "endMs": 1790919512754,
         "attrs": {
           "outcome": "answered",
           "queries": 1,

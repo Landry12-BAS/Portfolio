@@ -38,8 +38,8 @@ interface HarnessOutput {
 }
 
 /** Draws charts in a Node process that may not generate code from strings, and returns what it drew. */
-async function drawWithoutEval(charts: ChartSpec[], theme: 'light' | 'dark', language: 'en' | 'cs' = 'en'): Promise<HarnessOutput> {
-  const child = run(process.execPath, ['--disallow-code-generation-from-strings', HARNESS], { encoding: 'utf8', maxBuffer: 20_000_000, timeout: 60_000 })
+async function drawWithoutEval(charts: ChartSpec[], theme: 'light' | 'dark', language: 'en' | 'cs' = 'en', timeZone = 'UTC'): Promise<HarnessOutput> {
+  const child = run(process.execPath, ['--disallow-code-generation-from-strings', HARNESS], { encoding: 'utf8', maxBuffer: 20_000_000, timeout: 60_000, env: { ...process.env, TZ: timeZone } })
   child.child.stdin?.end(JSON.stringify({ tokens: chartTokensFor(theme), charts, width: 640, language }))
   return JSON.parse((await child).stdout) as HarnessOutput
 }
@@ -79,6 +79,16 @@ describe('drawing the charts without ever generating code from a string', () => 
     expect(line?.svg).not.toContain('Mar 02')
   }, 90_000)
 
+  it('draws a time axis the same in every time zone, so a day is never shown on the evening before', async () => {
+    const charts = acceptedCharts().filter(spec => spec.mark.type === 'line')
+    const [utc] = (await drawWithoutEval(charts, 'light', 'en', 'UTC')).drawn
+    const [losAngeles] = (await drawWithoutEval(charts, 'light', 'en', 'America/Los_Angeles')).drawn
+    const [tokyo] = (await drawWithoutEval(charts, 'light', 'en', 'Asia/Tokyo')).drawn
+    expect(utc?.svg).toBeTruthy()
+    expect(losAngeles?.svg).toBe(utc?.svg)
+    expect(tokyo?.svg).toBe(utc?.svg)
+  }, 90_000)
+
   it('leaves the numbers and the months in English for an English page', async () => {
     const [bar, line] = (await drawWithoutEval(acceptedCharts(), 'light', 'en')).drawn
     expect(bar?.svg).toContain('150,000')
@@ -111,7 +121,7 @@ describe('what a compiled chart contains', () => {
     return found
   }
 
-  const ALLOWED = new Set(['toDate', 'isValid', 'isFinite', 'format', 'timeFormat', 'isArray', 'join', 'ceil', 'min', 'max', 'scale', 'bandwidth', 'datum'])
+  const ALLOWED = new Set(['toDate', 'isValid', 'isFinite', 'format', 'timeFormat', 'utcFormat', 'isArray', 'join', 'ceil', 'min', 'max', 'scale', 'bandwidth', 'datum'])
 
   it('calls only the few functions a bar, line or point chart needs', () => {
     const called = new Set(acceptedCharts().flatMap(spec => expressionsIn(compileChart(spec, chartTokensFor('light'), 640)).flatMap(calledIn)))
@@ -142,6 +152,23 @@ describe('what a compiled chart contains', () => {
     const names = ['Basalt Blend', 'Ethiopia Guji', 'Kenya Nyeri', 'Colombia Huila', 'Lava Decaf', 'Gooseneck Kettle']
     const many = { ...bar, data: { values: names.map((name, index) => ({ x: name, y: 100 - index })) } }
     expect(horizontalLabels(many)).toMatchObject({ labelAngle: -40, labelOverlap: false })
+    // Moments crowd as names do, since a month's name is long; a numeric axis does not.
+    const line = acceptedCharts().find(candidate => candidate.mark.type === 'line')
+    const point = acceptedCharts().find(candidate => candidate.mark.type === 'point')
+    const months = Array.from({ length: 12 }, (_, month) => ({ x: `2025-${String(month + 1).padStart(2, '0')}-01T00:00:00`, y: 100 + month }))
+    expect(line && horizontalLabels({ ...line, data: { values: months } })).toMatchObject({ labelAngle: -40 })
+    expect(point && horizontalLabels(point)).toMatchObject({ labelAngle: 0 })
+  })
+
+  it('keeps a time axis of whole days from ticking by the hour, and leaves one with times of day alone', () => {
+    const line = acceptedCharts().find(spec => spec.mark.type === 'line')
+    if (!line) throw new Error('There is no line chart.')
+    /** Reads the minimum step between the ticks of the compiled chart's horizontal axis. */
+    const tickMinStep = (spec: ChartSpec) => (compileChart(spec, chartTokensFor('light'), 640) as { axes: { orient: string, tickMinStep?: number }[] }).axes.find(axis => axis.orient === 'bottom')?.tickMinStep
+    expect(line.data.values.every(point => typeof point.x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(point.x))).toBe(true)
+    expect(tickMinStep(line)).toBe(86_400_000)
+    const withTimes = { ...line, data: { values: line.data.values.map(point => ({ ...point, x: `${String(point.x)}T08:30:00Z` })) } }
+    expect(tickMinStep(withTimes)).toBeUndefined()
   })
 
   it('draws at the width it is given, and no narrower than a chart can be read', () => {

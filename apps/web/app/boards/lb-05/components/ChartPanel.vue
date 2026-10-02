@@ -17,7 +17,7 @@ import type { DrawnChart } from '../chart/render'
 import { checkChart } from '../chart/spec'
 import { readChartTokens } from '../chart/theme'
 import type { ChartEnvelope } from '../schemas'
-import { formatNumber } from '../table'
+import { formatMoment, formatNumber } from '../table'
 
 const props = defineProps<{
   /** The chart the answer carries, or null when the result had no honest chart. */
@@ -43,14 +43,21 @@ const rows = computed(() => (spec.value ? chartRows(spec.value) : []))
 const refusal = computed(() => (checked.value && !checked.value.ok ? checked.value.reason : undefined))
 const seriesTitle = computed(() => facts.value?.seriesTitle)
 
-/** Writes a point's value in the visitor's language. */
+/** Writes a point's quantity in the visitor's language. */
 function value(row: ChartRow): string {
   return typeof row.y === 'number' ? formatNumber(row.y, 'number', locale.value) : t('lb05.result.noValue')
 }
 
+/** Writes a point's place along the horizontal axis in the visitor's language: a name as it is, a number or a moment as they write it. */
+function place(row: ChartRow): string {
+  if (row.x === null) return t('lb05.result.noValue')
+  if (typeof row.x === 'number') return formatNumber(row.x, 'number', locale.value)
+  return facts.value?.xType === 'temporal' ? formatMoment(row.x, locale.value) : row.x
+}
+
 /** Writes a point as "horizontal value: quantity". */
 function pointText(row: ChartRow): string {
-  return t('lb05.chart.point', { x: row.x === null ? t('lb05.result.noValue') : String(row.x), y: value(row) })
+  return t('lb05.chart.point', { x: place(row), y: value(row) })
 }
 
 // The text alternative: what the chart is, how big it is, and its extremes.
@@ -259,7 +266,7 @@ onBeforeUnmount(() => {
               v-for="(row, index) in rows"
               :key="index"
             >
-              <td>{{ row.x === null ? t('lb05.result.noValue') : String(row.x) }}</td>
+              <td>{{ place(row) }}</td>
               <td class="number">
                 {{ value(row) }}
               </td>

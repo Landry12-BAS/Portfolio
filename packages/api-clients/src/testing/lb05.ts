@@ -129,7 +129,8 @@ function cannedAnswers(today: Day): Record<string, Canned> {
   const counted = 'orders.status NOT IN (\'cancelled\', \'lost\')'
   const revenue = `SUM(order_lines.line_total_czk) FILTER (WHERE ${counted})`
   const lines = 'FROM orders AS orders JOIN order_lines AS order_lines ON order_lines.order_id = orders.order_id'
-  const months = Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}-01`)
+  // DATE_TRUNC gives the database a timestamp, which the real API writes with a time of day (seen on the real service).
+  const months = Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}-01T00:00:00`)
   const monthly = [610_200, 598_400, 642_900, 655_100, 671_800, 640_300, 622_700, 659_400, 688_100, 702_600, 745_300, 812_900]
   return {
     'revenue-last-quarter': {

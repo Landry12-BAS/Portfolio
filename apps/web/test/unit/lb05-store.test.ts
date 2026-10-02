@@ -320,6 +320,48 @@ describe('LB-05\'s store: a question that takes long', () => {
     expect(scope.phase).toBe('idle')
   })
 
+  it('reads the day\'s count again after the wait is stopped, since the service counted the question when it took it', async () => {
+    const { site, store } = await start({ verified: true })
+    await store.loadQuota()
+    site.delayNext('POST /api/lb05/ask', 60_000)
+    const asking = store.ask({ question: QUESTION, source: 'sample' })
+    await seconds(2)
+    const reads = site.callsTo('/api/lb05/quota').length
+    store.stopWaiting()
+    await asking
+
+    expect(site.callsTo('/api/lb05/quota')).toHaveLength(reads + 1)
+  })
+
+  it('reads the day\'s count again after a question that was sent and failed, and not after one that never was', async () => {
+    const { site, store } = await start({ verified: true })
+    await store.loadQuota()
+    site.failNext('POST /api/lb05/ask', { status: 502, body: { error: { code: 'upstream_failed', message: 'x' } } })
+    await store.ask({ question: QUESTION, source: 'sample' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(site.callsTo('/api/lb05/quota')).toHaveLength(2)
+
+    await store.ask({ question: 'No', source: 'own' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(store.problem).toMatchObject({ kind: 'rejected' })
+    expect(site.callsTo('/api/lb05/quota')).toHaveLength(2)
+  })
+
+  it('stops waiting for the check without saying the question still counts, since nothing was sent', async () => {
+    const { site, store } = await start()
+    site.delayNext('POST /api/session/verify', 30_000)
+    const asking = store.ask({ question: QUESTION, source: 'own' })
+    await seconds(1)
+    expect(store.askedAt).toBeUndefined()
+    store.stopWaiting()
+    await seconds(40)
+    await asking
+
+    expect(store.stoppedWaiting).toBe(false)
+    expect(store.phase).toBe('idle')
+    expect(site.callsTo('/api/lb05/ask', 'POST')).toHaveLength(0)
+  })
+
   it('forgets a stopped wait when the next question starts', async () => {
     const { site, store } = await start({ verified: true })
     site.delayNext('POST /api/lb05/ask', 60_000)

@@ -18,6 +18,8 @@ export interface ChartFacts {
   kind: ChartSpec['mark']['type']
   count: number
   seriesCount: number
+  // The kind of values along the horizontal axis, which says how a value is written: a name, a number or a moment.
+  xType: ChartSpec['encoding']['x']['type']
   xTitle: string
   yTitle: string
   // The title of the colour channel, when the chart tells series apart.
@@ -46,6 +48,7 @@ export function chartFacts(spec: ChartSpec): ChartFacts {
     kind: spec.mark.type,
     count: rows.length,
     seriesCount: spec.encoding.color === undefined ? 0 : new Set(rows.map(row => row.series)).size,
+    xType: spec.encoding.x.type,
     xTitle: spec.encoding.x.title,
     yTitle: spec.encoding.y.title,
     seriesTitle: spec.encoding.color?.title,
