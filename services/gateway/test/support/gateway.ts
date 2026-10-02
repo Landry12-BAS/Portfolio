@@ -11,6 +11,7 @@ import type { CryptoKey } from 'jose'
 import { inject } from 'vitest'
 
 import { buildGateway } from '../../src/app.ts'
+import type { GatewayOptions } from '../../src/app.ts'
 import { importServiceKeys, signServiceToken } from '../../src/auth/service-token.ts'
 import type { Span } from '../../src/spans.ts'
 import { loadRouting } from '../../src/routing/load.ts'
@@ -40,9 +41,10 @@ export interface TestGateway {
 
 /**
  * Starts a gateway for one test, in the production profile unless told otherwise.
- * Pass a `redisUrl` to point it at a different (for example, unreachable) Redis.
+ * Pass a `redisUrl` to point it at a different (for example, unreachable) Redis, and a
+ * `logger` to read what the gateway logs (the production gateway logs as `main.ts` says).
  */
-export async function startGateway(options: { profile?: Profile, redisUrl?: string } = {}): Promise<TestGateway> {
+export async function startGateway(options: { profile?: Profile, redisUrl?: string, logger?: GatewayOptions['logger'] } = {}): Promise<TestGateway> {
   const providers = {
     alpha: await FakeProvider.start(answer('alpha answer')),
     beta: await FakeProvider.start(answer('beta answer')),
@@ -80,6 +82,7 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
     redis,
     prefix,
     now,
+    logger: options.logger,
   })
 
   // Signs a token for the service, dated by the test's clock.

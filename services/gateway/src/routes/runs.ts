@@ -6,7 +6,9 @@
 // a prompt or an answer (docs/SECURITY.md, section 4), and this route checks that again on
 // the way out: every stream entry must be a valid span of the strict schema in spans.ts, or
 // it is passed over. The run's ID is the only key to its trace, so the route answers a
-// run that isn't there exactly like one that has expired, and never logs the ID.
+// run that isn't there exactly like one that has expired, and never logs the ID: the request
+// serializer in log.ts replaces it in every logged URL, and test/integration/log.test.ts reads the
+// log to prove it.
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 

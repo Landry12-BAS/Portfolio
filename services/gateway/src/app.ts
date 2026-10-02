@@ -15,6 +15,7 @@ import { MeterStore } from './budget/store.ts'
 import { ClientGoneError } from './call.ts'
 import type { GatewayContext } from './call.ts'
 import { errorBody, GatewayError } from './errors.ts'
+import { redactingLogger } from './log.ts'
 import type { Routing } from './routing/load.ts'
 import type { Profile } from './routing/plan.ts'
 import { registerChat } from './routes/chat.ts'
@@ -52,7 +53,8 @@ export interface GatewayOptions {
 export async function buildGateway(options: GatewayOptions): Promise<FastifyInstance> {
   const now = options.now ?? Date.now
   const app = Fastify({
-    logger: options.logger ?? false,
+    // Whatever the log is set up to do, a request line never carries a run's ID (log.ts).
+    logger: redactingLogger(options.logger),
     // 1 MB by default; the model routes set their own limits.
     bodyLimit: 1_048_576,
     genReqId: () => randomUUID(),
