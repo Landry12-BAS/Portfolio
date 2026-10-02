@@ -243,7 +243,7 @@ describe('LB-05\'s board', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="board-state"]').text()).toBe('Replay')
-    expect(wrapper.get('[data-testid="replay-banner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="replay-banner"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="progress"]').text()).toContain('Replaying a recorded run')
     expect(wrapper.find('[data-testid="answer"]').exists()).toBe(false)
 
@@ -430,10 +430,10 @@ describe('LB-05\'s board', () => {
       expect(wrapper.find('[data-testid="semantic"]').exists()).toBe(false)
       await askOwnQuestion(wrapper)
       await seconds(4)
-      expect(wrapper.get('[data-testid="answer"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="answer"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="steps"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="facts"]').exists()).toBe(false)
-      expect(wrapper.get('[data-testid="sql-text"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="sql-text"]').exists()).toBe(true)
     })
 
     it('shows the steps, the facts and the semantic layer in the Technical reading', async () => {

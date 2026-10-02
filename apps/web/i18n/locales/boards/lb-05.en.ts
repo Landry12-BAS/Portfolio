@@ -138,7 +138,7 @@ const lb05 = {
     retry: 'Try again',
   },
   answer: {
-    title: 'Answer',
+    title: 'Outcome',
     youAsked: 'You asked',
     outcomes: {
       answered: 'Answered',

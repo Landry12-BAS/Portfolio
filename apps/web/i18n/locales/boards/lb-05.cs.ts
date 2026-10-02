@@ -136,7 +136,7 @@ const lb05 = {
     retry: 'Zkusit znovu',
   },
   answer: {
-    title: 'Odpověď',
+    title: 'Jak to dopadlo',
     youAsked: 'Zeptali jste se',
     outcomes: {
       answered: 'Zodpovězeno',

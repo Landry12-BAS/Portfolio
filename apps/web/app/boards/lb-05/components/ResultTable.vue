@@ -5,7 +5,7 @@
 // all of them, so a result of hundreds of rows stays quick to scan and to move through; the table
 // scrolls inside a region the keyboard can reach. Every cell is data from the warehouse and is shown
 // as text, numbers in the visitor's language, and nothing in it is read as markup.
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { formatCount, formatDuration } from '~/board-kit/format'
@@ -22,6 +22,7 @@ const props = defineProps<{
 const { t, locale } = useI18n()
 
 const shown = ref(ROWS_PER_PAGE)
+const region = ref<HTMLElement>()
 // A new result starts again at the first page.
 watch(() => props.result, () => {
   shown.value = ROWS_PER_PAGE
@@ -39,14 +40,22 @@ function write(columnIndex: number, row: readonly (string | number | boolean | n
   return formatCell(cell ?? null, kind, locale.value, words.value)
 }
 
+/** Hands the keyboard to the table once the last rows are in, since the buttons that asked for them are gone by then. */
+async function keepFocus(): Promise<void> {
+  await nextTick()
+  if (!hasMore.value) region.value?.focus({ preventScroll: true })
+}
+
 /** Shows one more page of rows. */
-function showMore(): void {
+async function showMore(): Promise<void> {
   shown.value = nextShown(shown.value, total.value)
+  await keepFocus()
 }
 
 /** Shows every row. */
-function showAll(): void {
+async function showAll(): Promise<void> {
   shown.value = total.value
+  await keepFocus()
 }
 </script>
 
@@ -80,6 +89,7 @@ function showAll(): void {
     </p>
     <div
       v-else
+      ref="region"
       class="scroll"
       role="region"
       tabindex="0"

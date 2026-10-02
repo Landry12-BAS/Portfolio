@@ -339,7 +339,7 @@ describe('the chart panel', () => {
     const hostile = { ...barChart(), spec: { ...barChart().spec, data: { url: 'https://evil.test/steal.json' } } }
     const wrapper = mountWithSite(ChartPanel, { props: { chart: hostile } })
     await flushPromises()
-    expect(wrapper.get('[data-testid="chart-refused"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="chart-refused"]').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('evil.test')
     expect(drawing.calls).toHaveLength(0)
     expect(wrapper.find('[data-testid="chart-canvas"]').exists()).toBe(false)
