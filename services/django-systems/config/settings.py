@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "core",
     "lb01",
     "lb02",
+    "lb09",
 ]
 
 MIDDLEWARE = [

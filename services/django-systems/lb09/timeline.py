@@ -11,8 +11,8 @@ from typing import Final
 
 from lb09.scripts import Script
 
-# Flite speaks about 170 words a minute (measured on the six scripts).
-WORDS_PER_SECOND: Final = 2.85
+# Flite speaks about 150 words a minute (measured on the six scripts: 344 words in 136 seconds).
+WORDS_PER_SECOND: Final = 2.53
 # The silence before the first word, between two turns, and after the last.
 LEAD_SECONDS: Final = 0.3
 PAUSE_SECONDS: Final = 0.4

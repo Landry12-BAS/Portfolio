@@ -7,6 +7,7 @@ version = "0.1.0"
 description = "The LB systems built on Django: one project, one Postgres schema per system."
 requires-python = ">=3.13"
 dependencies = [
+    "av>=19.0.0",
     "celery[redis]>=5.6.3",
     "channels>=4.3.2",
     "channels-redis>=4.3.0",
