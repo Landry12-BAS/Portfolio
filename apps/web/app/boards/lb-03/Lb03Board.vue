@@ -88,8 +88,9 @@ const busy = computed(() => phase.value === 'sending' || (runMode.value === 'liv
 const showProgress = computed(() => phase.value === 'sending' || (phase.value === 'reading' && !store.finished))
 const failed = computed(() => onBoard.value?.state === 'failed')
 const showReading = computed(() => store.finished)
-// A failed document has no fields, but a replay of one still has the sample's page to show, so the page the hostile text is on can be seen.
-const showViewer = computed(() => store.ready || (failed.value && runMode.value === 'replay' && replaySample.value !== undefined))
+// A failed document has no fields, but one that failed after its pages were read (the injection check, a model) still has
+// them: the service says how many, and keeps their pictures, so the page the hostile text is on can be seen.
+const showViewer = computed(() => store.ready || (failed.value && (onBoard.value?.pages ?? 0) >= 1))
 const maxPages = computed(() => quota.value?.limits.max_pages ?? 5)
 
 // The page's picture: the service's own for a live document, the sample's static one for a replay.

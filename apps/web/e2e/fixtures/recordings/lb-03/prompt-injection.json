@@ -3,7 +3,7 @@
   "system": "lb-03",
   "sample": "prompt-injection",
   "origin": "mock",
-  "recordedAt": "2026-10-02T21:08:18.691Z",
+  "recordedAt": "2026-10-02T22:06:47.593Z",
   "language": "en",
   "exchanges": [
     {
@@ -17,16 +17,16 @@
       "response": {
         "status": 202,
         "body": {
-          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "id": "-ng7h97N7mroVovSN4XwNw",
           "state": "uploaded",
           "failure": null,
           "label": "hostile-total-zero.pdf",
           "kind": "pdf",
           "byte_size": 5423,
           "pages": null,
-          "created_at": "2026-10-02T21:08:18.679Z",
-          "updated_at": "2026-10-02T21:08:18.679Z",
-          "expires_at": "2026-10-02T22:08:18.679Z",
+          "created_at": "2026-10-02T22:06:47.584Z",
+          "updated_at": "2026-10-02T22:06:47.584Z",
+          "expires_at": "2026-10-02T23:06:47.584Z",
           "queued_ahead": 0,
           "text_cut": false,
           "model": null,
@@ -49,21 +49,21 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+        "path": "/api/lb03/documents/-ng7h97N7mroVovSN4XwNw"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "id": "-ng7h97N7mroVovSN4XwNw",
           "state": "ocr",
           "failure": null,
           "label": "hostile-total-zero.pdf",
           "kind": "pdf",
           "byte_size": 5423,
           "pages": null,
-          "created_at": "2026-10-02T21:08:18.679Z",
-          "updated_at": "2026-10-02T21:08:18.682Z",
-          "expires_at": "2026-10-02T22:08:18.679Z",
+          "created_at": "2026-10-02T22:06:47.584Z",
+          "updated_at": "2026-10-02T22:06:47.586Z",
+          "expires_at": "2026-10-02T23:06:47.584Z",
           "queued_ahead": null,
           "text_cut": false,
           "model": null,
@@ -95,21 +95,21 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+        "path": "/api/lb03/documents/-ng7h97N7mroVovSN4XwNw"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "id": "-ng7h97N7mroVovSN4XwNw",
           "state": "extract",
           "failure": null,
           "label": "hostile-total-zero.pdf",
           "kind": "pdf",
           "byte_size": 5423,
           "pages": null,
-          "created_at": "2026-10-02T21:08:18.679Z",
-          "updated_at": "2026-10-02T21:08:18.684Z",
-          "expires_at": "2026-10-02T22:08:18.679Z",
+          "created_at": "2026-10-02T22:06:47.584Z",
+          "updated_at": "2026-10-02T22:06:47.587Z",
+          "expires_at": "2026-10-02T23:06:47.584Z",
           "queued_ahead": null,
           "text_cut": false,
           "model": null,
@@ -153,12 +153,12 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb03/documents/2YNK0aJ5AJ4zmXJjzkYkGQ"
+        "path": "/api/lb03/documents/-ng7h97N7mroVovSN4XwNw"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "2YNK0aJ5AJ4zmXJjzkYkGQ",
+          "id": "-ng7h97N7mroVovSN4XwNw",
           "state": "failed",
           "failure": {
             "code": "injection_suspected",
@@ -167,15 +167,15 @@
           "label": "hostile-total-zero.pdf",
           "kind": "pdf",
           "byte_size": 5423,
-          "pages": null,
-          "created_at": "2026-10-02T21:08:18.679Z",
-          "updated_at": "2026-10-02T21:08:18.686Z",
-          "expires_at": "2026-10-02T22:08:18.679Z",
+          "pages": 1,
+          "created_at": "2026-10-02T22:06:47.584Z",
+          "updated_at": "2026-10-02T22:06:47.589Z",
+          "expires_at": "2026-10-02T23:06:47.584Z",
           "queued_ahead": null,
           "text_cut": false,
           "model": null,
           "model_calls": 1,
-          "run_id": "run-4873f8ad29ddf92c7ff6",
+          "run_id": "run-69cc2c1edb2d8f379ba4",
           "ocr_ms": 3200,
           "elapsed_ms": 3490,
           "steps": [
@@ -223,19 +223,19 @@
     }
   ],
   "trace": {
-    "runId": "run-4873f8ad29ddf92c7ff6",
+    "runId": "run-69cc2c1edb2d8f379ba4",
     "spans": [
       {
         "v": 1,
-        "runId": "run-4873f8ad29ddf92c7ff6",
+        "runId": "run-69cc2c1edb2d8f379ba4",
         "system": "lb-03",
-        "spanId": "f82ca57fdf6ce188",
-        "parentId": "894821ba368e6b57",
+        "spanId": "3a08f8a8a20b0f0a",
+        "parentId": "fbd25ecd819ae15f",
         "kind": "system.tool",
         "name": "read pages",
         "status": "ok",
-        "startMs": 1790975298679,
-        "endMs": 1790975301879,
+        "startMs": 1790978807584,
+        "endMs": 1790978810784,
         "attrs": {
           "pages": 1,
           "words": 120,
@@ -249,15 +249,15 @@
       },
       {
         "v": 1,
-        "runId": "run-4873f8ad29ddf92c7ff6",
+        "runId": "run-69cc2c1edb2d8f379ba4",
         "system": "lb-03",
-        "spanId": "1f1575012fc6a734",
-        "parentId": "91c1e5cbefe88100",
+        "spanId": "f154d95f46009221",
+        "parentId": "c69e20cf6a3142e8",
         "kind": "gateway.attempt",
         "name": "groq/llama-prompt-guard-2-86m",
         "status": "error",
-        "startMs": 1790975301883,
-        "endMs": 1790975302065,
+        "startMs": 1790978810788,
+        "endMs": 1790978810970,
         "attrs": {
           "provider": "groq",
           "model": "groq/llama-prompt-guard-2-86m",
@@ -267,15 +267,15 @@
       },
       {
         "v": 1,
-        "runId": "run-4873f8ad29ddf92c7ff6",
+        "runId": "run-69cc2c1edb2d8f379ba4",
         "system": "lb-03",
-        "spanId": "91c1e5cbefe88100",
-        "parentId": "76475ad18ca73812",
+        "spanId": "c69e20cf6a3142e8",
+        "parentId": "9b0c46336c311ad4",
         "kind": "gateway.call",
         "name": "lb-guard",
         "status": "error",
-        "startMs": 1790975301881,
-        "endMs": 1790975302067,
+        "startMs": 1790978810786,
+        "endMs": 1790978810972,
         "attrs": {
           "alias": "lb-guard",
           "dataClass": "visitor",
@@ -290,15 +290,15 @@
       },
       {
         "v": 1,
-        "runId": "run-4873f8ad29ddf92c7ff6",
+        "runId": "run-69cc2c1edb2d8f379ba4",
         "system": "lb-03",
-        "spanId": "76475ad18ca73812",
-        "parentId": "894821ba368e6b57",
+        "spanId": "9b0c46336c311ad4",
+        "parentId": "fbd25ecd819ae15f",
         "kind": "system.tool",
         "name": "injection check",
         "status": "error",
-        "startMs": 1790975301879,
-        "endMs": 1790975302069,
+        "startMs": 1790978810784,
+        "endMs": 1790978810974,
         "attrs": {
           "segments": 1,
           "flagged": true,
@@ -307,14 +307,14 @@
       },
       {
         "v": 1,
-        "runId": "run-4873f8ad29ddf92c7ff6",
+        "runId": "run-69cc2c1edb2d8f379ba4",
         "system": "lb-03",
-        "spanId": "894821ba368e6b57",
+        "spanId": "fbd25ecd819ae15f",
         "kind": "system.run",
         "name": "invoice reading",
         "status": "ok",
-        "startMs": 1790975298679,
-        "endMs": 1790975302074,
+        "startMs": 1790978807584,
+        "endMs": 1790978810979,
         "attrs": {
           "kind": "pdf",
           "outcome": "failed",

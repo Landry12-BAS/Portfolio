@@ -132,6 +132,28 @@ describe('LB-03\'s board', () => {
     expect(wrapper.find('[data-testid="refund"]').exists()).toBe(false)
   })
 
+  it('shows the page of a live document the injection check stopped, which the service drew before it checked the text', async () => {
+    const { wrapper } = await openBoard()
+    await chooseSample(wrapper, 'prompt-injection')
+    await startSample(wrapper)
+    await seconds(8)
+
+    expect(wrapper.get('[data-testid="failure"]').attributes('data-code')).toBe('injection_suspected')
+    expect(wrapper.get('[data-testid="viewer"] img').attributes('src')).toMatch(/^\/api\/lb03\/documents\/[\w-]+\/pages\/1$/)
+    expect(wrapper.findAll('[data-testid="box"]')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="show-all"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="fields"]').exists()).toBe(false)
+  })
+
+  it('shows no page for a live document the reader refused before it drew one', async () => {
+    const { wrapper } = await openBoard()
+    await uploadOwn(wrapper, 'six-pages-bohemia-2026-0888')
+    await seconds(8)
+
+    expect(wrapper.get('[data-testid="failure"]').attributes('data-code')).toBe('too_many_pages')
+    expect(wrapper.find('[data-testid="viewer"]').exists()).toBe(false)
+  })
+
   it('reads a sample with no recording live: after the check, stage by stage, to a checked reading with the page and its boxes', async () => {
     const { site, wrapper } = await openBoard()
     await chooseSample(wrapper, 'clean-pdf')

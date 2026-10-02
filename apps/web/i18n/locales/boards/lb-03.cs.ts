@@ -116,6 +116,7 @@ const lb03 = {
     openFull: 'Otevřít stránku v plné velikosti na nové kartě',
     missing: 'Obrázek této strany není k dispozici. Pole jsou přesto výsledek čtení.',
     pickOne: 'Vyberte pole v tabulce a uvidíte, kde je na stránce.',
+    noFields: 'Tohle je stránka, která se četla. Nevzešlo z ní žádné pole, takže není co zvýraznit.',
     typed: 'Tuto hodnotu jste napsali vy, takže nemá na stránce rámeček.',
     notFound: 'Tato hodnota se mezi slovy přečtenými ze stránky nenašla.',
     found: 'Strana {page}. Jistota {band}, {percent} %.',

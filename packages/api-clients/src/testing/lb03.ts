@@ -288,8 +288,7 @@ export class Lb03Mock {
   /** Returns the JPEG of one page of a visitor's document. */
   page(session: string, id: string, number: number): Answer | Lb03FileAnswer {
     const document = this.#find(session, id)
-    const ready = document !== undefined && this.#state(document) === 'ready'
-    if (document === undefined || !ready || number < 1 || number > document.source.pages) return errorAnswer(404, 'not_found', NOT_FOUND)
+    if (document === undefined || !this.#pagesDrawn(document) || number < 1 || number > document.source.pages) return errorAnswer(404, 'not_found', NOT_FOUND)
     const sample = document.source.sample
     const picture = sample === undefined ? undefined : this.#seed.picture(sample, number)
     if (picture === undefined) return errorAnswer(404, 'not_found', NOT_FOUND)
@@ -557,6 +556,17 @@ export class Lb03Mock {
     }
   }
 
+  /**
+   * Says whether the document's pages have been read and drawn: a document that is read to the end has them, and so has
+   * one that failed after the OCR (the injection check, a model), which is how the service keeps its pictures. One the
+   * OCR refused, or that is still being read, has none.
+   */
+  #pagesDrawn(document: MockDocument): boolean {
+    const state = this.#state(document)
+    if (state === 'ready') return true
+    return state === 'failed' && document.ending.kind === 'failed' && document.ending.at === 'extract'
+  }
+
   /** Writes a document as the API shows it: where it is, and once it is read everything that was made of it. */
   #out(document: MockDocument): Record<string, unknown> {
     const state = this.#state(document)
@@ -571,7 +581,7 @@ export class Lb03Mock {
       label: document.label,
       kind: document.kind,
       byte_size: document.byteSize,
-      pages: ready ? document.source.pages : null,
+      pages: this.#pagesDrawn(document) ? document.source.pages : null,
       created_at: created,
       updated_at: new Date(Math.max(this.#now(), document.createdAt)).toISOString(),
       expires_at: new Date(document.createdAt + FILE_LIFETIME_MS).toISOString(),

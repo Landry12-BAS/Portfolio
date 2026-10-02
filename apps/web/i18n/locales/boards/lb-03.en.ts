@@ -118,6 +118,7 @@ const lb03 = {
     openFull: 'Open the page at full size, in a new tab',
     missing: 'The picture of this page is not available. The fields are still the reading.',
     pickOne: 'Choose a field in the table to see where it is on the page.',
+    noFields: 'This is the page that was read. No fields came of it, so there is no box to show.',
     typed: 'You typed this value, so it has no box on the page.',
     notFound: 'This value was not found among the words read from the page.',
     found: 'On page {page}. Confidence {band}, {percent}%.',

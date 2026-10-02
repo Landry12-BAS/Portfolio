@@ -187,6 +187,18 @@ describe('an upload', () => {
     expect(hostile.run_id).toMatch(/^run-/)
   })
 
+  it('keeps the pages of a document that failed after they were read, as the service does, and has none for a file the reader refused', async () => {
+    const hostile = (await read('prompt-injection')).document
+    const long = (await read('six-pages-bohemia-2026-0888')).document
+
+    // The page was read and drawn before the injection check stopped the text, so the visitor can still see it.
+    expect(hostile.pages).toBe(1)
+    expect((await call('GET', `/api/lb03/documents/${hostile.id}/pages/1`)).status).toBe(200)
+    // The reader refused the six-page file before it drew anything.
+    expect(long.pages).toBeNull()
+    expect((await call('GET', `/api/lb03/documents/${long.id}/pages/1`)).status).toBe(404)
+  })
+
   it('reads a file the golden set does not know as the clean sample, under its own name', async () => {
     const data = Buffer.from('%PDF-1.7\n% a PDF of the visitor\'s own\n')
     const created = await call('POST', '/api/lb03/documents', { raw: form(data, 'C:\\fakepath\\My invoice (final).pdf') })

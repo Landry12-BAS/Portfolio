@@ -131,6 +131,10 @@ test.describe('replaying a recorded sample', () => {
     await expect(page.getByTestId('guard-score')).toHaveText('The injection check\'s score for the text was 0.99.')
     await expect(page.getByTestId('page-picture')).toHaveAttribute('src', '/lb03/pages/prompt-injection-1.jpg')
     await expect.poll(() => isDrawn(page.getByTestId('page-picture'))).toBe(true)
+    // No field came of it, so no box is drawn and there is nothing for the toggle to switch.
+    await expect(page.getByTestId('box')).toHaveCount(0)
+    await expect(page.getByTestId('show-all')).toHaveCount(0)
+    await expect(page.getByTestId('viewer-caption')).toHaveText('This is the page that was read. No fields came of it, so there is no box to show.')
     await expect(page.getByTestId('fields')).toHaveCount(0)
     await expect(page.getByTestId('chain-state').nth(1)).toHaveText('failed')
     await expect(page.getByTestId('chain-state').nth(2)).toHaveText('not reached')
@@ -293,6 +297,10 @@ test.describe('a document read live', () => {
 
     await expect(page.getByTestId('failure')).toBeVisible({ timeout: 20_000 })
     await expect(page.getByTestId('refund')).toHaveText('The document still counts against today\'s allowance.')
+    // The service drew the page before the check stopped its text, so the page it was on is shown, with no box.
+    await expect(page.getByTestId('page-picture')).toHaveAttribute('src', /^\/api\/lb03\/documents\/[\w-]+\/pages\/1$/)
+    await expect.poll(() => isDrawn(page.getByTestId('page-picture'))).toBe(true)
+    await expect(page.getByTestId('box')).toHaveCount(0)
     await expect(page.getByTestId('fields')).toHaveCount(0)
     await expect(page.getByTestId('export')).toHaveCount(0)
     await expect(page.getByTestId('counter-state')).toHaveText('No result')

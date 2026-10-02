@@ -69,6 +69,8 @@ function measure(event: Event): void {
 }
 
 const placed = computed(() => placedOnPage(props.fields, props.page))
+// There is something for the toggle to switch only when a box was found on this page.
+const hasBoxes = computed(() => placed.value.length > 0)
 // An SVG paints in document order, so the lit box goes last to be on top of any box it overlaps.
 const drawn = computed(() => placed.value
   .filter(item => showAll.value || item.path === props.selected)
@@ -79,6 +81,8 @@ const alt = computed(() => t('lb03.viewer.pageAlt', { page: props.page, pages: p
 
 /** Says where a field is and how sure the reader is of it, in words. */
 const where = computed(() => {
+  // A document that failed after its pages were read has the page and no fields at all.
+  if (props.fields === null) return t('lb03.viewer.noFields')
   const found = field.value
   if (found === undefined) return t('lb03.viewer.pickOne')
   if (found.box === null) return found.edited ? t('lb03.viewer.typed') : t('lb03.viewer.notFound')
@@ -137,7 +141,10 @@ function go(page: number): void {
           />
         </button>
       </div>
-      <label class="toggle">
+      <label
+        v-if="hasBoxes"
+        class="toggle"
+      >
         <input
           v-model="showAll"
           type="checkbox"

@@ -317,6 +317,22 @@ describe('DocumentViewer', () => {
     expect(wrapper.find('[data-testid="open-page"]').exists()).toBe(false)
   })
 
+  it('shows the page of a document that failed after it was read with no box, no toggle and a caption that says why', () => {
+    const wrapper = mountWithSite(DocumentViewer, { props: { ...props, fields: null, selected: undefined } })
+
+    expect(wrapper.findAll('[data-testid="box"]')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="show-all"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="viewer-caption"]').text()).toBe('This is the page that was read. No fields came of it, so there is no box to show.')
+    expect(wrapper.find('[data-testid="open-page"]').exists()).toBe(true)
+  })
+
+  it('offers the toggle only when a box was found on the page being shown', () => {
+    const field = { path: 'vendor', kind: 'text' as const, value: 'A', box: { page: 2, quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2], confidence: 0.95, match: 1, band: 'high' as const }, edited: false, checks: [] }
+
+    expect(mountWithSite(DocumentViewer, { props: { ...props, pages: 2, page: 1, fields: [field], selected: undefined } }).find('[data-testid="show-all"]').exists()).toBe(false)
+    expect(mountWithSite(DocumentViewer, { props: { ...props, pages: 2, page: 2, fields: [field], selected: undefined } }).find('[data-testid="show-all"]').exists()).toBe(true)
+  })
+
   it('says a field has no box because it was typed in, or because it was not found', () => {
     const typed = { path: 'total', kind: 'amount' as const, value: '1', box: null, edited: true, checks: [] }
     expect(mountWithSite(DocumentViewer, { props: { ...props, fields: [typed], selected: 'total' } }).get('.where').text()).toBe('You typed this value, so it has no box on the page.')
