@@ -42,7 +42,9 @@ describe('reading a recording\'s exchanges', () => {
     const fact = factOf(exchange)
 
     expect(fact?.kind).toBe('events')
-    expect(fact?.kind === 'events' && exchange.request.path).toContain(fact.runId)
+    const runId = fact?.kind === 'events' ? fact.runId : ''
+    expect(runId).not.toBe('')
+    expect(exchange.request.path).toContain(runId)
   })
 
   it('passes over an answer that is not a success, since the board would not have accepted it either', () => {

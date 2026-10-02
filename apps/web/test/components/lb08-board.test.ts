@@ -136,7 +136,7 @@ describe('LB-08\'s board', () => {
 
     await openLive(wrapper)
 
-    expect(wrapper.get('[data-testid="editor"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="editor"]').exists()).toBe(true)
     expect(outlineIds(wrapper)).toEqual(['order_received', 'big_order', 'check_stock', 'alert_roastery', 'email_cafe'])
     expect(wrapper.get('[data-testid="validity"]').text()).toContain('Valid. Steps: 5. Connections: 4.')
     expect(wrapper.get('[data-testid="saved-state"]').text()).toContain('Saved')
@@ -242,7 +242,7 @@ describe('LB-08\'s board: a run', () => {
 
     expect(runStatus(wrapper)).toBe('failed')
     expect(wrapper.findAll('[data-testid="dead-letter"]')).toHaveLength(1)
-    expect(wrapper.get('[data-step="tell_purchasing"] [data-testid="step-dead"]').exists()).toBe(true)
+    expect(wrapper.find('[data-step="tell_purchasing"] [data-testid="step-dead"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="sent-row"]')).toHaveLength(1)
     expect(site.callsTo('/api/lb08/workflows/', 'POST')[0]?.body).toMatchObject({ failures: [{ nodeId: 'tell_purchasing', times: 3 }] })
 
@@ -340,7 +340,7 @@ describe('LB-08\'s board: describing a process, and what can go wrong', () => {
 
     await describeProcess(wrapper, 'When a wholesale order over €500 arrives, check stock, alert the roastery on Slack and email the café an ETA.')
 
-    expect(wrapper.get('[data-testid="editor"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="editor"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="versions"]').text()).toContain('The model')
     expect(wrapper.get('[data-testid="generations"]').text()).toContain('9 of 10')
     expect(site.callsTo('/api/lb08/workflows', 'POST')[0]?.body).toMatchObject({ from: 'description' })
@@ -410,7 +410,7 @@ describe('LB-08\'s board: samples and replays', () => {
     expect(wrapper.get('[data-testid="replay-banner"]').text()).toContain('Replay of a recorded run')
     await seconds(15)
 
-    expect(wrapper.get('[data-testid="read-only"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="read-only"]').exists()).toBe(true)
     expect(runStatus(wrapper)).toBe('succeeded')
     expect(wrapper.findAll('[data-testid="dead-letter"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="dead-replayed"]').exists()).toBe(true)
@@ -438,7 +438,7 @@ describe('LB-08\'s board: samples and replays', () => {
 
     await again?.trigger('click')
     await seconds(1)
-    expect(wrapper.get('[data-testid="replay-banner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="replay-banner"]').exists()).toBe(true)
     await seconds(15)
     await live?.trigger('click')
     await seconds(2)
@@ -457,7 +457,7 @@ describe('LB-08\'s board: samples and replays', () => {
     await wrapper.get('[data-testid="start-sample"]').trigger('click')
     await seconds(1)
 
-    expect(wrapper.get('[data-testid="editor"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="editor"]').exists()).toBe(true)
     expect(site.callsTo('/api/lb08/workflows', 'POST')[0]?.body).toEqual({ from: 'sample', sampleId: 'wholesale-order-cs' })
   })
 })
