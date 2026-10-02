@@ -1,12 +1,16 @@
-# The Flask systems image (services/flask-systems): LB-05's API (gunicorn), its database
-# migration and the one-shot job that generates its data (infra/docker-compose.yml). One
-# image, three commands. Build context: the repository root.
+# The Flask systems image (services/flask-systems): the API (gunicorn) for LB-03 and LB-05,
+# the database migration and the one-shot job that generates LB-05's data
+# (infra/docker-compose.yml). One image, three commands. Build context: the repository root.
 #
 # The build stage installs the production dependencies from uv.lock into a virtualenv; the
 # runtime stage copies that virtualenv and the code into a slim Python image and runs as an
-# unprivileged user. The image keeps the repository's layout (services/flask-systems and
-# data/seed under /app), because the settings find the semantic layer relative to it. Only
-# LB-05's seed folder is copied: nothing else of data/seed is this service's business.
+# unprivileged user. The image keeps the repository's layout (services/flask-systems, data/seed
+# and evals under /app), because the settings find the semantic layer, LB-03's chart of
+# accounts and its golden set relative to it. Only what the two systems read at run time is
+# copied: LB-05's seed folder, and from LB-03's the chart of accounts, the manifest and the
+# golden set (the samples a duplicate is compared with), not the 4 MB of documents, pictures
+# and fonts that the generator and the evals use. The OCR needs no system library: RapidOCR's
+# models, pdfium, OpenCV and ONNX Runtime all come inside their wheels.
 # Base images are pinned by digest: `just pin-images` refreshes them.
 
 FROM python:3.13.15-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS build
@@ -33,7 +37,7 @@ RUN uv sync --frozen --no-editable --package flask-systems \
 
 FROM python:3.13.15-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS runtime
 LABEL org.opencontainers.image.title="lb-flask-systems" \
-      org.opencontainers.image.description="The Flask systems (LB-05 Data Analyst): API, migration and data generation." \
+      org.opencontainers.image.description="The Flask systems (LB-03 Invoice Reader, LB-05 Data Analyst): API, migration and data generation." \
       org.opencontainers.image.source="https://github.com/Landry12-BAS/Portfolio"
 # An unprivileged user with no home and no shell. The numeric id is what docker-compose.yml
 # gives the tmpfs mounts, so the two must agree. /warehouse is where LB-05's dataset lives:
@@ -49,6 +53,8 @@ RUN groupadd --system --gid 10001 lb \
 COPY --from=build /app/.venv /app/.venv
 COPY --from=build /repo/services/flask-systems /app/services/flask-systems
 COPY data/seed/lb05 /app/data/seed/lb05
+COPY data/seed/lb03/chart_of_accounts.yaml data/seed/lb03/manifest.json /app/data/seed/lb03/
+COPY evals/lb03/golden.yaml /app/evals/lb03/golden.yaml
 # The data job sits next to manage.py, so it imports the service the way manage.py does.
 COPY --chmod=0444 infra/docker/flask-seed.py /app/services/flask-systems/seed_warehouse.py
 COPY --chmod=0555 infra/docker/python-entrypoint.sh /usr/local/bin/lb-entrypoint

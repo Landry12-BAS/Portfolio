@@ -84,9 +84,22 @@
 	# The Django systems: LB-01 and LB-02's APIs, and LB-02's WebSocket.
 	@django path /api/lb01/* /api/lb02/* /ws/lb02/*
 
-	# The Flask systems (LB-05) and the Node systems (LB-08): one API prefix each.
-	@flask path /api/lb05/*
+	# The Flask systems (LB-03 and LB-05) and the Node systems (LB-08): one API prefix each.
+	@flask path /api/lb03/* /api/lb05/*
 	@node path /api/lb08/*
+
+	# The one route that takes a file: LB-03's upload, a multipart form of one file. Every
+	# other body is small, and the limit below is for them.
+	@lb03_upload {
+		method POST
+		path /api/lb03/documents
+	}
+	@not_lb03_upload {
+		not {
+			method POST
+			path /api/lb03/documents
+		}
+	}
 
 	# The one gateway path the site's server reads, for the Scope: a run's spans. A run id
 	# is 8 to 64 letters, digits, '_' or '-', so no dot segment or escape can slip through.
@@ -119,10 +132,15 @@
 	route {
 		respond @other_host `{"error":{"code":"not_found","message":"There is nothing at this address."}}` 404
 
-		# No body bigger than a ticket's text and a little more. An upload route would raise
-		# this for itself, in its own route.
-		request_body {
+		# No body bigger than a ticket's text and a little more, except the one upload, which
+		# may carry what the service takes: a file of 10 MB and the few bytes of a form around
+		# it (the service checks that itself, before it reads a byte; this is the wall before
+		# it, and the site's server passes on only 4 MB of it).
+		request_body @not_lb03_upload {
 			max_size 1MB
+		}
+		request_body @lb03_upload {
+			max_size 11MB
 		}
 
 		respond @websocket_from_elsewhere `{"error":{"code":"forbidden_origin","message":"This origin may not open a connection."}}` 403
@@ -141,7 +159,9 @@
 		# A question to LB-05 has 90 seconds to be answered (its own deadline), and LB-08 may
 		# make two model calls to describe a workflow, so those two get 95 seconds: more than
 		# the service needs, and less than the 100 at which Cloudflare gives up on its own and
-		# shows its error page in place of ours. The rest answer within a minute or not at all.
+		# shows its error page in place of ours. (LB-03 shares the Flask systems' 95 seconds,
+		# though every call of it answers at once: a document is read in the background and
+		# its page polls.) The rest answer within a minute or not at all.
 		import proxy @django django-api:8000 60s
 		import proxy @flask flask-api:8102 95s
 		import proxy @node node-api:8002 95s
