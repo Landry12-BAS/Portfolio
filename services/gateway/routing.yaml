@@ -369,6 +369,26 @@ systems:
     # set (39 cases, at most 2 calls each) when a prompt changes. Rebalanced as each system
     # ships (docs/STACK.md, Capacity).
     dailyCalls: 160
+  lb-03:
+    name: Invoice Reader
+    service: flask-systems
+    aliases: [lb-fast, lb-vision, lb-guard]
+    # A document costs an injection check for each 2,800 characters of its text (one for almost
+    # every invoice, two at most: the service cuts longer text at 5,600), the extraction (lb-fast
+    # on the text, lb-vision with the picture for a photo), a second extraction call when the first
+    # reply is not the JSON asked for, and one targeted repair when a check fails. A clean
+    # document costs two calls. OCR, the arithmetic, the boxes, the duplicate check and the journal
+    # entry are the service's own code and need no model. The pipeline stops itself at five calls
+    # (lb03/limits.py), so this cap is a second line behind it.
+    maxCallsPerRun: 5
+    # 10 documents per visitor per day (the LB-03 datasheet), at up to 5 calls each. The service
+    # counts the 10 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 50
+    # About 30 custom documents a day at two to three calls each, and a pass of the golden set
+    # (43 documents; a clean one costs 2 calls, at most 5, `just eval-lb03`) when a prompt changes.
+    # The five samples are recorded and cost nothing. These are ceilings, to be rebalanced from
+    # measured use once the systems run live (docs/STACK.md, Capacity).
+    dailyCalls: 250
 
 # The services that read run traces and do nothing else: the site's server, for the Scope
 # (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
@@ -379,4 +399,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03]

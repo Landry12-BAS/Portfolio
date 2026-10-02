@@ -218,7 +218,7 @@ describe('trace readers', () => {
     const routing = loadRouting(committed, allKeys)
 
     expect([...routing.traceReaders.keys()]).toEqual(['web'])
-    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03'])
   })
 
   it('never lets a reader own a system, so no reader can make a model call', () => {
