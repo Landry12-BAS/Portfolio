@@ -873,6 +873,7 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | `flask-api` is `unhealthy`, and its log says the data isn't ready | The warehouse volume is empty or from another generator version: `compose logs flask-seed`, then `compose run --rm flask-seed python seed_warehouse.py --force` and recreate `flask-api` |
 | `node-worker` is `unhealthy` | Its heartbeat file is older than 30 seconds: the worker's event loop is stuck or it is crash-looping. `compose logs node-worker`; Redis's `acl log` shows a command its user may not run |
 | A WebSocket to LB-02 is refused with `403` | The `Origin` is not `LB_SITE_ORIGIN` (Caddy checks it); with `1009` or a drop, a frame was over 8192 bytes (`--ws-max-size`) |
+| A WebSocket to LB-02 gets `too_many_connections` and closes with `1013` | The visitor already holds four connections to this server process: two tabs, the installed app, and one the network cut that the server has not noticed yet (it goes when uvicorn's ping times out, about 40 seconds). Closing a tab frees a place; the page retries by itself |
 | `cloudflared` keeps restarting | The `TUNNEL_TOKEN` is wrong or was refreshed in Cloudflare |
 | Backups stop appearing | `journalctl -u lb-backup.service`; usually `LB_EGRESS_SYSTEMS_ALLOW` lacks the R2 host, or the R2 token changed |
 | The box is slow or killed processes | `docker stats --no-stream`, then `dmesg \| grep -i oom`: a container hit its memory limit; raise it in the Compose file and the budget at its top |
