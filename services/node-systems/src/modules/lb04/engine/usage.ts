@@ -35,11 +35,12 @@ export function limitFor(kind: UsageKind): number {
   return kind === 'contract' ? LB04_LIMITS.contractsPerVisitorPerDay : LB04_LIMITS.uploadsPerVisitorPerDay
 }
 
-/** The error for a visitor who has used a day's allowance: 429, with when it starts again. */
+/** The error for a visitor who has used a day's allowance: 429, with when it starts again, as a time (`resets_at`) and as a wait (`Retry-After`). */
 export function dailyLimit(kind: UsageKind, moment: Date): AppError {
-  const resetsAt = nextReset(moment).toISOString()
-  if (kind === 'contract') return new AppError(429, 'daily_limit', `You have had ${LB04_LIMITS.contractsPerVisitorPerDay} contracts reviewed today, which is the limit. It starts again at 00:00 UTC.`, { resetsAt })
-  return new AppError(429, 'upload_limit', `You have sent ${LB04_LIMITS.uploadsPerVisitorPerDay} files today, which is the limit. It starts again at 00:00 UTC.`, { resetsAt })
+  const reset = nextReset(moment)
+  const details = { resetsAt: reset.toISOString(), retryAfterSeconds: Math.ceil((reset.getTime() - moment.getTime()) / 1_000) }
+  if (kind === 'contract') return new AppError(429, 'daily_limit', `You have had ${LB04_LIMITS.contractsPerVisitorPerDay} contracts reviewed today, which is the limit. It starts again at 00:00 UTC.`, details)
+  return new AppError(429, 'upload_limit', `You have sent ${LB04_LIMITS.uploadsPerVisitorPerDay} files today, which is the limit. It starts again at 00:00 UTC.`, details)
 }
 
 /**

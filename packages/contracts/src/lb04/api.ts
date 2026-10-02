@@ -15,6 +15,9 @@ const sampleId = z.string().regex(/^[a-z0-9-]{1,60}$/)
 const label = z.literal(NOT_LEGAL_ADVICE)
 // The size of a PDF as base64: four characters for every three bytes, rounded up.
 const MAX_BASE64_CHARS = Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4
+// What a request may hold: the limit's base64 and a little over it, so that a file only just over the byte limit
+// is told it is too large (413, by the check that counts the decoded bytes) and not that its request has the wrong form (422).
+const MAX_REQUEST_BASE64_CHARS = MAX_BASE64_CHARS + 1_024
 
 /** A range of one page's text: `text.slice(start, end)` of the page `page` (counted from 1). The characters are the ones the server checked. */
 export const lb04CitationSchema = z.strictObject({
@@ -30,7 +33,7 @@ export const lb04CreateContractRequestSchema = z.discriminatedUnion('from', [
     from: z.literal('upload'),
     // The file's name, kept (cut to 80 characters) only to label the visitor's list. It is never used as a path.
     filename: z.string().trim().min(1).max(200),
-    contentBase64: z.string().min(8).max(MAX_BASE64_CHARS),
+    contentBase64: z.string().min(8).max(MAX_REQUEST_BASE64_CHARS),
   }),
 ])
 

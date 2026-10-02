@@ -184,8 +184,14 @@ describe('what a visitor may send', () => {
     expect(lb04CreateContractRequestSchema.safeParse({ from: 'url', url: 'https://example.com/a.pdf' }).success).toBe(false)
     expect(lb04CreateContractRequestSchema.safeParse({ from: 'sample', sampleId: 'a', extra: 1 }).success).toBe(false)
     expect(lb04CreateContractRequestSchema.safeParse({ from: 'sample', sampleId: '../etc/passwd' }).success).toBe(false)
-    const tooBig = 'A'.repeat(Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4 + 4)
+    const tooBig = 'A'.repeat(Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4 + 2_048)
     expect(lb04CreateContractRequestSchema.safeParse({ from: 'upload', filename: 'a.pdf', contentBase64: tooBig }).success).toBe(false)
+  })
+
+  it('lets a file only just over the limit through the request\'s form, so the service can tell the sender it is too large and not that the form is wrong', () => {
+    const justOver = 'A'.repeat(Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4 + 12)
+
+    expect(lb04CreateContractRequestSchema.safeParse({ from: 'upload', filename: 'a.pdf', contentBase64: justOver }).success).toBe(true)
   })
 })
 

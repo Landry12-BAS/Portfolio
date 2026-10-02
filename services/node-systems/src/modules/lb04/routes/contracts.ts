@@ -14,8 +14,8 @@ import { contractNotFound, deleteContractOf, listContractViews, readContractView
 import { errors, findingParams, idParams, TAGS } from './shared.ts'
 import type { Lb04Services, Typed } from './shared.ts'
 
-// A PDF at its size limit as base64, with room for the JSON around it.
-const UPLOAD_BODY_LIMIT = Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4 + 1_024
+// A PDF at its size limit as base64, with room for the slack the request schema allows and for the JSON around it.
+const UPLOAD_BODY_LIMIT = Math.ceil(LB04_LIMITS.maxFileBytes / 3) * 4 + 4_096
 
 /** Adds the contract routes. */
 export function registerContractRoutes(app: Typed, services: Lb04Services): void {
@@ -57,7 +57,7 @@ export function registerContractRoutes(app: Typed, services: Lb04Services): void
     schema: {
       tags: TAGS,
       summary: 'The text of every page, as the server extracted it',
-      description: 'What every citation counts its characters in: a citation is a page and a range of this text.',
+      description: 'What every citation counts its characters in: a citation is a page and a range of this text. 409 `not_ready` while the review has not got as far as reading the file, and `review_failed` when it failed.',
       params: idParams,
       response: { 200: lb04PagesViewSchema, ...errors.unauthorized, ...errors.missing, ...errors.notReady },
     },
@@ -67,7 +67,7 @@ export function registerContractRoutes(app: Typed, services: Lb04Services): void
     schema: {
       tags: TAGS,
       summary: 'The PDF itself, for the viewer',
-      description: 'As base64 inside JSON, because the site\'s server forwards nothing else.',
+      description: 'As base64 inside JSON, because the site\'s server forwards nothing else. 409 `review_failed` when the review failed, which deletes the file at once.',
       params: idParams,
       response: { 200: lb04FileViewSchema, ...errors.unauthorized, ...errors.missing, ...errors.notReady },
     },
@@ -77,7 +77,7 @@ export function registerContractRoutes(app: Typed, services: Lb04Services): void
     schema: {
       tags: TAGS,
       summary: 'The finished review',
-      description: 'Every risk finding quotes the contract, and the quote was checked against the contract\'s text by the server. A missing clause has no quote, and says what was searched for. Not legal advice.',
+      description: 'Every risk finding quotes the contract, and the quote was checked against the contract\'s text by the server. A missing clause has no quote, and says what was searched for. Not legal advice. 409 `not_ready` while the review runs, and `review_failed` when it failed.',
       params: idParams,
       response: { 200: lb04ReportSchema, ...errors.unauthorized, ...errors.missing, ...errors.notReady },
     },

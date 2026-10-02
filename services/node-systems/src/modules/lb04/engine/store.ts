@@ -48,6 +48,16 @@ export function notReady(): AppError {
   return new AppError(409, 'not_ready', 'The review of this contract is not finished yet.')
 }
 
+/** The error for a contract whose review failed: it ended without a report, a text or a file, and there is nothing to show of it. */
+export function reviewFailed(): AppError {
+  return new AppError(409, 'review_failed', 'The review of this contract failed, so there is nothing to show of it.')
+}
+
+/** Picks the error for a contract that has nothing to show: its review failed, or has not finished yet. */
+function nothingToShow(state: Lb04State): AppError {
+  return state === 'failed' ? reviewFailed() : notReady()
+}
+
 /** A contract as it is stored, with what a route or the worker needs of it. */
 interface ContractRow {
   id: string
@@ -177,7 +187,7 @@ export async function readPagesView(db: Executor, sessionKey: string, id: string
   const [owned] = await selectContract(db, id, moment, sessionKey)
   if (!owned) throw contractNotFound()
   const rows = await db.select({ page: contractPages.page, text: contractPages.text }).from(contractPages).where(eq(contractPages.contractId, id)).orderBy(asc(contractPages.page))
-  if (rows.length === 0) throw notReady()
+  if (rows.length === 0) throw nothingToShow(typed(owned).state)
   return { pages: rows }
 }
 
@@ -186,7 +196,7 @@ export async function readFileView(db: Executor, sessionKey: string, id: string,
   const [owned] = await selectContract(db, id, moment, sessionKey)
   if (!owned) throw contractNotFound()
   const [file] = await db.select({ content: contractFiles.content, size: contractFiles.size }).from(contractFiles).where(eq(contractFiles.contractId, id)).limit(1)
-  if (!file) throw notReady()
+  if (!file) throw nothingToShow(typed(owned).state)
   return { contentType: 'application/pdf', size: file.size, base64: file.content.toString('base64') }
 }
 
@@ -195,7 +205,7 @@ export async function readReportView(db: Executor, sessionKey: string, id: strin
   const [owned] = await selectContract(db, id, moment, sessionKey)
   if (!owned) throw contractNotFound()
   const [stored] = await db.select({ report: reports.report }).from(reports).where(eq(reports.contractId, id)).limit(1)
-  if (!stored) throw notReady()
+  if (!stored) throw nothingToShow(typed(owned).state)
   const asked = await db.select({ redline: redlines.redline }).from(redlines).where(eq(redlines.contractId, id)).orderBy(asc(redlines.createdAt))
   return { ...stored.report, redlines: asked.map(entry => entry.redline) }
 }

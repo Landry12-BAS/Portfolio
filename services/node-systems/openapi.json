@@ -1123,7 +1123,7 @@
             "additionalProperties": false,
             "properties": {
               "contentBase64": {
-                "maxLength": 2796204,
+                "maxLength": 2797228,
                 "minLength": 8,
                 "type": "string"
               },
@@ -1170,7 +1170,7 @@
             "additionalProperties": false,
             "properties": {
               "contentBase64": {
-                "maxLength": 2796204,
+                "maxLength": 2797228,
                 "minLength": 8,
                 "type": "string"
               },
@@ -7020,7 +7020,7 @@
     },
     "/api/lb04/contracts/{id}/file": {
       "get": {
-        "description": "As base64 inside JSON, because the site's server forwards nothing else.",
+        "description": "As base64 inside JSON, because the site's server forwards nothing else. 409 `review_failed` when the review failed, which deletes the file at once.",
         "parameters": [
           {
             "in": "path",
@@ -7185,7 +7185,7 @@
     },
     "/api/lb04/contracts/{id}/pages": {
       "get": {
-        "description": "What every citation counts its characters in: a citation is a page and a range of this text.",
+        "description": "What every citation counts its characters in: a citation is a page and a range of this text. 409 `not_ready` while the review has not got as far as reading the file, and `review_failed` when it failed.",
         "parameters": [
           {
             "in": "path",
@@ -7248,7 +7248,7 @@
     },
     "/api/lb04/contracts/{id}/report": {
       "get": {
-        "description": "Every risk finding quotes the contract, and the quote was checked against the contract's text by the server. A missing clause has no quote, and says what was searched for. Not legal advice.",
+        "description": "Every risk finding quotes the contract, and the quote was checked against the contract's text by the server. A missing clause has no quote, and says what was searched for. Not legal advice. 409 `not_ready` while the review runs, and `review_failed` when it failed.",
         "parameters": [
           {
             "in": "path",
