@@ -100,14 +100,17 @@ describe('the real queue', () => {
   })
 
   it('makes one job for one contract however many times it is added', async () => {
+    // Jobs are counted by state, which the service's own Redis user may do (it has no right to list a queue's jobs).
+    const jobsInQueue = async (): Promise<number> => Object.values(await inspector.getJobCounts('waiting', 'active', 'delayed', 'completed', 'failed')).reduce((total, count) => total + count, 0)
+    const before = await jobsInQueue()
     const id = await startWith(referenceReview('wholesale-supply').scripts.models)
 
     await scheduler.enqueue(id)
     await scheduler.enqueue(id)
     await until(id, 'done')
 
-    const jobs = await inspector.getJobs(['waiting', 'active', 'delayed', 'completed', 'failed'])
-    expect(jobs.filter(job => job.id === id)).toHaveLength(1)
+    expect(await jobsInQueue() - before).toBe(1)
+    expect(await inspector.getJob(id)).toBeDefined()
   })
 
   it('waits as long as the gateway asked before the next attempt, when that is longer than its own backoff', async () => {
@@ -274,10 +277,12 @@ describe('the sweep on its own', () => {
     const second = await startMaintenance(harness.deps, redis, prefix)
     try {
       const queue = new Queue('lb04-maintenance', { connection: redis, prefix: bullPrefix(prefix) })
-      const schedulers = await queue.getJobSchedulers()
+      const count = await queue.getJobSchedulersCount()
+      const sweep = await queue.getJobScheduler('sweep')
       await queue.close()
 
-      expect(schedulers.filter(entry => entry.key === 'sweep')).toHaveLength(1)
+      expect(count).toBe(1)
+      expect(sweep?.every).toBe(harness.deps.config.sweepEveryMs)
     }
     finally {
       await first.close()
