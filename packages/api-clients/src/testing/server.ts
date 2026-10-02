@@ -4,7 +4,8 @@
 // answers LB-01 like the real one (a ticket's pipeline moves on as it is polled, drafts cite the
 // real policies), answers every other operation with an example that fits its schema, checks
 // every visitor token with the real verifier, and checks its own answers against the documents,
-// so it cannot quietly drift from them.
+// so it cannot quietly drift from them. Besides those operations it has one route of its own,
+// `GET /__mock`, which says `{"mock": true}`, so the sample recorder can tell it from a real back end.
 //
 // It is a test fixture and listens on the loopback address only. For tests that need a back
 // end misbehaving, `script()` queues an answer (a status, a body, a delay, a dropped connection,
@@ -16,6 +17,7 @@ import type { AddressInfo } from 'node:net'
 import { createVisitorVerifier, VisitorTokenError } from '@lb/common/visitors'
 import type { Visitor, VisitorVerifier } from '@lb/common/visitors'
 
+import { MOCK_IDENTITY_PATH } from '../mock-identity.ts'
 import { MockGateway } from './gateway.ts'
 import { Lb01Mock, errorAnswer } from './lb01.ts'
 import type { Answer } from './lb01.ts'
@@ -212,6 +214,10 @@ class MockSite {
 
     const script = this.#takeScript(method, url.pathname)
     if (script) return this.#play(script, request, response)
+
+    // The one thing no real back end does: say what it is. The recorder asks, so a recording made
+    // on this mock can never be labelled as one made on a real back end (apps/web/scripts/record).
+    if (url.pathname === MOCK_IDENTITY_PATH && method === 'GET') return this.#send(response, 200, { mock: true })
 
     const spans = /^\/v1\/runs\/([^/]+)\/spans$/.exec(url.pathname)
     if (spans && method === 'GET') {

@@ -11,6 +11,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./routes": "./src/routes.ts",
+    "./mock-identity": "./src/mock-identity.ts",
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {

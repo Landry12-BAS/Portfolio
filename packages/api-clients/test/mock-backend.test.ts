@@ -10,7 +10,7 @@ import { generateKeyPairSync } from 'node:crypto'
 import { mintServiceToken } from '@lb/common/tokens'
 import { mintVisitorToken } from '@lb/common/visitors'
 
-import { OpenApiDocuments, readSeed, startMockBackend } from '../src/testing/index.ts'
+import { MOCK_IDENTITY_PATH, OpenApiDocuments, readSeed, startMockBackend } from '../src/testing/index.ts'
 import type { MockBackend } from '../src/testing/index.ts'
 
 const site = generateKeyPairSync('ed25519')
@@ -89,6 +89,14 @@ describe('the operations it serves', () => {
     expect((await call('GET', '/api/lb01/nothing')).status).toBe(404)
     expect((await call('DELETE', '/api/lb01/customers', { system: 'lb-01' })).status).toBe(404)
     expect((await call('GET', '/admin')).status).toBe(404)
+  })
+
+  it('says it is the mock at the one address of its own, so a recorder can tell it from a real back end', async () => {
+    const answer = await call('GET', MOCK_IDENTITY_PATH)
+
+    expect(answer.status).toBe(200)
+    expect(answer.json).toEqual({ mock: true })
+    expect((await call('POST', MOCK_IDENTITY_PATH)).status).toBe(404)
   })
 
   it('refuses a body its document\'s schema refuses, naming the fields and not the values', async () => {

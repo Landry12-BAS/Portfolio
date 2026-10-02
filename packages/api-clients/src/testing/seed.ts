@@ -3,7 +3,7 @@
 // curated sample tickets of the golden set. So the mock's customers, sources and tickets are the
 // real ones, and nothing about them is written out a second time.
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 
 import { parse } from 'yaml'
 
@@ -65,7 +65,7 @@ export interface Seed {
 }
 
 // The repository's root, from this file: packages/api-clients/src/testing/.
-const REPOSITORY_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
+const REPOSITORY_ROOT = `${resolve(import.meta.dirname, '../../../..')}/`
 
 /** A parsed YAML document, before it is looked at. */
 type Loose = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any

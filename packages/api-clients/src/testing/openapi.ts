@@ -5,7 +5,7 @@
 // document drops stops being served, and a handler whose answer stops fitting its schema
 // fails a test.
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 
 import { Ajv2020 } from 'ajv/dist/2020.js'
 import type { ValidateFunction } from 'ajv/dist/2020.js'
@@ -53,7 +53,7 @@ const SERVICES: readonly { service: ServiceName, file: string }[] = [
   { service: 'node', file: 'services/node-systems/openapi.json' },
 ]
 // The repository's root, from this file: packages/api-clients/src/testing/.
-const REPOSITORY_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
+const REPOSITORY_ROOT = `${resolve(import.meta.dirname, '../../../..')}/`
 // The HTTP methods an operation may be under in a document.
 const METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options']
 // How deep an example goes into nested objects before it stops, so a recursive schema ends.
