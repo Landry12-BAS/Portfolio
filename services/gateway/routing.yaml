@@ -292,6 +292,92 @@ aliases:
       - groq/llama-prompt-guard-2-86m
       - groq/llama-prompt-guard-2-22m
 
+  # Eval Lab's pinned aliases (LB-10, docs/STACK.md). An eval is about one model, so each of these has a
+  # chain of one: no fallback, and a call that fails is a failed call, never a different model's answer.
+  # There is one for every model on the lb-fast, lb-tools and lb-reason chains that LB-10 can score, so
+  # each fallback can be measured on its own. Only the flask-systems service may use them (the loader
+  # refuses a system of another service that lists one), through LB-10. The two OpenRouter aliases are
+  # synthetic only: that provider may train on inputs, so a visitor's prompt can never reach it, and
+  # they serve the curated nightly runs and CI. The sizes are lb-tools': a prompt plus its answer stays
+  # under Groq's 8K tokens a minute.
+  lb-eval-groq-120b:
+    description: Eval Lab, Groq gpt-oss-120b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/gpt-oss-120b
+
+  lb-eval-groq-20b:
+    description: Eval Lab, Groq gpt-oss-20b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/gpt-oss-20b
+
+  # A Groq preview model: it can be withdrawn at short notice, and its score is only as good as that.
+  lb-eval-groq-qwen:
+    description: Eval Lab, Groq qwen3.8-27b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/qwen3.8-27b
+
+  lb-eval-cf-120b:
+    description: Eval Lab, Workers AI gpt-oss-120b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/gpt-oss-120b
+
+  lb-eval-cf-20b:
+    description: Eval Lab, Workers AI gpt-oss-20b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/gpt-oss-20b
+
+  lb-eval-cf-glm:
+    description: Eval Lab, Workers AI glm-4.7-flash, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/glm-4.7-flash
+
+  lb-eval-or-qwen:
+    description: Eval Lab, OpenRouter qwen3.8-27b, pinned, synthetic content only
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    # Free OpenRouter models queue: they are given longer than the Groq and Workers AI ones.
+    timeouts: { responseMs: 60000 }
+    services: [flask-systems]
+    syntheticOnly: true
+    chain:
+      - openrouter/qwen3.8-27b
+
+  lb-eval-or-nemotron:
+    description: Eval Lab, OpenRouter nemotron-3-super, pinned, synthetic content only
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    timeouts: { responseMs: 60000 }
+    services: [flask-systems]
+    syntheticOnly: true
+    chain:
+      - openrouter/nemotron-3-super
+
 # The systems allowed to spend model calls, the service that calls for each, and
 # their quotas. A system joins this list in the same change that builds it
 # (docs/PLAYBOOK.md, Building one system, step 4).
@@ -370,6 +456,27 @@ systems:
     # ships (docs/STACK.md, Capacity).
     dailyCalls: 160
 
+  lb-10:
+    name: Eval Lab
+    service: flask-systems
+    # The eight pinned eval aliases, and lb-judge for the nightly LLM judge. Visitor runs may only reach
+    # the Groq and Workers AI ones: the service offers no other, and the OpenRouter ones refuse visitor
+    # content here as well.
+    aliases: [lb-eval-groq-120b, lb-eval-groq-20b, lb-eval-groq-qwen, lb-eval-cf-120b, lb-eval-cf-20b, lb-eval-cf-glm, lb-eval-or-qwen, lb-eval-or-nemotron, lb-judge]
+    # A visitor run is the 10 cases of the sample on the edited prompt, once for each of up to two
+    # providers (20 calls), plus the production prompt's 10 cases for each provider whose baseline is
+    # not cached yet (up to 20 more, once for everybody). A malformed answer is graded as it is and never
+    # repaired, so no call is spent twice. The cap is exactly that worst case.
+    maxCallsPerRun: 40
+    # One run per visitor per day (the LB-10 datasheet), at up to 40 calls. The service counts the run
+    # itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 40
+    # At most 12 visitor runs a day at about 20 calls (240), the nightly runs on OpenRouter (two aliases,
+    # five packs, ten cases: 100), CI's gate (five packs, twenty cases: 100) and the judge (about 60).
+    # Groq and Workers AI carry the visitors; the budgets of their models are the hard cap, and this is
+    # a ceiling to be rebalanced from measured use (docs/STACK.md, Capacity).
+    dailyCalls: 600
+
 # The services that read run traces and do nothing else: the site's server, for the Scope
 # (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
 # owns no system above, so the model routes refuse it (system_not_allowed); a service that
@@ -379,4 +486,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-10]

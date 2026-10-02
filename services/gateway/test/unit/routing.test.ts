@@ -48,6 +48,8 @@ describe('the committed routing table', () => {
     expect(workers?.runUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/run')
     expect([...routing.aliases.keys()]).toEqual([
       'lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed', 'lb-rerank', 'lb-guard',
+      'lb-eval-groq-120b', 'lb-eval-groq-20b', 'lb-eval-groq-qwen', 'lb-eval-cf-120b', 'lb-eval-cf-20b', 'lb-eval-cf-glm',
+      'lb-eval-or-qwen', 'lb-eval-or-nemotron',
     ])
   })
 
@@ -81,8 +83,9 @@ describe('the committed routing table', () => {
     }
   })
 
-  it('gives visitor content a production route that never trains on it, on every alias', () => {
+  it('gives visitor content a production route that never trains on it, on every alias that takes it', () => {
     for (const alias of routing.aliases.values()) {
+      if (alias.syntheticOnly) continue
       const plan = planChain(alias, 'visitor', 'production', new Set([alias.kind]))
       expect(plan.candidates.length).toBeGreaterThan(0)
       for (const model of plan.candidates) {
@@ -93,7 +96,7 @@ describe('the committed routing table', () => {
   })
 
   it('keeps interactive aliases inside Groq\'s tokens-per-minute limit', () => {
-    for (const name of ['lb-fast', 'lb-tools', 'lb-reason']) {
+    for (const name of ['lb-fast', 'lb-tools', 'lb-reason', 'lb-eval-groq-120b', 'lb-eval-groq-20b', 'lb-eval-groq-qwen']) {
       const alias = routing.aliases.get(name)!
       expect(alias.maxInputTokens + alias.maxOutputTokens).toBeLessThanOrEqual(8000 * routing.budgets.minuteCeiling)
     }
@@ -205,6 +208,33 @@ describe('mistakes the loader catches', () => {
     expect(issues).toContain('providers.workers-ai.runUrl must use https')
   })
 
+  it('refuses an eval alias with a fallback, since its score would no longer be about one model', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.aliases['lb-eval-groq-20b'].chain.push('workers-ai/gpt-oss-20b')
+    }))
+    expect(issues).toEqual(['aliases.lb-eval-groq-20b: eval aliases are pinned to one model, so a score is about that model'])
+  })
+
+  it('refuses a system of another service that lists an eval alias', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.systems['lb-01'].aliases.push('lb-eval-groq-20b')
+    }))
+    expect(issues).toEqual(['systems.lb-01: lb-eval-groq-20b is only for the flask-systems service'])
+  })
+
+  it('refuses an alias that names a service no system belongs to, since a typo would switch it off for everyone', () => {
+    const issues = issuesOf(edited((doc) => {
+      doc.aliases['lb-eval-groq-20b'].services = ['flask-system']
+    }))
+    expect(issues).toContain('aliases.lb-eval-groq-20b: no system belongs to the flask-system service')
+  })
+
+  it('waives the visitor rule only for an alias that says it is synthetic only', () => {
+    expect(issuesOf(edited((doc) => {
+      delete doc.aliases['lb-eval-or-qwen'].syntheticOnly
+    }))).toEqual(['aliases.lb-eval-or-qwen: no model can take visitor content in production'])
+  })
+
   it('refuses a visitor quota above the system\'s daily quota', () => {
     const issues = issuesOf(edited((doc) => {
       doc.systems['lb-01'].sessionDailyCalls = 1000
@@ -214,11 +244,11 @@ describe('mistakes the loader catches', () => {
 })
 
 describe('trace readers', () => {
-  it('lets the site\'s server read the traces of the four demo systems, and no other service', () => {
+  it('lets the site\'s server read the traces of the demo systems, and no other service', () => {
     const routing = loadRouting(committed, allKeys)
 
     expect([...routing.traceReaders.keys()]).toEqual(['web'])
-    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-10'])
   })
 
   it('never lets a reader own a system, so no reader can make a model call', () => {
@@ -259,6 +289,63 @@ describe('trace readers', () => {
     expect(issuesOf(edited((doc) => {
       doc.traceReaders.web.canCallModels = true
     }))).toEqual([expect.stringContaining('traceReaders.web')])
+  })
+})
+
+describe('Eval Lab\'s pinned aliases', () => {
+  const routing = loadRouting(committed, allKeys)
+  const pinned = [...routing.aliases.values()].filter(alias => alias.name.startsWith('lb-eval-'))
+
+  it('has one for every model on the routes LB-10 scores, each on a chain of one', () => {
+    expect(pinned.map(alias => alias.chain.map(model => model.ref))).toEqual([
+      ['groq/gpt-oss-120b'], ['groq/gpt-oss-20b'], ['groq/qwen3.8-27b'],
+      ['workers-ai/gpt-oss-120b'], ['workers-ai/gpt-oss-20b'], ['workers-ai/glm-4.7-flash'],
+      ['openrouter/qwen3.8-27b'], ['openrouter/nemotron-3-super'],
+    ])
+    for (const route of ['lb-fast', 'lb-tools', 'lb-reason']) {
+      const served = routing.aliases.get(route)!.chain.filter(model => model.provider.terms === 'production')
+      for (const model of served) {
+        expect(pinned.some(alias => alias.chain[0] === model), `${model.ref} has no pinned alias`).toBe(true)
+      }
+    }
+  })
+
+  it('is for the flask-systems service only, and LB-10 is the only system that lists any', () => {
+    for (const alias of pinned) expect(alias.services).toEqual(['flask-systems'])
+    const listing = [...routing.systems.values()].filter(system => system.aliases.some(name => name.startsWith('lb-eval-')))
+    expect(listing.map(system => [system.key, system.service])).toEqual([['lb-10', 'flask-systems']])
+  })
+
+  it('refuses visitor content on the OpenRouter aliases, and takes it on the Groq and Workers AI ones', () => {
+    for (const alias of pinned) {
+      const plan = planChain(alias, 'visitor', 'production', chat)
+      const trains = alias.chain[0]!.provider.trainsOnInputs
+      expect(alias.syntheticOnly).toBe(trains)
+      expect(plan.candidates.length).toBe(trains ? 0 : 1)
+      if (trains) expect(plan.excluded.map(entry => entry.reason)).toEqual(['visitor-data'])
+    }
+  })
+
+  it('serves synthetic content on every one of them, which is what the nightly runs and CI send', () => {
+    for (const alias of pinned) {
+      expect(planChain(alias, 'synthetic', 'production', chat).candidates.map(model => model.ref)).toEqual([alias.chain[0]!.ref])
+    }
+  })
+
+  it('refuses visitor content on a synthetic-only alias even when its model does not train', () => {
+    const strict = loadRouting(edited((doc) => {
+      doc.aliases['lb-eval-groq-20b'].syntheticOnly = true
+    }), allKeys)
+    const plan = planChain(strict.aliases.get('lb-eval-groq-20b')!, 'visitor', 'production', chat)
+    expect(plan.candidates).toEqual([])
+    expect(plan.excluded.map(entry => entry.reason)).toEqual(['visitor-data'])
+  })
+
+  it('sizes LB-10\'s budget for a visitor run: two providers, ten cases, and a production baseline for each', () => {
+    const lab = routing.systems.get('lb-10')!
+    expect(lab.maxCallsPerRun).toBe(2 * 10 + 2 * 10)
+    expect(lab.sessionDailyCalls).toBe(lab.maxCallsPerRun)
+    expect(lab.dailyCalls).toBeGreaterThanOrEqual(12 * 20)
   })
 })
 

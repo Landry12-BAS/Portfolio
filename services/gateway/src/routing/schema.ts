@@ -89,6 +89,13 @@ const alias = z.strictObject({
   // Guards only: the injection probability, from 0 to 1, at which a text is flagged.
   threshold: z.number().gt(0).max(1).optional(),
   timeouts: timeouts.partial().optional(),
+  // The only services whose systems may list this alias. Absent means any service. Eval Lab's pinned
+  // aliases name `flask-systems`, so no other service can ever be given one.
+  services: z.array(slug).min(1).optional(),
+  // The alias takes the site's own synthetic content and nothing else: a call that carries a visitor's
+  // content is refused, whatever the models on the chain do with inputs. A pinned alias on a provider
+  // that may train on inputs sets it, so that provider can never see what a visitor wrote.
+  syntheticOnly: z.boolean().optional(),
   chain: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9.-]+$/, 'provider/model')).min(1),
 })
 

@@ -129,6 +129,7 @@ Mistral's free mode (trains on inputs unless you opt out).
 | `lb-stt` | Fast mode (LB-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
 | `lb-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Groq llama-prompt-guard-2-22m. Both are Groq previews, and nothing else checks for injection, so the guard fails closed |
 | `lb-judge` | Nightly evals (LB-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
+| `lb-eval-*` | Eval Lab's pinned aliases (LB-10, flask-systems only) | One model each, no fallback: Groq gpt-oss-120b, gpt-oss-20b and qwen3.8-27b; Workers AI gpt-oss-120b, gpt-oss-20b and glm-4.7-flash; OpenRouter qwen3.8-27b and nemotron-3-super (synthetic only: a visitor's prompt never reaches it) |
 
 These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
 set in Eval Lab before it serves visitors. The exact provider model IDs, context sizes,

@@ -51,6 +51,10 @@ export interface Alias {
   // Guards only: the injection probability at which a text is flagged.
   threshold: number | undefined
   timeouts: Timeouts
+  // The services whose systems may list the alias, or undefined when any service may.
+  services: readonly string[] | undefined
+  // True when the alias takes synthetic content only: visitor content is refused on it.
+  syntheticOnly: boolean
   chain: readonly Model[]
 }
 
@@ -97,6 +101,9 @@ type Env = Readonly<Record<string, string | undefined>>
 
 // ${NAME} in a base URL, filled in from the environment.
 const placeholder = /\$\{([A-Z][A-Z0-9_]*)\}/g
+
+// Eval Lab's pinned aliases (LB-10) all start with this, and each has exactly one model on its chain.
+const EVAL_ALIAS_PREFIX = 'lb-eval-'
 
 /**
  * Tells whether a provider URL is safe to send an API key to. Provider traffic carries
@@ -249,6 +256,11 @@ export function loadRouting(text: string, env: Env): Routing {
     if (config.kind === 'embedding' && config.chain.length !== 1) {
       issues.push(`aliases.${name}: embedding aliases are pinned to one model, since vectors from different models don't mix`)
     }
+    // Eval Lab's pinned aliases carry one model each: a score has to be about one model, and a fallback
+    // would quietly make it about two.
+    if (name.startsWith(EVAL_ALIAS_PREFIX) && config.chain.length !== 1) {
+      issues.push(`aliases.${name}: eval aliases are pinned to one model, so a score is about that model`)
+    }
     if (config.kind === 'guard' && config.threshold === undefined) {
       issues.push(`aliases.${name}: guard aliases need a threshold`)
     }
@@ -273,8 +285,10 @@ export function loadRouting(text: string, env: Env): Routing {
     }
 
     // Visitor content may only reach production providers that don't train on inputs.
-    // Every alias needs at least one, so no route can fail for visitors by design.
-    if (chain.length > 0 && !chain.some(model => !model.provider.trainsOnInputs && model.provider.terms === 'production')) {
+    // Every alias needs at least one, so no route can fail for visitors by design. An alias
+    // that says it is synthetic only is the exception: it is never offered to visitors.
+    const takesVisitors = config.syntheticOnly !== true
+    if (takesVisitors && chain.length > 0 && !chain.some(model => !model.provider.trainsOnInputs && model.provider.terms === 'production')) {
       issues.push(`aliases.${name}: no model can take visitor content in production`)
     }
 
@@ -286,6 +300,8 @@ export function loadRouting(text: string, env: Env): Routing {
       maxOutputTokens,
       threshold: config.threshold,
       timeouts: { ...file.timeouts, ...config.timeouts },
+      services: config.services,
+      syntheticOnly: config.syntheticOnly === true,
       chain,
     })
   }
@@ -294,12 +310,26 @@ export function loadRouting(text: string, env: Env): Routing {
   const systems = new Map<string, System>()
   for (const [key, config] of Object.entries(file.systems)) {
     for (const aliasName of config.aliases) {
-      if (!aliases.has(aliasName)) issues.push(`systems.${key}: unknown alias ${aliasName}`)
+      const alias = aliases.get(aliasName)
+      if (!alias) {
+        issues.push(`systems.${key}: unknown alias ${aliasName}`)
+        continue
+      }
+      if (alias.services && !alias.services.includes(config.service)) {
+        issues.push(`systems.${key}: ${aliasName} is only for the ${alias.services.join(', ')} service`)
+      }
     }
     if (config.sessionDailyCalls > config.dailyCalls) {
       issues.push(`systems.${key}: sessionDailyCalls is above dailyCalls`)
     }
     systems.set(key, { ...config, key })
+  }
+
+  const owners = new Set([...systems.values()].map(system => system.service))
+  for (const alias of aliases.values()) {
+    for (const service of alias.services ?? []) {
+      if (!owners.has(service)) issues.push(`aliases.${alias.name}: no system belongs to the ${service} service`)
+    }
   }
 
   const traceReaders = checkTraceReaders(file.traceReaders, systems, issues)

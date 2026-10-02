@@ -15,7 +15,7 @@ routing. Threat model: [`docs/SECURITY.md`](../../docs/SECURITY.md), sections 4 
 | API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
 | Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers). The Scope's route: `GET /v1/runs/{runId}/spans` (a run's trace, for the site's server only) |
 | Providers | Groq, Cloudflare Workers AI, OpenRouter; NVIDIA in the `dev` profile only |
-| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard` |
+| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard`, and Eval Lab's eight pinned `lb-eval-*` ([below](#pinned-eval-aliases)) |
 | Routing table | [`routing.yaml`](routing.yaml), validated in CI by `pnpm check` |
 | Callers | Services with an Ed25519-signed token, 10 minutes at most |
 | State | Redis: budgets and quotas (atomic Lua), run spans (streams) |
@@ -94,6 +94,25 @@ each provider.
   the whole window is refused. When no model gives a readable verdict, the call fails
   (502, 503 or 504), and the caller must treat the text as unchecked: skip the steps
   that can call tools, or serve a replay.
+
+## Pinned eval aliases
+
+Eval Lab (LB-10) has to say how one prompt does on one model, which a virtual alias hides behind its
+fallbacks. So `routing.yaml` also holds eight `lb-eval-*` aliases, one for every model on the `lb-fast`,
+`lb-tools` and `lb-reason` chains that Eval Lab can score: `lb-eval-groq-120b`, `-groq-20b`, `-groq-qwen`,
+`-cf-120b`, `-cf-20b`, `-cf-glm`, `-or-qwen` and `-or-nemotron`.
+
+- **One model, no fallback.** The loader refuses an `lb-eval-*` alias with more than one model on its
+  chain. A call that fails is a failed call, and a score is about the model it names.
+- **For one service.** An alias may say which `services` may list it, and the loader refuses a system of
+  any other service that does. These name `flask-systems`, and only LB-10 lists them. LB-05, the other
+  system of that service, cannot call them (`alias_not_allowed`).
+- **Never a visitor's content on the provider that trains.** An alias marked `syntheticOnly` turns visitor
+  content away before any provider is asked (`unsupported_request`), whatever its model does with inputs.
+  The two OpenRouter aliases are marked, so a visitor's prompt can never reach OpenRouter: they serve the
+  curated nightly runs and CI. The Groq and Workers AI aliases take visitor content, as any alias does.
+- **Sized like `lb-tools`.** 4,000 tokens in and 2,048 out, which keeps a call inside Groq's 8,000 tokens a
+  minute. A prompt that is bigger is refused (`input_too_large`), not cut.
 
 ## Reading a run's trace
 
