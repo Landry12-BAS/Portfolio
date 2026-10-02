@@ -227,7 +227,8 @@ Short notes, as the playbook asks (step 8).
   customer's order, and another visitor's ticket, are indistinguishable from missing
   ones. Spans hold labels and counts, never a visitor's words. Tickets are deleted 24
   hours after filing.
-- **Denial of service.** 20 tickets per visitor a day; the gateway caps calls per run
+- **Denial of service.** 20 tickets per visitor a day, counted under a per-visitor lock so that
+  simultaneous requests cannot pass it; the gateway caps calls per run
   (7), per visitor (140 a day) and for LB-01 (350 a day). Tickets are capped at 2,000
   characters in the API and in the database, and search reads at most 64 words.
 - **Privilege escalation.** No draft is sent without a person. The claim check marks
@@ -242,8 +243,6 @@ Known gaps, measured or stated rather than hidden:
   approves still stand behind it.
 - Names and street addresses aren't redacted: no pattern finds them reliably. Only
   providers that never train on inputs read visitor tickets.
-- The daily ticket limit is counted when a ticket is filed, so simultaneous requests
-  can pass it by a few; the gateway's call quotas are the hard limit.
 - Until the vectors are recorded, search runs on keywords, and Czech tickets depend on
   the classifier's English query.
 
@@ -271,7 +270,8 @@ Short notes, as the playbook asks (step 8).
   otherwise. The confirmation is a record, never sent. Conversations, holds and bookings
   are deleted 24 hours after they started.
 - **Denial of service.** 30 messages and 64 gateway calls a conversation, counted by the
-  database in one statement each; 10 conversations a visitor a day; 500 characters a
+  database in one statement each; 10 conversations a visitor a day, counted under the same
+  per-visitor lock as LB-01's tickets (`core/locks.py`); 500 characters a
   message and 4 KB a frame; one turn at a time per connection and per conversation; 10
   seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
   adds 68 calls a run, 128 a visitor a day and 425 a day. Each turn holds a worker thread
@@ -299,8 +299,6 @@ Known gaps, stated rather than hidden:
 - Calendar events are best effort: if Redis is down, a committed booking stays committed and
   the next snapshot is right, but a tab misses the live change. A client should load the
   snapshot again after it reconnects.
-- The daily conversation limit is counted when a conversation starts, so simultaneous hellos
-  can pass it by a few; the gateway's quotas are the hard limit.
 - Not run live: the golden eval, the measured calls per booking, and recorded samples.
 
 ## Operating notes for LB-02

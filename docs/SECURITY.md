@@ -308,9 +308,10 @@ real Redis; `infra/caddy` (`infra/caddy/test.sh`, all checks pass) and the Compo
 
 - **LB-01's 20-tickets-a-day limit could be raced.** The count and the save were two steps, so a
   verified visitor who sent eight requests at once had all eight accepted (27 tickets in the test).
-  Each extra ticket is a row and a queued pipeline run; only the gateway's per-session call cap
-  limited the model spend. One visitor's tickets now take turns behind a Postgres advisory lock
-  (`core/locks.py`).
+  The service's README called this a gap that simultaneous requests pass "by a few"; the excess is
+  as many as are sent at once. Each extra ticket is a row and a queued pipeline run, and only the
+  gateway's per-session call cap limited the model spend. One visitor's tickets now take turns behind
+  a Postgres advisory lock (`core/locks.py`), and the README no longer lists the gap.
 - **LB-02's 10-conversations-a-day limit had the same flaw** over the WebSocket (12 of 12 starts
   accepted), and each conversation brings 30 messages and 64 model calls. Same fix.
 - **`/.well-known/security.txt`, which section 8 promises, did not exist** (the path answered the
