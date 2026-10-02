@@ -99,6 +99,36 @@ describe('LB-04\'s entry in routing.yaml', () => {
   })
 })
 
+describe('the routing table the gateway tests run on', () => {
+  // The miniature table the tests that start the real gateway load (test/support/routing.lb04.yaml): the real aliases' limits and the real quotas, on one fake provider.
+  const miniature = loadRouting(readFileSync(new URL('../support/routing.lb04.yaml', import.meta.url), 'utf8'), { ALPHA_URL: 'http://127.0.0.1:1', ALPHA_KEY: 'k' })
+  const miniatureSystem = miniature.systems.get('lb-04')
+
+  it('has LB-04\'s quotas as the real table has them, so a review that is too big meets the same refusal in a test as it would in production', () => {
+    expect(miniatureSystem).toMatchObject({ service: 'node-systems', maxCallsPerRun: system?.maxCallsPerRun, sessionDailyCalls: system?.sessionDailyCalls, dailyCalls: system?.dailyCalls })
+    expect([...(miniatureSystem?.aliases ?? [])].sort()).toEqual([...(system?.aliases ?? [])].sort())
+  })
+
+  it.each([ALIASES.long, ALIASES.reason, ALIASES.fast, 'lb-guard'])('has %s with the real alias\'s kind and limits', (name) => {
+    const real = routing.aliases.get(name)
+    const small = miniature.aliases.get(name)
+
+    expect(small).toBeDefined()
+    expect(small?.kind).toBe(real?.kind)
+    expect(small?.maxInputTokens).toBe(real?.maxInputTokens)
+    expect(small?.maxOutputTokens).toBe(real?.maxOutputTokens)
+    expect(small?.threshold).toBe(real?.threshold)
+  })
+
+  it('lets the site\'s server read LB-04\'s traces and grants no reader more than the real table does', () => {
+    expect(miniature.traceReaders.get('web')?.systems.has('lb-04')).toBe(true)
+    for (const [service, reader] of miniature.traceReaders) {
+      const granted = routing.traceReaders.get(service)?.systems
+      expect([...reader.systems].every(key => granted?.has(key))).toBe(true)
+    }
+  })
+})
+
 describe('the aliases LB-04 uses', () => {
   it.each([ALIASES.long, ALIASES.reason, ALIASES.fast])('%s lets the model write as long an answer as the service asks for', (alias) => {
     const key = (Object.entries(ALIASES).find(([, value]) => value === alias)?.[0] ?? 'long') as keyof typeof MAX_OUTPUT_TOKENS

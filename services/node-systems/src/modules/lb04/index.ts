@@ -36,8 +36,8 @@ function seedDirectoryOf(env: Env): string {
   return seedDirectory({ LB_SEED_DIR: env.LB_SEED_DIR })
 }
 
-/** The models a review asks, behind the gateway's virtual aliases, and the guard. */
-function reviewServices(gateway: Gateway): ReviewServices {
+/** The models a review asks, behind the gateway's virtual aliases, and the guard. Exported so the tests build the models exactly as production does. */
+export function reviewServices(gateway: Gateway): ReviewServices {
   return {
     models: {
       long: new GatewayJsonModel(gateway.chat(ALIASES.long), MAX_OUTPUT_TOKENS.long),
