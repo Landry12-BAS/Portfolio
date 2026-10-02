@@ -26,7 +26,6 @@ function source(name: string): string {
   return fileURLToPath(new URL(`../../src/${name}`, import.meta.url))
 }
 const site = makeSiteKeys()
-const prefix = `lbtest-${randomBytes(4).toString('hex')}:`
 
 let gw: ContractGateway
 let database: TestDatabase
@@ -55,7 +54,8 @@ beforeAll(async () => {
     NODE_NO_WARNINGS: '1',
     LB_DATABASE_URL: database.url,
     LB_REDIS_URL: inject('redisUrl'),
-    LB_REDIS_PREFIX: prefix,
+    // The gateway's own prefix, as in production, where the gateway and the services share one: the service writes the spans the gateway reads.
+    LB_REDIS_PREFIX: gw.prefix,
     LB_WEB_TOKEN_KEY: site.encodedPublicKey,
     LB_GATEWAY_URL: gw.url,
     LB_SERVICE_NAME: 'node-systems',
@@ -68,8 +68,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const child of running) child.kill('SIGKILL')
-  const keys = await gw.redis.keys(`${prefix}*`)
-  if (keys.length > 0) await gw.redis.del(...keys)
   await gw.close()
   await database.drop()
 })
@@ -220,6 +218,15 @@ describe('the API and the worker, as two processes', () => {
 
     expect(run.steps.map((step: { status: string }) => step.status)).toEqual(['succeeded', 'succeeded', 'succeeded'])
     expect((await call('GET', '/api/lb08/sent', session)).json).toHaveLength(2)
+
+    // The worker wrote the run's trace to the gateway's streams, root last, and the site's server can read it as finished.
+    const trace = await waitFor('the worker to write the run\'s root span', async () => {
+      const page = await (await gw.readTrace(run.id)).json() as { finished?: boolean, spans: { kind: string, name: string, spanId: string, parentId?: string }[] }
+      return page.finished ? page : undefined
+    })
+    const root = trace.spans.at(-1)
+    expect(root).toMatchObject({ kind: 'system.run', name: 'workflow run' })
+    expect(trace.spans.filter(span => span.kind === 'system.step').map(span => span.parentId)).toEqual([root?.spanId, root?.spanId])
   })
 
   it('describes a workflow through the real gateway, from an HTTP request to the fake provider and back', async () => {

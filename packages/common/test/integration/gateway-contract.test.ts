@@ -11,10 +11,10 @@ import { generateObject, generateText } from 'ai'
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest'
 
 import { Gateway, gatewayErrorOf } from '../../src/gateway.ts'
-import { createRun, newRunId, OutsideRunError, runScope } from '../../src/run.ts'
+import { createRun, newRunId, OutsideRunError, runScope, spanScope } from '../../src/run.ts'
 import type { Run } from '../../src/run.ts'
 import { ServiceTokens } from '../../src/tokens.ts'
-import { RedisSpanWriter, spanSchema, Tracer } from '../../src/tracing.ts'
+import { RedisSpanWriter, spanIdFrom, spanSchema, Tracer } from '../../src/tracing.ts'
 import { startContractGateway } from '../support/contract-gateway.ts'
 import type { ContractGateway } from '../support/contract-gateway.ts'
 
@@ -229,6 +229,33 @@ describe('the trace', () => {
     expect(later).toMatchObject({ spans: [], finished: true, cursor: page.cursor })
     const body = JSON.stringify(page)
     for (const words of ['PRIVATE-TICKET-TEXT', 'PRIVATE-ANSWER-TEXT', 'Sam Carter', 'gate code']) expect(body).not.toContain(words)
+  })
+
+  it('calls a run finished only once its root is recorded, with the steps written long before nested under it', async () => {
+    const run = visitorRun()
+    const rootId = spanIdFrom(`run:${run.runId}`)
+    /** The part of the Scope's page this test reads. */
+    interface Page {
+      finished: boolean
+      spans: { spanId: string, parentId?: string, name: string, kind: string, status: string }[]
+    }
+
+    // The steps of a run are written as they finish, under a root that does not exist yet.
+    await runScope(run, () => spanScope(rootId, () => tracer().span('step.check_stock', () => 1)))
+    await runScope(run, () => spanScope(rootId, () => tracer().span('step.alert_roastery', () => 1)))
+    const during = await (await gw.readTrace(run.runId)).json() as Page
+
+    await runScope(run, () => tracer().record({ name: 'workflow run', kind: 'system.run', status: 'error', spanId: rootId, startMs: Date.now() - 400, endMs: Date.now(), attrs: { steps: 3, attempts: 4, replay: false } }))
+    const after = await (await gw.readTrace(run.runId)).json() as Page
+
+    expect(during.finished).toBe(false)
+    expect(after.finished).toBe(true)
+    const root = after.spans.find(span => span.kind === 'system.run')
+    expect(root).toMatchObject({ spanId: rootId, name: 'workflow run', status: 'error', attrs: { steps: 3, attempts: 4, replay: false } })
+    expect(root?.parentId).toBeUndefined()
+    expect(after.spans.filter(span => span.kind === 'system.step').map(span => span.parentId)).toEqual([rootId, rootId])
+    // The root is the last span of the trace, as the Scope expects.
+    expect(after.spans.at(-1)?.spanId).toBe(rootId)
   })
 
   it('shows a reader nothing of a run of a system it may not read, as if the run were not there', async () => {

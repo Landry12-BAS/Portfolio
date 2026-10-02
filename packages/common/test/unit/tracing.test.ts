@@ -4,8 +4,8 @@
 import type { Redis } from 'ioredis'
 import { describe, expect, it } from 'vitest'
 
-import { createRun, OutsideRunError, runScope } from '../../src/run.ts'
-import { RedisSpanWriter, spanSchema, Tracer } from '../../src/tracing.ts'
+import { createRun, OutsideRunError, runScope, spanScope } from '../../src/run.ts'
+import { OpenSpan, RedisSpanWriter, spanIdFrom, spanSchema, Tracer } from '../../src/tracing.ts'
 import type { Span, SpanWriter } from '../../src/tracing.ts'
 
 const run = createRun({ system: 'lb-08', runId: 'run-12345678', session: 'session-0123456789abcdef' })
@@ -101,6 +101,90 @@ describe('a span', () => {
     }
 
     await expect(runScope(run, () => new Tracer(broken).span('step', () => 'still fine'))).resolves.toBe('still fine')
+  })
+})
+
+describe('a span recorded after its work is over', () => {
+  it('is written as given: its own ID, its own times, its status and its details, with no parent when nothing is open', async () => {
+    const writer = new MemoryWriter()
+    const tracer = new Tracer(writer)
+    const rootId = spanIdFrom('run:run-12345678')
+
+    await runScope(run, () => tracer.record({ name: 'workflow run', kind: 'system.run', status: 'error', spanId: rootId, startMs: 1_790_000_000_000, endMs: 1_790_000_004_500, attrs: { steps: 5, replay: false } }))
+
+    const [span] = writer.spans
+    expect(spanSchema.parse(span)).toEqual(span)
+    expect(span).toMatchObject({ runId: 'run-12345678', system: 'lb-08', spanId: rootId, kind: 'system.run', name: 'workflow run', status: 'error', startMs: 1_790_000_000_000, endMs: 1_790_000_004_500, attrs: { steps: 5, replay: false } })
+    expect(JSON.stringify(span)).not.toContain('parentId')
+  })
+
+  it('lets spans written earlier name it as their parent, which is what a span ID made from a seed is for', async () => {
+    const writer = new MemoryWriter()
+    const tracer = new Tracer(writer)
+    const rootId = spanIdFrom('run:run-12345678')
+
+    await runScope(run, () => spanScope(rootId, () => tracer.span('step.check_stock', () => 1)))
+    await runScope(run, () => tracer.record({ name: 'workflow run', kind: 'system.run', status: 'ok', spanId: rootId, startMs: 1, endMs: 2 }))
+
+    expect(writer.spans.map(span => span.name)).toEqual(['step.check_stock', 'workflow run'])
+    expect(writer.spans[0]?.parentId).toBe(rootId)
+    expect(writer.spans[1]?.spanId).toBe(rootId)
+  })
+
+  it('goes under the span that is open, or under the one it is given', async () => {
+    const writer = new MemoryWriter()
+    const tracer = new Tracer(writer)
+
+    await runScope(run, () => tracer.span('outer', async (outer) => {
+      await tracer.record({ name: 'inner', kind: 'system.tool', status: 'ok', startMs: 1, endMs: 2 })
+      await tracer.record({ name: 'elsewhere', kind: 'system.tool', status: 'ok', startMs: 1, endMs: 2, parentId: '00000000000000aa' })
+      expect(writer.spans[0]?.parentId).toBe(outer.spanId)
+    }))
+
+    expect(writer.spans[1]?.parentId).toBe('00000000000000aa')
+  })
+
+  it('never ends before it began, and gets a random ID when none is given', async () => {
+    const writer = new MemoryWriter()
+
+    await runScope(run, () => new Tracer(writer).record({ name: 'late clock', kind: 'system.run', status: 'ok', startMs: 5_000, endMs: 4_000 }))
+
+    expect(writer.spans[0]).toMatchObject({ startMs: 5_000, endMs: 5_000 })
+    expect(writer.spans[0]?.spanId).toMatch(/^[0-9a-f]{16}$/)
+  })
+
+  it('follows the rules of a span: a run to belong to, a plain name, short details and a real span ID', async () => {
+    const tracer = new Tracer(new MemoryWriter())
+    const finished = { name: 'workflow run', kind: 'system.run', status: 'ok', startMs: 1, endMs: 2 } as const
+
+    await expect(tracer.record(finished)).rejects.toBeInstanceOf(OutsideRunError)
+    await expect(runScope(run, () => tracer.record({ ...finished, name: 'bad\nname' }))).rejects.toThrow(RangeError)
+    await expect(runScope(run, () => tracer.record({ ...finished, attrs: { text: 'x'.repeat(201) } }))).rejects.toThrow('short labels')
+    await expect(runScope(run, () => tracer.record({ ...finished, spanId: 'NOT-HEX' }))).rejects.toThrow('16 lowercase hex digits')
+    await expect(runScope(run, () => tracer.record({ ...finished, parentId: '12' }))).rejects.toThrow('16 lowercase hex digits')
+  })
+
+  it('does not let a writer that fails fail the work', async () => {
+    const broken: SpanWriter = {
+      write: async () => {
+        throw new Error('Redis is down')
+      },
+    }
+
+    await expect(runScope(run, () => new Tracer(broken).record({ name: 'workflow run', kind: 'system.run', status: 'ok', startMs: 1, endMs: 2 }))).resolves.toBeUndefined()
+  })
+})
+
+describe('a span ID made from a seed', () => {
+  it('is 16 hex digits, the same for the same seed and different for another', () => {
+    expect(spanIdFrom('run:a')).toMatch(/^[0-9a-f]{16}$/)
+    expect(spanIdFrom('run:a')).toBe(spanIdFrom('run:a'))
+    expect(spanIdFrom('run:a')).not.toBe(spanIdFrom('run:b'))
+  })
+
+  it('is one an open span accepts, and a made-up one is refused', () => {
+    expect(new OpenSpan(run, 'root', 'system.run', undefined, 1, spanIdFrom('run:a')).spanId).toBe(spanIdFrom('run:a'))
+    expect(() => new OpenSpan(run, 'root', 'system.run', undefined, 1, 'abc')).toThrow(RangeError)
   })
 })
 

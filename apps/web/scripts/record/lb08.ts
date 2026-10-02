@@ -198,6 +198,6 @@ export async function runLb08Sample(backend: Backend, sampleId: string): Promise
     await followRun(tape, replayed, scenario)
     await readEffects(tape, replayed)
   }
-  // A workflow run's steps are spans of their own with no span around them, so its trace is complete when it has stopped growing.
-  return { language: sample.language, exchanges: tape.exchanges, runId: run.id, traceEnds: 'quiet' }
+  // The run writes a root span when it ends, so its trace is complete when that has arrived, as the default says.
+  return { language: sample.language, exchanges: tape.exchanges, runId: run.id }
 }

@@ -220,6 +220,19 @@ describe('what comes back to the visitor', () => {
     expect(reply.json.error).toEqual({ code: 'daily_limit', message: 'Come back tomorrow.', resets_at: '2026-10-06T00:00:00Z', fields: null })
   })
 
+  it('passes LB-08\'s answer for a model that is out of reach on whole: the 503, its own code and when to try again', async () => {
+    const browser = await verified()
+    const message = 'Describing a workflow is unavailable right now: the free model quota may be spent, or a provider may be down. Try one of the samples, or come back later.'
+    mock.script({ status: 503, headers: { 'retry-after': '30' }, json: { error: { code: 'generation_unavailable', message } } })
+
+    const reply = await browser.request('POST', '/api/lb08/workflows', { body: { from: 'description', description: 'When a customer asks for a refund, ask finance and email them the answer.' } })
+
+    // The code is what the board tells this apart by from a deployment with no back end, whose 503 says `unavailable`.
+    expect(reply.status).toBe(503)
+    expect(reply.headers.get('retry-after')).toBe('30')
+    expect(reply.json).toEqual({ error: { code: 'generation_unavailable', message } })
+  })
+
   it('turns an error that is not the platform\'s shape into a generic one, so nothing internal is reflected', async () => {
     const browser = await verified()
     mock.script({ status: 422, json: { detail: 'psycopg.errors.UndefinedTable: relation "lb01.ticket" does not exist', trace: ['File "/app/lb01/api.py"'] } })

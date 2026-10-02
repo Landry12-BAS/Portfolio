@@ -12,7 +12,7 @@ same rules, and the gateway it talks to is
 |---|---|
 | `gateway` | `Gateway`: the AI SDK's OpenAI-compatible provider pointed at the gateway, with a fresh service token and the run's `x-lb-*` headers on every request; `gatewayErrorOf` and `GatewayCode` for failures |
 | `run` | `createRun`, `runScope`, `currentRun`: the run a piece of work belongs to, kept in an `AsyncLocalStorage` |
-| `tracing` | `Tracer` and `RedisSpanWriter`: run spans in the gateway's format, written to the same Redis streams |
+| `tracing` | `Tracer` and `RedisSpanWriter`: run spans in the gateway's format, written to the same Redis streams. `Tracer.record` and `spanIdFrom` write a span whose work no function wrapped, such as a whole run |
 | `tokens` | `ServiceTokens` and `loadServiceKey`: the short-lived Ed25519 service tokens the gateway checks |
 | `visitors` | `mintVisitorToken`: the signer the site's server uses for a visitor's token. `createVisitorVerifier` and `verifyVisitorToken`: the check every system runs on it. Both on `node:crypto` alone |
 
@@ -39,6 +39,14 @@ await runScope(createRun({ system: 'lb-08', runId: newRunId(), session: sessionK
 - **Spans nest across the two sides.** A call made inside a span carries that span's ID,
   so the gateway's spans for the call appear under the step that made it. The contract
   tests prove it against the real gateway.
+- **A run that takes many steps writes its root when it ends.** `tracer.span` writes a
+  span when its function returns, which suits a pipeline in one process. A run whose steps
+  ran in many workers over several minutes (LB-08's workflow runs) has no function to wrap,
+  and the Scope calls a trace finished only once the run's root span (`system.run`, no
+  parent) is in it. `tracer.record({ name, kind: 'system.run', status, startMs, endMs, spanId })`
+  writes a span as it happened, last. The steps, written long before, name it as their
+  parent with `spanScope(spanIdFrom(seed), …)`: both sides work the ID out from a seed they
+  share, such as the run's ID. The Python tracer has no `record` yet.
 - **Samples are synthetic.** A run over the site's curated samples uses
   `dataClass: 'synthetic'` and needs no session; a visitor's run needs their hashed
   session key, never the raw cookie.

@@ -33,6 +33,8 @@ export interface Work {
   state: RunState
   log: RunLog
   now: Date
+  // Whether this transaction brought the run to its end, so its caller writes the run's root span once the transaction has committed.
+  ended: boolean
 }
 
 /** The fields of a step that a change may set. */
@@ -117,5 +119,5 @@ export async function updateStep(work: Work, nodeId: string, changes: StepChange
 
 /** Starts a transaction's work on a run: its loaded state, a fresh log and the time. */
 export function workOn(tx: Lb08Tx, state: RunState, now: Date): Work {
-  return { tx, state, log: new RunLog(state.run.id, () => now), now }
+  return { tx, state, log: new RunLog(state.run.id, () => now), now, ended: false }
 }

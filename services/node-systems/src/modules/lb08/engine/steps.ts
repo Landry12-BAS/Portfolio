@@ -13,7 +13,7 @@
 // done. That is safe by design. The retry runs the step again, finds the outbox row and
 // the delivery under the same idempotency key, sends nothing a second time, and records
 // the step as done. `Hooks.afterEffect` exists so a test can stop a worker right there.
-import { createRun, runScope } from '@lb/common'
+import { createRun, runScope, spanScope } from '@lb/common'
 import type { ActionNode } from '@lb/contracts'
 
 import { retryDelayMs } from '../config.ts'
@@ -29,6 +29,8 @@ import type { ConnectorResult, StepIdentity } from './sandbox.ts'
 import { settle, startRunOnce, syncRunStatus } from './settle.ts'
 import { contextOf, loadLocked, nodeOf, statusOf, updateStep, workOn } from './state.ts'
 import type { Work } from './state.ts'
+import { endOf, recordRunEnd, rootSpanIdOf } from './trace.ts'
+import type { RunEnd } from './trace.ts'
 
 /** Everything the worker needs to run a step it has claimed. */
 interface Claim {
@@ -40,16 +42,20 @@ interface Claim {
   context: RunContext
 }
 
-/** What claiming came to: a step to run, a step that had no attempts left, or nothing to do. */
+/**
+ * What claiming came to: a step to run, a step that had no attempts left (which may have made
+ * a dead letter, and ends the run if it was the last), or nothing to do.
+ */
 type Claimed
   = | { kind: 'run', claim: Claim }
-    | { kind: 'exhausted', deadLetter: DeadLetterNote }
+    | { kind: 'exhausted', deadLetter: DeadLetterNote | undefined, ended: RunEnd | undefined }
     | { kind: 'nothing' }
 
-/** What recording a failure came to: whether the step is finished for good, and the dead letter if it made one. */
+/** What recording a failure came to: whether the step is finished for good, the dead letter if it made one, and how the run ended if that was the end of it. */
 interface FailureOutcome {
   final: boolean
   deadLetter: DeadLetterNote | undefined
+  ended: RunEnd | undefined
 }
 
 /** Wraps whatever a connector threw as a step error, so one that wasn't expected fails the step instead of crashing the worker. */
@@ -70,7 +76,7 @@ async function recordFailure(deps: EngineDeps, work: Work, nodeId: string, attem
   if (error.retryable && attempt < maxAttempts) {
     await updateStep(work, nodeId, { status: 'queued', errorCode: error.code, errorMessage: error.message })
     work.log.add({ type: 'step.failed', ...failure, retryInMs: retryDelayMs(deps.config, attempt) })
-    return { final: false, deadLetter: undefined }
+    return { final: false, deadLetter: undefined, ended: undefined }
   }
   await updateStep(work, nodeId, { status: 'failed', errorCode: error.code, errorMessage: error.message, finishedAt: work.now })
   work.log.add({ type: 'step.failed', ...failure, retryInMs: null })
@@ -82,7 +88,7 @@ async function recordFailure(deps: EngineDeps, work: Work, nodeId: string, attem
     deadLetter = { runId: run.id, nodeId, attempts: attempt, code: error.code }
   }
   await settle(work)
-  return { final: true, deadLetter }
+  return { final: true, deadLetter, ended: endOf(work) }
 }
 
 /** Parks a copy of a dead letter in the queue for the owner's tools. A failure here is logged and nothing more: the database holds the real record. */
@@ -116,7 +122,7 @@ async function claimStep(deps: EngineDeps, runId: string, nodeId: string): Promi
       const error = new StepError('attempts_exhausted', 'The step used all its attempts without finishing.', true)
       const outcome = await recordFailure(deps, work, nodeId, step.attempts, error)
       await work.log.flush(tx)
-      return outcome.deadLetter ? { kind: 'exhausted', deadLetter: outcome.deadLetter } : { kind: 'nothing' }
+      return { kind: 'exhausted', deadLetter: outcome.deadLetter, ended: outcome.ended }
     }
 
     const attempt = step.attempts + 1
@@ -133,29 +139,32 @@ async function claimStep(deps: EngineDeps, runId: string, nodeId: string): Promi
 /**
  * Calls the step's connector inside a span of the run's trace, so the Scope shows the
  * step, its attempt and what became of it. The span carries labels only, never a payload.
+ * It names the run's root span as its parent: the root is written when the run ends, long
+ * after this span, but its ID is known now (see trace.ts).
  */
 async function executeStep(deps: EngineDeps, claim: Claim): Promise<ConnectorResult> {
   const run = createRun({ system: 'lb-08', runId: claim.runId, session: claim.who.sessionKey })
-  return runScope(run, () => deps.tracer.span(`step.${claim.node.id}`, async (span) => {
+  return runScope(run, () => spanScope(rootSpanIdOf(claim.runId), () => deps.tracer.span(`step.${claim.node.id}`, async (span) => {
     span.set('connector', claim.node.connector)
     span.set('attempt', claim.attempt)
     const result = await callConnector(deps.db, deps.hooks, claim.who, buildCall(claim.node, claim.context))
     span.set('outcome', result.delivery === null ? 'read' : result.delivery.duplicateOf === null ? 'sent' : 'duplicate_suppressed')
     return result
-  }))
+  })))
 }
 
 /**
  * Records a step's success: the output, the outbox acknowledgement, the effect's event,
  * and whatever the run does next. Does nothing if the step is no longer running (another
- * worker already finished it, or the workflow expired).
+ * worker already finished it, or the workflow expired). Returns how the run ended, if this
+ * step was its last.
  */
-async function completeStep(deps: EngineDeps, claim: Claim, result: ConnectorResult): Promise<void> {
+async function completeStep(deps: EngineDeps, claim: Claim, result: ConnectorResult): Promise<RunEnd | undefined> {
   const nodeId = claim.node.id
-  await deps.db.transaction(async (tx) => {
+  return deps.db.transaction(async (tx) => {
     const state = await loadLocked(tx, claim.runId)
     const step = state?.steps.get(nodeId)
-    if (!state || !step || statusOf(step) !== 'running') return
+    if (!state || !step || statusOf(step) !== 'running') return undefined
     const work = workOn(tx, state, deps.now())
     const { delivery } = result
     if (delivery) {
@@ -169,6 +178,7 @@ async function completeStep(deps: EngineDeps, claim: Claim, result: ConnectorRes
     work.log.add({ type: 'step.succeeded', nodeId, attempt: claim.attempt, output: result.output })
     await settle(work)
     await work.log.flush(tx)
+    return endOf(work)
   })
 }
 
@@ -188,6 +198,7 @@ async function failStep(deps: EngineDeps, claim: Claim, error: StepError): Promi
   })
   if (!outcome) return
   if (outcome.deadLetter) await parkSafely(deps, outcome.deadLetter)
+  await recordRunEnd(deps, outcome.ended)
   throw new StepFailure(!outcome.final)
 }
 
@@ -199,7 +210,10 @@ async function failStep(deps: EngineDeps, claim: Claim, error: StepError): Promi
  */
 export async function runStep(deps: EngineDeps, runId: string, nodeId: string): Promise<void> {
   const claimed = await claimStep(deps, runId, nodeId)
-  if (claimed.kind === 'exhausted') await parkSafely(deps, claimed.deadLetter)
+  if (claimed.kind === 'exhausted') {
+    if (claimed.deadLetter) await parkSafely(deps, claimed.deadLetter)
+    await recordRunEnd(deps, claimed.ended)
+  }
   if (claimed.kind !== 'run') return
   let result: ConnectorResult
   try {
@@ -210,6 +224,6 @@ export async function runStep(deps: EngineDeps, runId: string, nodeId: string): 
     await failStep(deps, claimed.claim, asStepError(deps, error))
     return
   }
-  await completeStep(deps, claimed.claim, result)
+  await recordRunEnd(deps, await completeStep(deps, claimed.claim, result))
   await dispatchSafely(deps, runId)
 }

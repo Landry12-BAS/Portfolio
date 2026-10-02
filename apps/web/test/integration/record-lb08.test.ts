@@ -132,12 +132,16 @@ describe('recording LB-08 samples against the mock', () => {
     expect(seen.size).toBe(2)
   })
 
-  it('ends a trace that has no root span when it has stopped growing, and counts what it holds', async () => {
+  it('ends the trace at the run\'s root span, which comes last with the steps nested under it, and counts what it holds', async () => {
     const recording = await recordSample(backend(), 'lb-08', 'wholesale-order')
 
-    expect(recording.trace.spans.some(span => span.kind === 'system.run' && span.parentId === undefined)).toBe(false)
+    const { spans } = recording.trace
+    const roots = spans.filter(span => span.kind === 'system.run' && span.parentId === undefined)
+    expect(roots).toHaveLength(1)
+    expect(spans.at(-1)).toBe(roots[0])
+    expect(spans.filter(span => span.kind === 'system.step').every(span => span.parentId === roots[0]?.spanId)).toBe(true)
     expect(recording.stats.modelCalls).toBe(0)
-    expect(recording.stats.steps).toBe(recording.trace.spans.filter(span => span.kind === 'system.step' || span.kind === 'system.tool').length)
+    expect(recording.stats.steps).toBe(spans.filter(span => span.kind === 'system.step' || span.kind === 'system.tool').length)
   })
 
   it('labels a recording made on a back end that does not say it is the mock as live', async () => {

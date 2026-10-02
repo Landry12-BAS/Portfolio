@@ -183,6 +183,8 @@ describe('workflows', () => {
     const refused = await call('POST', '/workflows', { from: 'description', description: 'Tell the roastery once more.' })
     expect(refused.status).toBe(429)
     expect(refused.json.error.code).toBe('daily_limit')
+    // It says when the day starts again, as the real service does: the next midnight in UTC.
+    expect(refused.json.error.resets_at).toBe(new Date(new Date(clock).setUTCHours(24, 0, 0, 0)).toISOString())
 
     clock += 24 * 3_600_000
     expect((await call('POST', '/workflows', { from: 'description', description: 'Tell the roastery once more.' })).status).toBe(201)
@@ -432,11 +434,12 @@ describe('a run', () => {
 
     const refused = await startRun(workflow.id, 'low-stock-reorder')
     expect(refused.status).toBe(429)
+    expect(refused.json.error.resets_at).toBe(new Date(new Date(clock).setUTCHours(24, 0, 0, 0)).toISOString())
     await follow(last.json.id)
     expect((await call('POST', `/runs/${last.json.id}/replay`)).status).toBe(429)
   })
 
-  it('writes a span for each attempt, with no root span, as the engine does, and a run nobody has started has no trace', async () => {
+  it('writes a span for each attempt, and a root span last that makes the trace finished, as the engine does; a run nobody has started has no trace', async () => {
     const workflow = await openSample('low-stock-reorder')
     const started = await startRun(workflow.id, 'low-stock-reorder', [{ nodeId: 'tell_purchasing', times: 1 }])
 
@@ -445,11 +448,46 @@ describe('a run', () => {
     const trace = await scope(started.json.id)
 
     expect(trace.status).toBe(200)
-    expect(trace.json.finished).toBe(false)
-    expect(trace.json.spans.map((span: { name: string, status: string, attrs: { attempt: number } }) => `${span.name}#${span.attrs.attempt}:${span.status}`)).toEqual([
+    expect(trace.json.finished).toBe(true)
+    /** The part of a span this test reads. */
+    interface Span {
+      name: string
+      kind: string
+      status: string
+      spanId: string
+      parentId?: string
+      attrs: { attempt: number }
+    }
+    const steps = trace.json.spans.filter((span: Span) => span.kind === 'system.step')
+    expect(steps.map((span: Span) => `${span.name}#${span.attrs.attempt}:${span.status}`)).toEqual([
       'step.tell_purchasing#1:error', 'step.reorder_task#1:ok', 'step.tell_purchasing#2:ok',
     ])
+    const root = trace.json.spans.at(-1)
+    expect(root).toMatchObject({ kind: 'system.run', name: 'workflow run', status: 'ok', attrs: { outcome: 'succeeded', attempts: 3, replay: false } })
+    expect(root.parentId).toBeUndefined()
+    expect(steps.every((span: Span) => span.parentId === root.spanId)).toBe(true)
     expect(trace.json.spans.every((span: { system: string }) => span.system === 'lb-08')).toBe(true)
+  })
+
+  it('has the trace of a run that is still going unfinished, and of a run that failed finished with a root that says error', async () => {
+    const workflow = await openSample('low-stock-reorder')
+    const going = await startRun(workflow.id, 'low-stock-reorder', [{ nodeId: 'tell_purchasing', times: 1 }])
+    // Two reads a second apart: the first starts the steps, the second finishes their first attempts, and a retry is still to come.
+    let status = ''
+    for (let read = 0; read < 2; read += 1) {
+      clock += 1_000
+      status = (await call('GET', `/runs/${going.json.id}/events?after=0`)).json.status
+    }
+    const midway = await scope(going.json.id)
+    const failing = await startRun(workflow.id, 'low-stock-reorder', [{ nodeId: 'tell_purchasing', times: 3 }])
+    await follow(failing.json.id)
+    const failed = await scope(failing.json.id)
+
+    expect(status).toBe('running')
+    expect(midway.json.spans.length).toBeGreaterThan(0)
+    expect(midway.json.finished).toBe(false)
+    expect(failed.json.finished).toBe(true)
+    expect(failed.json.spans.at(-1)).toMatchObject({ kind: 'system.run', status: 'error', attrs: { outcome: 'failed' } })
   })
 
   it('shows a visitor only their own runs, sandbox rows and dead letters', async () => {

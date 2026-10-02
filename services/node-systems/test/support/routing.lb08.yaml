@@ -52,3 +52,14 @@ systems:
     maxCallsPerRun: 3
     sessionDailyCalls: 30
     dailyCalls: 160
+
+# The site's server reads a run's trace for the Scope, as `web`, and the real table lists it
+# as a reader of lb-08. Without this block the gateway refuses every read with 403, which the
+# site turns into a 502, so a harness that starts the real service on this table could never
+# show a trace. test/integration/generate-gateway.test.ts and run-trace.test.ts read traces
+# through the real gateway, and test/unit/routing-contract.test.ts compares this block with
+# the real table.
+traceReaders:
+  web:
+    name: The site's server (the Scope)
+    systems: [lb-08]

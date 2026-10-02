@@ -36,6 +36,8 @@ export class Lb08Site {
   readonly site: FakeSite
   readonly mock: Lb08Mock
   readonly calls: FakeCall[] = []
+  // Keeps every run's root span out of its trace, to play the moment between a run ending and its root being written.
+  withholdRoots = false
   readonly #scripted: Scripted[] = []
 
   /** Starts a fake site with an empty LB-08 mock. */
@@ -91,10 +93,12 @@ export class Lb08Site {
 
   /** Answers a read of a run's trace with all the spans so far, when the run is LB-08's; the cursor is the count already seen. */
   #spans(runId: string, search: URLSearchParams): Answer | undefined {
-    const spans = this.mock.spansOf(runId)
-    if (!spans) return undefined
+    const written = this.mock.spansOf(runId)
+    if (!written) return undefined
+    const isRoot = (span: (typeof written)[number]): boolean => span.kind === 'system.run' && span.parentId === undefined
+    const spans = this.withholdRoots ? written.filter(span => !isRoot(span)) : written
     const seen = Number(search.get('after')?.split('-')[0] ?? 0)
-    const finished = spans.some(span => span.kind === 'system.run' && span.parentId === undefined)
+    const finished = spans.some(isRoot)
     return { status: 200, body: { runId, spans: spans.slice(seen), cursor: `${spans.length}-${spans.length}`, more: false, finished } }
   }
 

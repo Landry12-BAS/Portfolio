@@ -52,6 +52,26 @@ describe('LB-08\'s entry in routing.yaml', () => {
   })
 })
 
+describe('who may read LB-08\'s traces', () => {
+  // The routing table the service's gateway tests, and a harness that follows the web README, start the gateway on.
+  const miniature = loadRouting(readFileSync(new URL('../support/routing.lb08.yaml', import.meta.url), 'utf8'), { ALPHA_URL: 'http://127.0.0.1:1', ALPHA_KEY: 'k' })
+
+  it('lists the site\'s server as a reader of lb-08 in the real table, which is how the Scope shows a run', () => {
+    expect(routing.traceReaders.get('web')?.systems.has('lb-08')).toBe(true)
+  })
+
+  it('lists it in the test table too, so a gateway started on that table does not refuse the Scope with a 403', () => {
+    expect(miniature.traceReaders.get('web')?.systems.has('lb-08')).toBe(true)
+  })
+
+  it('keeps the test table\'s readers to the ones the real table has, so the test table does not grant more', () => {
+    for (const [service, reader] of miniature.traceReaders) {
+      const granted = routing.traceReaders.get(service)?.systems
+      expect([...reader.systems].every(key => granted?.has(key))).toBe(true)
+    }
+  })
+})
+
 describe('the lb-tools alias', () => {
   it('takes the longest request the pipeline can make: the repair of the longest description', () => {
     const first = [{ role: 'system' as const, content: describeSystemPrompt() }, { role: 'user' as const, content: describeUserMessage('x'.repeat(GRAPH_LIMITS.maxDescriptionLength)) }]

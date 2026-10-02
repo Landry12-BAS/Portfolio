@@ -391,12 +391,12 @@ export class Lb08Mock {
     return true
   }
 
-  /** The answer for a visitor who has used the day's allowance of one kind. */
+  /** The answer for a visitor who has used the day's allowance of one kind, with when the day starts again, as the real service says it. */
   #limitError(kind: 'run' | 'generation'): Answer {
     const message = kind === 'run'
       ? `A visitor may start ${RUN_LIMITS.runsPerVisitorPerDay} workflow runs a day, and a replay counts as one.`
       : `A visitor may describe ${RUN_LIMITS.generationsPerVisitorPerDay} workflows a day.`
-    return errorAnswer(429, 'daily_limit', message)
+    return { status: 429, body: { error: { code: 'daily_limit', message, resets_at: new Date(this.#midnight() + DAY_MS).toISOString() } } }
   }
 
   // ---- Runs ----

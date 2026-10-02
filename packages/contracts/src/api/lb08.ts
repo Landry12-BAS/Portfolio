@@ -65,6 +65,9 @@ export const errorBodySchema = z.strictObject({
     message: z.string(),
     // For a malformed request: the fields at fault, by name.
     fields: z.string().optional(),
+    // For a daily limit (429): when the day's allowance starts again, as a time in UTC. The same
+    // field, in the same place, as LB-05's daily limit, and the one platformErrorSchema reads.
+    resets_at: z.iso.datetime().optional(),
     // For a graph that failed validation: every problem found.
     problems: z.array(issueSchema).optional(),
   }),

@@ -363,6 +363,8 @@ describe('LB-08\'s board: describing a process, and what can go wrong', () => {
     await describeProcess(wrapper, 'When a customer asks for a refund, ask finance and email them the answer.')
 
     expect(wrapper.get('[data-testid="generation-unavailable"]').text()).toContain('Describing is unavailable right now')
+    // Not the kit's notice for a deployment with no back end, which says that only recorded samples can be played.
+    expect(wrapper.find('[data-testid="notice"]').exists()).toBe(false)
     await wrapper.findAll('[aria-label="Where the process comes from"] .lb-seg__btn')[0]?.trigger('click')
     expect(wrapper.get('[data-testid="start-sample"]').attributes('disabled')).toBeUndefined()
   })
@@ -484,6 +486,20 @@ describe('LB-08\'s board in Czech', () => {
     await wrapper.get('[data-step="big_order"] [data-testid="outline-remove"]').trigger('click')
     expect(wrapper.get('[data-testid="validity"]').text()).toContain('Problémy:')
     expect(wrapper.get('[data-step="check_stock"] [data-testid="step-problem"]').text()).toContain('se ze spouštěče nedá dojít')
+  })
+
+  it('says in Czech that describing is unavailable when the model is, and not that the demo is not connected', async () => {
+    const { site, wrapper } = await openBoard({ locale: 'cs' })
+    site.failNext('POST /api/lb08/workflows', { status: 503, body: { error: { code: 'generation_unavailable', message: 'x' } } })
+
+    // The composer's second choice is writing the process down; its label is Czech here, so it is found by its place.
+    await wrapper.findAll('.switch .lb-seg__btn')[1]?.trigger('click')
+    await wrapper.get('textarea').setValue('Když zákazník žádá o vrácení peněz, zeptej se účetní a pošli mu odpověď e-mailem.')
+    await wrapper.get('form').trigger('submit')
+    await seconds(1)
+
+    expect(wrapper.get('[data-testid="generation-unavailable"]').text()).toContain('Popisování teď není dostupné')
+    expect(wrapper.find('[data-testid="notice"]').exists()).toBe(false)
   })
 
   it('runs a workflow and tells its log in Czech', async () => {

@@ -88,7 +88,10 @@ export async function syncRunStatus(work: Work): Promise<void> {
   if (status === 'failed') work.log.add({ type: 'run.failed', nodeId: firstNodeWith(work.state, 'failed') ?? '' })
   await work.tx.update(runs).set({ status, ...(finished ? { finishedAt: work.now } : {}) }).where(eq(runs.id, run.id))
   run.status = status
-  if (finished) run.finishedAt = work.now
+  if (finished) {
+    run.finishedAt = work.now
+    work.ended = true
+  }
 }
 
 /**

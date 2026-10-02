@@ -3,15 +3,18 @@
 // notices (the day's limit, the system down, the check). Four are this board's own, because their
 // cause is something only this board has: a described process the checks refused (with every
 // problem found in it), the model being unavailable for the description, the visitor already keeping
-// as many workflows as are allowed, and a request that no longer fits the state of a run. The words
-// come from the locale files by the failure's code; the service's own messages are English and only
-// appear, marked as such, in the Technical reading.
+// as many workflows as are allowed, and a request that no longer fits the state of a run. Which
+// failures those are is decided by their code (problems.ts), not by the kit's kind. The words come
+// from the locale files; the service's own messages are English and only appear, marked as such, in
+// the Technical reading.
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { ApiProblem } from '~/board-kit/problem'
 import { useSessionStore } from '~/stores/session'
+
+import { ownNoticeOf } from '../problems'
 
 const props = defineProps<{
   problem: ApiProblem
@@ -22,14 +25,7 @@ const props = defineProps<{
 const { t, te } = useI18n()
 const { state } = storeToRefs(useSessionStore())
 
-const own = computed<'refused' | 'unavailable' | 'tooMany' | 'conflict' | undefined>(() => {
-  const { code, kind, problems } = props.problem
-  if (code === 'workflow_rejected' && problems.length > 0) return 'refused'
-  if (code === 'generation_unavailable') return 'unavailable'
-  if (code === 'workflow_limit') return 'tooMany'
-  if (kind === 'conflict') return 'conflict'
-  return undefined
-})
+const own = computed(() => ownNoticeOf(props.problem))
 const conflictText = computed(() => {
   const key = `lb08.conflicts.${props.problem.code}`
   return te(key) ? t(key) : t('lb08.conflicts.other')
@@ -68,7 +64,7 @@ function codeWords(code: string): string {
     </ul>
   </div>
   <div
-    v-else-if="own === 'unavailable'"
+    v-else-if="own === 'generation'"
     class="lb8-panel"
     role="status"
     data-testid="generation-unavailable"
