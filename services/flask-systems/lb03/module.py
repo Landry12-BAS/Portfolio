@@ -14,6 +14,7 @@ def build_runtime(platform: Platform) -> SystemRuntime:
     return SystemRuntime(
         blueprint=build_blueprint(service, platform.environment.web_token_key),
         is_ready=service.is_ready if service is not None else lambda: False,
+        start=service.start if service is not None else None,
     )
 
 

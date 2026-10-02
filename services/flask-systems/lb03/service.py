@@ -181,6 +181,11 @@ class Lb03Service:
         """Tell whether the service can serve right now: its database answers."""
         return self._database_check()
 
+    def start(self) -> None:
+        """Start the runner now, so its heartbeat and sweep begin as the worker boots, not at the first upload."""
+        if self._runner is not None:
+            self._runner.start()
+
     def close(self) -> None:
         """Stop the runner, which ends the documents it still holds and settles their visitors."""
         if self._runner is not None:
