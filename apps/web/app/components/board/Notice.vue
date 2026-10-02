@@ -18,7 +18,11 @@ const props = defineProps<{
   resetsAt?: string
   /** What the system said was wrong with an input, for the rejected notice. */
   detail?: string
+  /** Offers a "Try again" button, for a failure that asking again may fix and that costs nothing to ask. */
+  retryable?: boolean
 }>()
+
+const emit = defineEmits<{ retry: [] }>()
 
 const { t, locale } = useI18n()
 
@@ -57,6 +61,14 @@ const resetTime = computed(() => (props.resetsAt ? formatMoment(props.resetsAt, 
         {{ detail }}
       </p>
       <div class="actions">
+        <button
+          v-if="retryable"
+          type="button"
+          class="button"
+          @click="emit('retry')"
+        >
+          {{ t('board.notice.retry') }}
+        </button>
         <slot />
       </div>
     </div>
@@ -88,6 +100,20 @@ const resetTime = computed(() => (props.resetsAt ? formatMoment(props.resetsAt, 
 
 .actions:empty {
   display: none;
+}
+
+.button {
+  padding: 6px 12px;
+  font: 600 13px/1 var(--lb-font-sans);
+  color: var(--lb-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.button:hover {
+  background: var(--lb-sheet);
 }
 
 .actions {

@@ -7,6 +7,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { typeset } from '~/board-kit/format'
 import type { PickerSample } from '~/board-kit/samples'
 
 import type { Customer } from '../schemas'
@@ -24,6 +25,8 @@ const props = defineProps<{
   busy: boolean
   /** Whether a live run is possible: the deployment has a back end and the day's tickets are not used up. */
   canRunLive: boolean
+  /** True when the list of customers could not be read, so the visitor's own ticket cannot be filed yet. */
+  customersFailed: boolean
   /** The language to start the form in: the one the site is shown in. */
   defaultLanguage: 'en' | 'cs'
   /** The full text of each sample, by ID, so the visitor can read what the customer wrote before choosing. */
@@ -112,7 +115,7 @@ function fileOwn(): void {
           {{ t('lb01.compose.customerWrites') }}
         </figcaption>
         <blockquote :lang="chosenLanguage">
-          {{ chosenBody }}
+          {{ typeset(chosenBody, chosenLanguage) }}
         </blockquote>
         <p
           v-if="chosenSample"
@@ -162,6 +165,15 @@ function fileOwn(): void {
       class="pane"
       @submit.prevent="fileOwn"
     >
+      <p
+        v-if="customersFailed"
+        class="hint"
+        role="status"
+        data-testid="no-customers"
+      >
+        {{ t('lb01.compose.noCustomers') }}
+      </p>
+
       <div class="field">
         <label for="lb01-customer">{{ t('lb01.compose.customer') }}</label>
         <select

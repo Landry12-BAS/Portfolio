@@ -129,6 +129,14 @@ describe('BoardNotice', () => {
     expect(mountWithSite(BoardNotice, { props: { kind: 'upstream', detail: 'Traceback (most recent call last)' } }).text()).not.toContain('Traceback')
   })
 
+  it('offers to try again only when it is told the failure is worth asking about again', async () => {
+    expect(mountWithSite(BoardNotice, { props: { kind: 'network' } }).find('button').exists()).toBe(false)
+    const retryable = mountWithSite(BoardNotice, { props: { kind: 'network', retryable: true } })
+    await retryable.get('button').trigger('click')
+    expect(retryable.emitted('retry')).toHaveLength(1)
+    expect(mountWithSite(BoardNotice, { locale: 'cs', props: { kind: 'network', retryable: true } }).get('button').text()).toBe('Zkusit znovu')
+  })
+
   it('draws a button the board gives it', () => {
     const wrapper = mountWithSite(defineComponent({
       render: () => h(BoardNotice, { kind: 'network' }, { default: () => h('button', { type: 'button' }, 'Try again') }),

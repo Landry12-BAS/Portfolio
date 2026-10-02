@@ -44,7 +44,7 @@ const scope = useScopeStore()
 const replay = useReplayStore()
 const store = useLb01Store()
 const { mode } = storeToRefs(useReadingStore())
-const { ticket, customers, runMode, phase, problem, decisionProblem, deciding, stats, quota, runOver, canDecide } = storeToRefs(store)
+const { ticket, customers, customersStatus, runMode, phase, problem, decisionProblem, deciding, stats, quota, runOver, canDecide } = storeToRefs(store)
 
 const code = computed(() => (isLocaleCode(locale.value) ? locale.value : 'en'))
 const system = computed(() => findSystemIn(SYSTEM, code.value))
@@ -65,6 +65,8 @@ const recorded = computed(() => replay.recorded[SYSTEM])
 const available = computed(() => session.available)
 const canRunLive = computed(() => available.value && (quota.value?.remaining ?? 1) > 0)
 const unavailable = computed(() => session.loading === 'ready' && !session.available)
+// The session's state could not be read at all: the site itself could not be reached.
+const disconnected = computed(() => session.loading === 'failed')
 const replaying = computed(() => runMode.value === 'replay' && replay.recording !== undefined)
 
 const steps = computed(() => {
@@ -143,14 +145,21 @@ watch(() => store.finished, (done) => {
   if (done) void bringIntoView('lb01-console')
 })
 
-onMounted(async () => {
-  void replay.loadList(SYSTEM)
+/** Reads the session, and what a board needs from the back end once the session says there is one. */
+async function connect(): Promise<void> {
   await session.load()
   if (session.available) {
     void store.loadCustomers()
     void store.loadStats()
     void store.loadQuota()
   }
+}
+
+onMounted(async () => {
+  // Stores outlive the page, so a visitor who comes back finds the board empty, not stuck on an old run.
+  store.reset()
+  void replay.loadList(SYSTEM)
+  await connect()
 })
 
 onBeforeUnmount(() => {
@@ -172,6 +181,13 @@ onBeforeUnmount(() => {
     <BoardNotice
       v-if="unavailable"
       kind="unavailable"
+    />
+
+    <BoardNotice
+      v-if="disconnected"
+      :kind="session.problem?.kind ?? 'network'"
+      retryable
+      @retry="connect"
     />
 
     <BoardReplayBanner
@@ -196,6 +212,7 @@ onBeforeUnmount(() => {
       :customers="customers"
       :busy="phase === 'filing' || (runMode === 'live' && phase === 'running')"
       :can-run-live="canRunLive"
+      :customers-failed="customersStatus === 'failed'"
       :default-language="code"
       :bodies="sampleBodies"
       @replay="replaySample"

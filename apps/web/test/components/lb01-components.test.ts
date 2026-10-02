@@ -88,6 +88,15 @@ describe('DraftView', () => {
     expect(ticket.draft!.sources.at(-1)!.text).toMatch(/[ěščřžýáíé]/)
   })
 
+  it('sets Czech content the way the site sets Czech text, and leaves other languages alone', () => {
+    const sentences = [{ text: 'Zboží je v balíku a k němu patří doklad.', citations: [], supported: true, problem: null }]
+    const draft = { ...makeTicket().draft!, sentences }
+    const czech = mountWithSite(DraftView, { props: { draft, language: 'cs' } })
+    expect(czech.get('[data-testid="draft-sentence"]').text()).toContain('v\u00A0balíku a\u00A0k\u00A0němu')
+    const english = mountWithSite(DraftView, { props: { draft: { ...draft, sentences: [{ ...sentences[0]!, text: 'A bag is in a box.' }] }, language: 'en' } })
+    expect(english.get('[data-testid="draft-sentence"]').text()).toContain('A bag is in a box.')
+  })
+
   it('shows a citation that names no listed source as unknown, not as a link', () => {
     const draft = { ...makeTicket().draft!, sentences: [{ text: 'A claim.', citations: ['passage:nonexistent'], supported: true, problem: null }] }
     const wrapper = mountWithSite(DraftView, { props: { draft, language: 'en' } })
@@ -208,7 +217,7 @@ describe('TicketComposer', () => {
   ]
   const samples = LB01_SAMPLES.map(sample => ({ id: sample.id, title: sample.id, note: 'note', language: sample.language, excerpt: sample.body }))
   const bodies = Object.fromEntries(LB01_SAMPLES.map(sample => [sample.id, sample.body]))
-  const props = { samples, recorded: [] as string[], customers, busy: false, canRunLive: true, defaultLanguage: 'en' as const, bodies }
+  const props = { samples, recorded: [] as string[], customers, busy: false, canRunLive: true, customersFailed: false, defaultLanguage: 'en' as const, bodies }
 
   it('opens on the curated samples, with the first chosen, its text shown and what it is there to show', () => {
     const wrapper = mountWithSite(TicketComposer, { props })
@@ -292,6 +301,14 @@ describe('TicketComposer', () => {
     expect(wrapper.get('[data-testid="file-ticket"]').attributes('disabled')).toBeDefined()
     await wrapper.get('form').trigger('submit')
     expect(wrapper.emitted('file')).toBeUndefined()
+  })
+
+  it('says the customers could not be loaded, in the form where they would be chosen', async () => {
+    const wrapper = mountWithSite(TicketComposer, { props: { ...props, customers: [], customersFailed: true } })
+    expect(wrapper.find('[data-testid="no-customers"]').exists()).toBe(false)
+    await wrapper.findAll('.lb-seg__btn')[1]?.trigger('click')
+    expect(wrapper.get('[data-testid="no-customers"]').text()).toContain('could not be loaded')
+    expect(wrapper.get('[data-testid="file-ticket"]').attributes('disabled')).toBeDefined()
   })
 
   it('starts the language in the site\'s language, and says what is done with the text', async () => {

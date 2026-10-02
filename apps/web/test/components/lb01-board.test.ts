@@ -228,6 +228,60 @@ describe('LB-01\'s board: other deployments, readings and languages', () => {
     expect(wrapper.get('[data-testid="ticket-body"]').attributes('lang')).toBe('cs')
   })
 
+  it('says the site could not be reached when the session cannot be read, and reads it again on request', async () => {
+    const site = new FakeSite()
+    let reachable = false
+    vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (reachable ? site.fetch(input, init) : Promise.reject(new TypeError('offline'))))
+    vi.stubGlobal('location', new URL('http://site.test/'))
+    const wrapper = mountWithSite(Lb01Board, { props: { permalinkFor: (id: string) => `/runs/${id}` } })
+    await flushPromises()
+    const notice = wrapper.get('[data-testid="notice"]')
+    expect(notice.attributes('data-kind')).toBe('network')
+    expect(wrapper.text()).toContain('cannot run tickets live right now')
+
+    reachable = true
+    await notice.get('button').trigger('click')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(wrapper.find('[data-testid="notice"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="quota"]').text()).toContain('20 of 20')
+  })
+
+  it('says the customers could not be loaded, and keeps the samples working', async () => {
+    const site = new FakeSite()
+    site.failNext('GET /api/lb01/customers', { status: 502, body: { error: { code: 'upstream_failed', message: 'x' } } })
+    vi.stubGlobal('fetch', site.fetch)
+    vi.stubGlobal('location', new URL('http://site.test/'))
+    const wrapper = mountWithSite(Lb01Board, { props: { permalinkFor: (id: string) => `/runs/${id}` } })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(0)
+    await wrapper.findAll('.composer .lb-seg__btn')[1]?.trigger('click')
+    expect(wrapper.find('[data-testid="no-customers"]').exists()).toBe(true)
+    await wrapper.findAll('.composer .lb-seg__btn')[0]?.trigger('click')
+    expect(wrapper.get('[data-testid="start-sample"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('opens empty for a visitor who comes back, not stuck on the run they left', async () => {
+    const site = new FakeSite({ verified: true, pollsToFinish: 100, recordings: [recordLb01Sample({ origin: 'live' })] })
+    vi.stubGlobal('fetch', site.fetch)
+    vi.stubGlobal('location', new URL('http://site.test/'))
+    const first = mountWithSite(Lb01Board, { props: { permalinkFor: (id: string) => `/runs/${id}` } })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(0)
+    await fileOwnTicket(first)
+    await seconds(2)
+    expect(first.get('[data-testid="console"]').text()).toContain('The pipeline is working on the ticket.')
+    const pinia = first.vm.$pinia
+    first.unmount()
+
+    const second = mountWithSite(Lb01Board, { props: { permalinkFor: (id: string) => `/runs/${id}` }, pinia })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(second.get('[data-testid="console"]').text()).toContain('appear here once the pipeline has finished')
+    expect(second.get('[data-testid="board-state"]').text()).toBe('Live')
+    expect(second.findAll('[data-testid="pipeline-step"]').every(step => step.attributes('data-state') === 'waiting')).toBe(true)
+  })
+
   it('stops reading when the visitor leaves', async () => {
     const { site, wrapper } = await openBoard({ verified: true, pollsToFinish: 100 })
     await fileOwnTicket(wrapper)

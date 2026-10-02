@@ -5,6 +5,7 @@
 import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import type { Pinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import type { Component } from 'vue'
 import { createI18n } from 'vue-i18n'
@@ -54,11 +55,14 @@ const GLOBAL_COMPONENTS: Record<string, Component> = {
 export interface MountOptions {
   locale?: 'en' | 'cs'
   props?: Record<string, unknown>
+  // Pass the Pinia of an earlier mount to mount again with the stores as that left them, as a visitor
+  // who comes back to a page finds them (the stores outlive the page).
+  pinia?: Pinia
 }
 
 /** Mounts a component with the site's messages, a fresh Pinia and the kit registered. */
 export function mountWithSite(component: Component, options: MountOptions = {}): VueWrapper {
-  const pinia = createPinia()
+  const pinia = options.pinia ?? createPinia()
   setActivePinia(pinia)
   const i18n = createI18n({ legacy: false, locale: options.locale ?? 'en', fallbackLocale: 'en', messages: { en, cs } })
   return mount(component, {

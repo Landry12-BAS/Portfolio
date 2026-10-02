@@ -20,6 +20,7 @@ const lb01 = {
     runSampleLive: 'Run this sample live',
     runInstead: 'Run it live instead',
     noLive: 'This copy of the site cannot run tickets live right now.',
+    noCustomers: 'The synthetic customers could not be loaded, so your own ticket cannot be filed right now. The samples still work.',
     customer: 'Customer',
     customerHint: 'Synthetic customers of Basalt & Bean Coffee Co.',
     language: 'Language of the ticket',

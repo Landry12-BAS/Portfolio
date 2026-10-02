@@ -62,6 +62,7 @@ const kit = {
     retry: 'Try again',
   },
   notice: {
+    retry: 'Try again',
     unavailable: {
       title: 'This demo is not connected',
       text: 'This copy of the site, a preview for example, has no back end for the demo. Recorded samples can still be replayed.',

@@ -57,6 +57,8 @@ export const useLb01Store = defineStore('lb01', () => {
   const replay = useReplayStore()
 
   const customers = shallowRef<readonly Customer[]>([])
+  // Whether the list of customers is still being read, was read, or could not be.
+  const customersStatus = ref<'idle' | 'loading' | 'ready' | 'failed'>('idle')
   const ticket = shallowRef<Ticket>()
   const runMode = ref<RunMode>('idle')
   const phase = ref<RunPhase>('idle')
@@ -76,11 +78,14 @@ export const useLb01Store = defineStore('lb01', () => {
 
   /** Reads the synthetic customers a visitor can file tickets as. */
   async function loadCustomers(): Promise<void> {
+    customersStatus.value = 'loading'
     try {
       customers.value = await callApi(apiClients().django.GET('/api/lb01/customers'), z.array(customerSchema).max(100))
+      customersStatus.value = 'ready'
     }
     catch {
       customers.value = []
+      customersStatus.value = 'failed'
     }
   }
 
@@ -270,6 +275,7 @@ export const useLb01Store = defineStore('lb01', () => {
 
   return {
     customers,
+    customersStatus,
     ticket,
     runMode,
     phase,

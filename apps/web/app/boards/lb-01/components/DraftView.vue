@@ -8,6 +8,8 @@ import { LbIcon } from '@lb/icons'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { typeset } from '~/board-kit/format'
+
 import type { Draft } from '../schemas'
 
 const props = defineProps<{
@@ -54,9 +56,9 @@ function numberOf(id: string): number | undefined {
         :data-supported="sentence.supported"
         data-testid="draft-sentence"
       >
-        <mark v-if="!sentence.supported">{{ sentence.text }}</mark>
+        <mark v-if="!sentence.supported">{{ typeset(sentence.text, language) }}</mark>
         <template v-else>
-          {{ sentence.text }}
+          {{ typeset(sentence.text, language) }}
         </template>
         <span
           v-for="citation in sentence.citations"
@@ -112,10 +114,10 @@ function numberOf(id: string): number | undefined {
         >
           <p class="source-title">
             <span class="num">{{ t('lb01.console.sourceLabel', { n: index + 1 }) }}</span>
-            {{ source.title }}
+            {{ typeset(source.title, language) }}
           </p>
           <p class="source-text">
-            {{ source.text }}
+            {{ typeset(source.text, language) }}
           </p>
         </li>
       </ol>

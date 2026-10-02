@@ -2,6 +2,8 @@
 // ("530 ms", "2.7 s"), whole numbers with their thousands separator, percentages and dates.
 // Everything goes through Intl, so Czech gets its comma and its spacing without a table of ours.
 
+import { vlna } from '#shared/typography'
+
 // A space that does not break a line, so "530 ms" never wraps between the number and its unit.
 const NBSP = String.fromCharCode(0x00A0)
 
@@ -31,4 +33,13 @@ export function formatMoment(iso: string, locale: string): string {
 /** Writes a date alone, such as "2 Oct 2026". */
 export function formatDay(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(iso))
+}
+
+/**
+ * Sets Czech content, such as a ticket or the draft written for it, the way the site sets every
+ * Czech text (no line ends on a single-letter word); other languages are left as they are. It
+ * changes only where a line may break, so the words are the same.
+ */
+export function typeset(text: string, language: string): string {
+  return language === 'cs' ? vlna(text) : text
 }

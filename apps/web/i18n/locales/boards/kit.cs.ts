@@ -62,6 +62,7 @@ const kit = {
     retry: 'Zkusit znovu',
   },
   notice: {
+    retry: 'Zkusit znovu',
     unavailable: {
       title: 'Toto demo není připojeno',
       text: 'Tato kopie webu, například náhled, nemá pro demo žádný backend. Zaznamenané ukázky lze přesto přehrát.',

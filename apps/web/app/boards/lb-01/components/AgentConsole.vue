@@ -8,7 +8,7 @@ import { LbIcon } from '@lb/icons'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { formatMoment } from '~/board-kit/format'
+import { formatMoment, typeset } from '~/board-kit/format'
 import type { ApiProblem } from '~/board-kit/problem'
 
 import type { Ticket } from '../schemas'
@@ -127,7 +127,7 @@ watch(() => props.ticket?.decision, () => {
           :lang="ticket.language"
           data-testid="ticket-body"
         >
-          {{ ticket.body }}
+          {{ typeset(ticket.body, ticket.language) }}
         </blockquote>
       </figure>
 
@@ -171,7 +171,7 @@ watch(() => props.ticket?.decision, () => {
           class="final"
           :lang="ticket.language"
         >
-          {{ ticket.decision.final_text }}
+          {{ typeset(ticket.decision.final_text, ticket.language) }}
         </p>
         <p class="note">
           {{ t('lb01.console.autoSendOff') }}
