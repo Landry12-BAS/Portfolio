@@ -12,6 +12,7 @@ export type BoardLoader = () => Promise<Component>
 // Keyed by the system's slug, the part number in lower case.
 const BOARDS: Readonly<Record<string, BoardLoader>> = {
   'lb-01': async () => (await import('./lb-01/Lb01Board.vue')).default,
+  'lb-05': async () => (await import('./lb-05/Lb05Board.vue')).default,
 }
 
 /** Tells whether a system has an evaluation board. */

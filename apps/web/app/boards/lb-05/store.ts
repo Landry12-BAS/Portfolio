@@ -242,15 +242,20 @@ export const useLb05Store = defineStore('lb05', () => {
     }
   }
 
-  /** Stops waiting for the live question. The analyst keeps working on it and it still counts, so the next must wait for it. */
+  /**
+   * Stops waiting for the live question. Once the question has been sent the analyst keeps working on it
+   * and it still counts, so the next must wait for it; before that, while the check that the visitor is a
+   * person is still open, nothing was sent, and stopping only empties the board.
+   */
   function stopWaiting(): void {
     if (runMode.value !== 'live' || phase.value !== 'asking') return
+    const sent = askedAt.value !== undefined
     stopRun()
     scope.clear()
     phase.value = 'idle'
     runMode.value = 'idle'
     askedAt.value = undefined
-    stoppedWaiting.value = true
+    stoppedWaiting.value = sent
   }
 
   /** Holds a recorded answer back until the replay has played out, so a replay shows the work first and the answer at its end. */
