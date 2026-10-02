@@ -53,8 +53,15 @@ flowchart LR
 - **Short-lived tokens.** The Nuxt server's Nitro routes mint Ed25519-signed JWTs,
   valid for 5 minutes and scoped to one system, for SSE and WebSocket calls to the
   box. Their subject is a keyed hash of the session, never the cookie itself. The
-  systems check each one against the site's public key and fail closed without it;
-  `services/django-systems/core/visitors.py` specifies the claims.
+  systems check each one against the site's public key and fail closed without it.
+  The claims are specified by `packages/common/src/visitors.ts` and
+  `python/lb-common/src/lb_common/visitors.py`, which the Node, Django and Flask systems
+  all use, and which accept and refuse exactly the same tokens: both are strict (one
+  spelling for the text, plain JSON values only, whole-second times), and one corpus of
+  signed tokens with the verdict each must get
+  (`packages/common/test/fixtures/visitor-tokens.json`, made by
+  `just visitor-tokens`, kept fresh by `just check`) is run by the tests of both and of
+  every system's own authentication.
 - **Three rate-limit layers:** Cloudflare per IP, the gateway per session, and the
   gateway per system and per provider.
 - **Private by design.** IP addresses are kept only as salted hashes, and the salt

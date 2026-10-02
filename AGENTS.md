@@ -214,8 +214,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set), and LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
-| `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite) or `routing.yaml` is invalid (the CI drift check) |
+| `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite, the visitor-token corpus) or `routing.yaml` is invalid (the CI drift check) |
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
+| `just visitor-tokens` | Make the shared corpus of visitor tokens again (`packages/common/test/fixtures/visitor-tokens.json`), after a rule of the token check changes; the tests of `@lb/common`, `lb_common.visitors` and the Django, Flask and Node systems all run it, so every verifier accepts and refuses the same tokens |
 | `just stack-secrets [--again]` | Make throwaway secrets for the local stack in `infra/.dev` (git-ignored) |
 | `just stack <docker compose command>` | Run the whole platform locally, hardened as on the box: `just stack up -d --wait`, then Caddy answers on http://127.0.0.1:8180; `just stack down -v` removes it (needs Docker) |
 | `just stack-smoke` | Check a running local stack from the inside: health, the routes through Caddy (LB-02's WebSocket included), an empty Redis ACL log |

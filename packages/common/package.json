@@ -14,9 +14,11 @@
     "./testing": "./src/testing.ts"
   },
   "scripts": {
+    "check": "node scripts/visitor-token-corpus.ts --check",
     "lint": "eslint .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "visitor-tokens": "node scripts/visitor-token-corpus.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.62",

@@ -87,6 +87,19 @@ fails the system's own schema is not the gateway's fault, and `gatewayErrorOf` r
   and python/lb-common's `test_visitor_contract.py` runs the real signer and checks its
   tokens with Python's real verifier, tampered, expired, wrong-audience and over-long ones
   included.
+- **One verdict for every token.** The verifier is strict on purpose, and so is its Python
+  twin, so that a token only the site's key could sign is never read one way here and
+  another there. A segment is canonical base64url (no padding, no stray bits), the header
+  and claims are UTF-8 JSON with no byte order mark whose members are plain values (only
+  `aud` may be a list, and only of strings), `iat`, `exp` and `nbf` are whole seconds
+  (`1.0` is whole, `1.5` is not), `exp` is 1 to 300 seconds after `iat`, a token is at most
+  2048 characters, and an `Authorization` header is stripped of spaces and tabs and
+  nothing else. `test/fixtures/visitor-tokens.json` holds over 200 cases (signed tokens, header values and keys) with the
+  verdict each must get, and says which rule each tests; `scripts/visitor-token-corpus.ts`
+  makes it from a public seed (`just visitor-tokens`, and `just check` fails while it is
+  stale). The tests of this package, of `python/lb-common`, and of the Django, Flask and
+  Node systems all run that one file. Change a rule, make the file again, and every
+  language's tests must agree with it.
 - **Metadata only.** Span details are short labels and numbers. When a step fails, its
   span records the error's name, never its message, which could quote a visitor's words.
 

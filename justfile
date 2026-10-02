@@ -188,6 +188,11 @@ check:
 icons:
     pnpm --filter @lb/icons build
 
+# Make the shared corpus of visitor tokens again, after a rule of the token check changes (`just check` fails while it is stale).
+# Every verifier's tests run the file: @lb/common's, python/lb-common's, and the Django, Flask and Node systems'.
+visitor-tokens:
+    pnpm --filter @lb/common visitor-tokens
+
 # The local platform is hardened as on the box and needs Docker: run `just stack-secrets` once,
 # then `just stack up -d --wait`, and Caddy answers on http://127.0.0.1:8180.
 # Run a docker compose command on the local stack, such as `just stack ps` or `just stack logs gateway`.
