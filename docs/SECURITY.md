@@ -36,8 +36,12 @@ flowchart LR
 - DNS and HTTPS through Cloudflare; the origin IP is never published.
 - Cloudflare Tunnel: the box runs `cloudflared`, an outbound-only connector. There is
   no inbound firewall rule for HTTP or SSH.
-- Cloudflare's free managed WAF rules, Bot Fight Mode, a rate-limiting rule on the API
-  hostnames, and DDoS protection.
+- Cloudflare's free managed WAF rules, Bot Fight Mode, a per-IP rate-limiting rule on the
+  WebSocket path of the API hostname only (`/ws/`, where the address is the visitor's own),
+  and DDoS protection. There is deliberately no per-IP rule for the rest of the API hostname:
+  the site's server relays every visitor's call from Vercel's addresses, which all visitors
+  share, so such a rule would see the site and let one visitor block it for everyone.
+  [`docs/DEPLOY.md`](DEPLOY.md), part 5, says what to use instead.
 - TLS 1.3 and HSTS with preload.
 
 ## 2. Visitors without accounts
@@ -62,8 +66,10 @@ flowchart LR
   (`packages/common/test/fixtures/visitor-tokens.json`, made by
   `just visitor-tokens`, kept fresh by `just check`) is run by the tests of both and of
   every system's own authentication.
-- **Three rate-limit layers:** Cloudflare per IP, the gateway per session, and the
-  gateway per system and per provider.
+- **Three rate-limit layers:** Cloudflare per IP, for what visitors send straight to the API
+  hostname (LB-02's WebSocket); the systems' and the gateway's quotas per session, for everything
+  the site relays, since the API sees the site's addresses and not the visitor's; and the gateway
+  per system and per provider.
 - **Private by design.** IP addresses are kept only as salted hashes, and the salt
   rotates daily.
 
@@ -167,21 +173,24 @@ how a Vercel preview runs.
 | A back end, or something between, answering with more than it should | An answer must be JSON within a size limit and a deadline, with a status from a short list; an error is passed on only in the platform's error shape and only with the fields that shape allows, so a stack trace, an HTML page or a database message becomes a generic failure. Only `Retry-After` goes back as a header, and never a cookie |
 | CSRF | `SameSite=Strict` on the cookie, plus an `Origin` check on every request that changes anything (the origin must be the site's own, and `Sec-Fetch-Site` must say `same-origin` when a browser sends it), and no CORS, so no other site can read an answer |
 | Session fixation and forgery | A cookie the server did not sign is replaced, never adopted; a visitor cannot choose an ID, and there is no login to fix a session to |
-| Quota evasion by clearing cookies | A new cookie is a new session, with a fresh daily quota: the daily limits are per session because there are no accounts. What bounds a visitor who keeps clearing it is the Turnstile check before the first live run, Cloudflare's per-IP limits on the API hostnames, and the gateway's per-system and per-provider budgets, which cap total spend however many sessions ask. See the known gaps |
+| Quota evasion by clearing cookies | A new cookie is a new session, with a fresh daily quota: the daily limits are per session because there are no accounts. What bounds a visitor who keeps clearing it is the Turnstile check before the first live run and the gateway's per-system and per-provider budgets, which cap total spend however many sessions ask. See the known gaps |
 | Body bombs and slow requests | A size cap and a deadline for each system (`apps/web/server/lib/policy.ts`), set a little above what the system itself allows |
 | Markup in what the models write or a visitor types | Everything is rendered as text by Vue, `v-html` is banned by lint, and the site's API accepts a ticket that quotes a tag so the system can be tried with it (the XSS filter of `nuxt-security` is off for `/api/**`, where it would read the body first and refuse what a demo invites visitors to try) |
 
 ### Known gaps
 
 - **Clearing cookies resets a session's quota.** See the threat model: the daily limits are
-  per session, so a determined visitor can spend more than their share until Cloudflare's
-  per-IP limits or the gateway's budgets stop them.
-- **The per-IP layer sees the site's server, not the visitor.** The site's server calls the
-  API from its host (Vercel), so Cloudflare's per-IP rate limit on the API hostnames sees that
-  host's addresses for everything the site relays. It still protects the API hostnames from
-  direct abuse, but abuse relayed by the site is bounded only by the Turnstile check, the
-  per-session quotas and the gateway's budgets. The site has no rate limiter of its own on
-  purpose: one per serverless instance would not see all requests.
+  per session, so a determined visitor can spend more than their share until the gateway's
+  budgets stop them.
+- **There is no per-IP limit on what the site relays, on purpose.** The site's server calls the
+  API from its host (Vercel), so anything Cloudflare counts per IP on the API hostname is the
+  site's addresses, shared by every visitor: a per-IP rule there lets one visitor block the site
+  for everyone. So the per-IP rule is scoped to the WebSocket path, which visitors' browsers
+  reach directly, and what the site relays is bounded by the Turnstile check, the per-session
+  quotas, the gateway's budgets and its limit on how often one run's trace is read. A per-IP
+  limit on relayed traffic belongs where the visitor's address is visible, on the site
+  (Vercel's Firewall), not on the API hostname behind it; the site's own server has no limiter
+  of its own on purpose, since one per serverless instance would not see all requests.
 - **The real Turnstile widget has been run under this policy only with Cloudflare's test
   keys.** The production build, in a real browser, loaded the widget's script through the
   Trusted Types policy, rendered its frame, got a token and had the server's check with
@@ -427,3 +436,42 @@ real Redis; `infra/caddy` (`infra/caddy/test.sh`, all checks pass) and the Compo
 Turnstile widget and hostname), Oracle or Tailscale; the Redis ACL and Postgres role proofs
 (`infra/redis/test-acl.sh`, `infra/postgres/test-roles.sh`), which start containers of their own;
 arm64.
+
+### 2 Oct 2026, follow-up: the reported items that were code
+
+Each was fixed with a test that failed before the fix; the section it belongs to says how it works now.
+
+- **The run ID is out of the gateway's request log.** A request serializer replaces whatever follows
+  `/runs/` in every logged URL (`services/gateway/src/log.ts`, applied inside `buildGateway` so it
+  holds however the log is set up), and a test reads the log after successful, missing, malformed and
+  refused reads. **Still open:** Caddy's access log holds the run ID in the request URI; it is
+  infrastructure, only the owner reads it, and no filter for it is written yet.
+- **Every verifier accepts and refuses the same tokens.** The TypeScript and Python checks are strict
+  in the same way, and one corpus of 220 signed cases, made from a public seed
+  (`packages/common/test/fixtures/visitor-tokens.json`, `just visitor-tokens`, kept fresh by
+  `just check`), is run by the tests of `@lb/common`, `lb_common.visitors` and the Django, Flask and
+  Node systems through their own authentication. Against the old verifiers it failed 18 cases in
+  TypeScript and 32 in Python (the reported ones, and more: a padded header, bits that must be zero,
+  nested members, an `aud` list of mixed types, a `Bearer` header with tabs, a key with stray bits,
+  and Python judging `exp` by its own clock). A differential fuzz of 150,000 bent tokens and 60,000
+  `Authorization` headers, run once and not kept, found no difference between the two. Django's bearer
+  no longer reads the header the way Ninja does, which differed from the others.
+- **A build on Vercel cannot be the test build.** `LB_TEST_BUILD=1` where `VERCEL` is set stops
+  `nuxt build` with an error that names the variables, and a server built that way refuses to start
+  where `VERCEL` is set (`apps/web/shared/build-mode.ts`).
+- **The trace route is bounded.** The gateway counts the reads of each run (a burst of 20, then 5 a
+  second) and answers 429 `rate_limited` past that, however the page is asked for; the site keeps a
+  page for a second and shares one fetch among readers who ask at once. A test through the site to
+  the real gateway shows that varying the page cannot get round it.
+- **The site has one address, and the bare `/api` answers 404.** `NUXT_LB_SITE_ORIGIN` sends every
+  other host on with a 308 (see "What the site's server does"). `GET /api` answered 503 because the
+  test server attached the site's services to every path and the real middleware only to `/api/...`;
+  both now run one module, and an end-to-end test checks the real build.
+- **Cloudflare's per-IP rule is scoped to the WebSocket path** (documented, not code): section 1,
+  the known gaps and `docs/DEPLOY.md`, part 5.
+- Section 2 now names the verifiers' real homes.
+
+**Still reported, not changed.** LB-05's retry of an expensive question and LB-02's unbounded
+coroutines per queued frame (both above); the `X-Forwarded-Host` and `-Proto` headers are trusted by
+the Origin check, the Turnstile hostname check and now the one-address redirect, which is safe only
+because Vercel sets them itself.

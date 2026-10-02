@@ -279,11 +279,33 @@ Vercel DNS-only (grey cloud), as Vercel recommends; the API record below is prox
    The `cloudflared` container reaches `caddy` by name on the `edge` network, and Caddy
    is the only thing it talks to.
 
-**Rate limiting.** In Security, WAF, Rate limiting rules, add one rule for the API
-hostname, such as: when the host is `api.example.com`, more than 50 requests in 10
-seconds from one IP address, block. (The gateway and the Django systems have their own
-per-visitor quotas; this one stops floods before they reach the box.) Leave Cloudflare's
-managed WAF rules and Bot Fight Mode on.
+**Rate limiting.** Do not make the rate-limiting rule per IP address for the API hostname
+as a whole. The site's server makes every visitor's call to the API from Vercel, so the API
+sees a few addresses that all visitors share, and a per-IP rule sees the site, not the
+visitor. One visitor, or an ordinary busy minute, trips "more than N requests in 10 seconds
+from one IP", Cloudflare blocks Vercel's address, and every demo stops for everyone until the
+block ends. A higher number only makes the rule harder to trip by accident; a visitor who
+wants to trip it can still do so deliberately, from the site's address. The box's real limits
+are per session and per system, and they see the visitor: each system's quotas (LB-01's 20
+tickets a day, LB-02's 10 conversations, LB-05's 25 questions, LB-08's runs), the gateway's
+per-session calls and its per-system and per-provider budgets, the Turnstile check before a
+live run, and the gateway's limit on how often one run's trace is read.
+
+What to use instead:
+
+1. **The one thing visitors' browsers send straight to the API hostname is LB-02's WebSocket,
+   at `/ws/`.** The address Cloudflare sees there is the visitor's own, so a per-IP rule is
+   right there, and only there. In Security, WAF, Rate limiting rules, add one rule: when the
+   host is `api.example.com` and the URI path starts with `/ws/`, more than 20 requests in 10
+   seconds from one IP address, block.
+2. **For the rest of the API hostname, which the site relays, no per-IP rule.** Leave
+   Cloudflare's managed WAF rules, Bot Fight Mode and DDoS protection on: they judge a request
+   by what it is, not by how many its address sent. Caddy serves only the routes it lists
+   (part 11 checks this), and everything past it is limited per session and per system as above.
+3. **If you want a per-IP limit on what the site relays, put it where the visitor's address is
+   visible: on the site.** Vercel's Firewall can rate-limit `/api/*` by the visitor's address
+   (check what your plan allows; that menu has not been run here). The site's own server has
+   no limiter on purpose: one per serverless instance would not see all requests.
 
 **Turnstile.** Turnstile, Add widget: hostname `example.com`, mode Managed. Keep the two
 keys: the **site key** (public) and the **secret key**. They go to Vercel in part 10.
@@ -564,6 +586,9 @@ From a machine **outside** the tailnet:
       exist.
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' -H 'Origin: https://evil.example' https://api.example.com/ws/lb02/x`
       is `403`: a WebSocket from another origin is refused.
+- [ ] In Cloudflare, Security, WAF, Rate limiting rules: the only per-IP rule for
+      `api.example.com` is the one for the `/ws/` path. None covers the whole hostname (the
+      site relays everything else from Vercel's addresses, shared by every visitor).
 - [ ] `https://example.com` loads, in both languages, in both themes.
 - [ ] `curl -sI https://www.example.com/systems/lb-01?x=1` is `308` with `location:
       https://example.com/systems/lb-01?x=1`, no `set-cookie` and `cache-control: no-store`;
