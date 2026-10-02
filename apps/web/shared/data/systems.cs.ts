@@ -48,6 +48,8 @@ export const systemsCs = {
       { label: 'Blokace termínu', value: '5 min' },
       { label: 'Obnova demo kalendáře', value: 'Každou noc' },
       { label: 'Volání modelu na rezervaci (odhad)', value: '6–10' },
+      { label: 'Konverzací na návštěvníka za den', value: '10' },
+      { label: 'Uchování dat návštěvníka', value: '24 h' },
     ],
   },
   'lb-03': {

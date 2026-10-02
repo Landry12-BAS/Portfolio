@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img">
+  <title>LB, Landry Bodjona</title>
+  <!-- LB mark, rev C, traced from the owner's source files in brand/source. One construction for every variant, in mark units: 514.5 x 413.5. App icon, light: white tile. -->
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <g transform="translate(80 114.55) scale(0.68416)">
+    <path fill="#111214" d="M0 0H82.27V294.28L0 359.01Z"/>
+    <path fill="#111214" d="M188 26.9H393.33A97.96 97.96 0 0 1 456.21 199.97A108.52 108.52 0 0 1 514.42 296.12C514.42 365.81 466.31 413.41 395.87 413.41H110.46L174.67 356.69A46.54 46.54 0 0 1 205.48 345.03H388.85A49.99 49.99 0 0 0 388.85 245.06H237.92V180.97H369.15A45.34 45.34 0 0 0 369.15 90.28H188Z"/>
+    <path fill="#045EFE" d="M207.31 194.41C216.18 187.43 231.61 180.97 239.42 180.97V247.71L55.15 404.01A39.62 39.62 0 0 1 29.52 413.41H26.63A26.63 26.63 0 0 1 0 386.78V357.51Z"/>
+  </g>
+</svg>
