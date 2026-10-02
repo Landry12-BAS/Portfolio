@@ -1,6 +1,6 @@
 """Tests for lb01.claims: every fact in a draft must come from a source it cites."""
 
-from lb01.claims import check_claims
+from lb01.claims import ClaimProblem, ProblemCode, check_claims, describe_problem
 from lb01.prompts import DraftSentence
 
 SOURCES = {
@@ -87,3 +87,34 @@ def test_dates_match_however_the_reply_writes_them() -> None:
     check = check_claims([sentence("Objednávka byla doručena 5. 9. 2026.", "order:BB-1040")], SOURCES)
 
     assert check.supported
+
+
+def test_problems_are_codes_with_the_sources_or_numbers_they_are_about() -> None:
+    """A failed sentence keeps what is wrong as data, so any language can word it."""
+    check = check_claims(
+        [
+            sentence("Send us a photo within 30 days.", "passage:damaged.torn-bags"),
+            sentence("You can pause for 3 months.", "passage:subscriptions.skip-and-pause"),
+            sentence("Your refund is on its way."),
+        ],
+        SOURCES,
+    )
+
+    assert check.problems == {
+        0: ClaimProblem(ProblemCode.UNSTATED_NUMBERS, ("30",)),
+        1: ClaimProblem(ProblemCode.UNKNOWN_SOURCE, ("passage:subscriptions.skip-and-pause",)),
+        2: ClaimProblem(ProblemCode.UNCITED_FACT),
+    }
+
+
+def test_every_problem_is_worded_in_english_and_in_czech() -> None:
+    """Czech visitors read the explanation in Czech; an unknown language falls back to English."""
+    unstated = ClaimProblem(ProblemCode.UNSTATED_NUMBERS, ("30", "14"))
+
+    assert describe_problem(unstated, "en") == "states 30, 14, which its sources don't"
+    assert describe_problem(unstated, "cs") == "uvádí 30, 14, což jeho zdroje neobsahují"
+    assert describe_problem(ClaimProblem(ProblemCode.UNCITED_FACT), "cs") == "uvádí tvrzení bez zdroje"
+    assert describe_problem(ClaimProblem(ProblemCode.UNKNOWN_SOURCE, ("order:BB-1040",)), "cs") == (
+        "cituje zdroj, který nedostal: order:BB-1040"
+    )
+    assert describe_problem(unstated, "de") == describe_problem(unstated, "en")

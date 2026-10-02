@@ -28,7 +28,7 @@ from openai import OpenAIError
 from redis import Redis
 
 from core.structured import ChatModels, GatewayChat, StructuredAnswer, StructuredOutputError, ask_for_json
-from lb01.claims import ClaimCheck, check_claims
+from lb01.claims import ClaimCheck, check_claims, describe_problem
 from lb01.models import Customer, Draft, PolicyPassage, Ticket
 from lb01.orders import OrderLookup, look_up_order
 from lb01.prompts import Classification, DraftAnswer, Source, classify_messages, draft_messages
@@ -302,7 +302,13 @@ def save_result(ticket: Ticket, result: PipelineResult) -> None:
                     ],
                     "claims_supported": result.claims.supported,
                     "unsupported": [
-                        {"sentence": index, "reason": reason} for index, reason in result.claims.reasons.items()
+                        {
+                            "sentence": index,
+                            "code": problem.code.value,
+                            "items": list(problem.items),
+                            "reason": describe_problem(problem),
+                        }
+                        for index, problem in result.claims.problems.items()
                     ],
                     "model": result.draft_model[:120],
                 },

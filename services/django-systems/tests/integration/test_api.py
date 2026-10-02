@@ -117,6 +117,10 @@ def test_filing_a_ticket_queues_it_once_it_is_saved(
     ticket = Ticket.objects.get(public_id=body["id"])
     assert ticket.session_key == SAM
     assert queued == [ticket.pk]
+    # The run is named from the start, so the Scope can follow it while the worker works.
+    assert len(body["run_id"]) >= 8
+    assert ticket.run_id == body["run_id"]
+    assert visitor(site_key).get(f"/api/lb01/tickets/{body['id']}").json()["run_id"] == body["run_id"]
 
 
 @pytest.mark.parametrize(
@@ -198,6 +202,41 @@ def test_a_draft_is_shown_with_its_sources_and_its_marked_sentences(site_key: Ed
     assert draft["sources"][0]["title"] == "Damaged, stale or wrong items §1: Torn or crushed bags"
     assert draft["sources"][1]["title"] == "Order BB-1040"
     assert draft["sources"][1]["text"].startswith("Order BB-1040: delivered.")
+
+
+def test_a_czech_visitor_reads_the_claim_check_in_czech(site_key: Ed25519PrivateKey) -> None:
+    """A stored problem is worded in the ticket's language; an older row without a code keeps its English reason."""
+    ticket = drafted_ticket(language="cs")
+    Draft.objects.filter(ticket=ticket).update(
+        unsupported=[
+            {
+                "sentence": 1,
+                "code": "unstated_numbers",
+                "items": ["14"],
+                "reason": "states 14, which its sources don't",
+            },
+            {"sentence": 2, "reason": "states 1, which its sources don't"},
+        ]
+    )
+
+    sentences = visitor(site_key).get(f"/api/lb01/tickets/{ticket.public_id}").json()["draft"]["sentences"]
+
+    assert sentences[1]["problem"] == "uvádí 14, což jeho zdroje neobsahují"
+    assert sentences[2]["problem"] == "states 1, which its sources don't"
+
+
+def test_an_english_visitor_reads_the_claim_check_in_english(site_key: Ed25519PrivateKey) -> None:
+    """The same stored problem reads in English for an English ticket."""
+    ticket = drafted_ticket()
+    Draft.objects.filter(ticket=ticket).update(
+        unsupported=[
+            {"sentence": 2, "code": "uncited_fact", "items": [], "reason": "states a fact without citing a source"}
+        ]
+    )
+
+    sentences = visitor(site_key).get(f"/api/lb01/tickets/{ticket.public_id}").json()["draft"]["sentences"]
+
+    assert sentences[2]["problem"] == "states a fact without citing a source"
 
 
 def test_a_czech_ticket_shows_its_sources_in_czech(site_key: Ed25519PrivateKey) -> None:

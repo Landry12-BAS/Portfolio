@@ -288,8 +288,8 @@ def test_unsupported_sentences_are_marked_for_the_person_who_approves() -> None:
     assert ticket.status == Ticket.Status.AWAITING_APPROVAL
     assert not saved.claims_supported
     assert saved.unsupported == [
-        {"sentence": 1, "reason": "states 30, which its sources don't"},
-        {"sentence": 2, "reason": "states a fact without citing a source"},
+        {"sentence": 1, "code": "unstated_numbers", "items": ["30"], "reason": "states 30, which its sources don't"},
+        {"sentence": 2, "code": "uncited_fact", "items": [], "reason": "states a fact without citing a source"},
     ]
     assert spans.named("check claims").attrs == {"supported": False, "unsupported": 2}
 

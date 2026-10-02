@@ -21,9 +21,11 @@ from pydantic import StringConstraints, model_validator
 
 from core.data_files import Key
 from core.visitors import Visitor, VisitorBearer
+from lb01.claims import ClaimProblem, ProblemCode, describe_problem
 from lb01.models import MAX_TICKET_LENGTH, Customer, Decision, Draft, PolicyPassage, Ticket
 from lb01.orders import look_up_order
 from lb01.tasks import run_ticket
+from lb_common.run import new_run_id
 
 # How many tickets one visitor may file in a day (the LB-01 datasheet).
 TICKETS_PER_DAY = 20
@@ -190,8 +192,13 @@ def file_ticket(request: HttpRequest, payload: TicketIn) -> Status[TicketOut] | 
     if filed_today(visitor) >= TICKETS_PER_DAY:
         return Status(429, error("daily_limit", f"A visitor may file {TICKETS_PER_DAY} tickets a day."))
     with transaction.atomic(using="lb01"):
+        # The run's ID is known from the start, so the Scope can follow the run while it works.
         ticket = Ticket.objects.create(
-            session_key=visitor.session_key, customer=customer, language=payload.language, body=payload.body
+            session_key=visitor.session_key,
+            customer=customer,
+            language=payload.language,
+            body=payload.body,
+            run_id=new_run_id(),
         )
         # The worker must never look for a ticket this transaction hasn't committed yet.
         transaction.on_commit(partial(run_ticket.delay, ticket.pk), using="lb01")
@@ -306,7 +313,7 @@ def ticket_out(ticket: Ticket) -> TicketOut:
 
 def draft_out(draft: Draft, ticket: Ticket) -> DraftOut:
     """Describe a draft sentence by sentence, with every source it cites, in the ticket's language."""
-    problems = {int(item["sentence"]): str(item["reason"]) for item in draft.unsupported}
+    problems = {int(item["sentence"]): problem_text(item, ticket.language) for item in draft.unsupported}
     sentences = [
         SentenceOut(
             text=str(sentence["text"]),
@@ -323,6 +330,17 @@ def draft_out(draft: Draft, ticket: Ticket) -> DraftOut:
         model=draft.model,
         sources=[source for citation in cited if (source := source_out(citation, ticket)) is not None],
     )
+
+
+def problem_text(stored: dict[str, object], language: str) -> str:
+    """Word a stored claim problem in the ticket's language; a row without a code keeps its English reason."""
+    try:
+        code = ProblemCode(str(stored["code"]))
+    except (KeyError, ValueError):
+        return str(stored.get("reason", ""))
+    raw_items = stored.get("items", [])
+    items = tuple(str(item) for item in raw_items) if isinstance(raw_items, list) else ()
+    return describe_problem(ClaimProblem(code, items), language)
 
 
 def source_out(citation: str, ticket: Ticket) -> SourceOut | None:
