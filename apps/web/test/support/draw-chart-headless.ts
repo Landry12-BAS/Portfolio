@@ -6,6 +6,7 @@
 // needed to compile an expression with the Function constructor, drawing would fail here.
 import { readFileSync } from 'node:fs'
 
+import type { ChartLanguage } from '../../app/boards/lb-05/chart/locale.ts'
 import { createView } from '../../app/boards/lb-05/chart/render.ts'
 import type { ChartSpec } from '../../app/boards/lb-05/chart/spec.ts'
 import type { ChartTokens } from '../../app/boards/lb-05/chart/theme.ts'
@@ -15,6 +16,7 @@ interface Input {
   tokens: ChartTokens
   charts: ChartSpec[]
   width: number
+  language: ChartLanguage
 }
 
 /** What was drawn, in the few numbers the test checks. */
@@ -36,8 +38,8 @@ function codeGenerationIsOff(): boolean {
 }
 
 /** Draws one chart headless and returns it as SVG. */
-async function draw(spec: ChartSpec, tokens: ChartTokens, width: number): Promise<Drawn> {
-  const view = createView(spec, tokens, width, 'none')
+async function draw(spec: ChartSpec, tokens: ChartTokens, width: number, language: ChartLanguage): Promise<Drawn> {
+  const view = createView(spec, tokens, width, 'none', undefined, language)
   await view.runAsync()
   const svg = await view.toSVG()
   view.finalize()
@@ -46,5 +48,5 @@ async function draw(spec: ChartSpec, tokens: ChartTokens, width: number): Promis
 
 const input = JSON.parse(readFileSync(0, 'utf8')) as Input
 const drawn: Drawn[] = []
-for (const chart of input.charts) drawn.push(await draw(chart, input.tokens, input.width))
+for (const chart of input.charts) drawn.push(await draw(chart, input.tokens, input.width, input.language))
 console.log(JSON.stringify({ codeGenerationIsOff: codeGenerationIsOff(), drawn }))

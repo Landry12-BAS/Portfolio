@@ -13,9 +13,11 @@ import { expressionInterpreter } from 'vega-interpreter'
 import { compile } from 'vega-lite'
 import type { TopLevelSpec } from 'vega-lite'
 
+import { vegaLocale } from './locale.ts'
+import type { ChartLanguage } from './locale.ts'
 import type { ChartSpec } from './spec.ts'
 import { chartConfig } from './theme.ts'
-import type { ChartTokens } from './theme.ts'
+import type { ChartTokens, LabelLayout } from './theme.ts'
 
 /** The narrowest a chart is drawn, so labels stay legible however small the box is. */
 export const MIN_CHART_WIDTH = 240
@@ -63,9 +65,20 @@ function specToCompile(spec: ChartSpec, width: number): TopLevelSpec {
   }
 }
 
-/** Compiles a chart to the Vega spec that draws it, dressed in the tokens. */
-export function compileChart(spec: ChartSpec, tokens: ChartTokens, width: number): vega.Spec {
-  return compile(specToCompile(spec, width), { config: chartConfig(tokens) }).spec
+/** The most categories a chart's horizontal axis names flat; with more, the names are tilted so that every one is shown. */
+const MOST_FLAT_LABELS = 4
+
+/** Chooses how the labels along the horizontal axis are set: tilted when it names many categories, which flat labels would crowd out. */
+function labelLayout(spec: ChartSpec): LabelLayout {
+  const names = spec.encoding.x.type === 'nominal' || spec.encoding.x.type === 'ordinal'
+  return names && new Set(spec.data.values.map(point => point.x)).size > MOST_FLAT_LABELS ? 'tilted' : 'flat'
+}
+
+/** Compiles a chart to the Vega spec that draws it, dressed in the tokens and following the language's number and date conventions. */
+export function compileChart(spec: ChartSpec, tokens: ChartTokens, width: number, language: ChartLanguage = 'en'): vega.Spec {
+  const compiled = compile(specToCompile(spec, width), { config: chartConfig(tokens, labelLayout(spec)) }).spec
+  const locale = vegaLocale(language)
+  return locale ? { ...compiled, config: { ...compiled.config, locale } } : compiled
 }
 
 /**
@@ -73,14 +86,14 @@ export function compileChart(spec: ChartSpec, tokens: ChartTokens, width: number
  * interpreter, unable to load anything. The renderer is `canvas` for a page (with the container to draw
  * in) and `none` for a test that reads the drawing back as SVG.
  */
-export function createView(spec: ChartSpec, tokens: ChartTokens, width: number, renderer: 'canvas' | 'none', container?: HTMLElement): vega.View {
-  const runtime = vega.parse(compileChart(spec, tokens, width), undefined, { ast: true })
+export function createView(spec: ChartSpec, tokens: ChartTokens, width: number, renderer: 'canvas' | 'none', container?: HTMLElement, language: ChartLanguage = 'en'): vega.View {
+  const runtime = vega.parse(compileChart(spec, tokens, width, language), undefined, { ast: true })
   return new vega.View(runtime, { expr: expressionInterpreter, renderer, container, loader: REFUSING_LOADER, hover: false })
 }
 
 /** Draws a chart into a container on a canvas, and keeps it ready to be drawn again at another width. */
-export async function drawChart(container: HTMLElement, spec: ChartSpec, tokens: ChartTokens, width: number): Promise<DrawnChart> {
-  const view = createView(spec, tokens, width, 'canvas', container)
+export async function drawChart(container: HTMLElement, spec: ChartSpec, tokens: ChartTokens, width: number, language: ChartLanguage = 'en'): Promise<DrawnChart> {
+  const view = createView(spec, tokens, width, 'canvas', container, language)
   await view.runAsync()
   return {
     resize: async (next) => {

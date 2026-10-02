@@ -38,9 +38,9 @@ interface HarnessOutput {
 }
 
 /** Draws charts in a Node process that may not generate code from strings, and returns what it drew. */
-async function drawWithoutEval(charts: ChartSpec[], theme: 'light' | 'dark'): Promise<HarnessOutput> {
+async function drawWithoutEval(charts: ChartSpec[], theme: 'light' | 'dark', language: 'en' | 'cs' = 'en'): Promise<HarnessOutput> {
   const child = run(process.execPath, ['--disallow-code-generation-from-strings', HARNESS], { encoding: 'utf8', maxBuffer: 20_000_000, timeout: 60_000 })
-  child.child.stdin?.end(JSON.stringify({ tokens: chartTokensFor(theme), charts, width: 640 }))
+  child.child.stdin?.end(JSON.stringify({ tokens: chartTokensFor(theme), charts, width: 640, language }))
   return JSON.parse((await child).stdout) as HarnessOutput
 }
 
@@ -66,6 +66,23 @@ describe('drawing the charts without ever generating code from a string', () => 
       expect(line?.svg.toLowerCase()).toContain(normal(tokens.series[0] ?? ''))
       expect(line?.svg.toLowerCase()).toContain(normal(tokens.series[1] ?? ''))
     }
+  }, 90_000)
+
+  it('writes the numbers and the months on the axes in Czech for a Czech page, with the same drawing code and no code generation', async () => {
+    const [bar, line] = (await drawWithoutEval(acceptedCharts(), 'light', 'cs')).drawn
+    const thousands = new Intl.NumberFormat('cs').formatToParts(1_000_000).find(part => part.type === 'group')?.value ?? ''
+    const march = new Intl.DateTimeFormat('cs', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2025, 2, 1)))
+    expect(thousands).not.toBe(',')
+    expect(bar?.svg).toContain(`150${thousands}000`)
+    expect(bar?.svg).not.toContain('150,000')
+    expect(line?.svg).toContain(`${march} 02`)
+    expect(line?.svg).not.toContain('Mar 02')
+  }, 90_000)
+
+  it('leaves the numbers and the months in English for an English page', async () => {
+    const [bar, line] = (await drawWithoutEval(acceptedCharts(), 'light', 'en')).drawn
+    expect(bar?.svg).toContain('150,000')
+    expect(line?.svg).toContain('Mar 02')
   }, 90_000)
 
   it('draws every label, title and value as text in the drawing, and none as markup', async () => {
@@ -114,6 +131,17 @@ describe('what a compiled chart contains', () => {
       // The tooltip encoding is there and switched off; nothing builds one.
       expect(text).not.toMatch(/"tooltip":\{"(?!value":false)/)
     }
+  })
+
+  it('tilts the names on the horizontal axis of a bar chart with many categories so that every one is shown, and leaves a few flat', () => {
+    const [bar] = acceptedCharts()
+    if (!bar) throw new Error('There is no bar chart.')
+    /** Reads how the compiled chart sets the labels of its horizontal axis. */
+    const horizontalLabels = (spec: ChartSpec) => (compileChart(spec, chartTokensFor('light'), 640) as { config: { axisX: { labelAngle: number, labelOverlap: unknown } } }).config.axisX
+    expect(horizontalLabels(bar)).toMatchObject({ labelAngle: 0, labelOverlap: 'greedy' })
+    const names = ['Basalt Blend', 'Ethiopia Guji', 'Kenya Nyeri', 'Colombia Huila', 'Lava Decaf', 'Gooseneck Kettle']
+    const many = { ...bar, data: { values: names.map((name, index) => ({ x: name, y: 100 - index })) } }
+    expect(horizontalLabels(many)).toMatchObject({ labelAngle: -40, labelOverlap: false })
   })
 
   it('draws at the width it is given, and no narrower than a chart can be read', () => {

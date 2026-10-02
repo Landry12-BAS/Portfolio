@@ -52,8 +52,18 @@ export function readChartTokens(element: Element): ChartTokens | undefined {
 const LABEL_SIZE = 11
 const TITLE_SIZE = 12
 
+/** How the labels along a chart's horizontal axis are set: flat, with those that would overlap left out, or tilted so that every one is shown. */
+export type LabelLayout = 'flat' | 'tilted'
+
+/** Writes how the horizontal axis sets its labels. */
+function horizontalAxis(tokens: ChartTokens, labels: LabelLayout): NonNullable<Config['axisX']> {
+  const base = { grid: false, domain: true, domainColor: tokens.rule }
+  if (labels === 'tilted') return { ...base, labelAngle: -40, labelAlign: 'right', labelBaseline: 'middle', labelOverlap: false, labelLimit: 160 }
+  return { ...base, labelAngle: 0, labelOverlap: 'greedy', labelLimit: 120 }
+}
+
 /** Builds the Vega-Lite configuration that dresses a chart in the tokens. */
-export function chartConfig(tokens: ChartTokens): Config {
+export function chartConfig(tokens: ChartTokens, labels: LabelLayout = 'flat'): Config {
   const first = tokens.series[0] ?? tokens.ink
   return {
     background: tokens.sheet,
@@ -77,7 +87,7 @@ export function chartConfig(tokens: ChartTokens): Config {
       titleFontWeight: 'normal',
       titlePadding: 10,
     },
-    axisX: { grid: false, domain: true, domainColor: tokens.rule, labelAngle: 0, labelOverlap: 'greedy', labelLimit: 120 },
+    axisX: horizontalAxis(tokens, labels),
     legend: {
       orient: 'bottom',
       labelColor: tokens.ink,

@@ -88,7 +88,7 @@ async function draw(): Promise<void> {
     const { drawChart } = await import('../chart/render')
     if (mine !== drawing) return
     const width = target.clientWidth
-    const next = await drawChart(target, current, tokens, width)
+    const next = await drawChart(target, current, tokens, width, locale.value === 'cs' ? 'cs' : 'en')
     if (mine !== drawing) {
       next.destroy()
       return
