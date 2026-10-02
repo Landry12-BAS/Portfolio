@@ -275,8 +275,6 @@ sync-over-async claim is not yet measured.
 - DuckDB's memory limit does not cap `UNNEST` or `REPEAT` allocations; the allowlist is the guard.
 - One gunicorn worker means one DuckDB with its own memory limit: more workers multiply the
   memory, and the worker should sit under a container memory limit.
-- The datasheet says four layers of SQL safety; the service has six named layers, of which the
-  parse-tree check is two and the plan check is one more.
 
 ## Layout
 

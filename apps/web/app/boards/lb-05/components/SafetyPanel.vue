@@ -163,9 +163,9 @@ function start(): void {
     <p
       v-if="!brief"
       class="hint"
-      data-testid="four-or-six"
+      data-testid="six-checks"
     >
-      {{ t('lb05.attack.fourOrSix') }}
+      {{ t('lb05.attack.sixChecks') }}
     </p>
     <p class="hint">
       {{ t('lb05.attack.hiddenColumns') }}

@@ -382,13 +382,13 @@ test.describe('trying to make it delete data', () => {
     await expect(page.getByTestId('show-all')).toHaveCount(0)
   })
 
-  test('says plainly what each layer is, and that the datasheet\'s four defences are six checks', async ({ page }) => {
+  test('says plainly what each layer is, and that there are six of them, as the datasheet counts', async ({ page }) => {
     await openBoard(page)
     await openSafetyDemo(page)
     await expect(page.getByTestId('layers')).toContainText('opened read-only')
     await expect(page.getByTestId('layers')).toContainText('cut at 1,000 rows')
     await expect(page.getByTestId('layers')).toContainText('interrupted')
-    await expect(page.getByTestId('four-or-six')).toContainText('four defences')
+    await expect(page.getByTestId('six-checks')).toContainText('Six checks')
   })
 })
 

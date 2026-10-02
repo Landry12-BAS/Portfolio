@@ -291,7 +291,7 @@ describe('LB-05\'s board', () => {
       expect(wrapper.get('[data-testid="attack-expected"]').text()).toContain('Parse')
       expect(wrapper.findAll('[data-testid="layer"]')).toHaveLength(6)
       expect(wrapper.get('[data-testid="layers"]').text()).toContain('1,000 rows')
-      expect(wrapper.get('[data-testid="four-or-six"]').text()).toContain('four defences')
+      expect(wrapper.get('[data-testid="six-checks"]').text()).toContain('Six checks')
       expect(layerStates(wrapper).every(state => state === 'idle')).toBe(true)
     })
 

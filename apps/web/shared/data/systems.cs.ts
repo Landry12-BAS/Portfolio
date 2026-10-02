@@ -107,7 +107,7 @@ export const systemsCs = {
     chain: ['určení metrik', 'napsání SQL', 'parsování a allowlist', 'EXPLAIN', 'spuštění jen pro čtení', 'vlastní oprava', 'graf a vysvětlení'],
     stack: ['Flask (synchronní)', 'vláknové workery gunicornu', 'DuckDB', 'sqlglot', 'Vega-Lite', 'Vue'],
     highlights: [
-      'Čtyři vrstvy ochrany SQL: připojení jen pro čtení, kontrola syntaktického stromu, která pustí jen SELECT, vynucený limit řádků a časový limit dotazu.',
+      'Šest vrstev ochrany SQL: rozbor, který pustí jen SELECT, seznam povolených tabulek, sloupců a funkcí, kontrola plánu dřív, než se cokoli spustí, uzamčené připojení jen pro čtení, vynucený limit řádků a časový limit dotazu.',
       'Synchronní záměrně. Dotazy jsou krátké a vytěžují CPU, čekání na model pokryjí vlákna a kód zůstává jednoduchý. Katalogový list zveřejňuje zátěžový test proti asynchronní verzi.',
       'Přesnost výsledků měřená na 100 párech otázek a odpovědí.',
     ],
