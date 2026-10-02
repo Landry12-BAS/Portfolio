@@ -17,10 +17,12 @@ const minimal = {
   LB_DATABASE_URL: 'postgres://lb:secret-password@127.0.0.1:5432/lb',
   LB_REDIS_URL: 'redis://127.0.0.1:6379/0',
 }
+// What the API and the worker also need: both make model calls.
+const withGateway = { ...minimal, LB_GATEWAY_URL: 'http://gateway:8080', LB_SERVICE_KEY_FILE: '/run/key.jwk.json' }
 
 describe('the environment', () => {
   it('fills in every default for a minimal worker', () => {
-    expect(loadEnv(minimal, 'worker')).toMatchObject({
+    expect(loadEnv(withGateway, 'worker')).toMatchObject({
       LB_NODE_HOST: '0.0.0.0',
       LB_NODE_PORT: 8002,
       LB_NODE_LOG_LEVEL: 'info',
@@ -30,7 +32,7 @@ describe('the environment', () => {
   })
 
   it('counts a variable set to nothing as not set, as .env.example leaves the ones to fill in', () => {
-    const env = loadEnv({ ...minimal, LB_WEB_TOKEN_KEY: '', LB_SERVICE_KEY_FILE: '', LB_GATEWAY_URL: '', LB08_DATABASE_URL: '' }, 'worker')
+    const env = loadEnv({ ...minimal, LB_WEB_TOKEN_KEY: '', LB_SERVICE_KEY_FILE: '', LB_GATEWAY_URL: '', LB08_DATABASE_URL: '', LB04_DATABASE_URL: '' }, 'tool')
 
     expect(env.LB_WEB_TOKEN_KEY).toBeUndefined()
     expect(env.LB_SERVICE_KEY_FILE).toBeUndefined()
@@ -38,9 +40,10 @@ describe('the environment', () => {
     expect(() => loadEnv({ ...minimal, LB_GATEWAY_URL: '', LB_SERVICE_KEY_FILE: '' }, 'api')).toThrow(/LB_GATEWAY_URL: required/)
   })
 
-  it('needs the gateway to start the API, and not for the worker or a tool', () => {
-    expect(() => loadEnv(minimal, 'api')).toThrow(/LB_GATEWAY_URL: required[\s\S]*LB_SERVICE_KEY_FILE: required/)
-    expect(() => loadEnv(minimal, 'worker')).not.toThrow()
+  it('needs the gateway to start the API and the worker, which both make model calls, and not for a tool', () => {
+    expect(() => loadEnv(minimal, 'api')).toThrow(/LB_GATEWAY_URL: required to start the API[\s\S]*LB_SERVICE_KEY_FILE: required to start the API/)
+    expect(() => loadEnv(minimal, 'worker')).toThrow(/LB_GATEWAY_URL: required to start the worker[\s\S]*LB_SERVICE_KEY_FILE: required to start the worker/)
+    expect(() => loadEnv(withGateway, 'worker')).not.toThrow()
     expect(() => loadEnv(minimal, 'tool')).not.toThrow()
     expect(loadEnv({ ...minimal, LB_GATEWAY_URL: 'http://gateway:8080', LB_SERVICE_KEY_FILE: '/run/key.jwk.json', LB_WEB_TOKEN_KEY: KEY }, 'api').LB_WEB_TOKEN_KEY).toBe(KEY)
   })
@@ -59,7 +62,10 @@ describe('the environment', () => {
   })
 
   it('accepts a system\'s own database URL next to the shared one', () => {
-    expect(loadEnv({ ...minimal, LB08_DATABASE_URL: 'postgres://lb08:pw@127.0.0.1:5432/lb' }, 'worker').LB08_DATABASE_URL).toBe('postgres://lb08:pw@127.0.0.1:5432/lb')
+    const own = loadEnv({ ...withGateway, LB08_DATABASE_URL: 'postgres://lb08:pw@127.0.0.1:5432/lb', LB04_DATABASE_URL: 'postgres://lb04:pw@127.0.0.1:5432/lb' }, 'worker')
+
+    expect(own.LB08_DATABASE_URL).toBe('postgres://lb08:pw@127.0.0.1:5432/lb')
+    expect(own.LB04_DATABASE_URL).toBe('postgres://lb04:pw@127.0.0.1:5432/lb')
   })
 })
 

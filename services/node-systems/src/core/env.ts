@@ -18,6 +18,7 @@ export const envSchema = z.object({
   // only that schema; without one, the system uses the shared URL.
   LB_DATABASE_URL: postgresUrl,
   LB08_DATABASE_URL: postgresUrl.optional(),
+  LB04_DATABASE_URL: postgresUrl.optional(),
   LB_REDIS_URL: z.string().regex(/^rediss?:\/\/.+/, 'a redis:// or rediss:// URL'),
   // Every key this service writes starts with this, the gateway's own rule.
   LB_REDIS_PREFIX: z.string().regex(/^[a-z0-9-]{1,24}:$/, 'lowercase letters, digits and hyphens, ending in a colon').default('lb:'),
@@ -35,7 +36,7 @@ export const envSchema = z.object({
 /** The Node systems' settings after validation, with defaults filled in. */
 export type Env = z.infer<typeof envSchema>
 
-/** Which process is reading the settings: the API needs the gateway, the worker and the tools don't. */
+/** Which process is reading the settings: the API and the worker need the gateway (both make model calls), the tools don't. */
 export type Role = 'api' | 'worker' | 'tool'
 
 /**
@@ -47,10 +48,10 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>, ro
   const set = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== undefined && value !== ''))
   const parsed = envSchema.safeParse(set)
   const problems = parsed.success ? [] : parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`)
-  if (parsed.success && role === 'api') {
-    // The API makes model calls, so it can't start without a way to reach the gateway.
+  if (parsed.success && role !== 'tool') {
+    // The API describes workflows and makes redlines, and the worker reviews contracts: both make model calls, so neither can start without a way to reach the gateway.
     for (const name of ['LB_GATEWAY_URL', 'LB_SERVICE_KEY_FILE'] as const) {
-      if (!parsed.data[name]) problems.push(`${name}: required to start the API`)
+      if (!parsed.data[name]) problems.push(`${name}: required to start the ${role === 'api' ? 'API' : 'worker'}`)
     }
   }
   if (!parsed.success || problems.length > 0) throw new Error(`Invalid Node systems environment:\n- ${problems.join('\n- ')}`)
