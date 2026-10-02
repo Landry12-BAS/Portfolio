@@ -216,7 +216,11 @@ command yet, because it needs a Postgres with pgvector and a Redis:
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
   `__LB_TEST_BUILD__`: it accepts a fixed stand-in for a Turnstile token, and it shows `mock`
-  recordings. Production replaces the flag with `false`, so neither is in its bundle; CI checks it.
+  recordings. Production replaces the flag with `false`, so neither is in its bundle; CI checks it
+  (`scripts/check-production-build.ts`), and runs the check the other way round on the test build
+  (`--expect-test-code`) to prove it can see the code. A check that finds no build to look at fails with
+  status 2, never passes. The test build goes to `.output-e2e`, and only a build writes there: the dev
+  server is a test build too (`just dev-mock`) and would otherwise empty it.
 - **Zod runs jitless** in the browser (`app/plugins/00.zod-jitless.ts`): its probe for `eval` is caught
   but reported by the browser as a Trusted Types violation, on the first schema of every page.
 - **Pages set no cookie**; the session cookie exists only after a call to `/api/*`, which a board makes

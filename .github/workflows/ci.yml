@@ -82,7 +82,7 @@ jobs:
         run: pnpm --filter @lb/web check:build
       - run: pnpm --filter @lb/web build:e2e
       - name: The check does find the stand-in in the test build
-        run: '! pnpm --filter @lb/web exec node scripts/check-production-build.ts .output-e2e'
+        run: pnpm --filter @lb/web exec node scripts/check-production-build.ts .output-e2e --expect-test-code
 
       - run: pnpm --filter @lb/web exec playwright install --with-deps chromium
       - name: End-to-end, accessibility and security headers, against the test build and the mock back end

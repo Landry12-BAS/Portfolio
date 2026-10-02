@@ -23,6 +23,12 @@ const BOARD_POLICY = {
 export default defineNuxtConfig({
   extends: ['@lb/ui'],
   modules: ['@pinia/nuxt', '@nuxtjs/i18n', 'nuxt-security'],
+  // The test build goes to a folder of its own, so building it never overwrites the production build.
+  // Only a build does: the dev server also runs as a test build (`just dev-mock`), and Nitro empties the
+  // output folder it is given when it starts, which would wipe a test build made earlier.
+  $production: {
+    nitro: { output: testBuild ? { dir: here('./.output-e2e') } : undefined },
+  },
   devtools: { enabled: false },
   app: {
     head: {
@@ -77,8 +83,6 @@ export default defineNuxtConfig({
     // test fixtures instead, so a recording made on the mock can never ship in a production build.
     serverAssets: [{ baseName: 'recordings', dir: here(testBuild ? './e2e/fixtures/recordings' : './recordings') }],
     replace: { __LB_TEST_BUILD__: JSON.stringify(testBuild) },
-    // The test build goes to a folder of its own, so building it never overwrites the production build.
-    output: testBuild ? { dir: here('./.output-e2e') } : undefined,
   },
   vite: {
     define: { __LB_TEST_BUILD__: JSON.stringify(testBuild) },

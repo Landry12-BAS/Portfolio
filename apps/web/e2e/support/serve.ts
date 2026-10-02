@@ -5,8 +5,15 @@
 // and the mock plays LB-01 and the gateway's trace route.
 import { spawn } from 'node:child_process'
 import { generateKeyPairSync, randomBytes } from 'node:crypto'
+import { existsSync } from 'node:fs'
 
 import { startMockBackend } from '@lb/api-clients/testing'
+
+const TEST_BUILD_ENTRY = '.output-e2e/server/index.mjs'
+if (!existsSync(TEST_BUILD_ENTRY)) {
+  console.error(`There is no test build at ${TEST_BUILD_ENTRY}. Run \`pnpm --filter @lb/web build:e2e\` first (\`just e2e\` does).`)
+  process.exit(1)
+}
 
 const sitePort = process.env.E2E_PORT ?? '3100'
 const mockPort = Number(process.env.E2E_MOCK_PORT ?? 8121)
@@ -19,7 +26,7 @@ const mock = await startMockBackend({
   port: mockPort,
 })
 
-const site = spawn('node', ['.output-e2e/server/index.mjs'], {
+const site = spawn('node', [TEST_BUILD_ENTRY], {
   stdio: 'inherit',
   env: {
     ...process.env,
