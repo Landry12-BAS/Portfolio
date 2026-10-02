@@ -195,8 +195,13 @@ class DocumentListOut(BaseModel):
     documents: list[DocumentSummaryOut]
 
 
-class LimitsOut(BaseModel):
-    """The limits LB-03 enforces, which are the ones its datasheet promises."""
+class DocumentLimitsOut(BaseModel):
+    """The limits LB-03 enforces, which are the ones its datasheet promises.
+
+    The models of every system of the monolith share one OpenAPI document and are named in it by class name, and a
+    second class of the same name would silently replace the first: LB-05 has a `LimitsOut` and a `QuotaOut` too, so
+    these two are named for what they limit.
+    """
 
     documents_per_day: int
     concurrent_documents: int
@@ -207,7 +212,7 @@ class LimitsOut(BaseModel):
     document_deadline_seconds: float
 
 
-class QuotaOut(BaseModel):
+class DocumentQuotaOut(BaseModel):
     """A visitor's documents today, the limits, and whether the service can read documents at all right now."""
 
     used: int
@@ -215,7 +220,7 @@ class QuotaOut(BaseModel):
     active: int
     resets_at: datetime
     can_read: bool
-    limits: LimitsOut
+    limits: DocumentLimitsOut
 
 
 def band_of(confidence: float) -> Band:
@@ -244,9 +249,9 @@ def kind_of(path: str) -> FieldKind:
     return kinds.get(name, "amount")
 
 
-def limits_out() -> LimitsOut:
+def limits_out() -> DocumentLimitsOut:
     """Return the limits the service enforces: the datasheet's, from the constants the code enforces them with."""
-    return LimitsOut(
+    return DocumentLimitsOut(
         documents_per_day=limits.DOCUMENTS_PER_DAY,
         concurrent_documents=limits.MAX_ACTIVE_PER_VISITOR,
         max_upload_bytes=limits.MAX_UPLOAD_BYTES,

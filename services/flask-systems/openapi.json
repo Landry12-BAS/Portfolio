@@ -530,6 +530,50 @@
         "pattern": "^[A-Za-z0-9_-]{22}$",
         "type": "string"
       },
+      "DocumentLimitsOut": {
+        "description": "The limits LB-03 enforces, which are the ones its datasheet promises.\n\nThe models of every system of the monolith share one OpenAPI document and are named in it by class name, and a\nsecond class of the same name would silently replace the first: LB-05 has a `LimitsOut` and a `QuotaOut` too, so\nthese two are named for what they limit.",
+        "properties": {
+          "concurrent_documents": {
+            "title": "Concurrent Documents",
+            "type": "integer"
+          },
+          "document_deadline_seconds": {
+            "title": "Document Deadline Seconds",
+            "type": "number"
+          },
+          "documents_per_day": {
+            "title": "Documents Per Day",
+            "type": "integer"
+          },
+          "file_lifetime_seconds": {
+            "title": "File Lifetime Seconds",
+            "type": "integer"
+          },
+          "max_model_calls_per_document": {
+            "title": "Max Model Calls Per Document",
+            "type": "integer"
+          },
+          "max_pages": {
+            "title": "Max Pages",
+            "type": "integer"
+          },
+          "max_upload_bytes": {
+            "title": "Max Upload Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "documents_per_day",
+          "concurrent_documents",
+          "max_upload_bytes",
+          "max_pages",
+          "file_lifetime_seconds",
+          "max_model_calls_per_document",
+          "document_deadline_seconds"
+        ],
+        "title": "DocumentLimitsOut",
+        "type": "object"
+      },
       "DocumentListOut": {
         "description": "The visitor's documents of the hour, newest first.",
         "properties": {
@@ -785,6 +829,45 @@
           "can_export"
         ],
         "title": "DocumentOut",
+        "type": "object"
+      },
+      "DocumentQuotaOut": {
+        "description": "A visitor's documents today, the limits, and whether the service can read documents at all right now.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "can_read": {
+            "title": "Can Read",
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/DocumentLimitsOut"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          },
+          "resets_at": {
+            "format": "date-time",
+            "title": "Resets At",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used",
+          "remaining",
+          "active",
+          "resets_at",
+          "can_read",
+          "limits"
+        ],
+        "title": "DocumentQuotaOut",
         "type": "object"
       },
       "DocumentState": {
@@ -1212,45 +1295,35 @@
         "type": "string"
       },
       "LimitsOut": {
-        "description": "The limits LB-03 enforces, which are the ones its datasheet promises.",
+        "description": "The limits LB-05 enforces, which are the ones its datasheet promises.",
         "properties": {
-          "concurrent_documents": {
-            "title": "Concurrent Documents",
+          "max_model_calls_per_question": {
+            "title": "Max Model Calls Per Question",
             "type": "integer"
           },
-          "document_deadline_seconds": {
-            "title": "Document Deadline Seconds",
+          "query_timeout_seconds": {
+            "title": "Query Timeout Seconds",
             "type": "number"
           },
-          "documents_per_day": {
-            "title": "Documents Per Day",
+          "question_deadline_seconds": {
+            "title": "Question Deadline Seconds",
+            "type": "number"
+          },
+          "questions_per_day": {
+            "title": "Questions Per Day",
             "type": "integer"
           },
-          "file_lifetime_seconds": {
-            "title": "File Lifetime Seconds",
-            "type": "integer"
-          },
-          "max_model_calls_per_document": {
-            "title": "Max Model Calls Per Document",
-            "type": "integer"
-          },
-          "max_pages": {
-            "title": "Max Pages",
-            "type": "integer"
-          },
-          "max_upload_bytes": {
-            "title": "Max Upload Bytes",
+          "row_cap": {
+            "title": "Row Cap",
             "type": "integer"
           }
         },
         "required": [
-          "documents_per_day",
-          "concurrent_documents",
-          "max_upload_bytes",
-          "max_pages",
-          "file_lifetime_seconds",
-          "max_model_calls_per_document",
-          "document_deadline_seconds"
+          "questions_per_day",
+          "query_timeout_seconds",
+          "row_cap",
+          "max_model_calls_per_question",
+          "question_deadline_seconds"
         ],
         "title": "LimitsOut",
         "type": "object"
@@ -1326,16 +1399,8 @@
         "type": "string"
       },
       "QuotaOut": {
-        "description": "A visitor's documents today, the limits, and whether the service can read documents at all right now.",
+        "description": "A visitor's questions today, and the limits.",
         "properties": {
-          "active": {
-            "title": "Active",
-            "type": "integer"
-          },
-          "can_read": {
-            "title": "Can Read",
-            "type": "boolean"
-          },
           "limits": {
             "$ref": "#/components/schemas/LimitsOut"
           },
@@ -1356,9 +1421,7 @@
         "required": [
           "used",
           "remaining",
-          "active",
           "resets_at",
-          "can_read",
           "limits"
         ],
         "title": "QuotaOut",
@@ -2312,7 +2375,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuotaOut"
+                  "$ref": "#/components/schemas/DocumentQuotaOut"
                 }
               }
             },

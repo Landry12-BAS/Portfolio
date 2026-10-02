@@ -982,7 +982,7 @@ cases:
   printed:
     document_type: receipt
     vendor: Cafe Luna
-    invoice_number: 0187
+    invoice_number: '0187'
     issue_date: '2026-09-12'
     currency: CZK
     prices_include_vat: true
@@ -1064,7 +1064,7 @@ cases:
   printed:
     document_type: receipt
     vendor: Stop and Go Fuel
-    invoice_number: 0911
+    invoice_number: '0911'
     issue_date: '2026-09-20'
     currency: CZK
     prices_include_vat: true

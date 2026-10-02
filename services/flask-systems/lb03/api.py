@@ -31,7 +31,7 @@ from lb03.invoice import FIELD_PATH
 from lb03.presenter import (
     DocumentListOut,
     DocumentOut,
-    QuotaOut,
+    DocumentQuotaOut,
     document_out,
     limits_out,
     summary_out,
@@ -239,13 +239,13 @@ def build_blueprint(service: Lb03Service | None, web_token_key: str | None) -> A
             return refusal_response(refusal)
         return "", 204
 
-    @blueprint.get("/quota", responses={200: QuotaOut})
+    @blueprint.get("/quota", responses={200: DocumentQuotaOut})
     def quota() -> Response | dict[str, Any]:
         """Read how many documents the visitor has left today, how many are being read, and the limits."""
         if service is None:
             return error_response(503, "unavailable", NOT_SERVING_MESSAGE)
         usage = service.usage(visitor_of_request().session_key)
-        return QuotaOut(
+        return DocumentQuotaOut(
             used=usage.used,
             remaining=usage.remaining,
             active=usage.active,

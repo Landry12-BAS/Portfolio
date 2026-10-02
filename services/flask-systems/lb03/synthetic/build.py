@@ -20,6 +20,7 @@ This is development tooling; the service never imports it.
 import hashlib
 import io
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,8 @@ PHOTO_RENDER_SCALE = 2.2
 PIXEL_TOLERANCE = 2.0
 BOX_TOLERANCE = 0.003
 MIME_BY_FORMAT = {"jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+# A text that a YAML reader may take for a number: digits (with signs, underscores or a point), or hex and octal.
+NUMBER_LIKE = re.compile(r"^[-+]?(?:[0-9][0-9_]*(?:\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?|\.[0-9]+|0[xo][0-9a-fA-F_]+)$")
 # Where the samples' page pictures are written, under the seed folder.
 PICTURES_FOLDER = "pages"
 type Quad = tuple[float, float, float, float, float, float, float, float]
@@ -263,11 +266,28 @@ def render_manifest(manifest: Manifest) -> str:
     return json.dumps(manifest.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"
 
 
+class GoldenDumper(yaml.SafeDumper):
+    """A YAML writer that quotes every text a YAML 1.2 reader would take for a number.
+
+    PyYAML reads `0187` as text (it is not an octal number) and so writes it bare, but YAML 1.2 readers, such as the
+    site's mock back end's, read it as the number 187 and an invoice number would lose its zero.
+    """
+
+
+def represent_text(dumper: yaml.SafeDumper, data: str) -> yaml.ScalarNode:
+    """Write a text in single quotes when it looks like a number, as plain text otherwise."""
+    quoted = NUMBER_LIKE.fullmatch(data) is not None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'" if quoted else None)
+
+
+GoldenDumper.add_representer(str, represent_text)
+
+
 def render_golden(golden: GoldenSet) -> str:
     """Write the golden set as the committed YAML has it: the header, then the cases with their defaults left out."""
     data = golden.model_dump(mode="json", exclude_none=True, exclude_defaults=True)
-    return GOLDEN_HEADER + yaml.safe_dump(
-        data, sort_keys=False, allow_unicode=True, width=120, default_flow_style=False
+    return GOLDEN_HEADER + yaml.dump(
+        data, Dumper=GoldenDumper, sort_keys=False, allow_unicode=True, width=120, default_flow_style=False
     )
 
 
