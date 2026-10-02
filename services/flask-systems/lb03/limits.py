@@ -62,9 +62,13 @@ SWEEP_INTERVAL_SECONDS = 60.0
 # How long a worker that is shutting down waits for the documents it holds before giving them up as interrupted.
 SHUTDOWN_GRACE_SECONDS = 20.0
 
-# The OCR worker's limits: wall-clock seconds, CPU seconds and address space in bytes, per document.
-OCR_WALL_SECONDS = 45.0
-OCR_CPU_SECONDS = 40
+# The OCR worker's limits: wall-clock seconds, CPU seconds and address space in bytes, per document. Measured in the
+# production image under the box's limits (1.5 CPUs, 2 GiB), a PDF of five pages, the most it reads, takes 22 s of wall
+# time and 32 s of CPU time (the worker runs two threads) on a four-core x86 machine. The limits leave a little over
+# twice that for a slower core and a busy box, and no more, since they are also what a hostile file may burn. With the
+# model calls' 150 s they stay inside the 240 s of HARD_LIMIT_SECONDS.
+OCR_WALL_SECONDS = 60.0
+OCR_CPU_SECONDS = 80
 OCR_MEMORY_BYTES = 3 * 1024 * 1024 * 1024
 # How many OCR workers run at once. The box has two cores, so reading is one document at a time by default.
 OCR_WORKERS = 1

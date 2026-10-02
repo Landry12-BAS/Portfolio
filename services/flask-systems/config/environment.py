@@ -49,6 +49,7 @@ VARIABLES = {
     "LB03_S3_SECRET_ACCESS_KEY": "lb03_s3_secret_access_key",
     "LB03_OCR_WORKERS": "lb03_ocr_workers",
     "LB03_SCRATCH_DIR": "lb03_scratch_dir",
+    "LB03_REQUIRE_LANDLOCK": "lb03_require_landlock",
 }
 # The three variables that together say how to call the AI gateway.
 GATEWAY_FIELDS = ("gateway_url", "service_name", "service_key_file")
@@ -77,6 +78,9 @@ class Environment(BaseModel):
     is held as a secret, so it can't be printed by accident). `lb03_ocr_workers` is how many OCR
     processes may run at once, and `lb03_scratch_dir` is where each one gets its own folder to work in
     (the system's temporary folder by default; the stack gives it a small memory-backed one).
+    `lb03_require_landlock` makes the worker refuse every document on a kernel (or a container) that has no
+    Landlock, instead of reading it in a cage with one wall less: off until the owner has seen on the box,
+    in a document's trace, that its Landlock is there (docs/DEPLOY.md).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -104,6 +108,7 @@ class Environment(BaseModel):
     lb03_s3_secret_access_key: SecretStr | None = None
     lb03_ocr_workers: int = Field(default=1, ge=1, le=4)
     lb03_scratch_dir: str | None = None
+    lb03_require_landlock: bool = False
 
     @field_validator("database_url", "lb05_database_url", "lb03_database_url")
     @classmethod

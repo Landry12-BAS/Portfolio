@@ -773,11 +773,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/9c/34f6962f9b9e9c71f6e5ed806e0d0ff03c9d1b0b2340088a0cf4bce09b18/flask-3.1.3-py3-none-any.whl", hash = "sha256:f4bcbefc124291925f1a26446da31a5178f9483862233b23c0c96a20701f670c", size = 103424, upload-time = "2026-02-19T05:00:56.027Z" },
 ]
 
-[package.optional-dependencies]
-async = [
-    { name = "asgiref" },
-]
-
 [[package]]
 name = "flask-cors"
 version = "6.0.5"
@@ -812,7 +807,7 @@ dependencies = [
     { name = "alembic" },
     { name = "boto3" },
     { name = "duckdb" },
-    { name = "flask", extra = ["async"] },
+    { name = "flask" },
     { name = "flask-openapi3" },
     { name = "gunicorn" },
     { name = "lb-common" },
@@ -835,7 +830,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.0" },
     { name = "boto3", specifier = ">=1.40.0" },
     { name = "duckdb", specifier = ">=1.5.6" },
-    { name = "flask", extras = ["async"], specifier = ">=3.1.3,<3.2" },
+    { name = "flask", specifier = ">=3.1.3,<3.2" },
     { name = "flask-openapi3", specifier = ">=4.3.2" },
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "lb-common", editable = "python/lb-common" },

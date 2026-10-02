@@ -81,6 +81,8 @@ class SandboxReport(Strict):
     no_new_privileges: bool
     seccomp: bool
     landlock_abi: Annotated[int, Field(ge=0, le=20)]
+    # How willing the worker made itself to be the kernel's first victim when memory runs out (0 when it could not).
+    oom_score_adj: Annotated[int, Field(ge=-1000, le=1000)] = 0
 
 
 class OcrResult(Strict):

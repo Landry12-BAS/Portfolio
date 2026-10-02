@@ -388,6 +388,7 @@ class Pipeline:
         span.set("no_new_privileges", reading.sandbox.no_new_privileges)
         span.set("seccomp", reading.sandbox.seccomp)
         span.set("landlock_abi", reading.sandbox.landlock_abi)
+        span.set("oom_score_adj", reading.sandbox.oom_score_adj)
 
     async def keep_pictures(self, work: Work, reading: Reading) -> None:
         """Store the picture of each page, for the viewer, under the document's own prefix."""

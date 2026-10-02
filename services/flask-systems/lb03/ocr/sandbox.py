@@ -182,6 +182,9 @@ SCRATCH_RIGHTS = (
 DEVICE_READS = ("/dev/urandom", "/dev/random", "/dev/zero")
 # The name of the file the proof tries to create beside the scratch folder, which the cage must refuse.
 ESCAPE_PROBE = "lb03-escape-probe"
+# Where a process says how willing it is to be killed when the machine runs out of memory, and the most it can say.
+OOM_SCORE_FILE = "/proc/self/oom_score_adj"
+OOM_SCORE_MAX = 1000
 # Where the system's libraries and the CPU's description live: read-only.
 SYSTEM_READS = ("/usr", "/lib", "/lib64", "/etc/ld.so.cache", "/sys/devices/system/cpu", "/proc/self")
 
@@ -228,6 +231,22 @@ def apply_rlimits(limits: WorkerLimits) -> None:
         (resource.RLIMIT_CORE, 0),
     ):
         resource.setrlimit(name, (value, value))
+
+
+def volunteer_for_the_oom_killer() -> int:
+    """Ask the kernel to kill this process first when the machine runs out of memory; return the score it holds now.
+
+    The worker is the biggest thing in the container beside the service (about 840 MiB at the most, measured, in
+    a container of a couple of GiB), so without this the kernel's pick could be the service, and every document
+    in flight with it. Raising one's own score needs no privilege. Where the file can't be written (a read-only
+    /proc) the worker goes on and reports 0: this is a courtesy to the service, not a wall of the cage.
+    """
+    score_file = Path(OOM_SCORE_FILE)
+    try:
+        score_file.write_text(str(OOM_SCORE_MAX), encoding="ascii")
+        return int(score_file.read_text(encoding="ascii"))
+    except (OSError, ValueError):
+        return 0
 
 
 def refuse_privileges() -> None:
@@ -368,6 +387,8 @@ def apply_sandbox(scratch: Path, limits: WorkerLimits) -> SandboxReport:
     architecture = platform.machine()
     if architecture not in AUDIT_ARCH:
         raise SandboxError(f"The cage is built for x86_64 and aarch64, not {architecture}.")
+    # First, while /proc/self is still writable: Landlock only lets the worker read it.
+    oom_score_adj = volunteer_for_the_oom_killer()
     refuse_privileges()
     abi = landlock_abi()
     if abi == 0 and limits.require_landlock:
@@ -375,7 +396,9 @@ def apply_sandbox(scratch: Path, limits: WorkerLimits) -> SandboxReport:
     if abi > 0:
         apply_landlock(scratch, abi)
     install_seccomp(architecture)
-    report = SandboxReport(rlimits=True, no_new_privileges=True, seccomp=True, landlock_abi=abi)
+    report = SandboxReport(
+        rlimits=True, no_new_privileges=True, seccomp=True, landlock_abi=abi, oom_score_adj=oom_score_adj
+    )
     verify_sandbox(report, scratch)
     return report
 

@@ -11,6 +11,7 @@ import ctypes
 import ctypes.util
 import errno
 import json
+import os
 import platform
 import signal
 import struct
@@ -208,6 +209,37 @@ print("\\n".join(line for line in status.splitlines() if line.startswith(("NoNew
     assert report["landlock_abi"] == sandbox.landlock_abi()
     assert "NoNewPrivs:\t1" in done.stdout
     assert "Seccomp:\t2" in done.stdout
+
+
+@needs_cage
+def test_the_worker_volunteers_to_be_the_first_process_the_kernel_kills(scratch: Path) -> None:
+    """Out of memory, the kernel's pick is the worker and not the service: its score is the highest there is."""
+    if not os.access(sandbox.OOM_SCORE_FILE, os.W_OK):
+        pytest.skip("this /proc does not let a process raise its own OOM score")
+    attack = """
+print("REPORT", report.oom_score_adj)
+print("SCORE", Path("/proc/self/oom_score_adj").read_text().strip())
+"""
+    done = in_the_cage(attack, scratch)
+    assert done.returncode == 0, done.stderr
+    assert "REPORT 1000" in done.stdout
+    assert "SCORE 1000" in done.stdout
+
+
+def test_a_worker_that_cannot_raise_its_oom_score_goes_on_and_reports_nothing_gained(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """It is a courtesy and not a wall: a /proc that refuses the write leaves the score at 0 and raises nothing.
+
+    The real file is never touched here: it would make the test runner itself the kernel's first victim.
+    """
+    monkeypatch.setattr(sandbox, "OOM_SCORE_FILE", str(tmp_path / "no-such-folder" / "oom_score_adj"))
+    assert sandbox.volunteer_for_the_oom_killer() == 0
+    stand_in = tmp_path / "oom_score_adj"
+    stand_in.write_text("0")
+    monkeypatch.setattr(sandbox, "OOM_SCORE_FILE", str(stand_in))
+    assert sandbox.volunteer_for_the_oom_killer() == sandbox.OOM_SCORE_MAX
+    assert stand_in.read_text() == "1000"
 
 
 @needs_cage

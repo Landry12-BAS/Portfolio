@@ -37,7 +37,7 @@ from lb03.duplicates import Known, duplicate_result, find_duplicate, identity_of
 from lb03.export import journal_csv, lines_csv
 from lb03.golden import read_golden_set, read_manifest
 from lb03.invoice import ExtractedInvoice, FieldPathError, get_field, set_field
-from lb03.ocr.pool import OcrPool, PoolSettings
+from lb03.ocr.pool import OcrPool, PoolSettings, default_worker_limits
 from lb03.pipeline import Job, Offload, Parts, Pipeline, Reader
 from lb03.quota import Admission, PostgresLedger, Usage, midnight_after
 from lb03.repository import (
@@ -446,6 +446,13 @@ def build_service(
     )
 
 
+def pool_settings(environment: Environment) -> PoolSettings:
+    """Say how the OCR pool runs: its workers, where each works, and whether a kernel without Landlock is refused."""
+    scratch = Path(environment.lb03_scratch_dir) if environment.lb03_scratch_dir else None
+    worker_limits = default_worker_limits().model_copy(update={"require_landlock": environment.lb03_require_landlock})
+    return PoolSettings(workers=environment.lb03_ocr_workers, scratch_root=scratch, worker_limits=worker_limits)
+
+
 def build_runner(
     platform: Platform,
     repository: DocumentRepository,
@@ -465,8 +472,7 @@ def build_runner(
 
     def build_pipeline(offload: Offload) -> Pipeline:
         """Make the pipeline when the first document arrives, so its OCR pool and span thread start after the fork."""
-        scratch = Path(environment.lb03_scratch_dir) if environment.lb03_scratch_dir else None
-        pool = reader or OcrPool(PoolSettings(workers=environment.lb03_ocr_workers, scratch_root=scratch))
+        pool = reader or OcrPool(pool_settings(environment))
         spans = QueuedSpanWriter(span_writer)
         return Pipeline(
             Parts(

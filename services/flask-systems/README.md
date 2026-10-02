@@ -124,11 +124,12 @@ makes itself harmless from the inside before it reads a byte ([`ocr/sandbox.py`]
 
 | Wall | What it does |
 |---|---|
-| Limits | 40 CPU seconds, 3 GiB of address space, the size of any file it writes, the number of open files, no core dump; the service adds 45 s of wall-clock time and kills the whole process group |
+| Limits | 80 CPU seconds, 3 GiB of address space, the size of any file it writes, the number of open files, no core dump; the service adds 60 s of wall-clock time and kills the whole process group. A PDF of five pages, the most it reads, takes 22 s of wall time and 32 s of CPU time in the production image (measured), so the limits leave a little over twice that for a slower core |
 | No new privileges, not dumpable | Nothing it runs gains rights, and no other process of the same user can read its memory |
 | A seccomp filter | Creating or using a socket is refused, and starting a program, attaching to a process, mounting, loading a module, `bpf` and `io_uring` are fatal. Written here as the few instructions it is, for x86-64 and aarch64, and checked against libseccomp's numbers by a test where libseccomp is installed |
 | Landlock (Linux 5.13 and later) | It may read the Python it runs, the system libraries and a few device files, and write nowhere but its own scratch folder. It can't read the service's key, the service's folder or the file store, though they belong to the same user |
 | A proof | After the cage is up the worker tries to open a socket and, under Landlock, to write and read outside its folder, and stops at once if any of it works. A cage that is not there is an error, not a silent default. Where the kernel has no Landlock the worker says so and runs with one layer less, unless `require_landlock` is set |
+| The first victim | Not a wall but a courtesy: the worker raises its own OOM score to the most there is, so when the container runs out of memory the kernel kills the worker and not the service. The document then fails as `ocr_failed` and the visitor's place is given back (a /proc that refuses the write leaves the score at 0, and the worker says so in its report) |
 
 What the worker checks about the file before a decoder runs ([`ocr/decode.py`](lb03/ocr/decode.py)): a PDF is read as
 bytes first and refused if it names anything that runs or reaches outside itself (JavaScript, a launch action, a URI,
@@ -286,7 +287,7 @@ model.
 
 ## Tests
 
-1,959 tests in all, 798 of them LB-03's (612 unit and 186 integration), run with `just test` or from this folder with
+1,963 tests in all, 802 of them LB-03's (616 unit and 186 integration), run with `just test` or from this folder with
 `uv run pytest`. The unit tests need no Docker.
 
 - **The cage.** The real worker, in its cage: no socket of any kind can be made, no program can be started or traced,
@@ -508,8 +509,8 @@ merely persuaded: its reply is untrusted input however it is written.
 
 | Threat | Defence | What is left |
 |---|---|---|
-| A file that exploits a decoder (a PDF, a PNG, a JPEG, a WebP) | The web process never decodes it. A worker process does, after it has put up limits, no new privileges, a seccomp filter with no sockets and no program to start, and Landlock with write access to its scratch folder alone; it proves the cage before reading a byte and is killed at 45 s. Its result is read with strict schemas, its standard error thrown away | A kernel bug that lets a process out of seccomp and Landlock at once, reached through a decoder bug. **Landlock is not confirmed on the production box's kernel**, and without it the cage has one wall less (the worker reports it, and `require_landlock` makes the service insist) |
-| Decompression and page bombs | A PDF's page count is taken before a page is drawn (more than five is refused), an image's size is read from its header and refused over 40 million pixels, pages are drawn no larger than 1,800 pixels on a side, object streams are opened to a cap, and the address space is 3 GiB | A bomb under the caps still costs 45 s of one core: the pool runs one worker, the day's count is ten, and the cap on free refunds is three |
+| A file that exploits a decoder (a PDF, a PNG, a JPEG, a WebP) | The web process never decodes it. A worker process does, after it has put up limits, no new privileges, a seccomp filter with no sockets and no program to start, and Landlock with write access to its scratch folder alone; it proves the cage before reading a byte and is killed at 60 s. Its result is read with strict schemas, its standard error thrown away | A kernel bug that lets a process out of seccomp and Landlock at once, reached through a decoder bug. **Landlock is not confirmed on the production box's kernel**, and without it the cage has one wall less (the worker reports it, and `require_landlock` makes the service insist) |
+| Decompression and page bombs | A PDF's page count is taken before a page is drawn (more than five is refused), an image's size is read from its header and refused over 40 million pixels, pages are drawn no larger than 1,800 pixels on a side, object streams are opened to a cap, and the address space is 3 GiB | A bomb under the caps still costs 60 s of one core: the pool runs one worker, the day's count is ten, and the cap on free refunds is three |
 | Active content in a PDF: JavaScript, launch actions, links, embedded files | Refused by a scan of the bytes, with names unescaped (a policy, a second wall); pdfium has no JavaScript engine and follows no link; the PDF's own text layer is never read, so words a person can't see are not what a model reads | A file made by hand to get past the scan, which meets the cage |
 | A file that is not what it says it is | The first bytes decide the kind (PDF, PNG, JPEG, WebP), never the name or the type the browser claims, and the file name is never a path: it is cleaned, kept as a label, and shown back as text to its owner only | |
 | Metadata leaks: GPS, camera, thumbnails | An image is turned upright, converted to RGB and saved again as a JPEG; the original is never served back | The original is kept for the hour, in the store |
@@ -566,6 +567,18 @@ Measured here, on a four-core x86-64 development machine, with no model involved
   this OCR: they say how well it reads print and how badly it reads handwriting, not how it reads anyone's invoices.
   `evals/lb03/ocr-baseline.json` holds them, and `just ocr-lb03 --check` fails when a figure falls more than three points
   below.
+- **The OCR worker's memory**, the largest resident size the caged process reached, from `ru_maxrss` (x86-64, with the
+  models that ship in the RapidOCR wheel): 692 MiB over the 41 seed documents (the three-page PDF is the peak), 747 MiB on
+  a PDF of five pages, the most it reads, and 837 MiB on a smooth picture of 7,000 by 5,700 pixels, the biggest image
+  the pixel cap lets in. That, and not the 3 GiB address-space limit (a ceiling for a runaway), is what the `flask-api`
+  container's memory is sized from: DuckDB's 1 GB, the worker's 0.84 GiB and the Python process together.
+- **The OCR in the production image**, built from `infra/docker/flask-systems.Dockerfile` and run as the Compose file
+  runs `flask-api` (a read-only root filesystem, every capability dropped, no new privileges, 1.5 CPUs, 2 GiB, a tmpfs
+  scratch folder, no network): the three seed files the service loads were enough (13 accounts, 43 golden cases, 6
+  samples); the cage stood with `seccomp` on and **`landlock_abi` 7** under Docker's default profile on this kernel (6.18;
+  the box's is unknown); a one-page PDF took 5.7 s, a photograph 3.6 s, a handwritten receipt 3.4 s, and **a PDF of five
+  pages 22 s of wall time and 32 s of CPU time**, the figure the 60 s and 80 s limits were set from; a six-page PDF was
+  refused before a page was drawn and a PDF naming JavaScript was refused as unsafe.
 - **Two documents in flight under gunicorn `gthread`**, with a barrier that only passes if both are read at the same time
   (see above). The runner and the server are shown not to serialise documents, with fake models.
 - The 100 LB-05 golden reference queries on the full dataset, through the parse, plan and run

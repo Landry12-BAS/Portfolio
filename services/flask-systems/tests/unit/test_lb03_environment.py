@@ -4,6 +4,7 @@ import pytest
 
 from config.environment import ConfigurationError, read_environment
 from core.databases import connection_options, system_engines
+from lb03.service import pool_settings
 from tests.support import VALID_ENVIRONMENT
 
 S3 = {
@@ -100,3 +101,34 @@ def test_lb_03_has_an_engine_on_its_own_schema() -> None:
     assert "-c search_path=lb03 " in connection_options("lb03")
     for engine in engines.values():
         engine.dispose()
+
+
+def test_a_kernel_with_no_landlock_is_accepted_unless_the_owner_says_to_refuse_it() -> None:
+    """LB03_REQUIRE_LANDLOCK is off by default and reads as a yes or a no, and nothing else."""
+    assert read_environment(VALID_ENVIRONMENT).lb03_require_landlock is False
+    assert read_environment({**VALID_ENVIRONMENT, "LB03_REQUIRE_LANDLOCK": "true"}).lb03_require_landlock is True
+    assert read_environment({**VALID_ENVIRONMENT, "LB03_REQUIRE_LANDLOCK": "false"}).lb03_require_landlock is False
+    with pytest.raises(ConfigurationError, match="LB03_REQUIRE_LANDLOCK"):
+        read_environment({**VALID_ENVIRONMENT, "LB03_REQUIRE_LANDLOCK": "perhaps"})
+
+
+def test_the_ocr_pool_is_run_as_the_settings_say() -> None:
+    """The worker count, the scratch folder and the Landlock requirement reach the pool's settings."""
+    plain = pool_settings(read_environment(VALID_ENVIRONMENT))
+    strict = pool_settings(
+        read_environment(
+            {
+                **VALID_ENVIRONMENT,
+                "LB03_OCR_WORKERS": "2",
+                "LB03_SCRATCH_DIR": "/lb03-scratch",
+                "LB03_REQUIRE_LANDLOCK": "true",
+            }
+        )
+    )
+
+    assert (plain.workers, plain.scratch_root, plain.worker_limits.require_landlock) == (1, None, False)
+    assert strict.workers == 2
+    assert str(strict.scratch_root) == "/lb03-scratch"
+    assert strict.worker_limits.require_landlock is True
+    # Everything else about the worker is the datasheet's, whatever the settings are.
+    assert strict.worker_limits.model_copy(update={"require_landlock": False}) == plain.worker_limits
