@@ -8,7 +8,8 @@ gateway it talks to is [`services/gateway`](../../services/gateway/README.md).
 
 | Module | What it gives a system |
 |---|---|
-| `lb_common.gateway` | `Gateway`: the official `openai` client pointed at the gateway, plus `embed`, `rerank` and `guard`; `GatewayCode`, the gateway's error codes |
+| `lb_common.gateway` | `Gateway`: the official `openai` client pointed at the gateway, plus `embed`, `rerank`, `guard` and `transcribe`; `GatewayCode`, the gateway's error codes |
+| `lb_common.audio` | The one audio format the gateway's speech-to-text route measures and takes, 16-bit mono 16 kHz WAV (`wav_from_pcm`) |
 | `lb_common.run` | `Run` and `run_scope`: the run a piece of work belongs to |
 | `lb_common.tracing` | `Tracer`: run spans in the gateway's format, written to the same Redis streams |
 | `lb_common.tokens` | The short-lived Ed25519 service tokens the gateway checks |
@@ -43,6 +44,12 @@ with run_scope(Run(system="lb-01", run_id=new_run_id(), session=session_key)):
   block: its turns open under `span_scope(root_span_id(run_id))`, which is the ID the root
   will have, and `tracer.finish_run(name, started_ms, **details)` writes the root when
   the run ends. The trace route then reports `finished`; until then it does not.
+- **A recording is measured, not trusted.** `gateway.transcribe(wav)` sends a recording in the one
+  format the gateway can measure from its bytes (`wav_from_pcm` writes it from decoded samples) and
+  returns a `Transcription`: the language, the duration the gateway measured, and the segments with the
+  second each starts and ends. The answer is checked again here (segments in order, numbered from 0,
+  none past the recording), so a provider's odd answer is never passed on. Visitor audio goes only to
+  providers that do not train on inputs, by the run's data class, as for chat.
 - **Samples are synthetic.** A run over the site's curated samples uses
   `data_class="synthetic"` and needs no session; a visitor's run needs their hashed
   session key, never the raw cookie.

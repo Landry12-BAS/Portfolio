@@ -1,8 +1,10 @@
 """The AI gateway (LB-00), as a Python service calls it.
 
 Chat completions and embeddings go through the official `openai` client pointed at the
-gateway, which speaks the same API. Reranking and the prompt-injection guard are the
-gateway's own endpoints, called through the same client. Every request carries a fresh
+gateway, which speaks the same API. Speech to text uses the same client's transcription
+endpoint, with the recording in the one format the gateway measures (lb_common.audio).
+Reranking and the prompt-injection guard are the gateway's own endpoints, called through
+the same client. Every request carries a fresh
 service token and the current run's x-lb-* headers, and every failure raises an `openai`
 error: when the gateway answered, `error.code` is one of `GatewayCode`.
 
@@ -20,7 +22,7 @@ from urllib.parse import urlsplit
 
 import httpx2
 from openai import OpenAI, OpenAIError
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from lb_common.run import Run, current_run, current_span_id
 from lb_common.tokens import ServiceTokens, check_service_name, load_service_key
@@ -174,6 +176,64 @@ class GuardVerdict(BaseModel):
     segments: int = Field(ge=1)
 
 
+# The most segments one recording can hold, and the longest text of one: the gateway's own caps.
+MAX_SEGMENTS = 600
+MAX_SEGMENT_TEXT = 2_000
+# A segment may end this far past the recording's end before the answer counts as wrong.
+SEGMENT_END_SLACK_SECONDS = 0.01
+
+
+class TranscriptSegment(BaseModel):
+    """One stretch of speech: the words, and the seconds from the start of the recording it begins and ends at.
+
+    `no_speech_prob` and `avg_logprob` are Whisper's own doubts about the segment, when the provider
+    reports them; a caller can use them to drop text invented over silence.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: int = Field(ge=0)
+    start: float = Field(ge=0.0, allow_inf_nan=False)
+    end: float = Field(ge=0.0, allow_inf_nan=False)
+    text: str = Field(min_length=1, max_length=MAX_SEGMENT_TEXT)
+    avg_logprob: float | None = Field(default=None, allow_inf_nan=False)
+    no_speech_prob: float | None = Field(default=None, ge=0.0, le=1.0, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def _ends_after_it_starts(self) -> Self:
+        """Refuse a segment that ends before it starts."""
+        if self.end < self.start:
+            raise ValueError("A segment can't end before it starts.")
+        return self
+
+
+class Transcription(BaseModel):
+    """The gateway's transcription of a recording, in the same shape whichever provider served it.
+
+    `duration` is what the gateway measured from the recording's bytes, not the provider's claim. The
+    segments are in order of their start, numbered from 0, and none runs past the recording.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    language: str = Field(max_length=40)
+    duration: float = Field(ge=0.0, allow_inf_nan=False)
+    text: str
+    segments: list[TranscriptSegment] = Field(max_length=MAX_SEGMENTS)
+
+    @model_validator(mode="after")
+    def _segments_fit_the_recording(self) -> Self:
+        """Refuse segments that are out of order, numbered wrongly, or run past the end of the recording."""
+        if [segment.id for segment in self.segments] != list(range(len(self.segments))):
+            raise ValueError("The segments aren't numbered from 0 in order.")
+        starts = [segment.start for segment in self.segments]
+        if starts != sorted(starts):
+            raise ValueError("The segments aren't in order of their start.")
+        if any(segment.end > self.duration + SEGMENT_END_SLACK_SECONDS for segment in self.segments):
+            raise ValueError("A segment runs past the end of the recording.")
+        return self
+
+
 class Gateway:
     """One service's connection to the AI gateway, shared by the whole process."""
 
@@ -232,6 +292,31 @@ class Gateway:
         if scores != sorted(scores, reverse=True):
             raise GatewayResponseError("The gateway's ranking isn't in order.")
         return ranking
+
+    def transcribe(self, wav: bytes, language: str | None = None, model: str = "lb-stt") -> Transcription:
+        """Turn a recording into words with the second each stretch of speech starts and ends.
+
+        `wav` must be the format the gateway measures: 16-bit PCM, mono, 16 kHz (`lb_common.audio.wav_from_pcm`
+        writes it). `language` is a code such as `en`; left out, the model detects it. A visitor's recording
+        is only ever sent to a provider that does not train on inputs: the run's data class decides.
+        """
+        fields = {"model": model, "response_format": "verbose_json"}
+        if language is not None:
+            fields["language"] = language
+        response = self.openai.post(
+            "/audio/transcriptions",
+            cast_to=httpx2.Response,
+            body=fields,
+            files=[("file", ("recording.wav", wav, "audio/wav"))],
+            options={
+                "headers": {"Authorization": f"Bearer {self._tokens.current()}", "Content-Type": "multipart/form-data"}
+            },
+        )
+        try:
+            return Transcription.model_validate_json(response.content)
+        except ValidationError as error:
+            # The error names the fields that were wrong, never the words of the transcript.
+            raise GatewayResponseError("The gateway's answer to /audio/transcriptions is malformed.") from error
 
     def guard(self, text: str, model: str = "lb-guard") -> GuardVerdict:
         """Ask whether a text looks like a prompt injection, before it reaches a model that can call tools."""

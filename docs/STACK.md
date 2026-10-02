@@ -135,7 +135,9 @@ set in Eval Lab before it serves visitors. The exact provider model IDs, context
 capabilities and limits live in `services/gateway/routing.yaml`, which CI validates.
 `lb-rerank` and `lb-guard` joined the gateway for LB-01, each with an endpoint of its
 own (`/v1/rerank` for scores from 0 to 1, `/v1/guard` for a normalised verdict);
-`lb-stt` joins with LB-09. Llama Guard 3 is no fallback for the guard: it scores
+`lb-stt` joined with LB-09: it uses the OpenAI transcription endpoint on Groq and Workers AI's own
+`/ai/run` for the fallback, takes a 16 kHz mono WAV, and counts seconds of audio, not tokens
+([`services/gateway/README.md`](../services/gateway/README.md), Speech to text). Llama Guard 3 is no fallback for the guard: it scores
 content safety (hazard categories S1 to S14), not injection, and Workers AI offers no
 injection classifier.
 
