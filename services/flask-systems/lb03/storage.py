@@ -89,6 +89,21 @@ def check_prefix(prefix: str) -> str:
     return prefix
 
 
+def document_prefix(document_id: str) -> str:
+    """Return the folder a document's files are stored in, checking the id has the shape of one."""
+    return check_prefix(f"docs/{document_id}/")
+
+
+def original_key(document_id: str, extension: str) -> str:
+    """Return the key a document's uploaded file is stored under; `extension` is the one its kind has."""
+    return check_key(f"docs/{document_id}/original.{extension}")
+
+
+def page_key(document_id: str, number: int) -> str:
+    """Return the key the picture of one page of a document is stored under."""
+    return check_key(f"docs/{document_id}/page-{number}.jpg")
+
+
 class LocalFileStore:
     """Files on local disk, in a folder only the service's user can open, written whole or not at all."""
 

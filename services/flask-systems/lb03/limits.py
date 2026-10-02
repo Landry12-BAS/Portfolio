@@ -29,22 +29,32 @@ MODEL_IMAGE_LONG_SIDE_PIXELS = 1_568
 MODEL_IMAGE_QUALITY = 80
 
 # How long a visitor's files, and what was read from them, are kept. The service deletes them itself at
-# expiry (lb03/expiry.py); R2's lifecycle rule only works in whole days, so it is a backstop, not the promise.
+# expiry (lb03/sweeper.py); R2's lifecycle rule only works in whole days, so it is a backstop, not the promise.
 FILE_LIFETIME_SECONDS = 3_600
 
-# Model calls one document may make, the injection check included, as the gateway counts them: the
-# check, the extraction, one repair of an extraction that is not the JSON asked for, the one targeted
-# repair of a failed check, and one repair of that. A document that goes straight through costs two.
+# Model calls one document may make, the injection check included, as the gateway counts them: the check
+# (one call for each 2,800 characters of text, at most two), the extraction with one repair of a reply that is
+# not the JSON asked for, and the one targeted repair of a failed check, which is never repaired itself. A
+# short document that goes straight through costs two: one check and one extraction.
 MAX_MODEL_CALLS = 5
-# The time the whole pipeline has, OCR and model waits included, and the longest one model call may take.
+# The time the model calls of one document have, after OCR, and the longest one model call may take.
 DOCUMENT_DEADLINE_SECONDS = 150.0
 MODEL_CALL_TIMEOUT_SECONDS = 50.0
+# The most time a document's whole run may take, OCR and the rest included: the backstop behind every other
+# limit, so a step nobody thought to bound still ends.
+HARD_LIMIT_SECONDS = 240.0
 # The least time worth starting a model call with.
 MIN_CALL_SECONDS = 2.0
 # How many documents one worker process reads at the same time. The rest wait their turn, in order.
 MAX_DOCUMENTS_IN_FLIGHT = 8
-# How long an unfinished document may go without a sign of life before it counts as lost (its worker died).
-STALE_AFTER_SECONDS = 300.0
+# How often a worker says it is still reading the documents it holds, and how long an unfinished document may
+# go without that sign of life before it counts as lost (its worker died): three missed signs.
+HEARTBEAT_SECONDS = 30.0
+STALE_AFTER_SECONDS = 90.0
+# How often a worker looks for documents whose hour is over and for documents that were lost.
+SWEEP_INTERVAL_SECONDS = 60.0
+# How long a worker that is shutting down waits for the documents it holds before giving them up as interrupted.
+SHUTDOWN_GRACE_SECONDS = 20.0
 
 # The OCR worker's limits: wall-clock seconds, CPU seconds and address space in bytes, per document.
 OCR_WALL_SECONDS = 45.0

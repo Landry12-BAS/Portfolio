@@ -255,28 +255,29 @@ class DocumentRepository:
             ).all()
         return [stored_from(row) for row in rows]
 
-    def advance(self, document_id: str, state: DocumentState, step: dict[str, Any] | None, now: datetime) -> bool:
-        """Move a document that is still being read to its next state, noting the step it finished; False if over."""
+    def advance(self, document_id: str, state: DocumentState, steps: Sequence[dict[str, Any]], now: datetime) -> bool:
+        """Move a document that is still being read to its next state, noting the steps it finished; False if over."""
         with self.engine.begin() as connection:
             current = connection.execute(
                 select(Document.state, Document.steps).where(Document.id == document_id).with_for_update()
             ).one_or_none()
             if current is None or current.state in FINAL_VALUES:
                 return False
-            steps = [*current.steps, step] if step is not None else current.steps
             connection.execute(
                 update(Document)
                 .where(Document.id == document_id)
-                .values(state=state.value, updated_at=now, steps=steps)
+                .values(state=state.value, updated_at=now, steps=[*current.steps, *steps])
             )
         return True
 
-    def touch(self, document_id: str, now: datetime) -> None:
-        """Note that the pipeline is still working on a document, so it is not mistaken for a lost one."""
+    def touch(self, document_ids: Sequence[str], now: datetime) -> None:
+        """Note that the pipeline is still working on these documents, so they are not mistaken for lost ones."""
+        if not document_ids:
+            return
         with self.engine.begin() as connection:
             connection.execute(
                 update(Document)
-                .where(Document.id == document_id, Document.state.in_(ACTIVE_VALUES))
+                .where(Document.id.in_(list(document_ids)), Document.state.in_(ACTIVE_VALUES))
                 .values(updated_at=now)
             )
 

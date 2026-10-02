@@ -139,8 +139,8 @@ def test_a_document_moves_through_its_states_and_each_step_is_noted(repository: 
     """`advance` changes the state and appends the step, in order."""
     repository.create(new_document("doc-sam"), NOW)
 
-    assert repository.advance("doc-sam", DocumentState.OCR, {"step": "ocr"}, NOW + timedelta(seconds=1))
-    assert repository.advance("doc-sam", DocumentState.EXTRACT, {"step": "extract"}, NOW + timedelta(seconds=5))
+    assert repository.advance("doc-sam", DocumentState.OCR, [{"step": "ocr"}], NOW + timedelta(seconds=1))
+    assert repository.advance("doc-sam", DocumentState.EXTRACT, [{"step": "extract"}], NOW + timedelta(seconds=5))
 
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
@@ -239,10 +239,10 @@ def test_a_document_that_has_ended_stays_ended(repository: DocumentRepository) -
     repository.finish_ready("ready-one", finished_reading(), NOW)
     repository.finish_failed("failed-one", FailureCode.NO_TEXT, NOW, 0, None, [])
 
-    assert not repository.advance("ready-one", DocumentState.OCR, {"step": "late"}, NOW)
+    assert not repository.advance("ready-one", DocumentState.OCR, [{"step": "late"}], NOW)
     assert not repository.finish_failed("ready-one", FailureCode.INTERRUPTED, NOW, 0, None, [])
     assert not repository.finish_ready("failed-one", finished_reading(), NOW)
-    assert not repository.advance("failed-one", DocumentState.EXTRACT, {"step": "late"}, NOW)
+    assert not repository.advance("failed-one", DocumentState.EXTRACT, [{"step": "late"}], NOW)
 
     ready, failed = repository.get("ready-one", SAM, NOW), repository.get("failed-one", SAM, NOW)
     assert ready is not None
@@ -420,8 +420,8 @@ def test_a_document_nobody_has_touched_for_a_while_is_found_as_lost_and_a_touch_
     repository.finish_ready("done", finished_reading(), NOW)
     later = NOW + timedelta(seconds=limits.STALE_AFTER_SECONDS + 60)
 
-    repository.touch("busy", later - timedelta(seconds=10))
-    repository.touch("done", later - timedelta(seconds=10))
+    repository.touch(["busy"], later - timedelta(seconds=10))
+    repository.touch(["done"], later - timedelta(seconds=10))
     lost = repository.stale(later - timedelta(seconds=limits.STALE_AFTER_SECONDS), limit=10)
 
     assert [document.id for document in lost] == ["quiet"]

@@ -26,6 +26,7 @@ import stat
 import sys
 import tempfile
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -334,9 +335,15 @@ class OcrPool:
                 error.exit_status = exit_status
             raise
 
-    async def read(self, data: bytes) -> Reading:
-        """Read one document's pages: raises `OcrError` with the reason when it can't be read."""
+    async def read(self, data: bytes, on_start: Callable[[], Awaitable[None]] | None = None) -> Reading:
+        """Read one document's pages: raises `OcrError` with the reason when it can't be read.
+
+        `on_start` is awaited once a slot is free and the worker is about to start, which is how a caller tells
+        a document that is waiting its turn from one that is being read.
+        """
         async with self.slots:
+            if on_start is not None:
+                await on_start()
             started = time.monotonic()
             scratch = await asyncio.to_thread(self.make_scratch)
             try:
