@@ -78,6 +78,10 @@ interface OpenClause {
 const PIECE_CHARS = 1_400
 // A contract needs this many numbered clauses before its numbering is believed.
 const MIN_NUMBERED = 3
+// More numbered clauses than any contract of thirty pages has. A file that has more is made of fragments (a table of
+// numbers, say), and it is cut into pieces instead: each clause costs the model a label, and the labels of
+// thousands of tiny clauses would not fit the long-document model's input limit.
+const MAX_NUMBERED = 1_600
 
 // A page number on its own: "7", "Page 7", "Page 7 of 30", "7 / 30".
 const PAGE_NUMBER = /^(?:page\s+)?\d{1,3}(?:\s*(?:of|\/)\s*\d{1,3})?$/i
@@ -266,8 +270,8 @@ function splitIntoPieces(lines: readonly Line[], furniture: ReadonlySet<string>,
 
 /**
  * Splits a contract into clauses, in document order. Page numbers and running headers are left out
- * of the clauses (but stay in the pages' text). A contract whose numbering can't be followed is cut
- * into pieces instead, with no numbers, so nothing a model reads is out of order.
+ * of the clauses (but stay in the pages' text). A contract whose numbering can't be followed (or that
+ * has more than 1,600 clauses) is cut into pieces instead, with no numbers, so nothing a model reads is out of order.
  */
 export function splitClauses(pages: readonly PageInput[]): Clause[] {
   const byPage = pages.map(linesOf)
@@ -276,7 +280,7 @@ export function splitClauses(pages: readonly PageInput[]): Clause[] {
   const texts = new Map(pages.map(page => [page.page, page.text] as const))
   const clauses = splitByNumbers(lines, furniture, texts)
   const numbered = clauses.filter(clause => clause.number !== null && !clause.continued).length
-  return numbered >= MIN_NUMBERED ? clauses : splitIntoPieces(lines, furniture, texts)
+  return numbered >= MIN_NUMBERED && clauses.length <= MAX_NUMBERED ? clauses : splitIntoPieces(lines, furniture, texts)
 }
 
 /** Returns the clause that holds a place in a page's text, or undefined when none does. */

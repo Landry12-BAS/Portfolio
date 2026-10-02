@@ -142,6 +142,14 @@ describe('a contract with no numbering', () => {
     expect(clauses.map(clause => clause.start)).toEqual([...clauses.map(clause => clause.start)].sort((a, b) => a - b))
   })
 
+  it('is also what a file made of thousands of tiny numbered fragments gets, since each clause costs the model a label', () => {
+    const fragments = Array.from({ length: 40 }, (_, article) => [`${article + 1}. A`, ...Array.from({ length: 49 }, (__, clause) => `${article + 1}.${clause + 1} b`)]).flat()
+    const few = fragments.slice(0, 1_500)
+
+    expect(splitClauses([{ page: 1, text: few.join('\n') }]).filter(clause => clause.number !== null)).toHaveLength(1_500)
+    expect(splitClauses([{ page: 1, text: fragments.join('\n') }]).every(clause => clause.number === null)).toBe(true)
+  })
+
   it('is read in order even when there is only a little numbering, and gives an empty contract no clauses', () => {
     expect(splitClauses([{ page: 1, text: '1. Only one.\nSome words.\n2. And a second.' }]).every(clause => clause.number === null)).toBe(true)
     expect(splitClauses([{ page: 1, text: '' }])).toEqual([])
