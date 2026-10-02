@@ -350,9 +350,9 @@ services:
   # LB-05 (the Flask systems). Its only Postgres table holds the daily question counters;
   # its data is a DuckDB file, which the service opens read-only.
   #
-  # The settings insist on a Redis URL and a shared database URL even for a job that touches
-  # neither, so the jobs are given the lb05 login (the only one there is) and a Redis URL
-  # that goes nowhere.
+  # The settings insist on a Redis URL and a database URL even for a job that touches
+  # neither. The migration needs the database, and is given the lb05 login; whatever a job
+  # does not need is given a URL that goes nowhere.
   flask-migrate:
     <<: *flask
     restart: "no"
@@ -390,8 +390,8 @@ services:
     volumes:
       - lb05-warehouse:/warehouse
     network_mode: none
-    # numpy builds the whole dataset in memory: about 1 GB at its peak (measured), for ten
-    # seconds, once, when the volume is empty or the generator changed.
+    # numpy builds the whole dataset in memory: 923 MB at its peak (measured), for about
+    # fifteen seconds, once, when the volume is empty or the generator changed.
     mem_limit: 1536m
     memswap_limit: 1536m
     cpus: 1.0
