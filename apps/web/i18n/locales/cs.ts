@@ -6,6 +6,7 @@
 import { vlnaDeep } from '#shared/typography'
 import kit from './boards/kit.cs'
 import lb01 from './boards/lb-01.cs'
+import lb08 from './boards/lb-08.cs'
 import type { Messages } from './en'
 
 const cs = {
@@ -152,6 +153,7 @@ const cs = {
   },
   board: kit,
   lb01,
+  lb08,
   error: {
     code: 'Chyba {code}',
     notFound: 'Díl nenalezen',
