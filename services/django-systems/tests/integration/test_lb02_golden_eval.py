@@ -162,7 +162,9 @@ PLANS: dict[str, Plan] = {
             details("Eva Kratochvílová", "cupping", 2, D1, "afternoon"),
             say("Odpolední termín je právě zadržený jiným hostem. Mohu vám nabídnout jiné volné termíny."),
             say("Ano, odpolední termín je teď znovu volný. Mám vám ho podržet?"),
-            hold(1),
+            # The afternoon slot was first shown in the second message, after the three nearest slots
+            # of the first, so it is number 4 for good: 1 to 3 stay the slots the first message showed.
+            hold(4),
             CONFIRM,
         ]
     ),

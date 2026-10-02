@@ -58,7 +58,8 @@ from lb02.limits import (
 )
 from lb02.live import ChannelLayerNotifier
 from lb02.messages import Receipt, has_wording, render, typeset_czech, when_text
-from lb02.models import Conversation, Handoff, Offering, Reservation
+from lb02.models import Conversation, Handoff, Offering, Reservation, Slot
+from lb02.offers import is_on_offer, number_of
 from lb02.privacy import MaskedMessage, mask, strip_control_characters
 from lb02.prompts import (
     CHAT_MAX_TOKENS,
@@ -68,6 +69,7 @@ from lb02.prompts import (
     OptionFacts,
     StateFacts,
     fit_history,
+    gone_options_note,
     history_messages,
     language_messages,
     state_block,
@@ -319,14 +321,30 @@ class Concierge:
         now = self.clock()
         self.expire_own_holds(conversation, now)
         step = sync_step(conversation, self.bookings)
+        listed_before = list(conversation.offered_slots)
         if step == Step.AVAILABILITY:
             self.tools.run_search(conversation)
         live = self.bookings.current_hold(conversation)
         notes = [REAL_ADDRESS_NOTE] if masked.real_addresses and not masked.example_address else []
+        gone = self.options_gone_since(conversation, listed_before)
+        if gone:
+            notes.append(gone_options_note(gone))
         expired = self.expired_hold(conversation, now)
         if expired is not None:
             notes.append(hold_expiry_note(expired))
         return TurnContext(language=language, held_before=live.pk if live else None, notes=tuple(notes))
+
+    def options_gone_since(self, conversation: Conversation, listed_before: Sequence[int]) -> tuple[OptionFacts, ...]:
+        """Find the options that were on offer at the last message and aren't now, with the numbers they had."""
+        gone_ids = [slot_id for slot_id in listed_before if not is_on_offer(conversation, slot_id)]
+        slots = Slot.objects.select_related("offering").in_bulk(gone_ids)
+        gone: list[OptionFacts] = []
+        for slot_id in gone_ids:
+            slot = slots.get(slot_id)
+            number = number_of(conversation, slot_id)
+            if slot is not None and number is not None:
+                gone.append(OptionFacts(number, slot.offering.key, when_text(slot.starts_at, slot.ends_at, "en")))
+        return tuple(gone)
 
     def keep_contact(self, conversation: Conversation, masked: MaskedMessage) -> None:
         """Keep the example address the visitor wrote, read by this code and never by the model."""

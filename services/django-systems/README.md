@@ -60,7 +60,7 @@ the datasheet's "6 to 10" stays an estimate until `just eval-lb02` has run live.
 | Count | Adds the message to the conversation's 30 in one statement that refuses the 31st; the table also refuses a count above 30 | The 31st message hands the conversation to a person, with the whole transcript |
 | Detect the language | Reads the script, the stop words and the letters ([`lb02/languages.py`](lb02/languages.py)): ten Latin-script languages and nine other scripts, and a switch mid-conversation | A first message the code can't read costs one `lb-fast` call; if that fails, English |
 | Screen | `lb-guard` reads every message before any model that can call a tool does | A flagged message is refused with no model call, and the third hands over; one that can't be checked is asked again, and the second hands over: the screen fails closed |
-| Refresh | Marks the conversation's own run-out hold expired and searches again, so the slots on offer are free now | Never fails |
+| Refresh | Marks the conversation's own run-out hold expired and searches again, so the slots on offer are free now; a slot that stays keeps its number, and the model is told which numbers have gone | Never fails |
 | Converse | `lb-tools` with only the tools the step allows, at most 3 chat calls a message and 3 tool calls a reply | An empty answer asks the visitor to repeat; twice in a row, or a spent quota, hands over |
 | Run each tool | The step must accept the tool, and its arguments must pass a strict Pydantic model that forbids extra fields ([`lb02/tools.py`](lb02/tools.py)) | A refused or invalid call changes nothing, and the model is told which field was wrong, never its own text |
 | Answer | A hold, a confirmation, a taken slot and a run-out hold are written by the code from the database's facts, in English and Czech, so they cost no second call; other languages get the model's words | The model's own words are never trusted to state a booking: see the known gaps |
@@ -87,8 +87,16 @@ The booking rules, each enforced below the model:
   is offered `confirm_booking` only while the conversation holds a live slot, and it takes
   no arguments, so it can't confirm a slot it never held or one somebody else holds. A hold
   made in a turn can't be confirmed in the same turn: the visitor has to say yes first.
-  `hold_slot` takes an option number from the conversation's own list of offered slots,
-  never a slot ID.
+  `hold_slot` takes an option number, never a slot ID.
+- **An option number means one slot for the whole conversation.** A slot gets its number the
+  first time the conversation is shown it, and keeps it in every tab: when availability
+  changes between two messages, the slots that remain keep their numbers, a new slot takes
+  the next number, and a number is never reused ([`lb02/offers.py`](lb02/offers.py);
+  `Conversation.shown_slots` is the registry, a slot's number its place in it). A number
+  whose slot has gone holds nothing else: if someone else has the slot the visitor is told
+  it was taken, and if the search merely moved on the model is told what is on offer. Only
+  a slot on offer can be held, so an old number can't reach a slot of another offering.
+  A conversation can be shown 128 different slots (the 14-day calendar has 112).
 - **The calendar resets nightly.** `lb02.reset_calendar` clears what visitors made and lays
   out the next 14 days from the day it runs; a conversation is deleted 24 hours after it
   started.

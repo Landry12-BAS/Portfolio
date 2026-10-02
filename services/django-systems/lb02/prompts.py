@@ -27,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 from core.structured import ChatMessage
 from core.tool_chat import ToolChatMessage, ToolDefinition
 from lb02.languages import language_name
-from lb02.limits import HOLD_DURATION, MAX_OPTIONS, MAX_PARTY_SIZE
+from lb02.limits import HOLD_DURATION, MAX_PARTY_SIZE, MAX_SHOWN_SLOTS
 from lb02.states import Tool, tools_offered
 
 # What each chat call may write: a short reply, or a tool call with its arguments.
@@ -60,10 +60,13 @@ and carry on with the booking.
 of the day they would like. Record each with update_details as soon as you have it, and never \
 ask twice for what you have. The email is handled separately: when the State says it is missing, \
 ask for an example address such as name@example.test, because real addresses are never kept.
-5. When the State lists options, offer them by day and time and let the visitor choose. Hold \
-only an option from that list, with hold_slot. After a hold, the visitor is asked to confirm; \
-call confirm_booking only when they agree. If they want something else, use hold_slot for \
-another option, release_hold, or check_availability.
+5. When the State lists options, offer them by day and time, each with its number as the \
+State gives it, and let the visitor choose. An option keeps its number for the whole \
+conversation, so hold with the number you offered, and only an option the State still lists. \
+If the option the visitor means is no longer listed, say it has gone and offer what is listed; \
+never hold another one in its place. After a hold, the visitor is asked to confirm; call \
+confirm_booking only when they agree. If they want something else, use hold_slot for another \
+option, release_hold, or check_availability.
 6. If the visitor asks for a person, or for anything but a booking (orders, shipping, refunds, \
 complaints), say you can't help with that here and call handoff_to_person with the reason \
 asked_for_person or out_of_scope.
@@ -150,6 +153,15 @@ def system_prompt(
         first_day=f"{first_day:%a} {first_day.isoformat()}",
         last_day=f"{last_day:%a} {last_day.isoformat()}",
         party_limit=MAX_PARTY_SIZE,
+    )
+
+
+def gone_options_note(options: Sequence[OptionFacts]) -> str:
+    """Tell the model which options it listed before have gone, so it never holds another slot in their place."""
+    listed = "; ".join(f"{option.number}) {option.offering}, {option.when}" for option in options)
+    return (
+        f"These options were on offer at the last message and are not any more: {listed}. "
+        "They can't be held. If the visitor means one of them, say it has gone and offer what is listed."
     )
 
 
@@ -296,12 +308,12 @@ def tool_definition(tool: Tool, offering_keys: Sequence[str]) -> ToolDefinition:
         return ToolDefinition(
             name=tool.value,
             description=(
-                f"Hold one of the listed options for {int(HOLD_DURATION.total_seconds() // 60)} minutes "
-                "while the visitor decides."
+                f"Hold one of the listed options, by its number in the State, for "
+                f"{int(HOLD_DURATION.total_seconds() // 60)} minutes while the visitor decides."
             ),
             parameters={
                 "type": "object",
-                "properties": {"option": {"type": "integer", "minimum": 1, "maximum": MAX_OPTIONS}},
+                "properties": {"option": {"type": "integer", "minimum": 1, "maximum": MAX_SHOWN_SLOTS}},
                 "required": ["option"],
             },
         )

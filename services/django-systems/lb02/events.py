@@ -133,7 +133,11 @@ class Line(Wire):
 
 
 class Option(Wire):
-    """A slot on offer, by the number the concierge holds it with."""
+    """A slot on offer, by the number the concierge holds it with.
+
+    A slot keeps the number it was first shown with for the whole conversation and numbers are
+    never reused, so the numbers on offer are not always 1, 2, 3.
+    """
 
     number: int
     slot: int

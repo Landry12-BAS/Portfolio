@@ -42,6 +42,12 @@ MAX_CHAT_CALLS_PER_TURN: Final = 3
 MAX_TOOL_CALLS_PER_REPLY: Final = 3
 # How many free slots a search offers at a time.
 MAX_OPTIONS: Final = 6
+# How many different slots one conversation can be shown, ever. A slot keeps the number it was
+# first shown with for the whole conversation and numbers are never reused (lb02/offers.py), so
+# the count only grows. The calendar holds 112 slots (eight a day for CALENDAR_DAYS_AHEAD days),
+# and a conversation lives a day, so 128 is more than any conversation can be shown; a test
+# checks that the seeded calendar fits. Past it, a new slot is simply not offered.
+MAX_SHOWN_SLOTS: Final = 128
 
 # A conversation whose messages the injection screen flagged this many times, or whose
 # turns failed this many times in a row, goes to a person.

@@ -571,14 +571,18 @@ async def test_a_second_tab_watches_the_slot_move_from_held_to_booked(
 
 
 async def test_a_second_tab_is_offered_only_what_is_still_free(rig: Rig, web_signing_key: Ed25519PrivateKey) -> None:
-    """Both tabs asked for the 2:30 slot; once the first holds it, the second is offered others and holds one."""
+    """Both tabs asked for the 2:30 slot; once the first holds it, the second is offered others and holds one.
+
+    The second tab's 2:30 slot was its number 1, and a number is never given to a second slot, so the
+    first of the others it is offered afterwards is number 2.
+    """
     rig.models.replies += [
         calling(call("update_details", **DETAILS)),
         say("The 2:30 slot is free."),
         calling(call("update_details", **(DETAILS | {"name": "Dan Wu"}))),
         say("The 2:30 slot is free."),
         calling(call("hold_slot", option=1)),
-        calling(call("hold_slot", option=1)),
+        calling(call("hold_slot", option=2)),
     ]
     first_tab, second_tab = Tab(web_signing_key, JANA), Tab(web_signing_key, DAN)
     await first_tab.hello()

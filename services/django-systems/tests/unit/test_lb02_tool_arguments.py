@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from lb02.limits import MAX_SHOWN_SLOTS
 from lb02.states import Tool
 from lb02.tools import (
     ARGUMENT_SCHEMAS,
@@ -141,17 +142,20 @@ def test_a_search_window_may_be_given_in_part() -> None:
         parse_arguments(Tool.CHECK_AVAILABILITY, '{"date_from": "2026-10-05", "date_to": "2026-10-04"}')
 
 
-@pytest.mark.parametrize("option", [1, 6])
+@pytest.mark.parametrize("option", [1, 6, MAX_SHOWN_SLOTS])
 def test_hold_slot_takes_an_option_number_in_range(option: int) -> None:
-    """The model names a place in the list it was shown, never a slot ID."""
+    """The model names the number an option was shown with, which may be past 6 once slots have come and gone."""
     parsed = parse_arguments(Tool.HOLD_SLOT, json.dumps({"option": option}))
 
     assert parsed == HoldSlotArguments(option=option)
 
 
-@pytest.mark.parametrize("text", ["{}", '{"option": 0}', '{"option": 7}', '{"option": "1"}', '{"slot_id": 12}'])
+@pytest.mark.parametrize(
+    "text",
+    ["{}", '{"option": 0}', f'{{"option": {MAX_SHOWN_SLOTS + 1}}}', '{"option": "1"}', '{"slot_id": 12}'],
+)
 def test_hold_slot_refuses_anything_but_an_option_number(text: str) -> None:
-    """A slot ID, a missing number or one outside the list is an error, so nothing is held that wasn't offered."""
+    """A slot ID, a missing number or one no conversation could have been given is an error."""
     with pytest.raises(ValueError, match="invalid arguments"):
         parse_arguments(Tool.HOLD_SLOT, text)
 

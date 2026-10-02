@@ -28,7 +28,7 @@ from django.db.models.functions import Length
 from django.db.models.lookups import GreaterThanOrEqual, LessThanOrEqual
 from django.utils import timezone
 
-from lb02.limits import MAX_OPTIONS, MAX_PARTY_SIZE, MESSAGES_PER_SESSION, VISITOR_DATA_LIFETIME
+from lb02.limits import MAX_OPTIONS, MAX_PARTY_SIZE, MAX_SHOWN_SLOTS, MESSAGES_PER_SESSION, VISITOR_DATA_LIFETIME
 
 # The roastery is in Prague: slot times, "tomorrow" and "this afternoon" all mean its clock.
 ROASTERY_TIME_ZONE: Final = ZoneInfo("Europe/Prague")
@@ -203,11 +203,15 @@ class Conversation(models.Model):
     # example address is accepted (lb02/privacy.py): no real mailbox is ever stored.
     guest_email = models.EmailField(blank=True)
 
-    # The last search, and the slots it put on offer, in the order they were numbered.
+    # The last search, and the slots it put on offer, in the order the search found them.
     search_from = models.DateField(null=True, blank=True)
     search_to = models.DateField(null=True, blank=True)
     search_part_of_day = models.CharField(max_length=10, choices=PartOfDay.choices, blank=True)
     offered_slots = ArrayField(models.BigIntegerField(), default=list, blank=True, size=MAX_OPTIONS)
+    # Every slot the conversation was ever shown, in the order it was first shown. A slot's
+    # number is its place in this list, counting from 1, so a number means the same slot for
+    # the whole conversation, whichever tab the visitor reads it in (lb02/offers.py).
+    shown_slots = ArrayField(models.BigIntegerField(), default=list, blank=True, size=MAX_SHOWN_SLOTS)
 
     # Limits, counted as they are used.
     message_count = models.PositiveSmallIntegerField(default=0)

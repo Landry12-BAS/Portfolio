@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from core.tool_chat import ToolCall, ToolChatMessage
-from lb02.limits import HOLD_DURATION, MAX_OPTIONS, MAX_PARTY_SIZE
+from lb02.limits import HOLD_DURATION, MAX_PARTY_SIZE, MAX_SHOWN_SLOTS
 from lb02.models import Handoff
 from lb02.prompts import (
     HANDOFF_REASONS,
@@ -305,7 +305,7 @@ def test_the_described_limits_are_the_validated_limits() -> None:
     handoff = tool_definition(Tool.HANDOFF_TO_PERSON, KEYS).parameters["properties"]
 
     assert details["party_size"] == {"type": "integer", "minimum": 1, "maximum": MAX_PARTY_SIZE}  # type: ignore[index]
-    assert hold["option"] == {"type": "integer", "minimum": 1, "maximum": MAX_OPTIONS}  # type: ignore[index]
+    assert hold["option"] == {"type": "integer", "minimum": 1, "maximum": MAX_SHOWN_SLOTS}  # type: ignore[index]
     assert tuple(details["part_of_day"]["enum"]) == PART_OF_DAY_VALUES == get_args(PartOfDay.__value__)  # type: ignore[index]
     assert tuple(handoff["reason"]["enum"]) == HANDOFF_REASONS  # type: ignore[index]
     assert set(HANDOFF_REASONS) <= {reason.value for reason in Handoff.Reason}

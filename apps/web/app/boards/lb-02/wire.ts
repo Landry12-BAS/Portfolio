@@ -13,6 +13,12 @@ export const MAX_MESSAGE_LENGTH = 500
 export const MESSAGES_PER_CONVERSATION = 30
 /** The most a text frame from the server may weigh, in characters: a resumed conversation brings its whole transcript. */
 export const MAX_SERVER_FRAME_LENGTH = 262_144
+/**
+ * The highest number an option can carry (lb02/limits.py, MAX_SHOWN_SLOTS). A slot keeps the number it was first
+ * shown with for the whole conversation and numbers are never reused, so after several searches an option's number
+ * is well past the six a list holds.
+ */
+export const MAX_OPTION_NUMBER = 128
 
 /** The reasons the server closes a connection (lb02/events.py, CloseCode). */
 export const CLOSE_CODES = {
@@ -60,9 +66,9 @@ export const lineSchema = z.strictObject({
   text: z.string().max(2_100),
 })
 
-/** A slot on offer, by the number the concierge holds it with. */
+/** A slot on offer, by the number the concierge holds it with, which never changes during the conversation. */
 export const optionSchema = z.strictObject({
-  number: z.int().min(1).max(20),
+  number: z.int().min(1).max(MAX_OPTION_NUMBER),
   slot: z.int().nonnegative(),
   offering: OFFERING_KEY,
   starts_at: MOMENT,
