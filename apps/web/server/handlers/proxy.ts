@@ -1,4 +1,4 @@
-// /api/lb01/**, /api/lb02/**, /api/lb05/** and /api/lb08/**: the visitor's browser calls the site's
+// /api/lb01/**, /api/lb02/**, /api/lb05/**, /api/lb08/** and /api/lb03/**: the visitor's browser calls the site's
 // own server at the same paths the back ends use, and this forwards the call, as the visitor, to
 // the back end (docs/STACK.md, "Backend-for-frontend"). Nothing is forwardable unless the three
 // committed OpenAPI documents describe it (packages/api-clients' route table): the method, the
@@ -7,16 +7,18 @@
 //   1. the route must be a documented one (404 otherwise), with a query the route documents;
 //   2. a session is started or read, and a request that changes something needs a session that
 //      has passed Turnstile (403 otherwise), before a byte of its body is read;
-//   3. the body, if the route takes one, is read within the system's limit and written again;
+//   3. the body, if the route takes one, is read within the system's limit: JSON is written again,
+//      and a file upload (LB-03's, `multipart/form-data`) has its envelope checked and its bytes passed on;
 //   4. a visitor token for that one system is made, valid five minutes, whose subject is a keyed
 //      hash of the session, and the call is made with a deadline;
-//   5. only the answer's status, JSON body and Retry-After go back.
+//   5. only the answer's status, its JSON body (or, for a route the document says answers with a
+//      file, the file) and Retry-After go back.
 import { checkQuery, matchRoute } from '@lb/api-clients/routes'
 import { mintVisitorToken } from '@lb/common/visitors'
 import { getRequestURL } from 'h3'
 
 import { defineApiHandler } from '../lib/api.ts'
-import { readJsonBody } from '../lib/body.ts'
+import { readJsonBody, readUploadBody } from '../lib/body.ts'
 import { problems } from '../lib/errors.ts'
 import { requireConfig } from '../lib/services.ts'
 import { sessionsOf } from '../lib/sessions.ts'
@@ -42,7 +44,18 @@ export default defineApiHandler(async (event, site) => {
   if (route.method !== 'GET' && !session.verified) throw problems.verificationRequired()
 
   const policy = site.policies[route.system]
-  const body = route.body ? await readJsonBody(event, policy.maxBodyBytes) : undefined
+  let body: string | Uint8Array<ArrayBuffer> | undefined
+  let contentType: string | undefined
+  if (route.upload) {
+    // A system whose routes take uploads names its limit; one that doesn't has no business with one.
+    if (policy.maxUploadBytes === undefined) throw problems.notFound()
+    const upload = await readUploadBody(event, policy.maxUploadBytes)
+    body = upload.bytes
+    contentType = upload.contentType
+  }
+  else if (route.body) {
+    body = (await readJsonBody(event, policy.maxBodyBytes)).text
+  }
   const token = mintVisitorToken(config.signingKey, { system: route.system, sessionKey: sessions.subjectOf(session) }, site.now() / 1_000)
   return callService({
     method: route.method,
@@ -50,7 +63,9 @@ export default defineApiHandler(async (event, site) => {
     path: fillPath(route.path, params),
     query,
     token,
-    body: body?.text,
+    body,
+    contentType,
+    files: route.files,
     timeoutMs: policy.timeoutMs,
     maxResponseBytes: policy.maxResponseBytes,
     fetch: site.fetch,

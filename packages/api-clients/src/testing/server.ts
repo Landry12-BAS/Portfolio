@@ -75,10 +75,11 @@ export interface ScriptedAnswer {
   destroy?: boolean
   status?: number
   headers?: Record<string, string>
-  // The body as JSON, as raw text (to send what isn't JSON), or as that many bytes of filler.
+  // The body as JSON, as raw text (to send what isn't JSON), as that many bytes of filler, or as exactly these bytes (a file).
   json?: unknown
   text?: string
   bytes?: number
+  binary?: Uint8Array
   // How long to wait before answering.
   delayMs?: number
   // How many matching requests it answers; once by default.
@@ -235,6 +236,11 @@ class MockSite {
     if (script.delayMs) await pause(script.delayMs)
     if (script.destroy) {
       request.socket.destroy()
+      return
+    }
+    if (script.binary !== undefined) {
+      response.writeHead(script.status ?? 200, { ...(this.#options.leakyHeaders === false ? {} : LEAKY_HEADERS), ...script.headers })
+      response.end(script.binary)
       return
     }
     const body = script.text ?? (script.bytes === undefined ? script.json : 'x'.repeat(script.bytes))

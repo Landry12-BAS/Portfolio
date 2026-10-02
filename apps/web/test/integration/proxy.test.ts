@@ -3,6 +3,7 @@
 // by a token this server made, nothing of the visitor's request but the JSON body goes along, and
 // nothing of the back end's answer but a status, a JSON body and Retry-After comes back. Each
 // test is a way a request, or a back end, could go wrong, answered in the platform's error shape.
+// (LB-03's upload and its files are the documented exceptions, and have their own tests: proxy-lb03.test.ts.)
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { API_ROUTES } from '@lb/api-clients/routes'
@@ -11,6 +12,7 @@ import type { MockBackend } from '@lb/api-clients/testing'
 import { verifyVisitorToken, loadPublicKey } from '@lb/common/visitors'
 
 import { Browser } from '../support/browser.ts'
+import { seedUpload } from '../support/lb03-files.ts'
 import { rawRequest } from '../support/raw.ts'
 import { makeTestKeys, startTestSite } from '../support/site-app.ts'
 import type { TestSite } from '../support/site-app.ts'
@@ -56,8 +58,10 @@ describe('what is forwarded', () => {
       mock.reset()
       const operation = documents.operations.find(candidate => candidate.method === route.method && candidate.template === route.path)!
       const path = route.path.replace(/\{\w+\}/g, 'abc12345')
-      const body = documents.exampleRequest(operation)
-      const reply = await browser.request(route.method, path, { body })
+      // The one route that takes a file is sent a file, as a form in a browser sends it, and not an example of JSON.
+      const reply = route.upload
+        ? await browser.request(route.method, path, { upload: seedUpload('clean-pdf') })
+        : await browser.request(route.method, path, { body: documents.exampleRequest(operation) })
 
       expect(Object.keys(operation.operation.responses ?? {}).map(Number), `${route.method} ${path} answered ${reply.status}`).toContain(reply.status)
       expect(mock.requests.map(sent => `${sent.method} ${sent.path}`), route.path).toEqual([`${route.method} ${path}`])
@@ -120,6 +124,7 @@ describe('who the back end thinks is calling', () => {
     await browser.request('GET', '/api/lb02/offerings')
     await browser.request('GET', '/api/lb05/quota')
     await browser.request('GET', '/api/lb08/limits')
+    await browser.request('GET', '/api/lb03/quota')
 
     const publicKey = loadPublicKey(keys.sitePublic)
     const seen = mock.requests.map((sent) => {
@@ -128,7 +133,7 @@ describe('who the back end thinks is calling', () => {
       return verifyVisitorToken(token, `lb-${system}`, publicKey, () => site.clock.now / 1_000)
     })
 
-    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03'])
     expect(new Set(seen.map(visitor => visitor.sessionKey)).size).toBe(1)
   })
 
