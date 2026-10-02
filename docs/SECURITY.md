@@ -112,7 +112,14 @@ how a Vercel preview runs.
   hands the page on after checking it with the span schema. A trace holds names, timings,
   models and token counts, never what was typed or answered, and expires within a day, so
   whoever has a run's ID (8 to 64 unguessable characters) may read it: that is what makes a
-  permalink possible, and why it needs no session.
+  permalink possible, and why it needs no session. A read of a full page costs the gateway about
+  10 ms of CPU, so the route is bounded twice: the site keeps a page for a second, and readers
+  who ask while it is fetched share the fetch (`server/lib/trace-cache.ts`, so a Scope or any number
+  of viewers of one trace cost the gateway one read of each page a second), and the gateway counts
+  the reads of each run on its own and answers 429 `rate_limited` past a burst of 20 and 5 a second
+  (`services/gateway/src/read-limit.ts`), however the page is asked for. A Scope polls about twice a
+  second and a permalink pages through a long trace in a few reads, so neither comes near it. A
+  flood across many run IDs the visitor has is bounded by what it takes to start those runs.
 - **Recordings.** `GET /api/recordings/{system}[/{sample}]` serves the recordings of the
   curated samples, which are bundled with the site, checked with their schema on every read and
   looked up by a name that must match `[a-z0-9-]{1,60}`. Only a recording whose `origin` is

@@ -35,6 +35,8 @@ afterAll(async () => {
 beforeEach(() => {
   mock.reset()
   clock.now = Date.UTC(2026, 9, 5, 9, 0, 0)
+  // The site remembers a page for a second; every test starts without one, as a new run's would.
+  site.services.traces.clear()
 })
 
 /** Files a ticket as a verified visitor, lets its pipeline finish, and returns its run ID. */
@@ -92,6 +94,73 @@ describe('a run\'s trace', () => {
     expect(during.json.spans).toHaveLength(3)
     expect(rest.json.finished).toBe(true)
     expect(rest.json.spans[0].spanId).not.toBe(during.json.spans[0].spanId)
+  })
+
+  it('is asked of the gateway once a second at most, however many are reading it: the page is kept for a second', async () => {
+    const runId = await finishedRun()
+    const readers = [new Browser(site), new Browser(site), new Browser(site)]
+
+    const first = await Promise.all(readers.map(async reader => reader.request('GET', `/api/runs/${runId}/spans`)))
+    clock.now += 999
+    const second = await readers[0]?.request('GET', `/api/runs/${runId}/spans`)
+
+    expect(first.map(reply => reply.status)).toEqual([200, 200, 200])
+    expect(first[1]?.json).toEqual(first[0]?.json)
+    expect(second?.json).toEqual(first[0]?.json)
+    expect(mock.requests.map(sent => `${sent.method} ${sent.path}`)).toEqual([`GET /v1/runs/${runId}/spans`])
+  })
+
+  it('is asked of the gateway again when the second is up, and so shows what has been written since', async () => {
+    const browser = new Browser(site)
+    await browser.verify()
+    const ticket = (await browser.request('POST', '/api/lb01/tickets', { body: TICKET })).json
+    await browser.request('GET', `/api/lb01/tickets/${ticket.id}`)
+    const early = await browser.request('GET', `/api/runs/${ticket.run_id}/spans`)
+    await browser.request('GET', `/api/lb01/tickets/${ticket.id}`)
+
+    const stale = await browser.request('GET', `/api/runs/${ticket.run_id}/spans`)
+    clock.now += 1_000
+    const fresh = await browser.request('GET', `/api/runs/${ticket.run_id}/spans`)
+
+    expect(stale.json).toEqual(early.json)
+    expect(fresh.json.spans.length).toBeGreaterThan(early.json.spans.length)
+    expect(fresh.json.finished).toBe(true)
+  })
+
+  it('keeps each page of a trace on its own: another cursor or another size is another read', async () => {
+    const runId = await finishedRun()
+    const browser = new Browser(site)
+
+    const whole = await browser.request('GET', `/api/runs/${runId}/spans`)
+    const small = await browser.request('GET', `/api/runs/${runId}/spans?limit=2`)
+    const rest = await browser.request('GET', `/api/runs/${runId}/spans?limit=2&after=${small.json.cursor}`)
+    const again = await browser.request('GET', `/api/runs/${runId}/spans?after=${small.json.cursor}&limit=2`)
+
+    expect(small.json.spans).toHaveLength(2)
+    expect(whole.json.spans.length).toBeGreaterThan(2)
+    expect(rest.json).toEqual(again.json)
+    // The cursor and the size may come in either order: it is one page, read once.
+    expect(mock.requests.map(sent => sent.query)).toEqual(['', '?limit=2', `?after=${small.json.cursor}&limit=2`])
+  })
+
+  it('does not keep what is not a page: a run that is not there yet is asked about again, and so is a failure', async () => {
+    const browser = new Browser(site)
+    await browser.verify()
+    const ticket = (await browser.request('POST', '/api/lb01/tickets', { body: TICKET })).json
+    mock.requests.length = 0
+
+    const missing = await browser.request('GET', `/api/runs/${ticket.run_id}/spans`)
+    await browser.request('GET', `/api/lb01/tickets/${ticket.id}`)
+    const started = await browser.request('GET', `/api/runs/${ticket.run_id}/spans`)
+    mock.script({ status: 503, json: { error: { message: 'down', type: 'api_error', code: 'gateway_unavailable' } } })
+    const failed = await browser.request('GET', `/api/runs/${ticket.run_id}/spans?limit=1`)
+    const recovered = await browser.request('GET', `/api/runs/${ticket.run_id}/spans?limit=1`)
+
+    expect(missing.status).toBe(404)
+    expect(started.status).toBe(200)
+    expect(failed.status).toBe(503)
+    expect(recovered.status).toBe(200)
+    expect(mock.requests.filter(sent => sent.path.startsWith('/v1/runs/'))).toHaveLength(4)
   })
 
   it('is a 404 in the platform\'s shape for a run that is not there, and asks nothing of the gateway for an ID that cannot be one', async () => {

@@ -9,6 +9,7 @@ import type { H3Event } from 'h3'
 import { problems } from './errors.ts'
 import type { SiteConfig, SiteState } from './config.ts'
 import type { SystemPolicy } from './policy.ts'
+import type { TraceCache } from './trace-cache.ts'
 
 /** Where the recordings of the curated samples are kept, and how to read them. */
 export interface RecordingStore {
@@ -30,6 +31,8 @@ export interface SiteServices {
   // How big a request may be and how long each system has to answer. A test shortens the deadlines.
   policies: Readonly<Record<SystemName, SystemPolicy>>
   recordings: RecordingStore
+  // The pages of traces the gateway sent a moment ago, so the Scope's route asks for each at most once a second.
+  traces: TraceCache
 }
 
 declare module 'h3' {

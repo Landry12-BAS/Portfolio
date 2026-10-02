@@ -9,6 +9,10 @@
 // run that isn't there exactly like one that has expired, and never logs the ID: the request
 // serializer in log.ts replaces it in every logged URL, and test/integration/log.test.ts reads the
 // log to prove it.
+//
+// A full page costs about 10 ms of CPU, and the route needs no visitor behind it, so each run's reads are
+// counted (read-limit.ts) before anything is read: a burst is let through, a flood of reads of one run is
+// answered 429 with when to come back, and test/integration/trace-limit.test.ts shows the bound.
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 
@@ -55,7 +59,11 @@ export function registerRuns(app: FastifyInstance, ctx: GatewayContext): void {
     const { runId } = parseBody(params, request.params)
     const { after, limit } = parseBody(query, request.query)
 
-    // 3. The page: spans in the order they were written, only of systems this service may read.
+    // 3. How often: a run read too often is refused here, before a single span is read or checked.
+    const wait = ctx.traceReads.take(runId)
+    if (wait !== undefined) throw new GatewayError(429, 'rate_limited', 'This run\'s trace is being read too often.', wait)
+
+    // 4. The page: spans in the order they were written, only of systems this service may read.
     const page = await readPage(ctx, runId, { after, limit, systems: reader.systems })
     if (!page) throw new GatewayError(404, 'run_not_found', 'There is no trace for that run: its ID is unknown, or its trace has expired.')
     return { runId, ...page }

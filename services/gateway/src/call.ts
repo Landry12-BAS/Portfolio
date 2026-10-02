@@ -11,6 +11,7 @@ import { modelMeters, quotaMeters, refund, settlement } from './budget/meters.ts
 import type { Meter } from './budget/meters.ts'
 import type { MeterStore } from './budget/store.ts'
 import { GatewayError } from './errors.ts'
+import type { ReadLimiter } from './read-limit.ts'
 import type { Alias, Model, Routing, System } from './routing/load.ts'
 import type { DataClass, Plan, Profile } from './routing/plan.ts'
 import type { Capability } from './routing/schema.ts'
@@ -29,6 +30,8 @@ export interface GatewayContext {
   spans: SpanSink
   // Reads a run's spans back, for the Scope route.
   spanReader: RedisSpanReader
+  // Counts how often each run's trace is read, so a flood of reads of one run is refused before it costs a read.
+  traceReads: ReadLimiter
   log: FastifyBaseLogger
 }
 

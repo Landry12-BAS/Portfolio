@@ -149,6 +149,13 @@ curl -H "authorization: Bearer $WEB_TOKEN" "localhost:8080/v1/runs/run-012345678
   1,000 spans. The route reads with `XRANGE` and `XREVRANGE` on the one run's key and
   nothing else, which the gateway's Redis user may do there (`infra/redis/users.acl.tmpl`).
   Without Redis the route answers `503 gateway_unavailable` and says nothing about why.
+- **How often.** A full page costs about 10 ms of CPU and the route needs no visitor behind
+  it, so each run's reads are counted before anything is read ([`src/read-limit.ts`](src/read-limit.ts)):
+  a burst of 20 reads of one run is let through, and 5 more come back every second. A read
+  past that is `429 rate_limited` with `Retry-After`, whatever page it asks for. The count is in
+  the gateway's memory (it is one process, and nothing has to survive a restart), for at most
+  5,000 runs at a time; a request refused for another reason (the service, the run ID, the query)
+  is not counted. A Scope polls about twice a second, so a client that follows a run never meets it.
 
 ## How a call is routed
 
@@ -188,6 +195,7 @@ is stable:
 | 404 | `model_not_found` | Ask for an `lb-` alias of the right kind |
 | 413 | `input_too_large` | Shorten the prompt |
 | 429 | `quota_exceeded` | The run, visitor or system quota is spent; `Retry-After` when it frees up |
+| 429 | `rate_limited` | A run's trace is read too often; `Retry-After` says when to ask again |
 | 502 | `upstream_failed` | Every model failed: serve a replay |
 | 503 | `budget_exhausted` | Every model is out of budget or cooling down: serve a replay, retry after `Retry-After` |
 | 503 | `gateway_unavailable` | Redis is down or no provider is configured. The gateway fails closed |
@@ -259,8 +267,8 @@ curl -N localhost:8080/v1/chat/completions \
 integration tests use a real Redis from Testcontainers and scripted fake providers on
 local ports, and cover fallback, streaming, budgets, quotas, data classes, access
 control, a client disconnecting mid-stream, reranking and the guard's segments, and the
-Scope's route (who may read a trace, cursors, size limits, what is refused, and spans that
-hold no visitor's words). Without Docker, point them at any Redis:
+Scope's route (who may read a trace, cursors, size limits, what is refused, how often a run
+may be read, what the request log leaves out, and spans that hold no visitor's words). Without Docker, point them at any Redis:
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379 pnpm --filter @lb/gateway test`. Each test
 uses its own key prefix and removes its keys afterwards.
 

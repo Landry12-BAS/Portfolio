@@ -4,6 +4,11 @@
 // is live and opens it again for a permalink. Anyone with a run's ID may read its trace: the ID
 // is 8 to 64 unguessable characters, the trace is metadata only, and it expires within a day. So no
 // session or Turnstile check applies, and the page is checked again here, strictly, before it is passed on.
+//
+// A read of a full page costs the gateway about 10 ms of CPU, and this route is open, so a page is kept for a
+// second (server/lib/trace-cache.ts): a Scope, or many viewers of one trace, cost the gateway one read of
+// each page a second, and the gateway counts the reads of each run on its own for anything past that
+// (services/gateway/src/read-limit.ts).
 import { tracePageSchema } from '@lb/contracts'
 import { getRequestURL, getRouterParam } from 'h3'
 
@@ -12,6 +17,8 @@ import type { RawAnswer } from '../lib/api.ts'
 import { problems } from '../lib/errors.ts'
 import { MAX_TRACE_PAGE_BYTES, TRACE_TIMEOUT_MS } from '../lib/policy.ts'
 import { requireConfig } from '../lib/services.ts'
+import type { SiteServices } from '../lib/services.ts'
+import type { TraceAnswer } from '../lib/trace-cache.ts'
 import { callService } from '../lib/upstream.ts'
 
 // A run ID, as the gateway and the Caddy edge accept it.
@@ -42,13 +49,14 @@ function traceQuery(search: URLSearchParams): [string, string][] {
   return query
 }
 
-/** Reads a page of a run's trace from the gateway, and passes on what fits the page schema. */
-export default defineApiHandler(async (event, site): Promise<RawAnswer> => {
+/** Names one page of one run's trace: the run, then the cursor and the size in a fixed order, so the same page is always the same key. */
+function pageKey(runId: string, query: readonly (readonly [string, string])[]): string {
+  return `${runId}?${query.map(([name, value]) => `${name}=${value}`).join('&')}`
+}
+
+/** Asks the gateway for a page of a run's trace, and passes on what fits the page schema. */
+async function fetchPage(site: SiteServices, runId: string, query: [string, string][]): Promise<TraceAnswer> {
   const config = requireConfig(site)
-  const runId = getRouterParam(event, 'runId') ?? ''
-  // A run ID of the wrong shape is a run that is not there: nothing is asked of the gateway.
-  if (!RUN_ID.test(runId)) throw problems.notFound()
-  const query = traceQuery(getRequestURL(event).searchParams)
   const answer = await callService({
     method: 'GET',
     origin: config.gatewayUrl,
@@ -63,4 +71,14 @@ export default defineApiHandler(async (event, site): Promise<RawAnswer> => {
   const page = tracePageSchema.safeParse(JSON.parse(answer.body))
   if (!page.success || page.data.runId !== runId) throw problems.upstreamFailed()
   return { status: 200, body: JSON.stringify(page.data), headers: {} }
+}
+
+/** Reads a page of a run's trace: the one the site was sent a moment ago, or one from the gateway. */
+export default defineApiHandler(async (event, site): Promise<RawAnswer> => {
+  requireConfig(site)
+  const runId = getRouterParam(event, 'runId') ?? ''
+  // A run ID of the wrong shape is a run that is not there: nothing is asked of the gateway.
+  if (!RUN_ID.test(runId)) throw problems.notFound()
+  const query = traceQuery(getRequestURL(event).searchParams)
+  return site.traces.read(pageKey(runId, query), async () => fetchPage(site, runId, query))
 }, { cache: 'no-store' })

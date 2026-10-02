@@ -20,6 +20,7 @@ import { SYSTEM_POLICIES } from '../../server/lib/policy.ts'
 import type { SystemPolicy } from '../../server/lib/policy.ts'
 import { SITEVERIFY_URL } from '../../server/lib/turnstile.ts'
 import type { RecordingStore, SiteServices } from '../../server/lib/services.ts'
+import { TraceCache } from '../../server/lib/trace-cache.ts'
 
 /** The keys a test site and its mock back end share. */
 export interface TestKeys {
@@ -125,6 +126,7 @@ export async function startTestSite(options: TestSiteOptions): Promise<TestSite>
     random: bytes => randomBytes(bytes),
     policies: Object.fromEntries(Object.entries(SYSTEM_POLICIES).map(([system, policy]) => [system, { ...policy, ...options.policies?.[system as keyof typeof SYSTEM_POLICIES] }])) as typeof SYSTEM_POLICIES,
     recordings: recordingStore(options.recordings ?? {}),
+    traces: new TraceCache(() => clock.now),
   }
 
   const app = createApp()

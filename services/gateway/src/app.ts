@@ -16,6 +16,7 @@ import { ClientGoneError } from './call.ts'
 import type { GatewayContext } from './call.ts'
 import { errorBody, GatewayError } from './errors.ts'
 import { redactingLogger } from './log.ts'
+import { ReadLimiter, TRACE_READ_LIMIT } from './read-limit.ts'
 import type { Routing } from './routing/load.ts'
 import type { Profile } from './routing/plan.ts'
 import { registerChat } from './routes/chat.ts'
@@ -72,6 +73,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     breaker: new CircuitBreaker(now, options.breaker),
     spans: new RedisSpanSink(options.redis, options.prefix, app.log),
     spanReader: new RedisSpanReader(options.redis, options.prefix, app.log),
+    traceReads: new ReadLimiter(now, TRACE_READ_LIMIT),
     log: app.log,
   }
 

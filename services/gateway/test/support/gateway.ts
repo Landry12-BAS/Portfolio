@@ -43,8 +43,10 @@ export interface TestGateway {
  * Starts a gateway for one test, in the production profile unless told otherwise.
  * Pass a `redisUrl` to point it at a different (for example, unreachable) Redis, and a
  * `logger` to read what the gateway logs (the production gateway logs as `main.ts` says).
+ * With `frozenClock` the gateway's clock stands still until `advance` moves it, so a test that
+ * counts what a window allows gets the same answer every time.
  */
-export async function startGateway(options: { profile?: Profile, redisUrl?: string, logger?: GatewayOptions['logger'] } = {}): Promise<TestGateway> {
+export async function startGateway(options: { profile?: Profile, redisUrl?: string, logger?: GatewayOptions['logger'], frozenClock?: boolean } = {}): Promise<TestGateway> {
   const providers = {
     alpha: await FakeProvider.start(answer('alpha answer')),
     beta: await FakeProvider.start(answer('beta answer')),
@@ -68,9 +70,10 @@ export async function startGateway(options: { profile?: Profile, redisUrl?: stri
     publicKeys[service] = (await exportJWK(pair.publicKey)).x ?? ''
   }
 
-  // The clock is real time plus an offset the test controls.
+  // The clock is real time (or the moment the test started, when it is frozen) plus an offset the test controls.
   let offset = 0
-  const now = () => Date.now() + offset
+  const startedAt = Date.now()
+  const now = () => (options.frozenClock ? startedAt : Date.now()) + offset
   const prefix = `lbtest-${randomBytes(6).toString('hex')}:`
   const redis = new Redis(options.redisUrl ?? inject('redisUrl'), { enableOfflineQueue: false, maxRetriesPerRequest: 1, lazyConnect: true })
   await redis.connect().catch(() => undefined)

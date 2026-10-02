@@ -14,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 
 import { buildGateway } from '../../../../services/gateway/src/app.ts'
 import { importServiceKeys } from '../../../../services/gateway/src/auth/service-token.ts'
+import { TRACE_READ_LIMIT } from '../../../../services/gateway/src/read-limit.ts'
 import { loadRouting } from '../../../../services/gateway/src/routing/load.ts'
 import { Browser } from '../support/browser.ts'
 import { makeTestKeys, startTestSite } from '../support/site-app.ts'
@@ -109,6 +110,23 @@ describe('the Scope through the real gateway', () => {
       expect(reply.status).toBe(404)
       expect(reply.json.error.code).toBe('run_not_found')
     }
+  })
+
+  it('bounds a flood of reads of one run, though every read asks for a different page: the gateway counts the run, not the page', async () => {
+    const runId = await writeRun('lb-01')
+    const browser = new Browser(site)
+
+    // The site keeps a page for a second, so a flood that varies the page size gets past its memory.
+    const replies = []
+    for (let limit = 1; limit <= TRACE_READ_LIMIT.burst + 20; limit += 1) replies.push(await browser.request('GET', `/api/runs/${runId}/spans?limit=${limit}`))
+    const statuses = replies.map(reply => reply.status)
+
+    // The burst is let through, and a read or two may have come back while the loop ran, on the real clock.
+    expect(statuses.filter(status => status === 200).length).toBeGreaterThanOrEqual(TRACE_READ_LIMIT.burst)
+    expect(statuses.filter(status => status === 200).length).toBeLessThanOrEqual(TRACE_READ_LIMIT.burst + 2)
+    expect(statuses.at(-1)).toBe(429)
+    expect(replies.at(-1)?.headers.get('retry-after')).toBe('1')
+    expect(replies.at(-1)?.text).not.toContain(runId)
   })
 
   it('is refused by the gateway when the site holds a key the gateway does not know, and the visitor sees only a 502', async () => {

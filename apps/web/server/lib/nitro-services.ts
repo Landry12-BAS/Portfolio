@@ -12,6 +12,7 @@ import { loadSiteState } from './config.ts'
 import type { RawRuntimeConfig } from './config.ts'
 import { SYSTEM_POLICIES } from './policy.ts'
 import type { RecordingStore, SiteServices } from './services.ts'
+import { TraceCache } from './trace-cache.ts'
 
 // Where the build puts the recordings (nitro.serverAssets in nuxt.config.ts), by system folder: `lb-01/torn-bag.json`.
 const RECORDINGS_STORAGE = 'assets:recordings'
@@ -48,6 +49,7 @@ export function nitroServices(): SiteServices {
     random: bytes => randomBytes(bytes),
     policies: SYSTEM_POLICIES,
     recordings: bundledRecordings(),
+    traces: new TraceCache(Date.now),
   }
   return services
 }

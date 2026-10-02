@@ -13,6 +13,7 @@ export type ErrorCode
     | 'model_not_found'
     | 'input_too_large'
     | 'quota_exceeded'
+    | 'rate_limited'
     | 'budget_exhausted'
     | 'upstream_rejected'
     | 'upstream_failed'
