@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // <BoardShell>: the frame every evaluation board sits in. A deep-blue title bar carries the part
 // number, the system's name and a badge that says plainly whether what is shown is a live run
-// or the replay of a recording; below it, a main column for the demo and a side column for the
-// limits and the Scope. The deep blue marks a live demo and is used for nothing else.
+// or the replay of a recording; below it, a main column for the demo, a side column for the
+// limits and the visitor's counters, and the Scope across the full width underneath. The deep
+// blue marks a live demo and is used for nothing else.
 import { LbIcon } from '@lb/icons'
 import { useI18n } from 'vue-i18n'
 
@@ -54,6 +55,12 @@ const { t } = useI18n()
       >
         <slot name="aside" />
       </aside>
+    </div>
+    <div
+      v-if="$slots.scope"
+      class="trace"
+    >
+      <slot name="scope" />
     </div>
   </section>
 </template>
@@ -134,6 +141,12 @@ const { t } = useI18n()
 .side {
   border-left: 1px solid var(--lb-rule);
   background: var(--lb-board-tint);
+}
+
+/* The Scope's trace is a wide table, so it gets the whole width of the board under both columns. */
+.trace {
+  padding: 18px 16px;
+  border-top: 1px solid var(--lb-rule);
 }
 
 @media (max-width: 900px) {

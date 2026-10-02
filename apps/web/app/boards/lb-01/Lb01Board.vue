@@ -7,7 +7,7 @@
 // A sample with a recording replays it for free, labelled as a replay. The page polls and never
 // streams, nothing is sent to a customer, and tickets are deleted after 24 hours.
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { LB01_SAMPLES } from '#shared/data/samples/lb01'
@@ -79,10 +79,29 @@ const permalink = computed(() => (runMode.value === 'live' && scope.runId ? prop
 // The last ticket the visitor asked to file, so "try again" after a failed check files it.
 const lastRequest = ref<NewTicket>()
 
+/**
+ * Scrolls a part of the board into view if it is below the fold, since a long composer can push
+ * what a run produces out of sight. It scrolls and nothing else: focus stays where the visitor put
+ * it, and a visitor who prefers reduced motion gets no animation.
+ */
+async function bringIntoView(id: string): Promise<void> {
+  await nextTick()
+  const target = document.getElementById(id)
+  if (!target || typeof target.scrollIntoView !== 'function') return
+  if (target.getBoundingClientRect().top < window.innerHeight * 0.7) return
+  const calm = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  target.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' })
+}
+
+/** Shows the run's progress when it starts: the pipeline, or the console where the pipeline is left out. */
+function revealRun(): Promise<void> {
+  return bringIntoView(brief.value ? 'lb01-console' : 'lb01-pipeline')
+}
+
 /** Files a ticket live and remembers it, for a retry. */
 function file(request: NewTicket): void {
   lastRequest.value = request
-  void store.file(request)
+  void store.file(request).then(revealRun)
 }
 
 /** Runs a curated sample live, as its customer. */
@@ -95,6 +114,7 @@ function runSample(id: string): void {
 async function replaySample(id: string): Promise<void> {
   try {
     store.replayRecording(await replay.read(SYSTEM, id))
+    void revealRun()
   }
   catch (error) {
     store.fail(isApiProblem(error) ? error : new ApiProblem(404, 'not_found', 'There is nothing at this address.'))
@@ -103,7 +123,9 @@ async function replaySample(id: string): Promise<void> {
 
 /** Plays the replay on the board again. */
 function replayAgain(): void {
-  if (replay.recording) store.replayRecording(replay.recording)
+  if (!replay.recording) return
+  store.replayRecording(replay.recording)
+  void revealRun()
 }
 
 /** Runs the sample that is being replayed live instead. */
@@ -115,6 +137,11 @@ function runReplayedLive(): void {
 function retryCheck(): void {
   if (lastRequest.value) void store.file(lastRequest.value)
 }
+
+// When the pipeline has finished with the ticket, the draft is what the visitor came for.
+watch(() => store.finished, (done) => {
+  if (done) void bringIntoView('lb01-console')
+})
 
 onMounted(async () => {
   void replay.loadList(SYSTEM)
@@ -180,6 +207,7 @@ onBeforeUnmount(() => {
 
     <section
       v-if="!brief"
+      id="lb01-pipeline"
       class="pipeline"
       :aria-label="t('lb01.pipeline.title')"
     >
@@ -190,6 +218,7 @@ onBeforeUnmount(() => {
     </section>
 
     <AgentConsole
+      id="lb01-console"
       :ticket="ticket"
       :working="Boolean(ticket) && !runOver && phase !== 'done'"
       :can-decide="canDecide"
@@ -208,6 +237,9 @@ onBeforeUnmount(() => {
         :now="now"
       />
       <StatsCounters :stats="stats" />
+    </template>
+
+    <template #scope>
       <BoardScopePanel
         :brief="brief"
         :permalink="permalink"
@@ -220,6 +252,12 @@ onBeforeUnmount(() => {
 .intro {
   max-width: 64ch;
   font-size: 15px;
+}
+
+.pipeline,
+#lb01-console {
+  /* Leave room for the site's sticky toolbar when a run's results are scrolled into view. */
+  scroll-margin-top: 72px;
 }
 
 .pipeline {

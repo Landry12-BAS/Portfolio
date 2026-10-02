@@ -3,7 +3,9 @@
 // keyboard works the way it does everywhere (arrow keys move, space chooses). Choosing a sample
 // starts nothing by itself; the board has its own button for that, so moving through the list
 // with the arrow keys never spends anything. Each sample says whether a recording of it exists:
-// a recorded sample can be replayed free, and one without says the run would be live.
+// a recorded sample can be replayed free, and one without says the run would be live. A card is
+// kept short (its name, its language, its recording); what the sample shows and what it says are
+// read out as the radio button's description, and the board shows them in full for the chosen one.
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -38,36 +40,35 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
       {{ legend }}
     </legend>
     <div class="grid">
-      <label
+      <div
         v-for="sample in samples"
         :key="sample.id"
         class="card"
         :class="{ chosen: selected === sample.id }"
       >
-        <input
-          v-model="selected"
-          type="radio"
-          name="sample"
-          class="radio"
-          :value="sample.id"
-          :aria-describedby="`sample-${sample.id}-about`"
-        >
-        <span class="head">
-          <span class="title">{{ sample.title }}</span>
-          <span class="lang">{{ sample.language.toUpperCase() }}</span>
-        </span>
-        <span
-          :id="`sample-${sample.id}-about`"
-          class="about"
-        >
-          <span class="note">{{ sample.note }}</span>
-          <span class="excerpt">{{ sample.excerpt }}</span>
+        <label class="choice">
+          <input
+            v-model="selected"
+            type="radio"
+            name="sample"
+            class="radio"
+            :value="sample.id"
+            :aria-describedby="`sample-${sample.id}-about`"
+          >
+          <span class="head">
+            <span class="title">{{ sample.title }}</span>
+            <span class="lang">{{ sample.language.toUpperCase() }}</span>
+          </span>
           <span
             class="state"
             :data-recording="recordingState(sample.id)"
           >{{ t(`board.samples.recording.${recordingState(sample.id)}`) }}</span>
-        </span>
-      </label>
+        </label>
+        <span
+          :id="`sample-${sample.id}-about`"
+          class="lb-sr-only"
+        >{{ sample.note }} {{ sample.excerpt }}</span>
+      </div>
     </div>
   </fieldset>
 </template>
@@ -87,17 +88,11 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px;
 }
 
 .card {
-  position: relative;
-  display: grid;
-  gap: 6px;
-  align-content: start;
-  padding: 10px 12px 10px 34px;
-  cursor: pointer;
   background: var(--lb-sheet);
   border: 1.5px solid var(--lb-rule);
 }
@@ -116,9 +111,17 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
   outline-offset: 2px;
 }
 
+.choice {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px 8px 34px;
+  cursor: pointer;
+}
+
 .radio {
   position: absolute;
-  top: 12px;
+  top: 10px;
   left: 11px;
   width: 16px;
   height: 16px;
@@ -134,8 +137,8 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
 }
 
 .title {
-  font-weight: 700;
   font-size: 14px;
+  font-weight: 700;
 }
 
 .lang {
@@ -143,22 +146,6 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
   font-size: 10px;
   letter-spacing: 0.08em;
   color: var(--lb-graphite);
-}
-
-.about {
-  display: grid;
-  gap: 4px;
-  font-size: 12.5px;
-}
-
-.excerpt {
-  display: -webkit-box;
-  overflow: hidden;
-  font-style: italic;
-  color: var(--lb-graphite);
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
 .state {

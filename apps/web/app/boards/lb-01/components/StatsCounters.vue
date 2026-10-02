@@ -54,7 +54,10 @@ const { t, locale } = useI18n()
       </div>
       <div class="wide">
         <dt>{{ t('lb01.counters.deflection') }}</dt>
-        <dd data-testid="deflection">
+        <dd
+          data-testid="deflection"
+          :class="{ empty: stats.deflection === null }"
+        >
           {{ stats.deflection === null ? t('lb01.counters.noData') : formatShare(stats.deflection, locale) }}
         </dd>
         <dd class="help">
@@ -63,7 +66,10 @@ const { t, locale } = useI18n()
       </div>
       <div class="wide">
         <dt>{{ t('lb01.counters.accuracy') }}</dt>
-        <dd data-testid="accuracy">
+        <dd
+          data-testid="accuracy"
+          :class="{ empty: stats.accuracy === null }"
+        >
           {{ stats.accuracy === null ? t('lb01.counters.noData') : formatShare(stats.accuracy, locale) }}
         </dd>
         <dd class="help">
@@ -116,6 +122,14 @@ dd {
   font-size: 16px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+/* "No data yet" is a sentence, not a measurement, so it is not drawn like one. */
+dd.empty {
+  font-family: var(--lb-font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--lb-graphite);
 }
 
 .help {

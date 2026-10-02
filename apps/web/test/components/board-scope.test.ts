@@ -45,7 +45,7 @@ describe('BoardScopePanel', () => {
 
   it('is a table with column headers and row headers, in a scroll region the keyboard can reach', async () => {
     const { wrapper } = await mountWithRun()
-    expect(wrapper.findAll('thead th[scope="col"]').map(item => item.text())).toEqual(['Step', 'Kind', 'Model', 'Tokens', 'Time'])
+    expect(wrapper.findAll('thead th[scope="col"]').map(item => item.text())).toEqual(['Step', 'Time', 'Kind', 'Model', 'Tokens'])
     expect(wrapper.findAll('tbody th[scope="row"]').length).toBeGreaterThan(5)
     const region = wrapper.get('[role="region"]')
     expect(region.attributes('tabindex')).toBe('0')
@@ -131,7 +131,7 @@ describe('BoardScopePanel', () => {
 
   it('speaks Czech', async () => {
     const { wrapper } = await mountWithRun({ locale: 'cs' })
-    expect(wrapper.findAll('thead th').map(item => item.text())).toEqual(['Krok', 'Druh', 'Model', 'Tokeny', 'Čas'])
+    expect(wrapper.findAll('thead th').map(item => item.text())).toEqual(['Krok', 'Čas', 'Druh', 'Model', 'Tokeny'])
     expect(wrapper.text()).toContain('(uvnitř: support ticket)')
     expect(wrapper.get('.summary').text()).toMatch(/2,7\s?s/)
   })

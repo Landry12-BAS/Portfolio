@@ -210,10 +210,11 @@ describe('TicketComposer', () => {
   const bodies = Object.fromEntries(LB01_SAMPLES.map(sample => [sample.id, sample.body]))
   const props = { samples, recorded: [] as string[], customers, busy: false, canRunLive: true, defaultLanguage: 'en' as const, bodies }
 
-  it('opens on the curated samples, with the first chosen and its text shown', () => {
+  it('opens on the curated samples, with the first chosen, its text shown and what it is there to show', () => {
     const wrapper = mountWithSite(TicketComposer, { props })
     expect(wrapper.findAll('input[type="radio"]')).toHaveLength(LB01_SAMPLES.length)
     expect(wrapper.get('blockquote').text()).toBe(LB01_SAMPLES[0]!.body)
+    expect(wrapper.get('.shows').text()).toBe('note')
     expect(wrapper.find('form').exists()).toBe(false)
   })
 

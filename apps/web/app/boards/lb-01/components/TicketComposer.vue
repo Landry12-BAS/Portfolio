@@ -56,7 +56,8 @@ const languageOptions = computed(() => [
 const hasRecording = computed(() => chosen.value !== undefined && props.recorded?.includes(chosen.value) === true)
 const recordingKnown = computed(() => props.recorded !== undefined)
 const chosenBody = computed(() => (chosen.value === undefined ? '' : props.bodies[chosen.value] ?? ''))
-const chosenLanguage = computed(() => props.samples.find(sample => sample.id === chosen.value)?.language ?? 'en')
+const chosenSample = computed(() => props.samples.find(sample => sample.id === chosen.value))
+const chosenLanguage = computed(() => chosenSample.value?.language ?? 'en')
 const bodyLength = computed(() => body.value.length)
 const canFile = computed(() => !props.busy && props.canRunLive && customer.value !== '' && body.value.trim().length > 0 && bodyLength.value <= MAX_BODY)
 
@@ -88,6 +89,7 @@ function fileOwn(): void {
     </h2>
     <LbSegmented
       v-model="source"
+      class="switch"
       :options="sourceOptions"
       :label="t('lb01.compose.modeLabel')"
     />
@@ -112,6 +114,12 @@ function fileOwn(): void {
         <blockquote :lang="chosenLanguage">
           {{ chosenBody }}
         </blockquote>
+        <p
+          v-if="chosenSample"
+          class="shows"
+        >
+          {{ chosenSample.note }}
+        </p>
       </figure>
       <p
         v-if="recordingKnown && !hasRecording"
@@ -244,10 +252,20 @@ function fileOwn(): void {
   min-width: 0;
 }
 
+/* The switch is a row of buttons, not a bar across the column. */
+.switch {
+  justify-self: start;
+}
+
 .preview {
   display: grid;
   gap: 4px;
   margin: 0;
+}
+
+.shows {
+  font-size: 12.5px;
+  color: var(--lb-graphite);
 }
 
 blockquote {

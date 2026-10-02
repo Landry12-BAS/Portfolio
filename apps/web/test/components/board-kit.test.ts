@@ -34,6 +34,16 @@ describe('BoardShell', () => {
     expect(wrapper.text()).toContain('Vývojová deska')
   })
 
+  it('gives the Scope the whole width under both columns, and draws nothing there when it has none', () => {
+    const withScope = mountWithSite(defineComponent({
+      render: () => h(BoardShell, { part: 'LB-01', name: 'n', state: 'live' }, { default: () => h('p', 'main'), scope: () => h('p', { id: 'trace' }, 'trace') }),
+    }))
+    expect(withScope.find('.trace #trace').exists()).toBe(true)
+    expect(withScope.find('.frame .trace').exists()).toBe(false)
+    const without = mountWithSite(BoardShell, { props: { part: 'LB-01', name: 'n', state: 'live' } })
+    expect(without.find('.trace').exists()).toBe(false)
+  })
+
   it('has a main column and a side column that is a labelled landmark', () => {
     const wrapper = mountWithSite(defineComponent({
       render: () => h(BoardShell, { part: 'LB-01', name: 'n', state: 'live' }, { default: () => h('p', { id: 'm' }, 'main'), aside: () => h('p', { id: 's' }, 'side') }),
@@ -182,6 +192,15 @@ describe('BoardSamplePicker', () => {
   it('says it is looking while the list of recordings is not known', () => {
     const wrapper = mountWithSite(BoardSamplePicker, { props: { samples, recorded: undefined, legend: 'x', modelValue: undefined } })
     expect(wrapper.findAll('.state').map(item => item.text())).toEqual(['Looking for a recording…', 'Looking for a recording…'])
+  })
+
+  it('keeps each card short and reads what the sample shows and says as the radio button\'s description', () => {
+    const wrapper = mountWithSite(BoardSamplePicker, { props: { samples, recorded: [], legend: 'x', modelValue: undefined } })
+    const description = wrapper.get('#sample-torn-bag-about')
+    expect(description.text()).toBe('A damaged delivery. Hi, my order')
+    expect(description.classes()).toContain('lb-sr-only')
+    expect(wrapper.get('.choice').text()).not.toContain('A damaged delivery.')
+    expect(wrapper.get('.choice').element.contains(description.element)).toBe(false)
   })
 
   it('reports the sample chosen and starts nothing by itself', async () => {

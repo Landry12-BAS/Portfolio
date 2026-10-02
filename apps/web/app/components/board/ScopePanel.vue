@@ -128,6 +128,9 @@ function tokens(row: TimelineRow): string {
               {{ t('board.scope.columns.step') }}
             </th>
             <th scope="col">
+              {{ t('board.scope.columns.time') }}
+            </th>
+            <th scope="col">
               {{ t('board.scope.columns.kind') }}
             </th>
             <th scope="col">
@@ -135,9 +138,6 @@ function tokens(row: TimelineRow): string {
             </th>
             <th scope="col">
               {{ t('board.scope.columns.tokens') }}
-            </th>
-            <th scope="col">
-              {{ t('board.scope.columns.time') }}
             </th>
           </tr>
         </thead>
@@ -162,6 +162,19 @@ function tokens(row: TimelineRow): string {
                 class="problem"
               >{{ t(`board.scope.status.${row.span.status}`) }}</span>
             </th>
+            <td class="time">
+              <span
+                class="track"
+                aria-hidden="true"
+              >
+                <span
+                  class="bar"
+                  :class="`bar--${row.kind}`"
+                  :style="{ left: `${row.left * 100}%`, width: `${row.width * 100}%` }"
+                />
+              </span>
+              <span class="mono">{{ duration(row) }}</span>
+            </td>
             <td>
               <span
                 class="swatch"
@@ -175,19 +188,6 @@ function tokens(row: TimelineRow): string {
             </td>
             <td class="mono">
               {{ tokens(row) }}
-            </td>
-            <td class="time">
-              <span
-                class="track"
-                aria-hidden="true"
-              >
-                <span
-                  class="bar"
-                  :class="`bar--${row.kind}`"
-                  :style="{ left: `${row.left * 100}%`, width: `${row.width * 100}%` }"
-                />
-              </span>
-              <span class="mono">{{ duration(row) }}</span>
             </td>
           </tr>
         </tbody>
@@ -320,6 +320,18 @@ tbody td {
   border-bottom: 1px solid var(--lb-rule);
 }
 
+/* A long name wraps instead of pushing the time out of a phone's first screen: the step and its
+   time come first, and the rest (kind, model, tokens) is a swipe away. */
+tbody th {
+  min-width: 150px;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+
+tbody td {
+  white-space: nowrap;
+}
+
 .name {
   font-family: var(--lb-font-mono);
   font-size: 11.5px;
@@ -389,6 +401,17 @@ tbody td {
   position: absolute;
   top: 0;
   bottom: 0;
+}
+
+@media (max-width: 640px) {
+  /* A shorter track keeps the step and its time on a phone's first screen. */
+  .track {
+    width: 56px;
+  }
+
+  tbody th {
+    min-width: 120px;
+  }
 }
 
 .links {
