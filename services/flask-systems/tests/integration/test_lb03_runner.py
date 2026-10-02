@@ -165,6 +165,7 @@ def make_harness(lb03_engine: Engine, tmp_path: Path) -> Iterator[Callable[..., 
                     samples=sample_identities(GOLDEN),
                     offload=offload,
                     clock=clock,
+                    cleanup=queue.close,
                 )
             )
 
@@ -474,6 +475,38 @@ def test_closing_ends_what_did_not_finish_as_interrupted_and_gives_the_visitor_t
     document = document_of(harness, job)
     assert (document.state, document.failure_code) == ("failed", FailureCode.INTERRUPTED.value)
     assert counters(harness) == (0, 0, 1)
+
+
+def test_a_worker_that_exits_ends_the_documents_it_holds_by_closing_the_runner(
+    make_harness: Callable[..., Harness], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The runner asks to be closed as the worker stops, so no document is left to be found lost."""
+    at_worker_exit: list[Callable[..., object]] = []
+    at_interpreter_exit: list[tuple[Callable[..., object], tuple[object, ...]]] = []
+    monkeypatch.setattr("lb03.runner.shutdown.register", at_worker_exit.append)
+    monkeypatch.setattr(
+        "lb03.runner.atexit.register", lambda function, *args: at_interpreter_exit.append((function, args))
+    )
+    harness = make_harness()
+
+    harness.runner.start()
+    harness.runner.start()
+
+    assert at_worker_exit == [harness.runner.close]
+    assert at_interpreter_exit == [(harness.runner.close, (0.0,))]
+
+
+def test_closing_the_runner_stops_the_thread_that_writes_its_spans(make_harness: Callable[..., Harness]) -> None:
+    """Nothing is left running when a worker has stopped: the span thread ends with the runner."""
+    harness = make_harness()
+    job = upload(harness)
+    harness.runner.submit(job)
+    wait_final(harness, job)
+
+    harness.runner.close()
+
+    assert not harness.queue._thread.is_alive()
+    assert {span.run_id for span in harness.spans.spans} == {document_of(harness, job).run_id}
 
 
 def test_a_closed_runner_takes_no_more_documents(make_harness: Callable[..., Harness]) -> None:

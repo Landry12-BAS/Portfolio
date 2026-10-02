@@ -116,6 +116,8 @@ class Parts:
     offload: Offload
     clock: Callable[[], datetime]
     monotonic: Callable[[], float] = time.monotonic
+    # What to do when the pipeline is finished with for good, such as stopping the thread that writes its spans.
+    cleanup: Callable[[], object] | None = None
 
 
 @dataclass(frozen=True)
@@ -230,6 +232,11 @@ class Pipeline:
     def __init__(self, parts: Parts) -> None:
         """Read documents with `parts`."""
         self.parts = parts
+
+    def close(self) -> None:
+        """Release what the pipeline holds (the span thread, say) once no document will be read again."""
+        if self.parts.cleanup is not None:
+            self.parts.cleanup()
 
     async def process(self, job: Job) -> Ended:
         """Read one document as one run of LB-03, and write how it ended.

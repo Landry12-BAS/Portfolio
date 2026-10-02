@@ -26,6 +26,7 @@ readers are busy, so a flood of uploads can't pile up work without bound.
 """
 
 import asyncio
+import atexit
 import contextvars
 import functools
 import logging
@@ -39,6 +40,7 @@ from typing import Any
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from core import shutdown
 from core.errors import describe_failure
 from lb03 import limits
 from lb03.pipeline import Ended, Job, Offload, Pipeline
@@ -128,6 +130,11 @@ class PipelineRunner:
                 target=self._run_loop, args=(loop, ready), name="lb03-pipeline", daemon=True
             )
             self._thread.start()
+            # A worker that is told to stop ends the documents it holds, instead of leaving them to be found lost:
+            # gunicorn's worker_exit hook closes the runner while its thread pool still works (core/shutdown.py), and
+            # the exit handler is the last resort for any other way the process ends, when nothing can finish anyway.
+            shutdown.register(self.close)
+            atexit.register(self.close, 0.0)
         ready.wait(CLOSE_SECONDS)
 
     def submit(self, job: Job) -> None:
@@ -161,13 +168,17 @@ class PipelineRunner:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(executor, functools.partial(context.run, function, *arguments))
 
-    def close(self) -> None:
-        """Stop taking documents, give the held ones a few seconds to finish, then end the rest as interrupted."""
+    def close(self, grace_seconds: float | None = None) -> None:
+        """Stop taking documents, give the held ones a few seconds to finish, then end the rest as interrupted.
+
+        `grace_seconds` is how long the held documents get; it defaults to the settings' (20 seconds).
+        """
         with self._lock:
             if self._closed:
                 return
             self._closed = True
-            deadline = time.monotonic() + self._settings.shutdown_grace_seconds
+            grace = self._settings.shutdown_grace_seconds if grace_seconds is None else grace_seconds
+            deadline = time.monotonic() + grace
             while self._held and time.monotonic() < deadline:
                 self._lock.wait(timeout=max(deadline - time.monotonic(), 0.0))
         self._stop_loop()
@@ -175,6 +186,8 @@ class PipelineRunner:
             self._interrupt_now(job)
         if self._executor is not None:
             self._executor.shutdown(wait=False, cancel_futures=True)
+        if self._pipeline is not None:
+            self._pipeline.close()
 
     def _run_loop(self, loop: asyncio.AbstractEventLoop, ready: threading.Event) -> None:
         """Run the loop on its thread: make the slots, start the heartbeat and the sweep, and run until stopped."""

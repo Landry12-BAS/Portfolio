@@ -49,7 +49,7 @@ from lb03.repository import (
     invoice_from_json,
     placements_from_json,
 )
-from lb03.runner import PipelineRunner, RunnerBusyError, RunnerClosedError
+from lb03.runner import PipelineRunner, RunnerBusyError, RunnerClosedError, RunnerSettings
 from lb03.sniff import HEAD_BYTES, sniff_kind
 from lb03.spans import QueuedSpanWriter
 from lb03.states import DocumentState
@@ -404,10 +404,13 @@ class Lb03Service:
         return Download(text.encode("utf-8"), "application/json", "invoice.json")
 
 
-def build_service(platform: Platform, reader: Reader | None = None) -> Lb03Service | None:
+def build_service(
+    platform: Platform, reader: Reader | None = None, runner_settings: RunnerSettings | None = None
+) -> Lb03Service | None:
     """Build the service from the platform, or return None, saying why in the log, when a part can't be built.
 
-    `reader` replaces the OCR pool, for tests that must not run OCR; the running service never passes one.
+    `reader` replaces the OCR pool and `runner_settings` the runner's timings, for tests that must not run OCR or
+    wait a minute; the running service passes neither.
     """
     environment = platform.environment
     engine = platform.engines.get("lb03")
@@ -423,7 +426,7 @@ def build_service(platform: Platform, reader: Reader | None = None) -> Lb03Servi
         return None
     repository = DocumentRepository(engine)
     ledger = PostgresLedger(engine, platform.clock)
-    runner = build_runner(platform, repository, ledger, store, chart, samples, reader)
+    runner = build_runner(platform, repository, ledger, store, chart, samples, reader, runner_settings)
     return Lb03Service(
         repository=repository,
         ledger=ledger,
@@ -444,6 +447,7 @@ def build_runner(
     chart: ChartOfAccounts,
     samples: list[Known],
     reader: Reader | None = None,
+    settings: RunnerSettings | None = None,
 ) -> PipelineRunner | None:
     """Make the runner, or None (with a warning) when the platform has no models, no injection check or no spans."""
     chat, guard, span_writer = platform.chat, platform.guard, platform.span_writer
@@ -456,6 +460,7 @@ def build_runner(
         """Make the pipeline when the first document arrives, so its OCR pool and span thread start after the fork."""
         scratch = Path(environment.lb03_scratch_dir) if environment.lb03_scratch_dir else None
         pool = reader or OcrPool(PoolSettings(workers=environment.lb03_ocr_workers, scratch_root=scratch))
+        spans = QueuedSpanWriter(span_writer)
         return Pipeline(
             Parts(
                 chat=chat,
@@ -463,11 +468,12 @@ def build_runner(
                 reader=pool,
                 store=store,
                 repository=repository,
-                tracer=Tracer(QueuedSpanWriter(span_writer)),
+                tracer=Tracer(spans),
                 chart=chart,
                 samples=samples,
                 offload=offload,
                 clock=platform.clock,
+                cleanup=spans.close,
             )
         )
 
@@ -475,4 +481,4 @@ def build_runner(
         """Run one pass of the sweep as of now."""
         sweep(repository, ledger, store, platform.clock())
 
-    return PipelineRunner(build_pipeline, repository, ledger, sweep_now, platform.clock)
+    return PipelineRunner(build_pipeline, repository, ledger, sweep_now, platform.clock, settings)
