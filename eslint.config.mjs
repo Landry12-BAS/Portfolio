@@ -34,6 +34,9 @@ export default createConfigForNuxt({
     src: ['apps/web/app', 'packages/ui/app'],
   },
 })
+  // Files a script writes (openapi-typescript's types, the route table) are checked for drift by
+  // `pnpm check`, not read by hand, so they are not linted.
+  .append({ ignores: ['packages/api-clients/src/generated/**'] })
   .append(vueA11y.configs['flat/recommended'])
   .append({
     name: 'lb/security',
