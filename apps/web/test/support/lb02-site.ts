@@ -80,7 +80,7 @@ export class FakeWebSocket {
   send(data: string): void {
     if (this.readyState !== 1) throw new Error('The socket is not open.')
     this.sent.push(data)
-    this.#connection?.receive(data)
+    if (!this.#site.loseFrames) this.#connection?.receive(data)
   }
 
   /** The page closes the socket. */
@@ -138,6 +138,8 @@ export class FakeLb02Site {
   readonly sockets: FakeWebSocket[] = []
   // When set, every new socket fails to open, as it does with the network down.
   refuseConnections = false
+  // When set, the frames the page sends are lost on the way: the page's socket takes them, the hub never hears them.
+  loseFrames = false
   readonly #scripted: Scripted[] = []
   readonly #stalled: { match: string, gate: Promise<void> }[] = []
 

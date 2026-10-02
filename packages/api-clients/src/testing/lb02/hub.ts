@@ -188,10 +188,15 @@ export class Lb02Hub {
     return found?.session === session && found.expiresAt > this.options.now() ? found : undefined
   }
 
-  /** Answers a message and writes the turn's spans. */
-  takeTurn(conversation: MockConversation, text: string): { output: TurnOutput, step: string } {
+  /** Takes in a message, as the service does before it starts to answer: it is counted and kept in the transcript. Says whether it was the first. */
+  receive(conversation: MockConversation, text: string): boolean {
+    return this.#concierge.receive(conversation, text)
+  }
+
+  /** Answers a message that was taken in and writes the turn's spans. */
+  respond(conversation: MockConversation, text: string, wasFirst: boolean): { output: TurnOutput, step: string } {
     const startedAt = this.options.now()
-    const output = this.#concierge.takeTurn(conversation, text)
+    const output = this.#concierge.respond(conversation, text, wasFirst)
     this.#turns += 1
     const step = stepOf(conversation, this.calendar)
     this.#spans.set(conversation.runId, [...(this.#spans.get(conversation.runId) ?? []), ...turnSpans(conversation.runId, this.#turns, startedAt, output, step)])
@@ -382,10 +387,12 @@ export class Lb02Connection {
   async #hear(text: string): Promise<void> {
     const conversation = this.#conversation
     if (!conversation || this.#closed) return
+    // The message is kept and counted at once, as the service does; a connection that ends before the answer leaves it unanswered.
+    const wasFirst = this.#hub.receive(conversation, text)
     this.#tell({ type: 'working' })
     if (this.#hub.options.thinkMs > 0) await new Promise<void>(resolve => setTimeout(resolve, this.#hub.options.thinkMs))
     if (this.#closed) return
-    const { output } = this.#hub.takeTurn(conversation, text)
+    const { output } = this.#hub.respond(conversation, text, wasFirst)
     // The calendar is told once the change has been committed, which is before the answer goes out.
     this.#hub.announce(output.changes)
     this.#tell({ type: 'reply', text: output.text, receipt: output.receipt ?? null, tools: output.tools, model_calls: conversation.modelCalls, ...this.#hub.stateOf(conversation) })

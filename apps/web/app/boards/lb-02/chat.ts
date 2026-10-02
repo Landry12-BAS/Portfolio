@@ -57,6 +57,41 @@ export function linesFromTranscript(transcript: readonly Line[], numbers: LineNu
   })
 }
 
+/** How the visitor's last message stands once a conversation is picked up again: answered, kept by the server without an answer, or never kept. */
+export type LastMessage
+  = | { state: 'answered' }
+    | { state: 'unanswered' }
+    | { state: 'lost', text: string }
+
+/** Picks the visitor's own messages out of the lines. */
+function visitorLines(lines: readonly ChatLine[]): VisitorLine[] {
+  return lines.filter((line): line is VisitorLine => line.kind === 'visitor')
+}
+
+/** Tells whether the concierge has said anything since the visitor's last message. Notes of actions and pauses are not answers. */
+function answersTheLastMessage(lines: readonly ChatLine[]): boolean {
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const kind = lines[index]?.kind
+    if (kind === 'concierge') return true
+    if (kind === 'visitor') return false
+  }
+  return true
+}
+
+/**
+ * Compares what the page showed before a drop with the transcript the server sent when the conversation was picked
+ * up again. The server's transcript is the record. If the page showed more of the visitor's messages than the
+ * server kept, the last one never arrived, and its words are returned so they can go back in the box. If the server
+ * kept it but nothing answers it, the answer was lost with the connection.
+ */
+export function lastMessage(before: readonly ChatLine[], after: readonly ChatLine[]): LastMessage {
+  const shown = visitorLines(before)
+  const kept = visitorLines(after)
+  const last = shown.at(-1)
+  if (last !== undefined && shown.length > kept.length) return { state: 'lost', text: last.text }
+  return answersTheLastMessage(after) ? { state: 'answered' } : { state: 'unanswered' }
+}
+
 /** Tells how a tool call went, in the three ways the chat words it. */
 export function toolOutcome(tool: ToolUse): 'ran' | 'refused' | 'failed' {
   if (!tool.executed) return 'refused'

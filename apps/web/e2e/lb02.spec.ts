@@ -17,7 +17,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeEach(async ({ page }) => {
   await control(page, 'reset')
-  await control(page, 'limits', { messagesPerConversation: 30 })
+  await control(page, 'limits', { messagesPerConversation: 30, thinkMs: 0 })
 })
 
 journeys()

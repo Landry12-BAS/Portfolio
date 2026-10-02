@@ -82,6 +82,20 @@ const PART_OF_DAY: Record<'morning' | 'afternoon' | 'evening', (hour: number) =>
   evening: hour => hour >= 17,
 }
 
+// The letters and digits a booking code is made of: the real service's alphabet (lb02/models.py), without the ones that are easily mistaken for each other.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+/** Makes a booking code in the real service's form, two groups of four, such as `K7M2-9QXP`, from a number; the same number always makes the same code. */
+function bookingCode(seed: number): string {
+  let state = seed >>> 0
+  let letters = ''
+  for (let place = 0; place < 8; place += 1) {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    letters += CODE_ALPHABET[state >>> 27]
+  }
+  return `${letters.slice(0, 4)}-${letters.slice(4)}`
+}
+
 /** The mock's calendar and its reservations. */
 export class MockCalendar {
   readonly #offerings: OfferingSeed[]
@@ -218,7 +232,7 @@ export class MockCalendar {
     if (!held) return { ok: false, refusal: 'no_hold' }
     this.#codes += 1
     held.status = 'booked'
-    held.code = `BB-${((this.#codes * 7919 + held.slot * 104_729) % 60_466_176).toString(36).toUpperCase().padStart(5, '0')}`
+    held.code = bookingCode(this.#codes * 7919 + held.slot)
     return { ok: true, reservation: held, changes: this.#touched(held.room, held.startsAt, held.endsAt) }
   }
 

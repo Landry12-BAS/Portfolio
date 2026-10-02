@@ -126,7 +126,7 @@ export function installableApp(): void {
       fromWorker.length = 0
 
       await page.getByTestId('start-sample').click()
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/, { timeout: 15_000 })
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/, { timeout: 15_000 })
       await page.getByTestId('again').click()
       await page.getByRole('button', { name: 'Your own conversation' }).click()
       await page.getByTestId('begin').click()
@@ -190,6 +190,6 @@ export function installableApp(): void {
     await say(page, 'Hello! I would like a cupping for two tomorrow at 14:30. I am Jana Novak, jana@example.test.')
     await say(page, 'Yes, that one.')
     await say(page, 'Yes, please confirm it.')
-    await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/)
+    await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
   })
 }

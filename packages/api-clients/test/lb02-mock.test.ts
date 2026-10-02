@@ -282,6 +282,23 @@ describe('the protocol', () => {
     expect(stranger.closedWith).toBe(4404)
   })
 
+  it('keeps and counts a message at once, so one whose answer is lost with the connection is still the last line of the resumed transcript', async () => {
+    const hub = makeHub({ thinkMs: 40 })
+    const first = new Tab(hub)
+    const ready = await first.hello('visitor-session-aaaaaaaa')
+    first.send({ type: 'message', text: 'A cupping for two tomorrow afternoon, please.' })
+    await settle()
+    expect(first.events.at(-1)).toMatchObject({ type: 'working' })
+    first.connection.dispose()
+    await new Promise(resolve => setTimeout(resolve, 80))
+    expect(first.last('reply')).toBeUndefined()
+
+    const again = new Tab(hub)
+    const resumed = await again.hello('visitor-session-aaaaaaaa', ready!.conversation)
+    expect(resumed).toMatchObject({ resumed: true, messages_left: 29 })
+    expect(resumed!.transcript).toEqual([{ role: 'visitor', text: 'A cupping for two tomorrow afternoon, please.' }])
+  })
+
   it('lets a visitor start ten conversations a day and closes the eleventh with 4429', async () => {
     const hub = makeHub()
     for (let count = 0; count < 10; count += 1) expect(await new Tab(hub).hello('visitor-session-aaaaaaaa')).toBeDefined()

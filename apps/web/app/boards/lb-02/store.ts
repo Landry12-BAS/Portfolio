@@ -27,8 +27,8 @@ import { useSessionStore } from '~/stores/session'
 
 import { applyChanges, changedSlots, clockOffset, slotsFromSnapshot } from './calendar'
 import type { SlotMap } from './calendar'
-import { LineNumbers, linesFromTranscript } from './chat'
-import type { ChatLine } from './chat'
+import { LineNumbers, lastMessage, linesFromTranscript } from './chat'
+import type { ChatLine, LastMessage } from './chat'
 import { readRecordedExchange } from './recorded'
 import { calendarSchema, conversationListSchema, conversationSchema, offeringsSchema } from './schemas'
 import type { CalendarSlot, ConversationDetail, Offering } from './schemas'
@@ -78,7 +78,7 @@ export interface ChangeNote {
 export type SayResult = SendResult | 'busy'
 
 /** What the page tells the visitor about a problem it can word itself, by the code of an error event or its own. */
-export type NoticeKind = ErrorCode | 'interrupted' | 'not_open'
+export type NoticeKind = ErrorCode | 'interrupted' | 'not_open' | 'unanswered' | 'not_received'
 
 /** Opens a WebSocket the way the browser does. It is looked up when it is used, so a test can replace it. */
 function browserSocket(url: string) {
@@ -309,13 +309,27 @@ export const useLb02Store = defineStore('lb02', () => {
 
   // The events of a conversation.
 
+  /**
+   * Says what a picked-up conversation's last message needs, when it needs something. The drop that ended the
+   * earlier connection may have taken the concierge's answer with it, or the message itself.
+   */
+  function noteLastMessage(last: LastMessage): void {
+    if (last.state === 'unanswered') notice.value = 'unanswered'
+    if (last.state === 'lost') {
+      notice.value = 'not_received'
+      unsent.value = last.text
+    }
+  }
+
   /** A conversation opened or was picked up again: its transcript replaces what the page held, since the server's is the record. */
   function onReady(event: ReadyEvent, live: boolean): void {
+    const shown = lines.value
     conversationId.value = event.conversation
     state.value = stateOf(event)
     lines.value = linesFromTranscript(event.transcript, numbers)
     working.value = false
     notice.value = undefined
+    if (live && event.resumed && !event.closed) noteLastMessage(lastMessage(shown, lines.value))
     ending.value = undefined
     problem.value = undefined
     if (!live) return

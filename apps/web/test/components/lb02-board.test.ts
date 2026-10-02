@@ -157,7 +157,7 @@ describe('LB-02\'s board', () => {
 
       await wrapper.get('[data-testid="script-next"]').trigger('click')
       await settle()
-      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^BB-/)
+      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       expect(wrapper.get('[data-testid="script-finished"]').text()).toBe(en.lb02.script.finished)
       expect(wrapper.find('[data-testid="hold-timer"]').exists()).toBe(false)
       expect(wrapper.findAll('[data-testid="slots"] [data-state="booked"]').some(row => row.text().includes(en.lb02.calendar.status.bookedMine))).toBe(true)
@@ -233,7 +233,7 @@ describe('LB-02\'s board', () => {
         `${en.lb02.chat.receipt}: ${en.lb02.chat.receipts.hold_placed}`,
         `${en.lb02.chat.receipt}: ${en.lb02.chat.receipts.booking_confirmed}`,
       ])
-      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^BB-/)
+      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       expect(wrapper.find('[data-testid="hold-timer"]').exists()).toBe(false)
       expect(wrapper.get('[data-testid="email-badge"]').text()).toBe(en.lb02.email.badge)
       expect(wrapper.get('[data-testid="email-to"]').text()).toBe('jana@example.test')
@@ -274,7 +274,7 @@ describe('LB-02\'s board', () => {
       await settle()
       expect(wrapper.get('[data-testid="line-pause"]').text()).toBe(cs.lb02.chat.later.replace('{minutes}', '6'))
       expect(lines(wrapper, 'visitor')).toHaveLength(4)
-      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^BB-/)
+      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       expect(wrapper.get('[data-testid="email-badge"]').text()).toBe(cs.lb02.email.badge)
       expect(wrapper.get('[data-testid="board-state"]').text()).toBe(cs.board.replay)
     })
@@ -388,6 +388,34 @@ describe('LB-02\'s board', () => {
       expect(site.callsTo('/api/lb02/calendar').length).toBeGreaterThan(loads)
       expect(wrapper.get('[data-testid="connection"]').text()).toBe(en.lb02.phone.status.open)
       expect(wrapper.get('[data-testid="calendar-announcement"]').text()).toBe(en.lb02.calendar.reloaded)
+    })
+
+    it('says so when the answer was lost with the connection: the message stays, with a notice to send it again', async () => {
+      const { wrapper, site } = await openBoard()
+      await begin(wrapper)
+      site.lb02.hub.configure({ thinkMs: 60_000 })
+      await say(wrapper, 'Hello there')
+      site.socket.serverCloses(1006)
+      await seconds(3)
+      await settle()
+      expect(wrapper.get('[data-testid="connection"]').text()).toBe(en.lb02.phone.status.open)
+      expect(wrapper.get('[data-testid="notice"]').text()).toBe(en.lb02.notice.unanswered)
+      expect(lines(wrapper, 'visitor')).toHaveLength(1)
+      expect(lines(wrapper, 'concierge')).toHaveLength(0)
+    })
+
+    it('puts a message that never reached the server back in the box, with a notice that says so', async () => {
+      const { wrapper, site } = await openBoard()
+      await begin(wrapper)
+      site.loseFrames = true
+      await say(wrapper, 'Hello there')
+      site.loseFrames = false
+      site.socket.serverCloses(1006)
+      await seconds(3)
+      await settle()
+      expect(wrapper.get('[data-testid="notice"]').text()).toBe(en.lb02.notice.not_received)
+      expect((wrapper.get('[data-testid="composer-field"]').element as HTMLTextAreaElement).value).toBe('Hello there')
+      expect(lines(wrapper, 'visitor')).toHaveLength(0)
     })
 
     it('words a message that was too long or not understood in plain language, and never shows the server\'s text', async () => {

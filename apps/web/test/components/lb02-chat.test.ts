@@ -251,7 +251,7 @@ describe('the hold and the booking', () => {
 
   it('shows the booking with its code and a link to the recorded email', () => {
     const wrapper = mountStatus({ booking: BOOKING })
-    expect(wrapper.get('[data-testid="booking-code"]').text()).toBe('BB-7K2M')
+    expect(wrapper.get('[data-testid="booking-code"]').text()).toBe('K7M2-9QXP')
     expect(wrapper.text()).toContain(en.lb02.booking.title)
     expect(wrapper.text()).toContain('Party of 2')
     expect(wrapper.get('a').attributes('href')).toBe('#lb02-email')

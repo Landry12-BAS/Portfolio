@@ -183,6 +183,11 @@ function sameTime(slot: MockSlot, time: { hour: number, minute: number }): boole
   return start.hour === time.hour && start.minute === time.minute
 }
 
+/** Hides the email addresses in the visitor's words, as the transcript keeps them. */
+function hideEmails(text: string): string {
+  return text.replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
+}
+
 /** What a turn does, so the answer and the counts of calls follow from one place. */
 interface Answer {
   text: string
@@ -355,11 +360,19 @@ export class MockConcierge {
     return this.#whileOffering(conversation, said, changed)
   }
 
-  /** Takes one message of the visitor's and answers it. */
-  takeTurn(conversation: MockConversation, text: string): TurnOutput {
+  /**
+   * Takes in a message: counts it and writes the visitor's words in the transcript. The real service does this before
+   * its first model call, so a turn that dies leaves the message behind with no answer. Says whether it was the first.
+   */
+  receive(conversation: MockConversation, text: string): boolean {
     conversation.messagesUsed += 1
     const wasFirst = conversation.lines.length === 0
-    this.#record(conversation, 'visitor', text.replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]'))
+    this.#record(conversation, 'visitor', hideEmails(text))
+    return wasFirst
+  }
+
+  /** Answers a message that was taken in. */
+  respond(conversation: MockConversation, text: string, wasFirst: boolean): TurnOutput {
     const finish = (answer: Answer, guard: number): TurnOutput => {
       this.#record(conversation, 'concierge', answer.text)
       // A person is handed the whole case, so the handoff's copy of the transcript includes the concierge's last words about it.

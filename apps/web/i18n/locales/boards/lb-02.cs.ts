@@ -152,6 +152,8 @@ const lb02 = {
     unavailable: 'Asistent teď nemůže odpovědět. Zkuste to za chvíli znovu.',
     interrupted: 'Spojení se přerušilo, zatímco asistent odpovídal. Pokud nahoře vaše poslední zpráva nemá odpověď, pošlete ji znovu.',
     not_open: 'Zpráva nebyla odeslána, protože spojení není otevřené. Je zase v poli.',
+    unanswered: 'Na vaši poslední zprávu nepřišla odpověď: spojení se přerušilo dřív, než asistent odpověděl. Pošlete ji znovu, pokud odpověď pořád chcete; započítá se jako další zpráva.',
+    not_received: 'Vaše poslední zpráva asistenta nedošla, protože se spojení přerušilo. Je zase v poli.',
   },
   hold: {
     title: 'Zablokováno pro vás',

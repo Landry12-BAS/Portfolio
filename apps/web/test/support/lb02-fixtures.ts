@@ -23,7 +23,7 @@ export function hold(expiresAt: string): Hold {
 
 /** The booking the tests use. */
 export const BOOKING: Booking = {
-  code: 'BB-7K2M',
+  code: 'K7M2-9QXP',
   slot: 7,
   offering: 'cupping',
   starts_at: '2026-10-03T12:30:00.000Z',

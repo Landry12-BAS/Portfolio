@@ -153,6 +153,8 @@ const lb02 = {
     unavailable: 'The concierge cannot answer right now. Try again in a moment.',
     interrupted: 'The connection dropped while the concierge was answering. If your last message has no answer above, send it again.',
     not_open: 'The message was not sent because the connection is not open. It is in the box again.',
+    unanswered: 'Your last message has no answer: the connection broke before the concierge replied. Send it again if you still want one; it counts as another message.',
+    not_received: 'Your last message did not reach the concierge, because the connection broke. It is in the box again.',
   },
   hold: {
     title: 'Held for you',

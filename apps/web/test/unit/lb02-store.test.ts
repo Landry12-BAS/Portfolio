@@ -10,6 +10,7 @@ import { LB02_SAMPLES } from '#shared/data/samples/lb02'
 
 import { AUTOPLAY_PAUSE_MS, CONVERSATIONS_PER_DAY, STORAGE_KEY, useLb02Store } from '~/boards/lb-02/store'
 import { RECONNECT_ATTEMPTS, reconnectDelay } from '~/boards/lb-02/socket'
+import { MESSAGES_PER_CONVERSATION } from '~/boards/lb-02/wire'
 import { useScopeStore } from '~/stores/scope'
 import { useSessionStore } from '~/stores/session'
 
@@ -266,6 +267,7 @@ describe('LB-02\'s store: when the connection drops or ends', () => {
     expect(rig.store.lines.map(line => line.kind)).toEqual(['visitor', 'action', 'concierge'])
     expect(rig.site.callsTo('/api/lb02/calendar').length).toBeGreaterThan(reads)
     expect(rig.site.callsTo('/api/tokens/lb-02', 'POST')).toHaveLength(2)
+    expect(rig.store.notice).toBeUndefined()
   })
 
   it('says the answer may be lost when the drop comes while the concierge is answering', async () => {
@@ -278,6 +280,43 @@ describe('LB-02\'s store: when the connection drops or ends', () => {
     await settle()
     expect(rig.store.working).toBe(false)
     expect(rig.store.notice).toBe('interrupted')
+  })
+
+  it('says the last message has no answer when the conversation is picked up and the server kept the message but not an answer', async () => {
+    const rig = await open(await start())
+    rig.site.lb02.hub.configure({ thinkMs: 60_000 })
+    expect(rig.store.say('Hello there')).toBe('sent')
+    await settle()
+    rig.site.socket.serverCloses(1001)
+    await settle()
+    await vi.advanceTimersByTimeAsync(reconnectDelay(1, 0.5) + 1000)
+    await settle()
+    expect(rig.store.connection).toBe('open')
+    expect(rig.store.notice).toBe('unanswered')
+    expect(rig.store.lines.map(line => line.kind)).toEqual(['visitor'])
+    expect(rig.store.messagesLeft).toBe(MESSAGES_PER_CONVERSATION - 1)
+    expect(rig.store.unsent).toBeUndefined()
+    // Saying something else clears the notice.
+    rig.site.lb02.hub.configure({ thinkMs: 0 })
+    expect(rig.store.say('Hello again')).toBe('sent')
+    expect(rig.store.notice).toBeUndefined()
+  })
+
+  it('puts the message back to be sent again when the connection broke before the server got it', async () => {
+    const rig = await open(await start())
+    rig.site.loseFrames = true
+    expect(rig.store.say('Hello there')).toBe('sent')
+    await settle()
+    rig.site.loseFrames = false
+    rig.site.socket.serverCloses(1006)
+    await settle()
+    await vi.advanceTimersByTimeAsync(reconnectDelay(1, 0.5) + 1000)
+    await settle()
+    expect(rig.store.connection).toBe('open')
+    expect(rig.store.notice).toBe('not_received')
+    expect(rig.store.unsent).toBe('Hello there')
+    expect(rig.store.lines).toEqual([])
+    expect(rig.store.messagesLeft).toBe(MESSAGES_PER_CONVERSATION)
   })
 
   it('gives up after the attempts and says the connection was lost, keeping the conversation to continue', async () => {

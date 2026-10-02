@@ -32,7 +32,7 @@ export function journeys(): void {
       await expect(page.getByTestId('calendar-announcement')).toContainText('is now held')
 
       await page.getByTestId('script-next').click()
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/)
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       await expect(page.getByTestId('hold-timer')).toHaveCount(0)
       await expect(slotRow(page, 'booked', 'Booked for you')).toHaveCount(1)
       await expect(page.getByTestId('messages-count')).toHaveText('27 of 30')
@@ -95,7 +95,7 @@ export function journeys(): void {
       await expect(second.getByTestId('booking-code')).toHaveCount(0)
 
       await say(page, 'Yes, please confirm it.')
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/)
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       await expect(slotRow(second, 'booked', 'Cupping session')).toHaveCount(1)
       await expect(second.getByTestId('calendar-announcement')).toContainText('is now booked')
       await expect(second.getByTestId('booking-code')).toHaveCount(0)
@@ -132,6 +132,27 @@ export function journeys(): void {
       expect(loads.length).toBeGreaterThan(0)
       await say(page, 'Yes, that one.')
       await expect(page.getByTestId('hold-timer')).toBeVisible()
+    })
+
+    test('says the last message has no answer when the drop took the answer, and sending it again is answered', async ({ page }) => {
+      await openBoard(page)
+      await beginConversation(page)
+      await control(page, 'limits', { thinkMs: 60_000 })
+      await page.getByTestId('composer-field').fill('Hello there.')
+      await page.getByTestId('composer-field').press('Enter')
+      await expect(page.getByTestId('working')).toBeVisible()
+
+      await control(page, 'drop', { code: 1001 })
+      await expect(page.getByTestId('connection')).toHaveText('Connected')
+      await expect(page.getByTestId('notice')).toContainText('Your last message has no answer')
+      await expect(page.getByTestId('line-visitor')).toHaveCount(1)
+      await expect(page.getByTestId('line-concierge')).toHaveCount(0)
+      await expect(page.getByTestId('messages-count')).toHaveText('29 of 30')
+
+      await control(page, 'limits', { thinkMs: 0 })
+      await say(page, 'Hello again.')
+      await expect(page.getByTestId('notice')).toHaveCount(0)
+      await expect(page.getByTestId('messages-count')).toHaveText('28 of 30')
     })
 
     test('is told a conversation cannot be found when its data is gone, in plain words', async ({ page }) => {
@@ -190,7 +211,7 @@ export function journeys(): void {
       await expect(page.getByTestId('board-state')).toHaveText('Replay')
       await expect(page.getByTestId('replay-banner')).toContainText('Replay of a recorded run')
       await expect(page.getByTestId('connection')).toHaveText('Replay')
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/, { timeout: 15_000 })
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/, { timeout: 15_000 })
       await expect(page.getByTestId('line-visitor')).toHaveCount(3)
       await expect(page.getByTestId('email-badge')).toHaveText('Recorded, never sent')
       await expect(page.getByTestId('calendar')).toContainText('The calendar as it was when this was recorded.')
@@ -206,7 +227,7 @@ export function journeys(): void {
       await page.getByRole('radio', { name: /Druhá karta blokuje termín/ }).check()
       await page.getByTestId('start-sample').click()
       await expect(page.getByTestId('line-pause')).toHaveText('o 6 min později', { timeout: 15_000 })
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/, { timeout: 15_000 })
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/, { timeout: 15_000 })
       await expect(page.getByTestId('email-badge')).toContainText('nikdy neodesláno')
     })
   })
@@ -277,7 +298,7 @@ export function journeys(): void {
       await expect(page.getByTestId('receipt')).toContainText('Termín zablokován')
       await expect(page.getByTestId('hold-timer')).toContainText('zbývá')
       await page.getByTestId('script-next').click()
-      await expect(page.getByTestId('booking-code')).toHaveText(/^BB-/)
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
       await expect(page.getByTestId('email-badge')).toContainText('nikdy neodesláno')
       await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
     })
