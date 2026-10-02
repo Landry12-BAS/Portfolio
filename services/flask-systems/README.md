@@ -51,7 +51,7 @@ behind it nest under it.
 | EXPLAIN | DuckDB | Plans the query without running it; refuses cross products and a step that expects more than 100 million rows | The same |
 | Run read-only | DuckDB | On a locked-down connection, at most 1,000 rows, at most 5 s | The same |
 | Self-correct | `lb-reason` | Once, for a mistake only: told which layer stopped the query and why, and asked for a new one | Refused, with both attempts shown |
-| Chart | code ([`chart.py`](lb05/chart.py)) | A Vega-Lite spec (bar, line or point) built from the result's shape by this service; the model never writes a spec | No chart when the result doesn't suit one |
+| Chart | code ([`chart.py`](lb05/chart.py)) | A Vega-Lite spec (bar, line or point) built from the result's shape by this service; the model never writes a spec. Identifiers (`id`, names ending in `_id`, the keys the layer joins on) are never drawn, and the number drawn is a metric the layer defines when the result has one | No chart, and the span says why: a single value, nothing that is a quantity, nothing to set it against, or a list of records with several rows for one point (`SELECT * FROM orders`). The table is always shown |
 | Explain | `lb-fast` | One short explanation from the question, the SQL and a preview of the result | A fixed sentence built from the numbers (`explanation_source: "fallback"`) |
 | Finish | Postgres | Frees the visitor, and gives the question back if the service itself failed, up to five a day | |
 
@@ -220,7 +220,9 @@ since an exception's message can quote a visitor.
   with a second question refused while the first is held at the model; and a question's spans
   in a real Redis stream.
 - **Drift.** `openapi.json` is regenerated and compared (`just openapi-flask` fixes it); the
-  gunicorn settings that keep the server small and local are pinned.
+  gunicorn settings that keep the server small and local are pinned. The chart builder and the
+  mock back end's copy of it (`packages/api-clients/src/testing/lb05-chart.ts`) are held to the
+  same cases, [`evals/lb05/chart-cases.json`](../../evals/lb05/chart-cases.json), by a test on each side.
 
 ## Threat model
 

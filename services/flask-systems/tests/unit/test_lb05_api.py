@@ -20,6 +20,7 @@ from core.app import create_app
 from core.platform import Platform
 from core.registry import SystemModule, SystemRuntime
 from lb05.api import BUSY_MESSAGE, DAILY_LIMIT_MESSAGE, SYSTEM_KEY, build_blueprint
+from lb05.golden import read_adversarial_set
 from lb05.pipeline import AnalystPipeline
 from lb05.prompts import MAX_QUESTION_CHARS
 from lb05.quota import Admission, Ledger, Usage, midnight_after
@@ -201,6 +202,29 @@ def test_a_question_is_answered_with_the_sql_the_table_and_an_explanation(make_r
     assert body["result"]["truncated"] is False
     assert body["message"] is None
     assert rig.ledger.ended == [(SESSION, False)]
+
+
+def test_a_dump_of_every_order_is_answered_cut_at_the_cap_with_no_chart(make_rig: Callable[..., Rig]) -> None:
+    """The dump-all-orders attack: a thousand rows, said to be cut, and no chart of order numbers by day."""
+    attack = next(item for item in read_adversarial_set().attempts if item.id == "dump-all-orders")
+    rig = make_rig({"lb-reason": [sql_reply(attack.sql)], "lb-fast": [EXPLANATION]})
+
+    body = rig.ask(attack.question).get_json()
+
+    assert body["outcome"] == "answered"
+    assert (body["result"]["row_count"], body["result"]["truncated"]) == (MAX_ROWS, True)
+    assert body["chart"] is None
+
+
+def test_a_summary_of_orders_by_month_is_answered_with_a_line_chart(make_rig: Callable[..., Rig]) -> None:
+    """The other side of the same rule: one row for each month is a summary, and it is drawn."""
+    sql = "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, COUNT(*) AS orders FROM orders GROUP BY 1 ORDER BY 1"
+    rig = make_rig({"lb-reason": [sql_reply(sql)], "lb-fast": [EXPLANATION]})
+
+    body = rig.ask().get_json()
+
+    assert body["chart"]["kind"] == "line"
+    assert body["chart"]["spec"]["encoding"]["y"]["title"] == "orders"
 
 
 def test_the_answer_carries_the_sql_that_ran_and_never_the_visitors_session(make_rig: Callable[..., Rig]) -> None:

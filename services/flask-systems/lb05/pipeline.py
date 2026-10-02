@@ -28,7 +28,7 @@ from typing import Literal
 from openai import OpenAIError
 
 from core.structured import ChatMessage, ChatModels, Completion, StructuredAnswer, StructuredOutputError, ask_for_json
-from lb05.chart import Chart, build_chart
+from lb05.chart import Chart, NoChart, choose_chart, hints_of
 from lb05.prompts import (
     EXPLAIN_ALIAS,
     EXPLAIN_MAX_TOKENS,
@@ -259,6 +259,7 @@ class AnalystPipeline:
         self.tracer = tracer
         self.clock = clock
         self.system = system_prompt(layer)
+        self.chart_hints = hints_of(layer)
 
     def answer(self, question: str, session_key: str | None, data_class: DataClass = "visitor") -> Answer:
         """Answer a question as one run of LB-05.
@@ -417,10 +418,13 @@ class AnalystPipeline:
         return self.answered(work, executed, chart, explanation, source)
 
     def chart(self, result: QueryResult) -> Chart | None:
-        """Choose a chart from the result's shape, in code."""
+        """Choose a chart from the result's shape, in code, and record why there is none when there is none."""
         with self.tracer.span("build chart") as span:
-            chart = build_chart(result)
+            chosen = choose_chart(result, self.chart_hints)
+            chart = chosen if isinstance(chosen, Chart) else None
             span.set("kind", chart.kind if chart is not None else "none")
+            if isinstance(chosen, NoChart):
+                span.set("reason", chosen.value)
             if chart is not None:
                 span.set("omitted_rows", chart.omitted_rows)
         return chart

@@ -6,18 +6,33 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from core.platform import REPOSITORY_ROOT
 from lb05.chart import (
     MAX_LABEL_CHARS,
     MAX_POINTS,
     MAX_SERIES,
     VEGA_LITE_SCHEMA,
+    Chart,
+    ChartHints,
     InlineData,
+    NoChart,
     VegaLiteSpec,
     build_chart,
+    choose_chart,
+    hints_of,
+    is_identifier,
     names_a_period,
     number_or_none,
 )
-from lb05.warehouse import CellValue, QueryResult, ResultColumn
+from lb05.golden import read_adversarial_set
+from lb05.semantic_layer import SemanticLayer
+from lb05.sql_policy import SqlPolicy
+from lb05.warehouse import CellValue, QueryResult, ResultColumn, Warehouse
+
+# The cases the mock's copy of this builder (packages/api-clients/src/testing/lb05-chart.ts) is held to as well.
+SHARED_CASES = json.loads((REPOSITORY_ROOT / "evals" / "lb05" / "chart-cases.json").read_text(encoding="utf-8"))[
+    "cases"
+]
 
 # Every key a spec this service writes may hold, at any depth. Nothing that can run, fetch or compute is here.
 ALLOWED_KEYS = {
@@ -117,7 +132,7 @@ def test_a_second_label_with_few_values_colours_the_series() -> None:
 
 def test_a_second_label_with_many_values_does_not_make_a_rainbow() -> None:
     """More than eight different values in the second label is too many colours to tell apart, so there is no series."""
-    rows: list[tuple[CellValue, ...]] = [("A", f"city {n}", n) for n in range(MAX_SERIES + 1)]
+    rows: list[tuple[CellValue, ...]] = [(f"country {n}", f"city {n}", n) for n in range(MAX_SERIES + 1)]
     chart = build_chart(result_of([("country", "text"), ("city", "text"), ("orders", "integer")], rows))
     assert chart is not None
     assert "color" not in chart.spec["encoding"]  # type: ignore[operator]
@@ -162,6 +177,92 @@ def test_a_result_with_no_honest_chart_has_none(
 ) -> None:
     """A single value or row, a table of text, undrawable columns and an empty result are shown as tables."""
     assert build_chart(result_of(columns, rows)) is None
+
+
+def title(name: str) -> str:
+    """Write a column's name as the chart titles it."""
+    return name.replace("_", " ")
+
+
+@pytest.mark.parametrize("case", SHARED_CASES, ids=[case["id"] for case in SHARED_CASES])
+def test_the_shared_cases_come_out_as_written(case: dict[str, Any]) -> None:
+    """Each case both builders are held to: the chart that comes out, or the reason there is none."""
+    result = result_of([(name, kind) for name, kind in case["columns"]], [tuple(row) for row in case["rows"]])
+    hints = ChartHints(metrics=frozenset(case["metrics"]), keys=frozenset(case["keys"]))
+
+    chosen = choose_chart(result, hints)
+
+    expected = case["expect"]
+    if expected is None:
+        assert chosen is NoChart(case["why"])
+        assert build_chart(result, hints) is None
+        return
+    assert isinstance(chosen, Chart)
+    encoding: Any = chosen.spec["encoding"]
+    assert chosen.kind == expected["kind"]
+    assert (encoding["x"]["title"], encoding["x"]["type"]) == (title(expected["x"]), expected["xType"])
+    assert encoding["y"]["title"] == title(expected["y"])
+    if expected["series"] is None:
+        assert "color" not in encoding
+    else:
+        assert encoding["color"]["title"] == title(expected["series"])
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("id", True),
+        ("ID", True),
+        ("order_id", True),
+        ("Customer_ID", True),
+        ("revenue", False),
+        ("paid", False),
+        ("valid", False),
+        ("order_idx", False),
+        ("identity", False),
+    ],
+)
+def test_an_identifier_is_found_by_its_name(name: str, expected: bool) -> None:
+    """`id` and names ending in `_id` label a row; a name that merely contains those letters does not."""
+    assert is_identifier(ResultColumn(name, "integer"), ChartHints()) is expected
+
+
+def test_a_key_the_layer_joins_on_is_an_identifier_whatever_it_is_called() -> None:
+    """The semantic layer's own metadata counts: a column it joins on is a label, not a quantity."""
+    column = ResultColumn("buyer_number", "integer")
+
+    assert is_identifier(column, ChartHints(keys=frozenset({"buyer_number"})))
+    assert not is_identifier(column, ChartHints())
+
+
+def test_the_hints_come_from_the_real_semantic_layer(layer: SemanticLayer) -> None:
+    """Its twelve metrics are what a measure column is called, and its joins use four keys."""
+    hints = hints_of(layer)
+
+    assert {"revenue", "orders", "units_sold", "repeat_buyers", "lost_repeat_buyers"} <= hints.metrics
+    assert len(hints.metrics) == len(layer.metrics) == 12
+    assert hints.keys == {"customer_id", "order_id", "product_id", "subscription_id"}
+
+
+def test_the_answer_to_a_dump_of_every_order_has_no_chart(
+    layer: SemanticLayer, policy: SqlPolicy, warehouse: Warehouse
+) -> None:
+    """`SELECT * FROM orders` (the dump-all-orders attack) is a list of records: not order numbers charted by day."""
+    attack = next(item for item in read_adversarial_set().attempts if item.id == "dump-all-orders")
+    result = warehouse.run(policy.validate(attack.sql).sql)
+
+    assert len(result.rows) == 1_000
+    assert {"order_id", "customer_id", "ordered_at", "status"} <= {column.name for column in result.columns}
+    assert choose_chart(result, hints_of(layer)) is NoChart.REPEATED_POINTS
+    assert build_chart(result, hints_of(layer)) is None
+
+
+def test_repeats_are_judged_on_the_whole_result_not_on_the_part_that_is_drawn() -> None:
+    """Two hundred distinct labels and then a repeat is still a list of records, though the chart would stop first."""
+    rows: list[tuple[CellValue, ...]] = [(f"label {n}", n) for n in range(MAX_POINTS)]
+    rows.append(("label 0", 999))
+
+    assert choose_chart(result_of([("label", "text"), ("n", "integer")], rows)) is NoChart.REPEATED_POINTS
 
 
 def test_a_long_result_is_cut_to_the_points_a_chart_can_show() -> None:

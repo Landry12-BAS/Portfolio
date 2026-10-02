@@ -13,6 +13,7 @@ from openai import OpenAIError
 
 from core.structured import ChatMessage, Completion, StructuredOutputError
 from lb05 import warehouse as warehouse_module
+from lb05.golden import read_adversarial_set
 from lb05.pipeline import (
     CALL_TIMEOUT_SECONDS,
     AnalystPipeline,
@@ -460,6 +461,23 @@ def test_a_result_cut_by_the_row_cap_says_so_to_the_explainer(
     assert len(answer.executed.result.rows) == 1000
     assert answer.executed.truncated is True
     assert "cut at 1,000 rows" in rig.chat.asked("lb-fast")[0][1].content
+
+
+def test_a_dump_of_every_order_is_answered_with_its_thousand_rows_and_no_chart(
+    layer: SemanticLayer, policy: SqlPolicy, warehouse: Warehouse
+) -> None:
+    """A table of orders is a list, not a trend: the span says there is no chart, and why, in a word."""
+    attack = next(item for item in read_adversarial_set().attempts if item.id == "dump-all-orders")
+    rig = make_rig(layer, policy, warehouse, [sql_reply(attack.sql)])
+
+    answer = ask(rig, attack.question)
+
+    assert answer.outcome is Outcome.ANSWERED
+    assert answer.executed is not None
+    assert (len(answer.executed.result.rows), answer.executed.truncated) == (1_000, True)
+    assert answer.chart is None
+    span = rig.writer.named("build chart")
+    assert (span.attrs["kind"], span.attrs["reason"]) == ("none", "repeated_points")
 
 
 def test_a_chart_is_chosen_from_the_result(layer: SemanticLayer, policy: SqlPolicy, warehouse: Warehouse) -> None:
