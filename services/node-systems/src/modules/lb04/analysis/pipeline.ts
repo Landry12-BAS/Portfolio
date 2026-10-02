@@ -18,11 +18,12 @@
 import { NOT_LEGAL_ADVICE } from '@lb/contracts'
 import type { Lb04Citation, Lb04Report, Lb04Screen } from '@lb/contracts'
 import type { Tracer } from '@lb/common'
+import { z } from 'zod'
 import type { ZodType } from 'zod'
 
 import type { Playbook } from '../playbook/playbook.ts'
 import { analysisAnswerSchema, reportAnswerSchema } from './answers.ts'
-import type { AnalysisAnswer, ReportAnswer } from './answers.ts'
+import type { ReportAnswer } from './answers.ts'
 import { splitClauses } from './clauses.ts'
 import type { PageInput } from './clauses.ts'
 import { ALIASES } from './model.ts'
@@ -48,21 +49,26 @@ export interface ReviewDeps {
   playbook: Playbook
 }
 
-/** What the guard said, saved so a retry doesn't ask again. `null` means it could not be asked. */
-export interface SavedScreen {
-  flagged: boolean | null
-  score: number | null
-}
-
-/** What the review has worked out so far and paid for. It is saved after each model call. */
-export interface Working {
-  screen?: SavedScreen
-  notes?: AnalysisAnswer
+/**
+ * What the review has worked out so far and paid for, saved after each model call so a retry resumes
+ * where the job stopped. It is read back from the database with this schema, so a record that doesn't
+ * fit (an older shape, a damaged row) is refused and the review starts again, rather than trusted.
+ */
+export const workingSchema = z.object({
+  // What the guard said, so a retry doesn't ask again. `null` means it could not be asked.
+  screen: z.object({ flagged: z.boolean().nullable(), score: z.number().min(0).max(1).nullable() }).optional(),
+  notes: analysisAnswerSchema.optional(),
   // The second model's answer, or `unusable` when it failed its schema even after the repair and the playbook's own severities are used.
-  calibration?: ReportAnswer | 'unusable'
+  calibration: z.union([z.literal('unusable'), reportAnswerSchema]).optional(),
   // The model calls made so far.
-  calls: number
-}
+  calls: z.int().min(0).max(20),
+})
+
+/** What the review has worked out so far and paid for. */
+export type Working = z.infer<typeof workingSchema>
+
+/** What the guard said, saved so a retry doesn't ask again. `null` means it could not be asked. */
+export type SavedScreen = NonNullable<Working['screen']>
 
 /** What the engine lets the pipeline tell it. */
 export interface ReviewHooks {
