@@ -1,14 +1,18 @@
 // The spans of a mock LB-02 turn, in the format the gateway's Scope route returns and the real
 // concierge writes (services/gateway/src/spans.ts): each message is a step of the conversation's run,
 // with the language check, the injection screen and the calls to the chat model under it, and a tool
-// span for every tool the model called. Like the real concierge, it writes no span for the whole
-// run: a conversation has no end that is known in advance, so its trace never says it is finished.
-// Every timing and token count here is made
-// up, so no test or page may show them as a measurement.
+// span for every tool the model called. Like the real concierge, it writes the root span of the run
+// when the conversation ends (it is handed to a person), and not before: a conversation has no end
+// that is known in advance, and a booked one may still be written to. The turns name that root as
+// their parent in advance. A message to a conversation that is over writes nothing. Every timing and
+// token count here is made up, so no test or page may show them as a measurement.
 import { createHash } from 'node:crypto'
 
 import type { MockSpan } from '../spans.ts'
 import type { TurnOutput } from './concierge.ts'
+
+// The key of the run's root span, which the turns name as their parent before it is written.
+const CONVERSATION = 'conversation'
 
 /** A span before it has its run, its place in time and its ID. */
 interface Plan {
@@ -61,8 +65,24 @@ function planTurn(turn: number, output: TurnOutput, step: string): Plan[] {
     }
     cursor += 900
   }
-  plans.push({ key: root, parent: undefined, kind: 'system.step', name: 'visitor message', from: 0, to: cursor + 10, attrs: { step, calls: output.calls.guard + output.calls.chat, tools: output.tools.length } })
+  plans.push({ key: root, parent: CONVERSATION, kind: 'system.step', name: 'visitor message', from: 0, to: cursor + 10, attrs: { step, calls: output.calls.guard + output.calls.chat, tools: output.tools.length } })
   return plans
+}
+
+/** Makes the root span of a conversation that has just ended: the whole run, from when it began to now, written last. */
+export function conversationSpan(runId: string, startedAt: number, endedAt: number, attrs: Record<string, string | number | boolean>): MockSpan {
+  return {
+    v: 1,
+    runId,
+    system: 'lb-02',
+    spanId: spanId(runId, CONVERSATION),
+    kind: 'system.run',
+    name: 'booking conversation',
+    status: 'ok',
+    startMs: startedAt,
+    endMs: Math.max(endedAt, startedAt),
+    attrs,
+  }
 }
 
 /**

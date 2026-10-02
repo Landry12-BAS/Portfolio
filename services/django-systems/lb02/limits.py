@@ -42,6 +42,12 @@ MAX_CHAT_CALLS_PER_TURN: Final = 3
 MAX_TOOL_CALLS_PER_REPLY: Final = 3
 # How many free slots a search offers at a time.
 MAX_OPTIONS: Final = 6
+# How many different slots one conversation can be shown, ever. A slot keeps the number it was
+# first shown with for the whole conversation and numbers are never reused (lb02/offers.py), so
+# the count only grows. The calendar holds 112 slots (eight a day for CALENDAR_DAYS_AHEAD days),
+# and a conversation lives a day, so 128 is more than any conversation can be shown; a test
+# checks that the seeded calendar fits. Past it, a new slot is simply not offered.
+MAX_SHOWN_SLOTS: Final = 128
 
 # A conversation whose messages the injection screen flagged this many times, or whose
 # turns failed this many times in a row, goes to a person.
@@ -53,3 +59,11 @@ FAILURES_BEFORE_HANDOFF: Final = 2
 HELLO_TIMEOUT_SECONDS: Final = 10.0
 IDLE_TIMEOUT_SECONDS: Final = 900.0
 MAX_FRAME_BYTES: Final = 4_096
+# Messages one connection may have in hand: the one being answered and one waiting behind it. The
+# page waits for each answer, so a client that sends more is not the page, and its frames are
+# refused instead of piling up in memory.
+MAX_PENDING_MESSAGES: Final = 2
+# Connections one visitor may have open at once in one server process: two tabs and the installed
+# app, and one still being torn down after a drop (a connection the network cut can stay open on
+# the server for the length of its ping timeout).
+MAX_CONNECTIONS_PER_VISITOR: Final = 4

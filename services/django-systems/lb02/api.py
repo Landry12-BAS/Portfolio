@@ -106,7 +106,11 @@ class LineOut(Schema):
 
 
 class OptionOut(Schema):
-    """A slot the concierge has on offer, by the number it holds it with."""
+    """A slot the concierge has on offer, by the number it holds it with.
+
+    A slot keeps the number it was first shown with for the whole conversation and numbers are
+    never reused, so the numbers on offer are not always 1, 2, 3.
+    """
 
     number: int
     slot: int

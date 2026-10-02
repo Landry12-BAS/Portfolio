@@ -8,7 +8,7 @@ import { CLOSE_CODES } from './wire.ts'
 
 /** The kinds of close the page tells apart. */
 export type CloseKind
-  = | 'transient' // the connection dropped or the server went away: reconnect and resume
+  = | 'transient' // the connection dropped, the server went away or asked to be tried again later (1013): reconnect and resume
     | 'unauthorized' // the token was refused (4401): ask for a fresh one once, then stop
     | 'not_found' // the conversation does not exist, or its data has been deleted (4404)
     | 'timed_out' // the connection was silent for 15 minutes (4408), or never said hello
@@ -26,6 +26,8 @@ export function classifyClose(code: number): CloseKind {
     case CLOSE_CODES.tooManyConversations: return 'too_many'
     case CLOSE_CODES.tooBig: return 'too_big'
     case CLOSE_CODES.unavailable: return 'unavailable'
+    // The visitor holds too many connections: another may close, so the page waits and tries again like after a drop.
+    case CLOSE_CODES.tryAgainLater: return 'transient'
     case CLOSE_CODES.badFrame:
     case CLOSE_CODES.unsupported:
     case 1002:

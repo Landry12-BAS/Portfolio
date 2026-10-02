@@ -21,6 +21,7 @@ from django.conf import settings
 from pytest_django.fixtures import Settings
 from redis import Redis
 
+from config.channel_layer import channel_layers
 from core.databases import SYSTEM_SCHEMAS, database_from_url
 
 # The Postgres and pgvector versions production runs, and the Redis version the gateway's tests use too.
@@ -78,16 +79,12 @@ def redis_url() -> Iterator[str]:
 def redis_channel_layer(settings: Settings, redis_url: str) -> Iterator[str]:
     """Run the test on the real Redis channel layer, under a key prefix of its own, and return the prefix.
 
-    The settings are what production uses, with a prefix only this test writes under, and
-    its keys are removed afterwards, so tests never share state.
+    The settings are what production uses (built by the same function, so the timeouts are
+    the real ones), with a prefix only this test writes under, and its keys are removed
+    afterwards, so tests never share state.
     """
     prefix = f"lbtest-{secrets.token_hex(6)}:"
-    settings.CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {"hosts": [redis_url], "prefix": f"{prefix}channels:"},
-        },
-    }
+    settings.CHANNEL_LAYERS = channel_layers(redis_url, f"{prefix}channels:")
     yield prefix
     client = Redis.from_url(redis_url)
     keys = list(client.scan_iter(match=f"{prefix}*"))

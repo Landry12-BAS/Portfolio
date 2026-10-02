@@ -74,10 +74,15 @@ def record(conversation: Conversation, role: str, text: str, now: datetime) -> M
     """
     with transaction.atomic(using=DATABASE):
         Conversation.objects.select_for_update().get(pk=conversation.pk)
-        last = Message.objects.filter(conversation=conversation).aggregate(top=Max("position"))["top"] or 0
+        last = last_position(conversation)
         return Message.objects.create(
             conversation=conversation, position=last + 1, role=role, text=text[:MAX_LINE_LENGTH], created_at=now
         )
+
+
+def last_position(conversation: Conversation) -> int:
+    """Return the place of the transcript's last line, or 0 when nothing has been said."""
+    return Message.objects.filter(conversation=conversation).aggregate(top=Max("position"))["top"] or 0
 
 
 def transcript_pairs(conversation: Conversation) -> list[tuple[str, str]]:

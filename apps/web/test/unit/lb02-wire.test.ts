@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 
 import { LB02_SAMPLES } from '#shared/data/samples/lb02'
 
-import { CLOSE_CODES, MAX_SERVER_FRAME_LENGTH, clientFrameSchema, helloText, messageText, parseServerFrame } from '~/boards/lb-02/wire'
+import { CLOSE_CODES, MAX_OPTION_NUMBER, MAX_SERVER_FRAME_LENGTH, clientFrameSchema, helloText, messageText, parseServerFrame } from '~/boards/lb-02/wire'
 
 const READY = {
   type: 'ready',
@@ -53,6 +53,17 @@ describe('events from the server', () => {
     expect(read({ type: 'calendar', changes: [{ slot: 1, offering: 'tasting', starts_at: '2026-10-06T10:00:00Z', ends_at: '2026-10-06T10:45:00Z', status: 'held', mine: true, until: '2026-10-02T09:35:00+00:00' }] })?.type).toBe('calendar')
     expect(read({ type: 'calendar_reset' })?.type).toBe('calendar_reset')
     expect(read({ type: 'error', code: 'message_too_long', message: 'A message may be at most 500 characters.' })?.type).toBe('error')
+    for (const code of ['turn_failed', 'too_many_pending', 'too_many_connections']) {
+      expect(read({ type: 'error', code, message: 'x' })?.type).toBe('error')
+    }
+  })
+
+  it('reads whether the answer to the last message is still on its way, and counts a ready that does not say as not pending', () => {
+    const waiting = read({ ...READY, pending: true })
+    const quiet = read(READY)
+    expect(waiting?.type === 'ready' && waiting.pending).toBe(true)
+    expect(quiet?.type === 'ready' && quiet.pending).toBe(false)
+    expect(read({ ...READY, pending: 'yes' })).toBeUndefined()
   })
 
   it('refuses a type nobody defined, a missing field, a field nobody planned for and a wrong type', () => {
@@ -74,6 +85,14 @@ describe('events from the server', () => {
     expect(read({ ...REPLY, options: [{ ...REPLY.options[0], starts_at: 'tomorrow' }] })).toBeUndefined()
     expect(read({ type: 'calendar', changes: [{ slot: 1, offering: 'Tasting Room', starts_at: '2026-10-06T10:00:00Z', ends_at: '2026-10-06T10:45:00Z', status: 'free', mine: false, until: null }] })).toBeUndefined()
     expect(read({ type: 'error', code: 'made_up', message: 'x' })).toBeUndefined()
+  })
+
+  it('reads an option number past the six a list holds, because a slot keeps its number all conversation', () => {
+    const option = REPLY.options[0]
+    expect(read({ ...REPLY, options: [{ ...option, number: 23 }] })?.type).toBe('reply')
+    expect(read({ ...REPLY, options: [{ ...option, number: MAX_OPTION_NUMBER }] })?.type).toBe('reply')
+    expect(read({ ...REPLY, options: [{ ...option, number: MAX_OPTION_NUMBER + 1 }] })).toBeUndefined()
+    expect(read({ ...REPLY, options: [{ ...option, number: 0 }] })).toBeUndefined()
   })
 
   it('refuses text that is not JSON, JSON that is not an object, a binary frame and an enormous frame', () => {
@@ -114,7 +133,7 @@ describe('frames from the page', () => {
   })
 
   it('names the close codes the README lists', () => {
-    expect(CLOSE_CODES).toMatchObject({ unauthorized: 4401, notFound: 4404, timedOut: 4408, tooManyConversations: 4429, badFrame: 4400, tooBig: 1009, unsupported: 1003, unavailable: 1011 })
+    expect(CLOSE_CODES).toMatchObject({ unauthorized: 4401, notFound: 4404, timedOut: 4408, tooManyConversations: 4429, badFrame: 4400, tooBig: 1009, unsupported: 1003, unavailable: 1011, tryAgainLater: 1013 })
   })
 })
 

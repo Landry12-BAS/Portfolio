@@ -175,7 +175,8 @@ export interface RunSpanPage {
   cursor: string
   // Whether more spans were already waiting when this page was cut.
   more: boolean
-  // Whether the run's root span has been written, so the run is over. Runs that have no root span, such as a conversation, never finish.
+  // Whether the run's root span has been written, so the run is over. A run that goes on in turns, such as LB-02's
+  // conversation, writes its root when it ends and not before, so it finishes then; its turns named the root as their parent in advance.
   finished: boolean
 }
 

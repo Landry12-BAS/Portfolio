@@ -282,7 +282,7 @@ describe('the protocol', () => {
     expect(stranger.closedWith).toBe(4404)
   })
 
-  it('keeps and counts a message at once, so one whose answer is lost with the connection is still the last line of the resumed transcript', async () => {
+  it('ends a turn whether or not its connection is still there: the answer is kept, and a later connection finds it in the transcript', async () => {
     const hub = makeHub({ thinkMs: 40 })
     const first = new Tab(hub)
     const ready = await first.hello('visitor-session-aaaaaaaa')
@@ -295,8 +295,71 @@ describe('the protocol', () => {
 
     const again = new Tab(hub)
     const resumed = await again.hello('visitor-session-aaaaaaaa', ready!.conversation)
-    expect(resumed).toMatchObject({ resumed: true, messages_left: 29 })
+    expect(resumed).toMatchObject({ resumed: true, pending: false, messages_left: 29 })
+    expect(resumed!.transcript.map((line: Loose) => line.role)).toEqual(['visitor', 'action', 'concierge'])
+    expect(again.last('reply')).toBeUndefined()
+  })
+
+  it('tells a connection that picks the conversation up mid-turn that the answer is on its way, and sends it when the turn ends', async () => {
+    const hub = makeHub({ thinkMs: 40 })
+    const first = new Tab(hub)
+    const ready = await first.hello('visitor-session-aaaaaaaa')
+    first.send({ type: 'message', text: 'A cupping for two tomorrow afternoon, please.' })
+    await settle()
+    first.connection.dispose()
+
+    const again = new Tab(hub)
+    const resumed = await again.hello('visitor-session-aaaaaaaa', ready!.conversation)
+    expect(resumed).toMatchObject({ resumed: true, pending: true })
     expect(resumed!.transcript).toEqual([{ role: 'visitor', text: 'A cupping for two tomorrow afternoon, please.' }])
+    expect(again.last('reply')).toBeUndefined()
+    await new Promise(resolve => setTimeout(resolve, 80))
+    expect(again.last('reply')).toMatchObject({ type: 'reply', messages_left: 29 })
+  })
+
+  it('does not send an answer to a connection that was told nothing was on its way', async () => {
+    const hub = makeHub({ thinkMs: 20 })
+    const first = new Tab(hub)
+    const ready = await first.hello('visitor-session-aaaaaaaa')
+    const idle = new Tab(hub)
+    await idle.hello('visitor-session-aaaaaaaa', ready!.conversation)
+    first.send({ type: 'message', text: 'A cupping for two tomorrow afternoon, please.' })
+    await new Promise(resolve => setTimeout(resolve, 60))
+    expect(first.last('reply')).toBeDefined()
+    expect(idle.last('reply')).toBeUndefined()
+  })
+
+  it('loses the turns being answered when asked to, as a restart would: the message stays, nothing is pending and no answer comes', async () => {
+    const hub = makeHub({ thinkMs: 40 })
+    const first = new Tab(hub)
+    const ready = await first.hello('visitor-session-aaaaaaaa')
+    first.send({ type: 'message', text: 'A cupping for two tomorrow afternoon, please.' })
+    await settle()
+    first.connection.dispose()
+    hub.loseTurns()
+    await new Promise(resolve => setTimeout(resolve, 80))
+
+    const again = new Tab(hub)
+    const resumed = await again.hello('visitor-session-aaaaaaaa', ready!.conversation)
+    expect(resumed).toMatchObject({ pending: false })
+    expect(resumed!.transcript).toEqual([{ role: 'visitor', text: 'A cupping for two tomorrow afternoon, please.' }])
+    expect(again.last('reply')).toBeUndefined()
+  })
+
+  it('keeps an option\'s number when the slots before it go: a slot is numbered the first time it is shown, for good', async () => {
+    const hub = makeHub()
+    const tab = new Tab(hub)
+    await tab.hello('visitor-session-aaaaaaaa')
+    const first = await tab.say('A tasting for two, please. I am Jana Novak, jana@example.test.')
+    const shown = first.reply.options as Loose[]
+    expect(shown.map(option => option.number)).toEqual([1, 2, 3, 4, 5, 6])
+
+    expect(otherVisitor(hub, { other_visitor: 'holds', slot: { offering: 'tasting', day: 1, time: '10:00' } })).toBe(true)
+    const again = await tab.say('Is it still available?')
+    const now = again.reply.options as Loose[]
+
+    expect(now.map(option => option.number)).toEqual([2, 3, 4, 5, 6, 7])
+    expect(now.slice(0, 5).map(option => option.slot)).toEqual(shown.slice(1).map(option => option.slot))
   })
 
   it('lets a visitor start ten conversations a day and closes the eleventh with 4429', async () => {
@@ -476,7 +539,7 @@ describe('over a real WebSocket on the mock back end', () => {
     expect((await fetch(`${mock.url}/__mock/lb02/drop`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: '{}' })).status).toBe(415)
   })
 
-  it('writes the conversation\'s spans for the Scope, none of them a root, so its trace never says it is finished', async () => {
+  it('writes the conversation\'s spans for the Scope, none of them a root while it is open, so its trace does not say it is finished', async () => {
     const { socket, events } = await connect()
     socket.send(JSON.stringify({ type: 'hello', token: token(), conversation: null }))
     await until(events, 1)
@@ -487,6 +550,29 @@ describe('over a real WebSocket on the mock back end', () => {
     const detail = await (await fetch(`${mock.url}/api/lb02/conversations/${id}`, { headers: { authorization } })).json() as Loose
     expect(mock.lb02.spansOf(detail.run_id)?.map(span => span.name)).toContain('visitor message')
     expect(mock.lb02.spansOf(detail.run_id)?.some(span => span.kind === 'system.run')).toBe(false)
+    socket.close()
+  })
+
+  it('writes the root span when the conversation is handed over, last and once, under which the turns sit, and nothing for what is said after', async () => {
+    const { socket, events } = await connect()
+    socket.send(JSON.stringify({ type: 'hello', token: token(), conversation: null }))
+    await until(events, 1)
+    const id = events[0]!.conversation as string
+    socket.send(JSON.stringify({ type: 'message', text: 'Can I speak to a real person please?' }))
+    await until(events, 3)
+    const authorization = `Bearer ${token()}`
+    const detail = await (await fetch(`${mock.url}/api/lb02/conversations/${id}`, { headers: { authorization } })).json() as Loose
+    const spans = mock.lb02.spansOf(detail.run_id)!
+    const roots = spans.filter(span => span.kind === 'system.run')
+    expect(roots).toHaveLength(1)
+    expect(spans.at(-1)).toBe(roots[0])
+    expect(roots[0]).toMatchObject({ name: 'booking conversation', attrs: { messages: 1, reason: 'asked_for_person', booked: false } })
+    expect(roots[0]!.parentId).toBeUndefined()
+    expect(spans.find(span => span.name === 'visitor message')?.parentId).toBe(roots[0]!.spanId)
+
+    socket.send(JSON.stringify({ type: 'message', text: 'Hello? Anyone there?' }))
+    await until(events, 5)
+    expect(mock.lb02.spansOf(detail.run_id)).toHaveLength(spans.length)
     socket.close()
   })
 })

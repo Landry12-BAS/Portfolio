@@ -12,6 +12,7 @@ from datetime import datetime
 from lb02.booking import BookingService
 from lb02.conversations import current_step, language_of, messages_left
 from lb02.models import Conversation, Slot
+from lb02.offers import number_of
 from lb02.states import Step
 
 
@@ -64,13 +65,19 @@ class Snapshot:
 
 
 def options_of(conversation: Conversation) -> list[OptionView]:
-    """List the slots on offer, in the order they were numbered."""
+    """List the slots on offer, in the order the search found them, each with the number it keeps all conversation.
+
+    The numbers are not 1, 2, 3 of this list: a slot that stayed on offer keeps the number it was
+    first shown with, even if the slots before it have gone (lb02/offers.py).
+    """
     slots = Slot.objects.select_related("offering").in_bulk(conversation.offered_slots)
-    return [
-        OptionView(number, slot.pk, slot.offering.key, slot.starts_at, slot.ends_at)
-        for number, slot_id in enumerate(conversation.offered_slots, start=1)
-        if (slot := slots.get(slot_id)) is not None
-    ]
+    views: list[OptionView] = []
+    for slot_id in conversation.offered_slots:
+        slot = slots.get(slot_id)
+        number = number_of(conversation, slot_id)
+        if slot is not None and number is not None:
+            views.append(OptionView(number, slot.pk, slot.offering.key, slot.starts_at, slot.ends_at))
+    return views
 
 
 def hold_of(conversation: Conversation, bookings: BookingService) -> HoldView | None:

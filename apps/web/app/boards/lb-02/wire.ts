@@ -13,12 +13,19 @@ export const MAX_MESSAGE_LENGTH = 500
 export const MESSAGES_PER_CONVERSATION = 30
 /** The most a text frame from the server may weigh, in characters: a resumed conversation brings its whole transcript. */
 export const MAX_SERVER_FRAME_LENGTH = 262_144
+/**
+ * The highest number an option can carry (lb02/limits.py, MAX_SHOWN_SLOTS). A slot keeps the number it was first
+ * shown with for the whole conversation and numbers are never reused, so after several searches an option's number
+ * is well past the six a list holds.
+ */
+export const MAX_OPTION_NUMBER = 128
 
 /** The reasons the server closes a connection (lb02/events.py, CloseCode). */
 export const CLOSE_CODES = {
   unsupported: 1003,
   tooBig: 1009,
   unavailable: 1011,
+  tryAgainLater: 1013,
   badFrame: 4400,
   unauthorized: 4401,
   notFound: 4404,
@@ -47,7 +54,7 @@ export const RECEIPTS = ['hold_placed', 'booking_confirmed', 'hold_expired', 'sl
 export const receiptSchema = z.enum(RECEIPTS)
 
 /** The codes of the events that say something can't be done (lb02/events.py, ErrorCode). */
-export const ERROR_CODES = ['invalid_frame', 'message_too_long', 'already_said_hello', 'conversation_gone', 'too_many_conversations', 'unavailable'] as const
+export const ERROR_CODES = ['invalid_frame', 'message_too_long', 'already_said_hello', 'conversation_gone', 'too_many_conversations', 'unavailable', 'turn_failed', 'too_many_pending', 'too_many_connections'] as const
 /** One code of an error event. */
 export const errorCodeSchema = z.enum(ERROR_CODES)
 
@@ -60,9 +67,9 @@ export const lineSchema = z.strictObject({
   text: z.string().max(2_100),
 })
 
-/** A slot on offer, by the number the concierge holds it with. */
+/** A slot on offer, by the number the concierge holds it with, which never changes during the conversation. */
 export const optionSchema = z.strictObject({
-  number: z.int().min(1).max(20),
+  number: z.int().min(1).max(MAX_OPTION_NUMBER),
   slot: z.int().nonnegative(),
   offering: OFFERING_KEY,
   starts_at: MOMENT,
@@ -108,12 +115,18 @@ const stateShape = {
   booking: bookingSchema.nullable(),
 }
 
-/** The conversation is open: its ID, whether it resumed an earlier one, its whole transcript and where it stands. */
+/**
+ * The conversation is open: its ID, whether it resumed an earlier one, its whole transcript and where it stands.
+ * `pending` is true when the conversation was picked up while the concierge was still answering the last message,
+ * which an earlier connection sent: the answer follows as a `reply`, or as an `error` if the turn failed. A
+ * recording made before the field existed has none, and counts as not pending.
+ */
 export const readySchema = z.strictObject({
   type: z.literal('ready'),
   conversation: z.string().regex(CONVERSATION_ID),
   resumed: z.boolean(),
   transcript: z.array(lineSchema).max(200),
+  pending: z.boolean().default(false),
   ...stateShape,
 })
 

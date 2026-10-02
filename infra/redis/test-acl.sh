@@ -344,7 +344,7 @@ if wanted django; then
     echo "LB-02's WebSocket consumers on the Redis channel layer, as the Django user"
     run_suite "the consumer tests pass as the django-systems user" "$scratch/django.log" \
         env LB_TEST_REDIS_URL="$django_url" LB_TEST_DATABASE_URL="$database_url" \
-        uv run --directory services/django-systems pytest tests/integration/test_lb02_consumer.py -q -p no:cacheprovider
+        uv run --directory services/django-systems pytest tests/integration/test_lb02_consumer.py tests/integration/test_lb02_consumer_turns.py -q -p no:cacheprovider
 fi
 
 if wanted flask; then

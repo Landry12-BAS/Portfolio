@@ -8,9 +8,11 @@ A model's tool call is a name and a string it wrote. Nothing in it is trusted:
 2. The arguments must parse and validate against the tool's Pydantic schema, which forbids
    fields it doesn't define. A malformed call earns an error naming the fields, never a guess.
 3. The tool then works only from the conversation's own facts. `hold_slot` takes an option
-   number from the conversation's latest list of slots on offer, not a slot ID, so it can hold
-   nothing that wasn't offered; `confirm_booking` takes no arguments, so it confirms the hold
-   this conversation has, and nobody else's. The database refuses the rest (lb02/booking.py).
+   number, not a slot ID, and a number means the same slot for the whole conversation
+   (lb02/offers.py); it holds only a slot that is on offer now, so it can hold nothing that
+   wasn't offered, and a number whose slot has gone never turns into another slot.
+   `confirm_booking` takes no arguments, so it confirms the hold this conversation has, and
+   nobody else's. The database refuses the rest (lb02/booking.py).
 
 Each tool answers with a small JSON object for the model to read: what it did, or an error
 code and what the model can do instead. Some answers carry a receipt, the kind of message
@@ -31,9 +33,10 @@ from lb02.booking import BookingError, BookingService, Clock, Refusal, bookable_
 from lb02.confirmation import record_confirmation
 from lb02.conversations import record, sync_step
 from lb02.handoff import hand_over
-from lb02.limits import MAX_OPTIONS, MAX_PARTY_SIZE
+from lb02.limits import MAX_OPTIONS, MAX_PARTY_SIZE, MAX_SHOWN_SLOTS
 from lb02.messages import Receipt, guests, when_text
 from lb02.models import Conversation, Handoff, Offering, Reservation, Slot
+from lb02.offers import is_on_offer, number_of, put_on_offer, slot_numbered
 from lb02.states import Tool, tool_accepted
 from lb_common.tracing import Tracer
 
@@ -97,9 +100,9 @@ class CheckAvailabilityArguments(ToolArguments):
 
 
 class HoldSlotArguments(ToolArguments):
-    """Which of the slots on offer to hold, by its number in the latest list."""
+    """Which of the slots on offer to hold, by the number it was shown with, which never changes."""
 
-    option: int = Field(ge=1, le=MAX_OPTIONS)
+    option: int = Field(ge=1, le=MAX_SHOWN_SLOTS)
 
 
 class NoArguments(ToolArguments):
@@ -390,12 +393,18 @@ class ToolExecutor:
         )
 
     def hold_slot(self, conversation: Conversation, arguments: HoldSlotArguments, context: TurnContext) -> ToolOutcome:
-        """Hold the slot at a number in the latest list for five minutes, and write the receipt from the hold itself."""
-        offered = conversation.offered_slots
-        slot_id = offered[arguments.option - 1] if arguments.option <= len(offered) else None
+        """Hold the slot with a number for five minutes, and write the receipt from the hold itself.
+
+        The number is looked up among the slots the conversation was shown, so it means the slot
+        the visitor saw with that number and no other. A slot that is no longer on offer is not
+        held: it was taken, or the search moved on, and the visitor is told so.
+        """
+        slot_id = slot_numbered(conversation, arguments.option)
         slot = Slot.objects.select_related("offering").filter(pk=slot_id).first() if slot_id is not None else None
         if slot is None:
-            return failed(Tool.HOLD_SLOT, "no_such_option", options_on_offer=len(offered))
+            return failed(Tool.HOLD_SLOT, "no_such_option", options_on_offer=len(conversation.offered_slots))
+        if not is_on_offer(conversation, slot.pk):
+            return self.option_gone(conversation, slot)
         try:
             held = self.bookings.place_hold(conversation, slot)
         except BookingError as error:
@@ -411,6 +420,18 @@ class ToolExecutor:
             note=f"Held {slot.offering.key} on {when_text(slot.starts_at, slot.ends_at, 'en')} for 5 minutes.",
             slot_id=slot.pk,
         )
+
+    def option_gone(self, conversation: Conversation, slot: Slot) -> ToolOutcome:
+        """Answer a request for a slot that was on offer and isn't any more, without holding anything else.
+
+        If someone else has the slot by now, it is the same answer as losing the race for it: the
+        receipt says it was taken, and fresh slots are on offer. If it is free but the search has
+        moved on, nothing is held, and the model is given what is on offer to go on from.
+        """
+        state = self.bookings.states_of([slot])[slot.pk]
+        if state.status != "free" and state.owner != conversation.pk:
+            return self.hold_refused(conversation, BookingError(Refusal.SLOT_UNAVAILABLE, "The slot is taken."))
+        return failed(Tool.HOLD_SLOT, "option_gone", options=self.options_on_offer(conversation))
 
     def hold_refused(self, conversation: Conversation, error: BookingError) -> ToolOutcome:
         """Turn the booking service's refusal into an answer, with fresh slots on offer when the slot was taken."""
@@ -555,11 +576,11 @@ class ToolExecutor:
         if window_empty:
             slots = self.bookings.free_slots(offering, first_open, last_open, party_size, "any", NEAREST_OPTIONS)
         conversation.search_from, conversation.search_to, conversation.search_part_of_day = first, last, part
-        conversation.offered_slots = [slot.pk for slot in slots]
-        conversation.save(
-            update_fields=["search_from", "search_to", "search_part_of_day", "offered_slots", "updated_at"]
+        conversation.save(update_fields=["search_from", "search_to", "search_part_of_day", "updated_at"])
+        on_offer = put_on_offer(conversation, slots)
+        return SearchOutcome(
+            slots=on_offer, window_empty=window_empty, first_day=first, last_day=last, part_of_day=part
         )
-        return SearchOutcome(slots=slots, window_empty=window_empty, first_day=first, last_day=last, part_of_day=part)
 
     def search_result(self, conversation: Conversation) -> Result:
         """Search, inside a span of its own, and describe what was found for the model."""
@@ -569,16 +590,26 @@ class ToolExecutor:
             span.set("window_empty", found.window_empty)
         result: Result = {
             "searched": f"{found.first_day.isoformat()} to {found.last_day.isoformat()}, {found.part_of_day}",
-            "options": [
-                {"option": number, "offering": slot.offering.key, "when": when_text(slot.starts_at, slot.ends_at, "en")}
-                for number, slot in enumerate(found.slots, start=1)
-            ],
+            "options": self.options_on_offer(conversation),
         }
         if found.window_empty:
             result["window_empty"] = "nothing is free then; these are the nearest slots"
         if not found.slots:
             result["none_free"] = True
         return result
+
+    def options_on_offer(self, conversation: Conversation) -> list[dict[str, object]]:
+        """List the slots on offer for the model, each by the number it keeps for the whole conversation."""
+        slots = Slot.objects.select_related("offering").in_bulk(conversation.offered_slots)
+        return [
+            {
+                "option": number_of(conversation, slot_id),
+                "offering": slots[slot_id].offering.key,
+                "when": when_text(slots[slot_id].starts_at, slots[slot_id].ends_at, "en"),
+            }
+            for slot_id in conversation.offered_slots
+            if slot_id in slots
+        ]
 
     def slot_facts(self, reservation: Reservation, slot: Slot, language: str) -> dict[str, object]:
         """Gather the facts a receipt needs about a held or booked slot, in the visitor's language."""

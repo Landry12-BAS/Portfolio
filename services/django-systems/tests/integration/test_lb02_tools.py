@@ -14,6 +14,7 @@ import pytest
 from core.tool_chat import ToolCall
 from lb02.messages import Receipt
 from lb02.models import Confirmation, Conversation, Handoff, Offering, Reservation
+from lb02.snapshot import options_of
 from lb02.states import Step
 from lb02.tools import CheckAvailabilityArguments, NoArguments, ToolOutcome, TurnContext
 from tests.lb02_support import Rig, build_rig, make_conversation, reload
@@ -30,9 +31,14 @@ def conversation_with_details(rig: Rig) -> Conversation:
     return reload(conversation)
 
 
+def number_in_place(conversation: Conversation, place: int) -> int:
+    """Return the number the slot in this place of the list on offer was shown with; place 0 is the first."""
+    return options_of(conversation)[place].number
+
+
 def hold_first_option(rig: Rig, conversation: Conversation) -> Reservation:
-    """Hold the first slot on offer, the way a model's hold_slot call does, and return the reservation."""
-    outcome = rig.run_tool(conversation, "hold_slot", option=1)
+    """Hold the first slot on offer by its number, the way a model's hold_slot call does, and return the reservation."""
+    outcome = rig.run_tool(conversation, "hold_slot", option=number_in_place(conversation, 0))
     assert outcome.ok, outcome.result
     return Reservation.objects.get(conversation=conversation, status=Reservation.Status.HELD)
 
@@ -292,7 +298,7 @@ def test_holding_a_second_option_moves_the_hold() -> None:
     rig.run_tool(conversation, "check_availability", date_from="2026-10-05", date_to="2026-10-06")
     first = hold_first_option(rig, conversation)
 
-    rig.run_tool(conversation, "hold_slot", option=2)
+    rig.run_tool(conversation, "hold_slot", option=number_in_place(conversation, 1))
 
     first.refresh_from_db()
     assert first.status == Reservation.Status.RELEASED

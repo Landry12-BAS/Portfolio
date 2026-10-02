@@ -11,6 +11,7 @@ from pathlib import Path
 
 from celery.schedules import crontab
 
+from config.channel_layer import channel_layers
 from config.environment import read_environment
 from core.databases import system_databases
 
@@ -71,12 +72,8 @@ REDIS_PREFIX = ENVIRONMENT.redis_prefix
 # Channels (LB-02's WebSockets): the layer that carries the live calendar between
 # connections lives in the same Redis, under the platform's key prefix. The prefix ends
 # in a colon so that an ACL rule for `lb:channels:*` covers every key the layer writes.
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL], "prefix": f"{REDIS_PREFIX}channels:"},
-    },
-}
+# Its sockets must outwait the layer's own blocking read (config/channel_layer.py).
+CHANNEL_LAYERS = channel_layers(REDIS_URL, f"{REDIS_PREFIX}channels:")
 
 # Celery: Redis carries the queue under the platform's key prefix, messages are JSON
 # only (never pickle), and nothing stores task results.

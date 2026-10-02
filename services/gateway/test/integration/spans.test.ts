@@ -221,6 +221,35 @@ describe('polling a live run', () => {
     expect((await pageOf(runId)).finished).toBe(false)
   })
 
+  it('says a run that goes on in turns has finished when its root is written last, though its turns named the root before it existed', async () => {
+    const runId = newRunId()
+    const rootId = 'a1b2c3d4e5f60718'
+    await sink.emit([systemSpan(runId, 1, { parentId: rootId }), systemSpan(runId, 2, { parentId: rootId })])
+    const open = await pageOf(runId)
+
+    await sink.emit([systemSpan(runId, 3, { kind: 'system.run', name: 'booking conversation', spanId: rootId })])
+    const done = await pageOf(runId, `after=${open.cursor}`)
+
+    expect(open.finished).toBe(false)
+    expect(done.finished).toBe(true)
+    expect(done.spans.map(span => span.name)).toEqual(['booking conversation'])
+  })
+
+  it('keeps saying a run has finished while a few spans written after its root pile up behind it', async () => {
+    const runId = newRunId()
+    await sink.emit([systemSpan(runId, 1, { kind: 'system.run', name: 'booking conversation' })])
+    // The reader looks for the root among the last 32 entries, so 29 spans after it don't hide it. (LB-02 writes
+    // nothing at all after the root of a conversation.)
+    await sink.emit(Array.from({ length: 29 }, (_, index) => systemSpan(runId, index + 2)))
+
+    const atTheRoot = await pageOf(runId, 'limit=1')
+    const later = await pageOf(runId, `limit=5&after=${atTheRoot.cursor}`)
+
+    expect(atTheRoot.spans.map(span => span.name)).toEqual(['booking conversation'])
+    expect(later.spans.map(span => span.name)).toEqual(['step 2', 'step 3', 'step 4', 'step 5', 'step 6'])
+    expect(later.finished).toBe(true)
+  })
+
   it('pages through a long run without losing or repeating a span', async () => {
     const runId = newRunId()
     await sink.emit(Array.from({ length: 450 }, (_, index) => systemSpan(runId, index + 1)))

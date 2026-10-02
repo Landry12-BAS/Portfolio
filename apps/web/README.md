@@ -104,8 +104,12 @@ the limits table and the trace table.
 Live runs **poll** (the ticket and the trace, about once a second). LB-02's conversation is the one
 exception: it travels over a WebSocket, though its trace is polled like the others. A trace is
 404 for the first moments of a run, so the Scope reads for a grace period before it says there is none.
-A conversation writes no root span, so its trace never says it is finished: the board tells the Scope
-with `scope.finish()` when the conversation ends.
+A conversation is one run of up to 30 messages, so it writes its root span when it ends, which is when it
+is handed to a person, and not before: until then its trace does not say it is finished, and a booked
+conversation that is still open (the visitor may write again) never does. Its turns name that root as their
+parent in advance, so the Scope shows them at the top while the conversation goes on and under the root once
+it arrives. The board does not wait for it: it tells the Scope with `scope.finish()` as soon as it sees the
+conversation closed.
 
 **When does the back end name the run?** The Scope can only read a trace by its run ID, and a board
 learns the ID from the system's own API. LB-01's Django saves a ticket's run ID with the pipeline's
@@ -171,9 +175,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    list it in `RUNNERS` in `scripts/record/record.ts`. Then `just record-sample lb-0n <sample>` on the
    live back end writes the recording; commit it with the system. A runner that makes a call with a
    query uses `backend.call(system, method, path, body, query)`, and keeps the path without it (a
-   recording's paths have no query string). A runner whose system writes no root span (LB-02's
-   conversation) returns `traceEnds: 'quiet'`, so the trace is read until it stops growing instead of
-   until it is `finished`.
+   recording's paths have no query string). A runner whose system writes no root span, or only sometimes
+   (LB-02's conversation writes one only when it is handed over), returns `traceEnds: 'quiet'`, so the trace
+   is read until it stops growing instead of until it is `finished`.
 9. **Tests.** The store against `FakeSite` (`test/support/fake-site.ts`: add the system's routes), the
    components with `mountWithSite`, and a Playwright spec like `e2e/lb01.spec.ts` and
    `e2e/board-a11y.spec.ts` (replay, a live run, each failure, both languages, the keyboard, axe in

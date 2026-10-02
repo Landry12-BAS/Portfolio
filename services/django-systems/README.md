@@ -50,7 +50,13 @@ a third when an answer needs its repair. Escalation reasons: `injection`, `unche
 ## LB-02: from a message to a booking
 
 A conversation is one run of up to 30 visitor messages, and each message is a span of
-it. A booking takes three messages and 7 gateway calls in the offline eval: an injection
+it. The run's root span (`booking conversation`, a `system.run` span with no parent and
+only counts and a reason in it) is written once, when the conversation is handed to a
+person, so the trace route says `finished` then and not before; the turns name that root
+as their parent in advance, so the Scope shows them under it once it arrives. A booked
+conversation is still open (the visitor may write again), so it has no root, and a message
+to a conversation that is over writes no span, no transcript line and no copy of the
+handoff, so such a client cannot make any of them grow. A booking takes three messages and 7 gateway calls in the offline eval: an injection
 check for each message and four calls to `lb-tools`. That is what scripted models cost;
 the datasheet's "6 to 10" stays an estimate until `just eval-lb02` has run live.
 
@@ -60,7 +66,7 @@ the datasheet's "6 to 10" stays an estimate until `just eval-lb02` has run live.
 | Count | Adds the message to the conversation's 30 in one statement that refuses the 31st; the table also refuses a count above 30 | The 31st message hands the conversation to a person, with the whole transcript |
 | Detect the language | Reads the script, the stop words and the letters ([`lb02/languages.py`](lb02/languages.py)): ten Latin-script languages and nine other scripts, and a switch mid-conversation | A first message the code can't read costs one `lb-fast` call; if that fails, English |
 | Screen | `lb-guard` reads every message before any model that can call a tool does | A flagged message is refused with no model call, and the third hands over; one that can't be checked is asked again, and the second hands over: the screen fails closed |
-| Refresh | Marks the conversation's own run-out hold expired and searches again, so the slots on offer are free now | Never fails |
+| Refresh | Marks the conversation's own run-out hold expired and searches again, so the slots on offer are free now; a slot that stays keeps its number, and the model is told which numbers have gone | Never fails |
 | Converse | `lb-tools` with only the tools the step allows, at most 3 chat calls a message and 3 tool calls a reply | An empty answer asks the visitor to repeat; twice in a row, or a spent quota, hands over |
 | Run each tool | The step must accept the tool, and its arguments must pass a strict Pydantic model that forbids extra fields ([`lb02/tools.py`](lb02/tools.py)) | A refused or invalid call changes nothing, and the model is told which field was wrong, never its own text |
 | Answer | A hold, a confirmation, a taken slot and a run-out hold are written by the code from the database's facts, in English and Czech, so they cost no second call; other languages get the model's words | The model's own words are never trusted to state a booking: see the known gaps |
@@ -87,8 +93,16 @@ The booking rules, each enforced below the model:
   is offered `confirm_booking` only while the conversation holds a live slot, and it takes
   no arguments, so it can't confirm a slot it never held or one somebody else holds. A hold
   made in a turn can't be confirmed in the same turn: the visitor has to say yes first.
-  `hold_slot` takes an option number from the conversation's own list of offered slots,
-  never a slot ID.
+  `hold_slot` takes an option number, never a slot ID.
+- **An option number means one slot for the whole conversation.** A slot gets its number the
+  first time the conversation is shown it, and keeps it in every tab: when availability
+  changes between two messages, the slots that remain keep their numbers, a new slot takes
+  the next number, and a number is never reused ([`lb02/offers.py`](lb02/offers.py);
+  `Conversation.shown_slots` is the registry, a slot's number its place in it). A number
+  whose slot has gone holds nothing else: if someone else has the slot the visitor is told
+  it was taken, and if the search merely moved on the model is told what is on offer. Only
+  a slot on offer can be held, so an old number can't reach a slot of another offering.
+  A conversation can be shown 128 different slots (the 14-day calendar has 112).
 - **The calendar resets nightly.** `lb02.reset_calendar` clears what visitors made and lays
   out the next 14 days from the day it runs; a conversation is deleted 24 hours after it
   started.
@@ -104,6 +118,8 @@ quotas in `routing.yaml` by a test:
 | Conversations a visitor may start a day | 10 |
 | A message | 500 characters; a party of at most 12, and at most what the offering takes |
 | A WebSocket frame | 4 KB; a connection has 10 seconds to say hello and 15 minutes of silence |
+| Messages one connection has in hand | 2: the one being answered and one waiting behind it; a third is refused with `too_many_pending` |
+| Connections one visitor may hold | 4 at a time, in one server process (two tabs, the installed app and one still being torn down); the fifth is refused with `too_many_connections` and closed with 1013 |
 
 ## The API
 
@@ -153,16 +169,50 @@ and more proxies log headers than message bodies. After that:
 | Client sends | Server answers |
 |---|---|
 | `{"type": "message", "text": "..."}` (1 to 500 characters) | `working`, then `reply`: the text, the `receipt` when the code wrote it, the tools called, the step, language, options, hold, booking, `messages_left`, `model_calls` |
-| the hello | `ready`: the conversation, whether it resumed, and its whole transcript and state |
+| the hello | `ready`: the conversation, whether it resumed, its whole transcript and state, and `pending` (below) |
 | nothing | `calendar`: slots that changed, each `free`, `held` or `booked`, and `mine` for this conversation; `calendar_reset`: load the snapshot again |
 
-A frame that isn't in the protocol gets an `error` event with a code (`invalid_frame`,
-`message_too_long`, `already_said_hello`, `conversation_gone`, `too_many_conversations`,
-`unavailable`) and the connection goes on. These close it, with the code that says why:
+Frames are read as they arrive, and a message is not answered where it is read: it joins a
+line of two (the one being answered and one behind it) that a worker task of the connection
+answers one at a time, so the calendar keeps moving during a long turn and a client that never
+waits cannot pile work up in memory. Calendar events may therefore arrive between `working`
+and `reply`.
+
+**A turn outlives its connection.** If the network cuts a connection while the concierge is
+answering, the turn still ends and its answer is saved in the transcript. A connection that
+resumes the conversation meanwhile is told in `ready` that the answer is on its way
+(`"pending": true`: the last line of the transcript is the visitor's and a turn of the
+conversation is running) and is sent it as a `reply` when the turn ends, or an `error` if
+the turn failed, through a channel-layer group of the conversation. One that resumes after the
+turn ended finds the answer in the transcript, with `pending` false, and is not sent it again
+(each answer carries its place in the transcript, and a connection ignores one it already
+holds). Only a connection that is waiting for an answer is sent one: a second, idle tab of the
+conversation is not shown a reply to a question it never saw, and catches up when it resumes.
+If the server process is lost mid-turn, nothing can send the answer; the resumed page finds
+the visitor's message last with `pending` false, and says so.
+
+A frame that isn't in the protocol, or can't be taken, gets an `error` event with a code
+(`invalid_frame`, `message_too_long`, `already_said_hello`, `conversation_gone`,
+`too_many_conversations`, `unavailable`, and these three:
+`turn_failed`, `too_many_pending`, `too_many_connections`) and the connection goes on, except
+where the table below closes it.
+
+- `turn_failed`: the turn raised an error nobody planned for. The visitor's message stays in
+  the transcript with a note that the concierge could not answer it, the failure counts like a
+  model that said nothing (the second in a row hands the conversation to a person, and that
+  arrives as a `reply` with the `unavailable` receipt instead), and the conversation, and the
+  connection, go on: the visitor can send the message again. The log holds the error's type and
+  the conversation's ID, never what the error said, since that may hold anything.
+- `too_many_pending`: a third message while two are in hand. It is dropped; nothing is queued.
+- `too_many_connections`: the visitor already holds four connections. It is followed by a close
+  with 1013 ("try again later"), which a page treats as a drop and retries with a growing wait.
+
+These close the connection, with the code that says why:
 4400 (not a hello first, or not JSON), 4401 (the token is missing, malformed, expired,
 signed by anyone else or for another system, or there is no key to check it with; nothing
 more is said), 4404 (no such conversation of theirs), 4408 (no hello in 10 seconds, or 15
-minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB) and 1011 (the service itself isn't set up).
+minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB), 1011
+(the service itself isn't set up) and 1013 (too many connections from this visitor).
 
 ## Data and evals
 
@@ -272,8 +322,9 @@ Short notes, as the playbook asks (step 8).
 - **Denial of service.** 30 messages and 64 gateway calls a conversation, counted by the
   database in one statement each; 10 conversations a visitor a day, counted under the same
   per-visitor lock as LB-01's tickets (`core/locks.py`); 500 characters a
-  message and 4 KB a frame; one turn at a time per connection and per conversation; 10
-  seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
+  message and 4 KB a frame; two messages in hand per connection, with the rest refused
+  rather than queued; four connections per visitor in a process; one turn at a time per
+  conversation; 10 seconds to say hello, 15 minutes of silence; at most 3 chat calls a message. The gateway
   adds 68 calls a run, 128 a visitor a day and 425 a day. Each turn holds a worker thread
   while the model answers, so the thread pool bounds concurrent turns.
 - **Privilege escalation.** Six tools, gated by step; none reads another conversation, sends
@@ -295,11 +346,27 @@ Known gaps, stated rather than hidden:
   are up.
 - Two tabs of one conversation take turns only within one server process. With several
   workers their turns can overlap; the limits, the constraint and the idempotent confirm
-  still hold, but the transcript's order of lines is then whichever got there first.
+  still hold, but the transcript's order of lines is then whichever got there first. The
+  cap on a visitor's connections is also kept per process, so with several workers a visitor
+  can hold the cap on each, and `pending` is known only to the process running the turn (a
+  page resumed on another process still gets the answer, but is not told it is on its way).
+- A turn that is lost with its process (a restart in the middle of one) is not recovered:
+  the visitor's message stays in the transcript without an answer, and the page says so on
+  resume. The caps on messages and connections are in memory, so they start again from zero
+  when the process does.
 - Calendar events are best effort: if Redis is down, a committed booking stays committed and
   the next snapshot is right, but a tab misses the live change. A client should load the
   snapshot again after it reconnects.
-- Not run live: the golden eval, the measured calls per booking, and recorded samples.
+- A booked conversation is still open (the visitor may write again), so its trace has no root
+  span and does not say it is finished; only a conversation that is handed to a person does.
+- Option numbers are never reused, so a conversation can be shown 128 different slots in all.
+  The 14-day calendar has 112, so no conversation can reach the limit; past it a new slot
+  would simply not be offered.
+- Not run live: the golden eval, the measured calls per booking, and recorded samples. The
+  prompt changed for stable option numbers (rule 5 asks the model to offer options with their
+  numbers and never hold another in place of one that went, and the State lists the options
+  that have gone since its last message); the scripted evals pass, but no live run has
+  measured how a model follows it, so `just eval-lb02` must be run before it is trusted.
 
 ## Operating notes for LB-02
 
@@ -309,7 +376,16 @@ Known gaps, stated rather than hidden:
   and its own schema, `lb02`, and that is all (`LB02_DATABASE_URL`, optional).
 - The channel layer writes under `lb:channels:*` in Redis, and Celery under its own prefix;
   the Django service's Redis role needs both, and the commands the layer uses to send to a
-  group, which include `EVALSHA`.
+  group, which include `EVALSHA`. A conversation's group (`lb02.conversation.<id>`) is under
+  the same prefix.
+- The channel layer's Redis sockets time out after 15 seconds (`config/channel_layer.py`),
+  three times the 5 seconds channels-redis blocks on Redis for a message. They must stay
+  longer than that block: redis-py's own default is 5 seconds, which made an idle WebSocket
+  fail with a timeout and close (1006) about every 5 seconds. A test holds a socket idle for
+  a block and a second on a real Redis.
+- A connection the network cut can stay open on the server for the length of uvicorn's ping
+  timeout (20 seconds after a 20 second ping, by default), and is counted against its visitor's
+  four until it closes, which is why the cap leaves one spare.
 - Run uvicorn with `--ws-max-size 8192` (the `just django` recipe does): the server library
   reads a whole frame before the consumer can refuse it.
 - The site opens the WebSocket on the API domain, as a Vercel function can't hold one, and

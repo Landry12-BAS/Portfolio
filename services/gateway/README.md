@@ -122,7 +122,7 @@ curl -H "authorization: Bearer $WEB_TOKEN" "localhost:8080/v1/runs/run-012345678
 | `spans` | Up to `limit` spans (1 to 500, default 200) written after `after`, oldest first. A parent is written after its children, because a span is written when it ends |
 | `cursor` | The ID of the last entry looked at. Send it back as `after` to poll a live run: the next page holds only what was written since, and an empty page returns the same cursor |
 | `more` | Spans were already waiting beyond this page, or the page hit its byte budget (256 KB). Ask again at once |
-| `finished` | The run's root span has been written: a `system.run` span with no parent, which a system writes last. It stays `true` for a client that is already past the root. A run with no root span, such as LB-02's conversation (one run, a span for every message), never finishes, so the client decides when to stop |
+| `finished` | The run's root span has been written: a `system.run` span with no parent, which a system writes last. It stays `true` for a client that is already past the root. A run that goes on in turns writes its root when it ends: LB-02's conversation (one run, a span for every message) writes it when it is handed to a person, so it finishes then, and a booked conversation that is still open does not. A run with no root span, such as LB-08's step spans, never finishes, so the client decides when to stop |
 
 - **Who may call it.** Only a service listed under `traceReaders` in `routing.yaml`
   (`web`, the site's server). Any other valid service token gets `403 permission_denied`,

@@ -63,8 +63,13 @@ export interface MockConversation {
   expiresAt: number
   language: string
   details: Details
-  // The slots on offer, by the number they are held with (1 is the first).
+  // The slots on offer now.
   offered: number[]
+  // Every slot the conversation was ever shown, in the order it was first shown. A slot's number is its place
+  // here, counting from 1: it never changes and is never given to another slot.
+  shown: number[]
+  // Whether a turn of the conversation is being answered right now.
+  answering: boolean
   messagesUsed: number
   modelCalls: number
   strikes: number
@@ -106,6 +111,8 @@ export function newConversation(id: string, session: string, runId: string, now:
     language: 'en',
     details: { offering: undefined, partySize: undefined, name: undefined, email: undefined, firstDay: 1, lastDay: 14, partOfDay: undefined, time: undefined },
     offered: [],
+    shown: [],
+    answering: false,
     messagesUsed: 0,
     modelCalls: 0,
     strikes: 0,
@@ -236,6 +243,9 @@ export class MockConcierge {
   #offer(conversation: MockConversation, tool: string): Answer {
     const { slots, widened } = searchFor(conversation, this.#calendar, this.#now())
     conversation.offered = slots.map(slot => slot.id)
+    for (const slot of slots) {
+      if (!conversation.shown.includes(slot.id)) conversation.shown.push(slot.id)
+    }
     conversation.lapsedHold = undefined
     const language = conversation.language
     const offering = this.#titleOf(conversation.details.offering, language)
@@ -365,6 +375,8 @@ export class MockConcierge {
    * its first model call, so a turn that dies leaves the message behind with no answer. Says whether it was the first.
    */
   receive(conversation: MockConversation, text: string): boolean {
+    // A conversation that is over takes nothing in: nothing is counted or kept, as in the service.
+    if (conversation.handoff) return false
     conversation.messagesUsed += 1
     const wasFirst = conversation.lines.length === 0
     this.#record(conversation, 'visitor', hideEmails(text))
@@ -380,7 +392,7 @@ export class MockConcierge {
       conversation.modelCalls += guard + answer.chat
       return { text: answer.text, receipt: answer.receipt, tools: answer.tools ?? [], calls: { guard, chat: answer.chat }, detectedLanguage: wasFirst, changes: answer.changes ?? [] }
     }
-    if (conversation.handoff) return finish({ text: receipt('closed', conversation.language), receipt: 'closed', chat: 0 }, 0)
+    if (conversation.handoff) return { text: receipt('closed', conversation.language), receipt: 'closed', tools: [], calls: { guard: 0, chat: 0 }, detectedLanguage: false, changes: [] }
     if (conversation.messagesUsed > this.#limit()) return finish(this.#handOff(conversation, 'message_limit', 'message_limit'), 0)
     const said = understand(text)
     if (said.language !== undefined) conversation.language = said.language

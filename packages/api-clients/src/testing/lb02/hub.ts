@@ -12,12 +12,12 @@ import { MockCalendar } from './calendar.ts'
 import type { OfferingSeed, SlotChange } from './calendar.ts'
 import { MESSAGES_PER_CONVERSATION, MockConcierge, newConversation, stepOf } from './concierge.ts'
 import type { MockConversation, TurnOutput } from './concierge.ts'
-import { turnSpans } from './spans.ts'
+import { conversationSpan, turnSpans } from './spans.ts'
 import type { MockSpan } from '../spans.ts'
 import { isoMoment } from './time.ts'
 
 /** The close codes the real service uses (lb02/events.py, CloseCode). */
-export const CLOSE = { unsupported: 1003, tooBig: 1009, unavailable: 1011, badFrame: 4400, unauthorized: 4401, notFound: 4404, timedOut: 4408, tooManyConversations: 4429 } as const
+export const CLOSE = { unsupported: 1003, tooBig: 1009, unavailable: 1011, tryAgainLater: 1013, badFrame: 4400, unauthorized: 4401, notFound: 4404, timedOut: 4408, tooManyConversations: 4429 } as const
 
 /** The longest frame the service takes, in bytes (lb02/limits.py). */
 export const MAX_FRAME_BYTES = 4_096
@@ -49,7 +49,7 @@ export interface HubOptions {
 }
 
 /** The error codes of the protocol (lb02/events.py, ErrorCode). */
-type ErrorCode = 'invalid_frame' | 'message_too_long' | 'already_said_hello' | 'conversation_gone' | 'too_many_conversations' | 'unavailable'
+type ErrorCode = 'invalid_frame' | 'message_too_long' | 'already_said_hello' | 'conversation_gone' | 'too_many_conversations' | 'unavailable' | 'turn_failed' | 'too_many_pending' | 'too_many_connections'
 
 // The sentences the real service sends with each code. The page never shows them: it words each code itself.
 const ERROR_SENTENCES: Record<ErrorCode, string> = {
@@ -59,6 +59,9 @@ const ERROR_SENTENCES: Record<ErrorCode, string> = {
   conversation_gone: 'That conversation doesn\'t exist, or it has ended and its data has been removed.',
   too_many_conversations: 'You have started as many conversations today as you may. Come back tomorrow.',
   unavailable: 'The concierge can\'t answer right now.',
+  turn_failed: 'Something went wrong while the concierge answered that message. Please send it again.',
+  too_many_pending: 'The concierge is still answering. Wait for its reply before you send more.',
+  too_many_connections: 'This browser has too many connections open. Close another tab and try again.',
 }
 
 /** A frame a client may send, once it has been read strictly. */
@@ -121,6 +124,9 @@ export class Lb02Hub {
   readonly #connections = new Set<Lb02Connection>()
   readonly #spans = new Map<string, MockSpan[]>()
   #turns = 0
+  // Which stretch of the hub's life a turn started in. Losing the turns that are being answered (a restart of the
+  // service) starts a new one, and a turn from an earlier one never ends.
+  turnEpoch = 0
 
   /** Lays the calendar out and waits for visitors. */
   constructor(offerings: OfferingSeed[], options: HubOptions) {
@@ -193,13 +199,24 @@ export class Lb02Hub {
     return this.#concierge.receive(conversation, text)
   }
 
-  /** Answers a message that was taken in and writes the turn's spans. */
+  /**
+   * Answers a message that was taken in and writes the turn's spans. A turn that ends the conversation (it is handed
+   * to a person) is followed by the run's root span, which tells the trace route the run is finished. A message to a
+   * conversation that is already over writes nothing.
+   */
   respond(conversation: MockConversation, text: string, wasFirst: boolean): { output: TurnOutput, step: string } {
     const startedAt = this.options.now()
+    const wasOpen = conversation.handoff === undefined
     const output = this.#concierge.respond(conversation, text, wasFirst)
-    this.#turns += 1
     const step = stepOf(conversation, this.calendar)
-    this.#spans.set(conversation.runId, [...(this.#spans.get(conversation.runId) ?? []), ...turnSpans(conversation.runId, this.#turns, startedAt, output, step)])
+    if (!wasOpen) return { output, step }
+    this.#turns += 1
+    const spans = turnSpans(conversation.runId, this.#turns, startedAt, output, step)
+    if (conversation.handoff !== undefined) {
+      const booked = this.calendar.bookingOf(conversation.id) !== undefined
+      spans.push(conversationSpan(conversation.runId, conversation.createdAt, this.options.now(), { messages: conversation.messagesUsed, calls: conversation.modelCalls, reason: conversation.handoff.reason, booked }))
+    }
+    this.#spans.set(conversation.runId, [...(this.#spans.get(conversation.runId) ?? []), ...spans])
     return { output, step }
   }
 
@@ -209,9 +226,9 @@ export class Lb02Hub {
     const step = stepOf(conversation, calendar)
     const language = conversation.language
     const options = step === 'availability'
-      ? conversation.offered.flatMap((id, index) => {
+      ? conversation.offered.flatMap((id) => {
           const slot = calendar.slot(id)
-          return slot ? [{ number: index + 1, slot: slot.id, offering: slot.offering, starts_at: isoMoment(slot.startsAt), ends_at: isoMoment(slot.endsAt) }] : []
+          return slot ? [{ number: conversation.shown.indexOf(id) + 1, slot: slot.id, offering: slot.offering, starts_at: isoMoment(slot.startsAt), ends_at: isoMoment(slot.endsAt) }] : []
         })
       : []
     const held = calendar.holdOf(conversation.id)
@@ -257,6 +274,19 @@ export class Lb02Hub {
     for (const connection of [...this.#connections]) connection.drop(code)
   }
 
+  /** Loses every turn that is being answered, as a restart of the service would: the message stays, and its answer never comes. */
+  loseTurns(): void {
+    this.turnEpoch += 1
+    for (const conversation of this.conversations.values()) conversation.answering = false
+  }
+
+  /** Sends a turn's answer to the other connections of its conversation that were told it was on its way. */
+  passOn(conversation: MockConversation, origin: Lb02Connection, answer: object): void {
+    for (const connection of this.#connections) {
+      if (connection !== origin && connection.conversation === conversation) connection.receiveAnswer(answer)
+    }
+  }
+
   /** Forgets every conversation, span and connection, and lays the calendar out afresh. */
   reset(): void {
     this.dropAll(1001)
@@ -276,6 +306,8 @@ export class Lb02Connection {
   #idleTimer: ReturnType<typeof setTimeout> | undefined
   // Messages are taken one at a time, in the order they came.
   #queue: Promise<void> = Promise.resolve()
+  // Whether the connection was told, in `ready`, that the answer to the last message is on its way.
+  #waiting = false
 
   /** Waits for the hello, which has to come within the hub's timeout. */
   constructor(hub: Lb02Hub, transport: Transport) {
@@ -375,7 +407,16 @@ export class Lb02Connection {
     this.#helloTimer = undefined
     this.#conversation = conversation
     this.#armIdle()
-    this.#tell({ type: 'ready', conversation: conversation.id, resumed: resume !== null, transcript: this.#transcript(conversation), ...this.#hub.stateOf(conversation) })
+    // A turn that outlived the connection that sent its message is still being answered; this one is sent the answer.
+    this.#waiting = resume !== null && conversation.answering
+    this.#tell({ type: 'ready', conversation: conversation.id, resumed: resume !== null, transcript: this.#transcript(conversation), pending: this.#waiting, ...this.#hub.stateOf(conversation) })
+  }
+
+  /** Takes the answer to a message another connection sent, if this one was told it was on its way. */
+  receiveAnswer(answer: object): void {
+    if (!this.#waiting) return
+    this.#waiting = false
+    this.#tell(answer)
   }
 
   /** The transcript as the page is sent it. */
@@ -386,17 +427,23 @@ export class Lb02Connection {
   /** Answers one message: `working`, a pause, and the `reply`, with the calendar told about whatever the turn changed. */
   async #hear(text: string): Promise<void> {
     const conversation = this.#conversation
-    if (!conversation || this.#closed) return
-    // The message is kept and counted at once, as the service does; a connection that ends before the answer leaves it unanswered.
+    if (!conversation) return
+    // The message is kept and counted at once, as the service does. The turn ends whether or not this connection is
+    // still there: its answer is kept, and a connection that picked the conversation up meanwhile is sent it.
     const wasFirst = this.#hub.receive(conversation, text)
     this.#tell({ type: 'working' })
+    const epoch = this.#hub.turnEpoch
+    conversation.answering = true
     if (this.#hub.options.thinkMs > 0) await new Promise<void>(resolve => setTimeout(resolve, this.#hub.options.thinkMs))
-    if (this.#closed) return
+    if (epoch !== this.#hub.turnEpoch) return
     const { output } = this.#hub.respond(conversation, text, wasFirst)
+    conversation.answering = false
     // The calendar is told once the change has been committed, which is before the answer goes out.
     this.#hub.announce(output.changes)
-    this.#tell({ type: 'reply', text: output.text, receipt: output.receipt ?? null, tools: output.tools, model_calls: conversation.modelCalls, ...this.#hub.stateOf(conversation) })
-    this.#armIdle()
+    const reply = { type: 'reply', text: output.text, receipt: output.receipt ?? null, tools: output.tools, model_calls: conversation.modelCalls, ...this.#hub.stateOf(conversation) }
+    this.#tell(reply)
+    this.#hub.passOn(conversation, this, reply)
+    if (!this.#closed) this.#armIdle()
   }
 
   /** Tells this connection about slots that changed, from its own conversation's point of view: the slot it holds or has is `mine`. */
