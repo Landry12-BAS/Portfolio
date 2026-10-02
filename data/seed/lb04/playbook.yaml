@@ -1,0 +1,438 @@
+# Basalt & Bean's contract playbook: what LB-04 Contract Radar reads a contract against.
+#
+# It is data, kept outside every prompt. The owner edits it here; the service reads it with
+# a strict reader (services/node-systems/src/modules/lb04/playbook), which refuses a field it
+# doesn't know, and builds the model's prompts from it by rule id. A rule that changes
+# meaning gets a new id; the golden set (evals/lb04/golden.yaml) names rules by id, and
+# `just check` fails when it names one that doesn't exist. The company and every contract
+# it is read against are fictional.
+#
+# Two kinds of rule:
+#   risk      a passage that is in the contract and goes against the playbook. The report quotes it.
+#   required  a clause the playbook expects. `detect.phrases` are searched for in the whole text
+#             (spaces, line breaks, hyphens, capitals and accents don't matter): if none of them is
+#             there, the clause is missing, and the report says so without a quote. A `required`
+#             rule's `suppressed_by` lists risk rules that already report the gap, so the report
+#             does not say the same thing twice.
+#
+# `fallback` is the wording a redline proposes: for a risk rule, a replacement for the passage;
+# for a required rule, a new clause. The model adapts it to the contract's own words, and the
+# redline shows the difference as words added and removed.
+version: 1
+perspective: >-
+  Basalt & Bean Coffee Co. is the supplier. It roasts coffee and sells it wholesale to cafes,
+  hotels and shops, under the law of the Czech Republic. A contract is read for what it asks
+  of the supplier.
+topics:
+  - id: liability
+    title: Liability
+    summary: How much the supplier can be made to pay when something goes wrong.
+    rules:
+      - id: liability-uncapped
+        kind: risk
+        title: Liability is not capped
+        severity: critical
+        acceptable: >-
+          Each party's total liability under the agreement is capped at the price paid or payable
+          for the products in the twelve months before the claim.
+        red_flag: >-
+          The supplier's liability is unlimited, or capped at an amount it cannot insure, or the
+          cap protects the customer only.
+        summary: >-
+          Nothing limits what the supplier could be made to pay, so one bad batch could cost more
+          than the whole contract earns.
+        fallback: >-
+          The Supplier's total aggregate liability to the Customer under or in connection with this
+          Agreement, whether in contract, tort (including negligence) or otherwise, shall not exceed
+          the total price paid or payable for the Products supplied under this Agreement in the
+          twelve (12) months before the event giving rise to the claim.
+      - id: liability-consequential
+        kind: risk
+        title: Indirect loss is not excluded
+        severity: medium
+        acceptable: >-
+          Neither party is liable for loss of profit, loss of business or any indirect or
+          consequential loss.
+        red_flag: >-
+          The supplier is made liable for loss of profit, loss of business or indirect and
+          consequential loss.
+        summary: >-
+          The supplier would answer for the customer's lost sales and knock-on losses, which are
+          far larger than the price of the coffee.
+        fallback: >-
+          Neither party shall be liable to the other for any loss of profit, loss of business, loss
+          of goodwill or any indirect or consequential loss arising under or in connection with this
+          Agreement.
+      - id: liability-cap-present
+        kind: required
+        title: No limit on liability
+        severity: high
+        acceptable: The agreement has a clause that limits each party's liability to a stated amount.
+        red_flag: The agreement has no clause that limits liability at all.
+        summary: >-
+          The contract never limits liability, so the supplier is exposed to the full loss of any
+          claim.
+        fallback: >-
+          Each party's total aggregate liability to the other under or in connection with this
+          Agreement, whether in contract, tort (including negligence) or otherwise, shall not exceed
+          the total price paid or payable for the Products supplied under this Agreement in the
+          twelve (12) months before the event giving rise to the claim.
+        detect:
+          phrases:
+            - limitation of liability
+            - limit of liability
+            - limits its liability
+            - limit its liability
+            - liability cap
+            - cap on liability
+            - aggregate liability
+            - total liability
+            - liability shall not exceed
+            - liability will not exceed
+            - liability is limited
+            - liability is capped
+            - liability shall be limited
+        suppressed_by: [liability-uncapped]
+
+  - id: indemnity
+    title: Indemnity
+    summary: Who pays for claims that third parties bring.
+    rules:
+      - id: indemnity-one-way
+        kind: risk
+        title: One-way, unlimited indemnity
+        severity: high
+        acceptable: >-
+          Each party indemnifies the other for third-party claims that come from its own breach, its
+          own negligence or infringement by its own materials, within the liability cap.
+        red_flag: >-
+          Only the supplier indemnifies, for any and all claims, losses or costs, with no cap and no
+          exception for the customer's own fault.
+        summary: >-
+          The supplier would have to cover every claim against the customer, even ones the customer
+          caused.
+        fallback: >-
+          Each party shall indemnify the other against third-party claims to the extent they arise
+          from its own breach of this Agreement, its own negligence or the infringement of
+          intellectual property rights by its own materials, subject to the limit of liability in
+          this Agreement.
+      - id: indemnity-present
+        kind: required
+        title: No indemnity clause
+        severity: medium
+        acceptable: >-
+          The agreement says who covers claims by third parties, for example a mutual indemnity for
+          each party's own fault.
+        red_flag: The agreement has no indemnity at all.
+        summary: >-
+          Nothing says who pays when a customer's own customer or a regulator brings a claim, so each
+          side argues it out afterwards.
+        fallback: >-
+          Each party shall indemnify the other against third-party claims to the extent they arise
+          from its own breach of this Agreement, its own negligence or the infringement of
+          intellectual property rights by its own materials, subject to the limit of liability in
+          this Agreement.
+        detect:
+          phrases:
+            - indemnify
+            - indemnification
+            - indemnity
+            - indemnities
+            - hold harmless
+            - holds harmless
+
+  - id: termination
+    title: Termination
+    summary: How either side can end the agreement.
+    rules:
+      - id: termination-one-sided
+        kind: risk
+        title: Only the customer can leave
+        severity: high
+        acceptable: >-
+          Either party may end the agreement for convenience on at least ninety days' notice, and
+          the supplier may stop supplying a customer who does not pay.
+        red_flag: >-
+          Only the customer may terminate for convenience, or may do so at once, while the supplier
+          may end the agreement for breach only.
+        summary: >-
+          The customer can walk away whenever it likes while the supplier stays bound.
+        fallback: >-
+          Either party may terminate this Agreement for convenience by giving the other not less than
+          ninety (90) days' written notice.
+      - id: termination-no-cure
+        kind: risk
+        title: Termination for breach with no time to fix it
+        severity: medium
+        acceptable: >-
+          A party may terminate for a material breach that is not put right within thirty days of a
+          written notice.
+        red_flag: >-
+          The customer may terminate at once for any breach, however small, with no time to put it
+          right.
+        summary: >-
+          A late delivery or a small defect would let the customer end the contract at once.
+        fallback: >-
+          Either party may terminate this Agreement by written notice if the other party commits a
+          material breach and fails to remedy it within thirty (30) days of a written notice
+          requiring it to do so.
+      - id: termination-right-present
+        kind: required
+        title: No right to terminate
+        severity: high
+        acceptable: The agreement says when and how each party may end it.
+        red_flag: The agreement has no termination clause.
+        summary: >-
+          The contract never says how it can be ended, so the supplier may be stuck with it until the
+          term runs out.
+        fallback: >-
+          Either party may terminate this Agreement by written notice if the other party commits a
+          material breach and fails to remedy it within thirty (30) days of a written notice
+          requiring it to do so, or if the other party becomes insolvent.
+        detect:
+          phrases:
+            - may terminate this agreement
+            - right to terminate
+            - terminate this agreement by
+            - terminate this agreement if
+            - terminate this agreement upon
+            - terminate this agreement with
+            - terminate the agreement
+
+  - id: renewal
+    title: Renewal
+    summary: What happens at the end of the term.
+    rules:
+      - id: renewal-long-notice
+        kind: risk
+        title: Automatic renewal with a long notice period
+        severity: high
+        acceptable: >-
+          The agreement renews only by written agreement, or renews automatically with a notice
+          period of no more than sixty days.
+        red_flag: >-
+          The agreement renews automatically unless notice is given more than ninety days before the
+          end of the term.
+        summary: >-
+          Miss a notice date months before the end and the supplier is bound for another full term.
+        fallback: >-
+          This Agreement shall renew automatically for successive periods of twelve (12) months each
+          unless either party gives the other written notice of non-renewal at least sixty (60) days
+          before the end of the then-current term.
+      - id: renewal-evergreen
+        kind: risk
+        title: Renews for ever
+        severity: medium
+        acceptable: A renewing agreement can always be ended by notice at the end of a term.
+        red_flag: The agreement renews with no end date and no right to stop it.
+        summary: >-
+          There is no way to stop the contract from renewing, term after term.
+        fallback: >-
+          This Agreement shall continue after the initial term until either party ends it by giving
+          the other not less than ninety (90) days' written notice.
+
+  - id: payment
+    title: Payment
+    summary: When and how the supplier is paid.
+    rules:
+      - id: payment-slow
+        kind: risk
+        title: Payment more than 45 days after the invoice
+        severity: medium
+        acceptable: >-
+          Invoices are payable within thirty days, and no later than forty-five, with interest on
+          late payment.
+        red_flag: Invoices are payable sixty days or more after the invoice date.
+        summary: >-
+          The supplier would finance the customer's coffee for three months or more, which strains
+          its cash.
+        fallback: >-
+          The Customer shall pay each undisputed invoice within thirty (30) days of the date of the
+          invoice. Interest shall accrue on overdue amounts at the statutory rate.
+      - id: payment-set-off
+        kind: risk
+        title: Customer may withhold or set off
+        severity: medium
+        acceptable: >-
+          The customer pays undisputed amounts in full and in time, and disputes the rest in
+          writing.
+        red_flag: >-
+          The customer may withhold payment or set off any claim against the price without notice.
+        summary: >-
+          The customer could keep part of the price back for any reason, without the supplier
+          agreeing that the claim is valid.
+        fallback: >-
+          The Customer shall pay all undisputed amounts in full without set-off, deduction or
+          withholding, and shall notify the Supplier in writing of any disputed amount within
+          fourteen (14) days of the invoice.
+      - id: payment-terms-present
+        kind: required
+        title: No payment terms
+        severity: medium
+        acceptable: The agreement says when each invoice is due.
+        red_flag: The agreement does not say when the price is paid.
+        summary: >-
+          The contract does not say when the supplier gets paid, so the due date is open to dispute.
+        fallback: >-
+          The Customer shall pay each undisputed invoice within thirty (30) days of the date of the
+          invoice.
+        detect:
+          phrases:
+            - days of the date of the invoice
+            - days of the invoice date
+            - days of receipt of the invoice
+            - days after the date of the invoice
+            - days from the date of the invoice
+            - days of invoice
+            - payment terms
+            - payable within
+            - shall pay each invoice
+            - shall pay the price
+            - due and payable
+
+  - id: ip
+    title: Intellectual property
+    summary: Who owns the blends, roast profiles, brands and designs.
+    rules:
+      - id: ip-assignment
+        kind: risk
+        title: The supplier's recipes and designs are handed over
+        severity: high
+        acceptable: >-
+          Each party keeps its own intellectual property. The customer may use the supplier's brand
+          to resell the products, for the term only.
+        red_flag: >-
+          Rights in the supplier's blends, roast profiles, recipes or packaging designs are assigned
+          to the customer or vest in it.
+        summary: >-
+          The customer would own the supplier's blends and roast profiles, which are what the
+          business is built on.
+        fallback: >-
+          Each party retains all intellectual property rights in its own materials, including, for
+          the Supplier, its blend formulations, roast profiles and packaging designs. The Supplier
+          grants the Customer a non-exclusive licence to use the Supplier's trade marks to resell the
+          Products during the term of this Agreement.
+      - id: ip-licence-broad
+        kind: risk
+        title: A perpetual licence to the supplier's work
+        severity: medium
+        acceptable: >-
+          Licences to the supplier's brand and materials are limited to reselling the products and
+          end with the agreement.
+        red_flag: >-
+          The customer gets a perpetual, irrevocable or sub-licensable licence to the supplier's
+          intellectual property.
+        summary: >-
+          The customer could keep using and passing on the supplier's materials after the contract
+          ends.
+        fallback: >-
+          The Supplier grants the Customer a non-exclusive, non-transferable licence to use the
+          Supplier's trade marks solely to resell the Products during the term of this Agreement.
+
+  - id: confidentiality
+    title: Confidentiality
+    summary: What each side must keep secret.
+    rules:
+      - id: confidentiality-one-way
+        kind: risk
+        title: Only the supplier must keep secrets
+        severity: medium
+        acceptable: Both parties keep each other's confidential information secret.
+        red_flag: Only the supplier is bound, so the customer may share the supplier's information.
+        summary: >-
+          The supplier's prices and blends would not be protected, while its customer's information
+          would be.
+        fallback: >-
+          Each party shall keep the other party's Confidential Information confidential, use it only
+          to perform this Agreement and not disclose it to any third party without the other party's
+          written consent.
+      - id: confidentiality-no-end
+        kind: risk
+        title: Confidentiality with no end
+        severity: low
+        acceptable: Confidentiality lasts for the term and three to five years afterwards.
+        red_flag: The duty of confidence has no end date.
+        summary: >-
+          The duty to keep secrets never ends, which is hard to administer and to insure.
+        fallback: >-
+          The obligations in this clause shall continue during the term of this Agreement and for
+          three (3) years after it ends.
+      - id: confidentiality-present
+        kind: required
+        title: No confidentiality clause
+        severity: medium
+        acceptable: The agreement protects each party's confidential information.
+        red_flag: The agreement has no confidentiality clause.
+        summary: >-
+          Nothing in the contract stops the customer from sharing the supplier's prices or blends.
+        fallback: >-
+          Each party shall keep the other party's Confidential Information confidential, use it only
+          to perform this Agreement and not disclose it to any third party without the other party's
+          written consent, during the term of this Agreement and for three (3) years after it ends.
+        detect:
+          phrases:
+            - confidential information
+            - confidentiality
+            - keep confidential
+            - shall not disclose
+
+  - id: governing_law
+    title: Governing law
+    summary: Which country's law and courts decide a dispute.
+    rules:
+      - id: law-foreign
+        kind: risk
+        title: Foreign law or courts
+        severity: medium
+        acceptable: >-
+          The agreement is governed by the law of the Czech Republic, and its courts decide disputes.
+        red_flag: >-
+          The agreement is governed by another country's law, or disputes go to courts or an
+          arbitration abroad.
+        summary: >-
+          A dispute would be fought under foreign law in a foreign court, at a cost that can
+          outweigh the claim.
+        fallback: >-
+          This Agreement and any dispute arising out of it shall be governed by the law of the Czech
+          Republic, and the courts of the Czech Republic shall have exclusive jurisdiction.
+      - id: law-present
+        kind: required
+        title: No governing law
+        severity: medium
+        acceptable: The agreement names the law that governs it and the courts that decide disputes.
+        red_flag: The agreement does not say which law governs it.
+        summary: >-
+          The contract does not say which country's law applies, which makes any dispute slower and
+          dearer.
+        fallback: >-
+          This Agreement and any dispute arising out of it shall be governed by the law of the Czech
+          Republic, and the courts of the Czech Republic shall have exclusive jurisdiction.
+        detect:
+          phrases:
+            - governed by the law
+            - governed by the laws
+            - governing law
+            - laws of the czech republic
+            - subject to the law
+
+  - id: exclusivity
+    title: Exclusivity
+    summary: Whether the supplier is tied to one customer.
+    rules:
+      - id: exclusivity-supplier-bound
+        kind: risk
+        title: The supplier is tied to this customer
+        severity: high
+        acceptable: >-
+          No exclusivity, or a limited exclusivity for a named territory that the customer earns with
+          a minimum purchase commitment.
+        red_flag: >-
+          The supplier may not sell to others in a territory or channel, or must give the customer
+          its best price, with no minimum purchase by the customer.
+        summary: >-
+          The supplier could not sell to anyone else in the territory, while the customer need not
+          buy a minimum.
+        fallback: >-
+          Nothing in this Agreement prevents the Supplier from supplying other customers. Any
+          exclusivity shall apply only to a territory named in writing and only while the Customer
+          meets the minimum annual purchase commitment agreed for it.
