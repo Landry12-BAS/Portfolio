@@ -5,6 +5,8 @@
 //   public/lb02-icon.svg            the app icon, a copy of the brand file (`brand/lb-icon-light.svg`)
 //   public/lb02.en.webmanifest      the web app manifest of the installable board, one for each language,
 //   public/lb02.cs.webmanifest      with its words taken from the board's locale modules
+//   public/lb02-offline.en.html     the page the app's service worker shows when the board's page is not
+//   public/lb02-offline.cs.html     on the device and there is no connection, with its words from the same modules
 //
 //   node scripts/generate-lb02.ts            write the files (`pnpm --filter @lb/web samples`)
 //   node scripts/generate-lb02.ts --check    fail when one is stale (`pnpm check`, which CI runs)
@@ -173,9 +175,52 @@ function renderManifest(language: 'en' | 'cs'): Generated {
   return { file: here(`../public/lb02.${language}.webmanifest`), text: `${JSON.stringify(manifest, null, 2)}\n` }
 }
 
+/** Writes text so a browser reads it as text: the five characters that can start markup or end an attribute are escaped. */
+function escapeHtml(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll('\'', '&#39;')
+}
+
+/**
+ * Writes the page of one language that the service worker shows when the board's own page is not kept on
+ * the device and there is no connection. It is a file of its own, outside the app, so it cannot use the
+ * design tokens or the app's fonts: it takes the colours of the visitor's system (light or dark) and its
+ * own font, and holds two sentences and a link back to the board.
+ */
+function renderOfflinePage(language: 'en' | 'cs'): Generated {
+  const messages = language === 'cs' ? cs : en
+  const typeset = (text: string): string => escapeHtml(language === 'cs' ? vlna(text) : text)
+  const text = [
+    '<!doctype html>',
+    `<html lang="${language}">`,
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<meta name="color-scheme" content="light dark">',
+    `<title>${typeset(messages.app.offlineTitle)}</title>`,
+    '<style>',
+    ':root { color-scheme: light dark; }',
+    'body { margin: 0; padding: 24px 16px; font: 16px/1.5 system-ui, sans-serif; color: CanvasText; background: Canvas; }',
+    'main { max-width: 34rem; margin: 12vh auto 0; }',
+    'h1 { margin: 0 0 12px; font-size: 1.5rem; }',
+    'a { color: LinkText; }',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<main>',
+    `<h1>${typeset(messages.app.offlineTitle)}</h1>`,
+    `<p>${typeset(messages.app.offlineText)}</p>`,
+    `<p><a href="${BOARD_PATHS[language]}/board">${typeset(messages.ended.retry)}</a></p>`,
+    '</main>',
+    '</body>',
+    '</html>',
+    '',
+  ].join('\n')
+  return { file: here(`../public/lb02-offline.${language}.html`), text }
+}
+
 /** Makes everything the script is responsible for. */
 function renderAll(): Generated[] {
-  return [renderSamples(readSamples()), renderIcon(), renderManifest('en'), renderManifest('cs')]
+  return [renderSamples(readSamples()), renderIcon(), renderManifest('en'), renderManifest('cs'), renderOfflinePage('en'), renderOfflinePage('cs')]
 }
 
 /** Reads a file as it is now, or an empty text when it does not exist. */
@@ -189,7 +234,7 @@ if (process.argv.includes('--check')) {
   const stale = files.filter(item => current(item.file) !== item.text)
   for (const item of stale) console.error(`${item.file.replace(here('../'), 'apps/web/')} is out of date. Run \`pnpm --filter @lb/web samples\` and commit the result.`)
   if (stale.length > 0) process.exit(1)
-  console.log('LB-02\'s samples, icon and manifests are up to date.')
+  console.log('LB-02\'s samples, icon, manifests and offline pages are up to date.')
 }
 else {
   for (const item of files) {

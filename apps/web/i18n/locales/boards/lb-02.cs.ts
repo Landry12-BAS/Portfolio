@@ -36,6 +36,7 @@ const lb02 = {
     resumeTitle: 'Vaše poslední konverzace v této kartě tu pořád je',
     resumeText: 'Na serveru zůstává 24 hodin. Můžete v ní pokračovat tam, kde jste skončili.',
     resume: 'Pokračovat v ní',
+    forget: 'Zapomenout na ni',
   },
   script: {
     title: 'Scénář ukázky',
@@ -101,8 +102,6 @@ const lb02 = {
       refused: 'odmítnut pravidly rezervace',
       failed: 'proběhl, ale nezdařil se',
     },
-    calls: 'Dosavadní volání modelu: {count}',
-    unsent: 'Vaše poslední zpráva možná nebyla odeslána. Je zase v poli.',
   },
   composer: {
     label: 'Vaše zpráva',
@@ -114,6 +113,8 @@ const lb02 = {
     finished: 'Tato konverzace skončila. Pro další rezervaci zahajte novou.',
     waiting: 'Čekám na asistenta…',
     offline: 'Jste offline, takže zprávy nelze odeslat.',
+    connecting: 'Připojuji se k asistentovi…',
+    ended: 'Spojení je zavřené. Pokračujte nebo začněte znovu tlačítky výše.',
     lastMessage: 'Toto je vaše poslední zpráva: další předá konverzaci člověku.',
   },
   messages: {
@@ -149,7 +150,7 @@ const lb02 = {
     too_many_conversations: 'Dnes jste zahájili tolik konverzací, kolik smíte.',
     unavailable: 'Asistent teď nemůže odpovědět. Zkuste to za chvíli znovu.',
     interrupted: 'Spojení se přerušilo, zatímco asistent odpovídal. Pokud nahoře vaše poslední zpráva nemá odpověď, pošlete ji znovu.',
-    not_open: 'Zpráva nebyla odeslána, protože spojení není otevřené.',
+    not_open: 'Zpráva nebyla odeslána, protože spojení není otevřené. Je zase v poli.',
   },
   hold: {
     title: 'Zablokováno pro vás',
@@ -163,8 +164,6 @@ const lb02 = {
     title: 'Rezervováno',
     code: 'Kód rezervace',
     party: 'Počet osob: {count}',
-    when: 'Kdy',
-    to: 'Potvrzení pro',
   },
   email: {
     title: 'Potvrzovací e-mail',
@@ -216,7 +215,6 @@ const lb02 = {
     lapsed: 'Blokace vypršela, takže je zase volný',
     counts: 'volných {free}, zablokovaných {held}, rezervovaných {booked}',
     dayMarker: 'Má váš termín',
-    slot: '{offering}, {time}: {status}',
     loading: 'Načítám kalendář…',
     failed: 'Kalendář se nepodařilo načíst.',
     reload: 'Načíst ho znovu',
@@ -252,7 +250,6 @@ const lb02 = {
       done: 'hotovo',
       current: 'teď',
       waiting: 'čeká',
-      skipped: 'přeskočeno',
     },
   },
   second: {
@@ -272,9 +269,10 @@ const lb02 = {
     hint: 'Prohlížeč nenabídl instalaci sám. V jeho nabídce hledejte Nainstalovat aplikaci nebo Přidat na plochu.',
     installed: 'Nainstalováno. Otevřete ji z plochy nebo ze seznamu aplikací.',
     offlineTitle: 'Jste offline',
-    offlineText: 'Deska se otevřela z kopie v tomto zařízení. Asistent, kalendář a přehrání potřebují připojení a nic z toho se tu neukládá.',
+    offlineText: 'Asistent, kalendář a zaznamenané ukázky potřebují připojení a nic z toho se v tomto zařízení neukládá. Stránka se otevře i bez připojení.',
     cachedTitle: 'Dostupné offline',
     cachedText: 'Stránka je uložená v tomto zařízení a otevře se i bez připojení.',
+    preparing: 'Stránka se ukládá do tohoto zařízení. Načtěte ji jednou znovu a otevře se i offline.',
     unsupported: 'Tento prohlížeč neumí desku nainstalovat jako aplikaci.',
   },
   offeringNames: {

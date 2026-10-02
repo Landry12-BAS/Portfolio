@@ -37,6 +37,7 @@ const lb02 = {
     resumeTitle: 'Your last conversation in this tab is still there',
     resumeText: 'It stays on the server for 24 hours. You can pick it up where you left it.',
     resume: 'Continue it',
+    forget: 'Forget it',
   },
   script: {
     title: 'Sample script',
@@ -102,8 +103,6 @@ const lb02 = {
       refused: 'refused by the booking rules',
       failed: 'ran, but did not succeed',
     },
-    calls: 'Model calls so far: {count}',
-    unsent: 'Your last message may not have been sent. It is in the box again.',
   },
   composer: {
     label: 'Your message',
@@ -115,6 +114,8 @@ const lb02 = {
     finished: 'This conversation is finished. Start a new one to book something else.',
     waiting: 'Waiting for the concierge…',
     offline: 'You are offline, so messages cannot be sent.',
+    connecting: 'Connecting to the concierge…',
+    ended: 'The connection is closed. Use the buttons above to continue or start again.',
     lastMessage: 'This is your last message: the next one hands the conversation to a person.',
   },
   messages: {
@@ -150,7 +151,7 @@ const lb02 = {
     too_many_conversations: 'You have started as many conversations today as you may.',
     unavailable: 'The concierge cannot answer right now. Try again in a moment.',
     interrupted: 'The connection dropped while the concierge was answering. If your last message has no answer above, send it again.',
-    not_open: 'The message was not sent because the connection is not open.',
+    not_open: 'The message was not sent because the connection is not open. It is in the box again.',
   },
   hold: {
     title: 'Held for you',
@@ -164,8 +165,6 @@ const lb02 = {
     title: 'Booked',
     code: 'Booking code',
     party: 'Party of {count}',
-    when: 'When',
-    to: 'Confirmation for',
   },
   email: {
     title: 'Confirmation email',
@@ -217,7 +216,6 @@ const lb02 = {
     lapsed: 'The hold ran out, so it is free again',
     counts: '{free} free, {held} held, {booked} booked',
     dayMarker: 'Has a slot of yours',
-    slot: '{offering} at {time}: {status}',
     loading: 'Loading the calendar…',
     failed: 'The calendar could not be loaded.',
     reload: 'Load it again',
@@ -253,7 +251,6 @@ const lb02 = {
       done: 'done',
       current: 'now',
       waiting: 'waiting',
-      skipped: 'skipped',
     },
   },
   second: {
@@ -273,9 +270,10 @@ const lb02 = {
     hint: 'Your browser did not offer to install it by itself. Look for Install app or Add to Home Screen in its menu.',
     installed: 'Installed. Open it from your home screen or your list of apps.',
     offlineTitle: 'You are offline',
-    offlineText: 'The board opened from a copy on this device. The concierge, the calendar and the replays need a connection, and none of them is saved here.',
+    offlineText: 'The concierge, the calendar and the recorded samples need a connection, and none of them is saved on this device. The page itself opens without one.',
     cachedTitle: 'Available offline',
     cachedText: 'The page is saved on this device and opens without a connection.',
+    preparing: 'The page is being saved on this device. Reload it once to finish, and it will open offline.',
     unsupported: 'This browser cannot install the board as an app.',
   },
   offeringNames: {
