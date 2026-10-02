@@ -357,7 +357,16 @@ Known gaps, stated rather than hidden:
 - Calendar events are best effort: if Redis is down, a committed booking stays committed and
   the next snapshot is right, but a tab misses the live change. A client should load the
   snapshot again after it reconnects.
-- Not run live: the golden eval, the measured calls per booking, and recorded samples.
+- A booked conversation is still open (the visitor may write again), so its trace has no root
+  span and does not say it is finished; only a conversation that is handed to a person does.
+- Option numbers are never reused, so a conversation can be shown 128 different slots in all.
+  The 14-day calendar has 112, so no conversation can reach the limit; past it a new slot
+  would simply not be offered.
+- Not run live: the golden eval, the measured calls per booking, and recorded samples. The
+  prompt changed for stable option numbers (rule 5 asks the model to offer options with their
+  numbers and never hold another in place of one that went, and the State lists the options
+  that have gone since its last message); the scripted evals pass, but no live run has
+  measured how a model follows it, so `just eval-lb02` must be run before it is trusted.
 
 ## Operating notes for LB-02
 
@@ -367,7 +376,16 @@ Known gaps, stated rather than hidden:
   and its own schema, `lb02`, and that is all (`LB02_DATABASE_URL`, optional).
 - The channel layer writes under `lb:channels:*` in Redis, and Celery under its own prefix;
   the Django service's Redis role needs both, and the commands the layer uses to send to a
-  group, which include `EVALSHA`.
+  group, which include `EVALSHA`. A conversation's group (`lb02.conversation.<id>`) is under
+  the same prefix.
+- The channel layer's Redis sockets time out after 15 seconds (`config/channel_layer.py`),
+  three times the 5 seconds channels-redis blocks on Redis for a message. They must stay
+  longer than that block: redis-py's own default is 5 seconds, which made an idle WebSocket
+  fail with a timeout and close (1006) about every 5 seconds. A test holds a socket idle for
+  a block and a second on a real Redis.
+- A connection the network cut can stay open on the server for the length of uvicorn's ping
+  timeout (20 seconds after a 20 second ping, by default), and is counted against its visitor's
+  four until it closes, which is why the cap leaves one spare.
 - Run uvicorn with `--ws-max-size 8192` (the `just django` recipe does): the server library
   reads a whole frame before the consumer can refuse it.
 - The site opens the WebSocket on the API domain, as a Vercel function can't hold one, and

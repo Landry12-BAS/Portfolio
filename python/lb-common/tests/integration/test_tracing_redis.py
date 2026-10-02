@@ -45,7 +45,7 @@ def test_a_root_written_when_a_run_ends_is_last_in_the_stream_and_has_no_parent(
     spans = read_spans(f"{prefix}run:run-redis-0001:spans")
     assert [span.name for span in spans] == ["visitor message", "booking conversation"]
     assert spans[0].parent_id == spans[1].span_id == root_span_id(RUN.run_id)
-    [*_, (_, fields)] = redis.xrange(f"{prefix}run:run-redis-0001:spans")
+    [*_, (_, fields)] = redis.xrange(f"{prefix}run:run-redis-0001:spans") or []
     assert fields is not None
     assert '"kind":"system.run"' in fields["span"]
     assert "parentId" not in fields["span"]
