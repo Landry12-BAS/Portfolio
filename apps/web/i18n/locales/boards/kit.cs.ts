@@ -73,6 +73,10 @@ const kit = {
       title: 'Nejdřív rychlé ověření',
       text: 'Váš vlastní text se pošle modelu až po ověření, že jste člověk.',
     },
+    cookie: {
+      title: 'Prohlížeč si ověření nezapamatoval',
+      text: 'Web si pamatuje, že jste ověření prošli, v jediném malém cookie, které nic jiného neobsahuje. Povolte pro tento web cookies a zkuste to znovu.',
+    },
     quota: {
       title: 'Dnešní kvóta je vyčerpaná',
       text: 'Každý návštěvník má denní kvótu, aby dema zůstala zdarma pro všechny.',

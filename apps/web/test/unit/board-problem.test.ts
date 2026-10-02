@@ -9,6 +9,7 @@ describe('kindOfStatus', () => {
     [0, 'network', 'network'],
     [403, 'verification_required', 'verification'],
     [403, 'verification_failed', 'verification'],
+    [403, 'cookie_not_kept', 'cookie'],
     [429, 'daily_limit', 'quota'],
     [503, 'unavailable', 'unavailable'],
     [504, 'upstream_timeout', 'timeout'],

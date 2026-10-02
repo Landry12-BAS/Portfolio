@@ -191,6 +191,27 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
 journeys, which `nuxt typecheck` does not read. Where a Chromium is preinstalled, point Playwright at it
 with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`.
 
+### Against the real services
+
+The mock plays what the OpenAPI documents allow; the real service does what its code does, and the two
+differ. LB-01's API names a ticket's run only when the pipeline has finished, which its document allows
+and the first mock did not do, so every live run failed on the real service until a run against it found
+that. Before a board is called done, run it once against the real service with fake models. It is not a
+command yet, because it needs a Postgres with pgvector and a Redis:
+
+1. A scratch database, then `manage.py migrate --database lb01` and `seed_lb01`, with the variables in
+   `services/django-systems/.env.example` and `LB_WEB_TOKEN_KEY` set to the public half of a throwaway
+   site key.
+2. The gateway (`node src/main.ts` in `services/gateway`) on the same Redis and key prefix, with the
+   `web` service key's public half in `LB_SERVICE_KEYS`. It will not start without a provider
+   configured; a placeholder key satisfies that, and no model is called, since nothing asks for one.
+3. Django under uvicorn, and a worker that does what `lb01.tasks.run_ticket` does (`claim_ticket`, then
+   `TicketPipeline(...).run`) with `tests/support.py`'s `FakeGateway` and `FakeChat` for the models and a
+   `RedisSpanWriter` for the spans, so the real tracer writes real spans.
+4. The test build of the site (`pnpm --filter @lb/web build:e2e`) with `NUXT_LB_API_URL` and
+   `NUXT_LB_GATEWAY_URL` pointing at them, and a browser. Watch what the board shows every second, not
+   only at the end, and file the day's twenty-one tickets.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -200,5 +221,8 @@ with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`.
   but reported by the browser as a Trusted Types violation, on the first schema of every page.
 - **Pages set no cookie**; the session cookie exists only after a call to `/api/*`, which a board makes
   when it opens.
-- **Not run against the real thing:** Cloudflare's Turnstile widget, Vercel, a real Django with a model.
-  What that leaves open is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 12.
+- **What was run against the real thing, and what was not.** The board ran against the real Django
+  API, the real gateway's trace route and the real tracer's spans, with the Django tests' fake models
+  in place of the models; the production build ran with the real Turnstile widget and Cloudflare's
+  published test keys. Not run: a real model, a real Turnstile site key and challenge, Vercel. What
+  that leaves open is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 12.

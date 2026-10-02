@@ -100,7 +100,7 @@ describe('BoardLimitsPanel', () => {
 })
 
 describe('BoardNotice', () => {
-  const kinds = ['unavailable', 'verification', 'quota', 'rejected', 'notFound', 'conflict', 'upstream', 'timeout', 'network', 'unknown'] as const
+  const kinds = ['unavailable', 'verification', 'cookie', 'quota', 'rejected', 'notFound', 'conflict', 'upstream', 'timeout', 'network', 'unknown'] as const
 
   it.each(kinds)('has words of its own for a %s failure, in both languages', (kind) => {
     const english = mountWithSite(BoardNotice, { props: { kind } })

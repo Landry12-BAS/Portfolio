@@ -202,6 +202,21 @@ test.describe('when something fails', () => {
     await expect(page.getByTestId('ticket-status')).toHaveText('Waiting for approval', { timeout: 15_000 })
   })
 
+  test('tells a visitor whose browser does not keep the session cookie, after the check passed', async ({ page, problems }) => {
+    await page.route('**/api/lb01/tickets', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
+      return route.fulfill({ status: 403, json: { error: { code: 'verification_required', message: 'Run the check that proves you are a person before using a demo with your own text.' } } })
+    })
+    await openBoard(page)
+    await fileOwnTicket(page, 'Order BB-1040 arrived with a torn bag.')
+
+    const notice = page.getByTestId('notice')
+    await expect(notice).toHaveAttribute('data-kind', 'cookie')
+    await expect(notice).toContainText('Your browser did not keep the check')
+    await expect(notice).toContainText('Allow cookies for this site')
+    problems.errors.length = 0
+  })
+
   test('says the system behind the demo failed, and lets the visitor try again', async ({ page, problems }) => {
     let failures = 1
     await page.route('**/api/lb01/tickets', async (route) => {

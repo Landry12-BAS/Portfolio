@@ -9,6 +9,7 @@ import { platformErrorSchema } from '@lb/contracts'
 export type ProblemKind
   = | 'unavailable' // this deployment has no back end, or the back end is down
     | 'verification' // the visitor must pass the Turnstile check first
+    | 'cookie' // the check passed but the browser did not keep its result, so every call still asks for it
     | 'quota' // the day's limit is used up
     | 'rejected' // the back end refused what was sent: too long, empty, or not valid
     | 'notFound' // there is no such ticket, run or sample (or it has expired)
@@ -40,6 +41,7 @@ export class ApiProblem extends Error {
 /** Picks the kind of failure from the status and code of an answer. Status 0 means no answer came. */
 export function kindOfStatus(status: number, code: string): ProblemKind {
   if (status === 0) return 'network'
+  if (code === 'cookie_not_kept') return 'cookie'
   if (code === 'verification_required' || code === 'verification_failed') return 'verification'
   if (status === 429) return 'quota'
   if (status === 503) return 'unavailable'
@@ -69,6 +71,14 @@ export function unavailableProblem(): ApiProblem {
 /** Builds the problem for a visitor who did not pass the Turnstile check. */
 export function verificationProblem(): ApiProblem {
   return new ApiProblem(403, 'verification_failed', 'The check could not tell that you are a person. Try again.')
+}
+
+/**
+ * Builds the problem for a visitor whose check passed but whose next call still asked for it: the
+ * result of the check lives in the site's one session cookie, so the browser is not keeping that cookie.
+ */
+export function cookieProblem(): ApiProblem {
+  return new ApiProblem(403, 'cookie_not_kept', 'The browser did not keep the session cookie that holds the result of the check.')
 }
 
 /** Reads a failed answer's body as a platform error. A body of any other shape is just its status. */

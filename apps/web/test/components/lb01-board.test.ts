@@ -229,6 +229,18 @@ describe('LB-01\'s board: other deployments, readings and languages', () => {
     document.body.innerHTML = ''
   })
 
+  it('tells a visitor whose browser does not keep the session cookie, since passing the check again would change nothing', async () => {
+    const { site, wrapper } = await openBoard({ verified: true })
+    const refusal = { status: 403, body: { error: { code: 'verification_required', message: 'x' } } }
+    site.failNext('POST /api/lb01/tickets', refusal)
+    site.failNext('POST /api/lb01/tickets', refusal)
+    await fileOwnTicket(wrapper)
+    const notice = wrapper.get('[data-testid="notice"]')
+    expect(notice.attributes('data-kind')).toBe('cookie')
+    expect(notice.text()).toContain('Allow cookies for this site')
+    expect(wrapper.find('[data-testid="ticket-status"]').exists()).toBe(false)
+  })
+
   it('says the demo is not connected on a deployment with no back end, and still replays a recording', async () => {
     const { site, wrapper } = await openBoard({ available: false, recordings: [recordLb01Sample({ origin: 'live' })] })
     expect(wrapper.get('[data-testid="notice"]').attributes('data-kind')).toBe('unavailable')

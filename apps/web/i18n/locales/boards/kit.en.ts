@@ -73,6 +73,10 @@ const kit = {
       title: 'One quick check first',
       text: 'Your own text is only sent to a model after a check that you are a person.',
     },
+    cookie: {
+      title: 'Your browser did not keep the check',
+      text: 'The site remembers that you passed the check in one small cookie, which holds nothing else. Allow cookies for this site and try again.',
+    },
     quota: {
       title: 'Today\'s allowance is used up',
       text: 'Each visitor has a daily allowance, so the demos stay free for everyone.',

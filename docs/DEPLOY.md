@@ -636,14 +636,19 @@ config`, hadolint, shellcheck and actionlint.
   names something else, the first `images` job fails right after signing, with the
   identity in the error, and nothing is deployed.
 - **Vercel**, and the site's side of the keys. The site's server (session, Turnstile check,
-  proxy, trace route) and LB-01's board are run and tested here against the mock back end,
-  and the trace route against the real gateway and a real Redis (`apps/web`'s contract
-  test), in a real browser with the production policy; they were never deployed, never run
-  against Cloudflare's Turnstile (the widget is tested with a stand-in), and never run with a
-  model behind LB-01. So no **recording** exists: `just record-sample lb-01 torn-bag` needs
-  the live back end and records nothing until it has run there, and until it has the boards
-  say "No recording yet" and offer the live run. Not checked either: whether the Vercel plan
-  lets a function wait the 95 seconds the proxy allows LB-05 and LB-08.
+  proxy, trace route) and LB-01's board are run and tested here against the mock back end, in
+  a real browser with the production policy. The board was also run, in a real browser,
+  against the **real Django API, the real gateway's trace route and the real tracer's spans**,
+  with the Django tests' fake models standing in for the models (that run found that Django
+  names a ticket's run only when its pipeline has finished, which the board now handles). The
+  production build was run with the **real Turnstile widget** and Cloudflare's published
+  always-pass test keys: the loader, the frame, the token and the server's check with
+  Cloudflare worked under the policy. They were never deployed, never run with a real Turnstile
+  site key, challenge and hostname, and never run with a model behind LB-01. So no
+  **recording** exists: `just record-sample lb-01 torn-bag` needs the live back end and
+  records nothing until it has run there, and until it has the boards say "No recording yet"
+  and offer the live run. Not checked either: whether the Vercel plan lets a function wait the
+  95 seconds the proxy allows LB-05 and LB-08.
 - Real provider traffic: no provider key was available.
 
 ## 13. Day to day

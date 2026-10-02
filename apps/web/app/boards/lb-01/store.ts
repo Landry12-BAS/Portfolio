@@ -12,7 +12,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { z } from 'zod'
 
 import { apiClients, callApi } from '~/board-kit/api'
-import { ApiProblem, isApiProblem, unavailableProblem, verificationProblem } from '~/board-kit/problem'
+import { ApiProblem, cookieProblem, isApiProblem, unavailableProblem, verificationProblem } from '~/board-kit/problem'
 import { exhausted, quotaFromRuns } from '~/board-kit/quota'
 import type { Quota } from '~/board-kit/quota'
 import { useReplayStore } from '~/stores/replay'
@@ -203,7 +203,11 @@ export const useLb01Store = defineStore('lb01', () => {
     timer = setTimeout(() => void poll(filed.id, reading, Date.now(), 0), TICKET_POLL_MS)
   }
 
-  /** Sends a ticket to the back end. If the server says the check is needed again (a new day began), runs it and tries once more. */
+  /**
+   * Sends a ticket to the back end. If the server says the check is needed again (a new day began), runs
+   * it and tries once more. If it still says so right after the check passed, the browser is not keeping
+   * the session cookie that holds the result, which the visitor can fix, so that is said and not retried.
+   */
   async function send(request: NewTicket): Promise<Ticket> {
     const post = () => callApi(apiClients().django.POST('/api/lb01/tickets', { body: request }), ticketSchema)
     try {
@@ -213,7 +217,12 @@ export const useLb01Store = defineStore('lb01', () => {
       if (!isApiProblem(error) || error.kind !== 'verification') throw error
       session.forgetVerification()
       if (!(await session.ensureVerified())) throw verificationProblem()
-      return post()
+      try {
+        return await post()
+      }
+      catch (again) {
+        throw isApiProblem(again) && again.kind === 'verification' ? cookieProblem() : again
+      }
     }
   }
 

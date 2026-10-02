@@ -236,6 +236,20 @@ describe('LB-01\'s store: when things go wrong', () => {
     expect(site.callsTo('/api/lb01/tickets', 'POST')).toHaveLength(2)
   })
 
+  it('says the browser is not keeping the check when the ticket is refused for it again right after it passed', async () => {
+    const { site, store } = await start({ verified: true })
+    const refusal = { status: 403, body: { error: { code: 'verification_required', message: 'x' } } }
+    site.failNext('POST /api/lb01/tickets', refusal)
+    site.failNext('POST /api/lb01/tickets', refusal)
+    await store.file(TICKET)
+    expect(store.problem).toMatchObject({ kind: 'cookie', code: 'cookie_not_kept' })
+    expect(store.phase).toBe('idle')
+    expect(store.ticket).toBeUndefined()
+    // The check ran once more, the ticket was sent twice, and nothing was tried a third time.
+    expect(site.callsTo('/api/session/verify', 'POST')).toHaveLength(1)
+    expect(site.callsTo('/api/lb01/tickets', 'POST')).toHaveLength(2)
+  })
+
   it('says verification failed when the check does not pass, and files nothing', async () => {
     const { site, store } = await start({ testMode: false })
     const filing = store.file(TICKET)

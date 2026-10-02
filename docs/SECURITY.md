@@ -133,11 +133,16 @@ how a Vercel preview runs.
   direct abuse, but abuse relayed by the site is bounded only by the Turnstile check, the
   per-session quotas and the gateway's budgets. The site has no rate limiter of its own on
   purpose: one per serverless instance would not see all requests.
-- **The real Turnstile widget has not been run under this policy.** The loader, the Trusted
-  Types policy and the board pages' headers are tested (component tests with a stand-in
-  widget, and a header test in the end-to-end suite), but no network or Cloudflare account
-  was available when they were built, so the first deployment needs one manual pass: open a
-  board, start a live run, and check the console for a policy violation.
+- **The real Turnstile widget has been run under this policy only with Cloudflare's test
+  keys.** The production build, in a real browser, loaded the widget's script through the
+  Trusted Types policy, rendered its frame, got a token and had the server's check with
+  Cloudflare accept it, with no Content Security Policy or Trusted Types violation. Chrome
+  logs one console message, because the widget's frame asks for `fullscreen`, which the
+  Permissions-Policy denies; the widget works without it. Not exercised: a real site key and
+  secret, a real challenge, and the hostname check against a real hostname (Cloudflare's test
+  secret says tokens were solved on `example.com`, so the test served the site as that host).
+  The first deployment still needs one manual pass: open a board, start a live run, and check
+  the console.
 - **Long calls on a serverless host.** LB-05 and LB-08 answer within 90 seconds, and the
   site's proxy waits 95 for them (`policy.ts`); whether the Vercel plan in use lets a function
   run that long has not been checked. If it does not, those two boards must poll.
