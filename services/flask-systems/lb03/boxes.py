@@ -39,13 +39,14 @@ model and runs in the service process on the words the worker returned.
 import math
 import statistics
 import unicodedata
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from difflib import SequenceMatcher
 
-from lb03.invoice import ExtractedInvoice, LineItem, VatLine
+from lb03.checks import CheckId, CheckResult, Severity, passed, skipped
+from lb03.invoice import ExtractedInvoice, LineItem, VatLine, field_paths, get_field
 from lb03.money import amount_candidates, amount_text, cents
 from lb03.ocr.protocol import OcrWord, Quad
 
@@ -567,3 +568,38 @@ def place_fields(invoice: ExtractedInvoice, pages: Sequence[PageWords]) -> dict[
         anchor = place_vat_row(locator, found, index, line, anchor)
     place_subtotal(locator, invoice, found, total)
     return found
+
+
+# The fields that are not printed as such: the kind of document is a label the model chose, so no box is expected.
+UNPRINTED_FIELDS = frozenset({"document_type"})
+
+
+def expected_paths(invoice: ExtractedInvoice) -> list[str]:
+    """List the paths of the fields `place_fields` looks for: those that hold a value and are printed on the page."""
+    return [path for path in field_paths(invoice) if path not in UNPRINTED_FIELDS and get_field(invoice, path)]
+
+
+def check_fields_on_page(
+    invoice: ExtractedInvoice, placed: Collection[str], confirmed: Collection[str] = ()
+) -> CheckResult:
+    """Make the `fields_on_page` warning: which values the invoice holds that were not found among the page's words.
+
+    A value that is not on the page may be misread, absent, or made up by the model, which is worth a look but
+    does not stop an export, so this is a warning. A field the visitor typed in by hand is `confirmed` by them,
+    and counts as found: it is the visitor's word, not the model's.
+    """
+    expected = expected_paths(invoice)
+    if not expected:
+        return skipped(CheckId.FIELDS_ON_PAGE, "The invoice holds no values to look for on the page.")
+    missing = [path for path in expected if path not in placed and path not in confirmed]
+    if not missing:
+        return passed(CheckId.FIELDS_ON_PAGE)
+    return CheckResult(
+        CheckId.FIELDS_ON_PAGE,
+        "failed",
+        severity=Severity.WARNING,
+        message=f"{len(missing)} of {len(expected)} values were not found among the words read from the page.",
+        fields=tuple(missing),
+        expected=f"{len(expected)} values on the page",
+        actual=f"{len(expected) - len(missing)} found",
+    )

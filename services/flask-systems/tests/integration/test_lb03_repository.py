@@ -21,6 +21,7 @@ from lb03.invoice import ExtractedInvoice
 from lb03.models import Document
 from lb03.repository import (
     DocumentRepository,
+    EditedReading,
     FinishedReading,
     NewDocument,
     checks_from_json,
@@ -279,25 +280,44 @@ def test_the_pipeline_and_the_recovery_ending_one_document_together_have_exactly
     assert (stored.extraction is not None) == (stored.state == "ready")
 
 
+def edited_reading(reading: FinishedReading, **changes: object) -> EditedReading:
+    """Make the reading that follows a visitor's correction, with the invoice's fields changed as a test says."""
+    invoice = reading.invoice.model_copy(update=changes)
+    return EditedReading(
+        invoice=invoice,
+        placements={},
+        checks=run_checks(invoice, date(2026, 10, 1)),
+        journal=None,
+        identity=identity_of(invoice),
+        duplicate_of="sample:bohemia-packaging-2026-0412",
+        duplicate_same_content=False,
+    )
+
+
 def test_a_correction_is_saved_with_a_note_of_the_change_and_only_on_a_ready_document(
     repository: DocumentRepository,
 ) -> None:
-    """The visitor's edit replaces the reading, its checks and the entry, and the corrections list grows."""
+    """The visitor's edit replaces the reading and all that follows from it, and the corrections list grows."""
     reading = finished_reading()
     repository.create(new_document("doc-sam"), NOW)
-    edited = reading.invoice.model_copy(update={"vendor": "Bohemia Packaging a.s."})
+    edited = edited_reading(reading, vendor="Bohemia Packaging a.s.")
     correction = {"path": "vendor", "was": "Bohemia Packaging s.r.o.", "now": "Bohemia Packaging a.s."}
 
-    assert not repository.save_edit("doc-sam", SAM, edited, reading.checks, reading.journal, correction, NOW)
+    assert not repository.save_edit("doc-sam", SAM, edited, correction, NOW)
     repository.finish_ready("doc-sam", reading, NOW)
-    assert repository.save_edit("doc-sam", SAM, edited, reading.checks, reading.journal, correction, NOW)
-    assert repository.save_edit("doc-sam", SAM, edited, reading.checks, reading.journal, correction, NOW)
+    assert repository.save_edit("doc-sam", SAM, edited, correction, NOW)
+    assert repository.save_edit("doc-sam", SAM, edited, correction, NOW)
 
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
     assert stored.extraction is not None
     assert invoice_from_json(stored.extraction).vendor == "Bohemia Packaging a.s."
     assert stored.corrections == [correction, correction]
+    assert stored.placements == {}
+    assert stored.journal is None
+    assert (stored.duplicate_of, stored.duplicate_same_content) == ("sample:bohemia-packaging-2026-0412", False)
+    assert edited.identity is not None
+    assert stored.identity_vendor == edited.identity.vendor
 
 
 def test_nobody_edits_another_visitors_document_or_one_that_has_expired(repository: DocumentRepository) -> None:
@@ -305,18 +325,39 @@ def test_nobody_edits_another_visitors_document_or_one_that_has_expired(reposito
     reading = finished_reading()
     repository.create(new_document("doc-sam"), NOW)
     repository.finish_ready("doc-sam", reading, NOW)
-    edited = reading.invoice.model_copy(update={"vendor": "Someone Else"})
+    edited = edited_reading(reading, vendor="Someone Else")
 
-    other_visitor = repository.save_edit("doc-sam", ALEX, edited, reading.checks, None, {"path": "vendor"}, NOW)
-    too_late = repository.save_edit(
-        "doc-sam", SAM, edited, reading.checks, None, {"path": "vendor"}, NOW + timedelta(hours=2)
-    )
+    other_visitor = repository.save_edit("doc-sam", ALEX, edited, {"path": "vendor"}, NOW)
+    too_late = repository.save_edit("doc-sam", SAM, edited, {"path": "vendor"}, NOW + timedelta(hours=2))
 
     assert (other_visitor, too_late) == (False, False)
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
     assert (stored.extraction or {}).get("vendor") == "Bohemia Packaging s.r.o."
     assert stored.corrections == []
+
+
+def test_two_corrections_arriving_together_are_both_kept(repository: DocumentRepository) -> None:
+    """The corrections list is appended to under a row lock, so a race can't lose one."""
+    reading = finished_reading()
+    repository.create(new_document("doc-sam"), NOW)
+    repository.finish_ready("doc-sam", reading, NOW)
+    barrier = threading.Barrier(10)
+
+    def correct(index: int) -> None:
+        """Wait for the others, then save a correction of this thread's own."""
+        barrier.wait()
+        repository.save_edit("doc-sam", SAM, edited_reading(reading), {"path": "vendor", "n": index}, NOW)
+
+    threads = [threading.Thread(target=correct, args=(index,)) for index in range(10)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    stored = repository.get("doc-sam", SAM, NOW)
+    assert stored is not None
+    assert sorted(item["n"] for item in stored.corrections) == list(range(10))
 
 
 def test_the_duplicate_check_sees_only_the_visitors_other_finished_documents_of_the_hour(

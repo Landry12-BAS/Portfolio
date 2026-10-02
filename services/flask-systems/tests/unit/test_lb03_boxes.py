@@ -15,12 +15,15 @@ import pytest
 from lb03.boxes import (
     PageWords,
     Placement,
+    check_fields_on_page,
     date_texts,
+    expected_paths,
     is_split_thousands,
     normalise,
     one_digit_substituted,
     place_fields,
 )
+from lb03.checks import CheckId, Severity
 from lb03.invoice import ExtractedInvoice
 from tests.lb03_support import LETTER_WIDTH, page, row, sentence
 
@@ -436,3 +439,71 @@ def test_amounts_use_decimal_so_no_float_rounding_decides_a_match() -> None:
     """A value that a float would round (0.1 + 0.2) is matched exactly as a decimal."""
     found = place_fields(invoice(total=str(Decimal("0.1") + Decimal("0.2"))), [page(row(0.1, ("0.30", 0.8)))])
     assert placed(found, "total").match == 1.0
+
+
+def small_invoice() -> ExtractedInvoice:
+    """Make the invoice that `simple_invoice_page` prints."""
+    return invoice(
+        document_type="invoice",
+        vendor="Bohemia Packaging s.r.o.",
+        invoice_number="2026-0412",
+        issue_date="2026-04-12",
+        due_date="2026-05-12",
+        currency="EUR",
+        line_items=[
+            {"description": "Kraft boxes", "quantity": "1", "unit_price": "7.40", "total": "7.40"},
+            {"description": "Tape rolls", "quantity": "1", "unit_price": "12.00", "total": "12.00"},
+        ],
+        subtotal="19.40",
+        vat=[{"rate": "21", "base": "19.40", "amount": "4.07"}],
+        total="23.47",
+    )
+
+
+def test_the_fields_to_look_for_are_those_with_a_value_except_the_kind_of_document() -> None:
+    """The kind of document is the model's label, not printed text, and an empty field has nothing to find."""
+    paths = expected_paths(invoice(document_type="invoice", vendor="Acme", total="5.00", due_date=None))
+
+    assert "document_type" not in paths
+    assert "due_date" not in paths
+    assert {"vendor", "total"} <= set(paths)
+
+
+def test_a_document_whose_every_value_was_found_passes_the_page_check() -> None:
+    """When every value has a box there is nothing to warn about."""
+    read = small_invoice()
+    found = place_fields(read, [simple_invoice_page()])
+
+    result = check_fields_on_page(read, set(found))
+
+    assert (result.id, result.status) == (CheckId.FIELDS_ON_PAGE, "passed")
+
+
+def test_a_value_that_is_not_on_the_page_is_a_warning_naming_it_and_never_an_error() -> None:
+    """A made-up total is found nowhere: the check says so, as a warning, with the path and the counts."""
+    made_up = small_invoice().model_copy(update={"total": Decimal("99.99")})
+    found = place_fields(made_up, [simple_invoice_page()])
+
+    result = check_fields_on_page(made_up, set(found))
+
+    assert result.failed
+    assert result.severity is Severity.WARNING
+    assert result.fields == ("total",)
+    assert result.expected is not None
+    assert result.actual is not None
+    assert "1 of " in result.message
+
+
+def test_a_field_the_visitor_typed_in_counts_as_found() -> None:
+    """A correction is the visitor's word, so it is not warned about as missing from the page."""
+    made_up = small_invoice().model_copy(update={"total": Decimal("99.99")})
+    found = place_fields(made_up, [simple_invoice_page()])
+
+    result = check_fields_on_page(made_up, set(found), confirmed={"total"})
+
+    assert result.status == "passed"
+
+
+def test_an_invoice_with_nothing_to_find_skips_the_page_check() -> None:
+    """An empty reading has no values, so the check has nothing to say."""
+    assert check_fields_on_page(invoice(), set()).status == "skipped"

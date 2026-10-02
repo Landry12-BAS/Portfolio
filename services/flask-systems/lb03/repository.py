@@ -144,6 +144,19 @@ class FinishedReading:
 
 
 @dataclass(frozen=True)
+class EditedReading:
+    """A document's reading after a visitor corrected a field: everything that follows from the new value."""
+
+    invoice: ExtractedInvoice
+    placements: dict[str, Placement]
+    checks: list[CheckResult]
+    journal: JournalEntry | None
+    identity: Identity | None
+    duplicate_of: str | None
+    duplicate_same_content: bool | None
+
+
+@dataclass(frozen=True)
 class StoredDocument:
     """A document row as plain data."""
 
@@ -242,18 +255,19 @@ class DocumentRepository:
             ).all()
         return [stored_from(row) for row in rows]
 
-    def advance(self, document_id: str, state: DocumentState, step: dict[str, Any], now: datetime) -> bool:
-        """Move a document that is still being read to its next state, noting the step; False if it has ended."""
+    def advance(self, document_id: str, state: DocumentState, step: dict[str, Any] | None, now: datetime) -> bool:
+        """Move a document that is still being read to its next state, noting the step it finished; False if over."""
         with self.engine.begin() as connection:
             current = connection.execute(
                 select(Document.state, Document.steps).where(Document.id == document_id).with_for_update()
             ).one_or_none()
             if current is None or current.state in FINAL_VALUES:
                 return False
+            steps = [*current.steps, step] if step is not None else current.steps
             connection.execute(
                 update(Document)
                 .where(Document.id == document_id)
-                .values(state=state.value, updated_at=now, steps=[*current.steps, step])
+                .values(state=state.value, updated_at=now, steps=steps)
             )
         return True
 
@@ -321,16 +335,13 @@ class DocumentRepository:
         return bool(changed)
 
     def save_edit(
-        self,
-        document_id: str,
-        session_key: str,
-        invoice: ExtractedInvoice,
-        checks: list[CheckResult],
-        journal: JournalEntry | None,
-        correction: dict[str, Any],
-        now: datetime,
+        self, document_id: str, session_key: str, edited: EditedReading, correction: dict[str, Any], now: datetime
     ) -> bool:
-        """Save a visitor's correction of a field: the new reading, its checks and entry, and a note of the change."""
+        """Save a visitor's correction of a field: the new reading, all that follows from it, and a note of the change.
+
+        Only a `ready` document of this visitor, within its hour, can be edited; the corrections list is appended
+        to under a row lock, so two edits arriving together are both kept.
+        """
         with self.engine.begin() as connection:
             current = connection.execute(
                 select(Document.corrections)
@@ -348,9 +359,15 @@ class DocumentRepository:
                 update(Document)
                 .where(Document.id == document_id)
                 .values(
-                    extraction=invoice_json(invoice),
-                    checks=checks_json(checks),
-                    journal=journal_json(journal),
+                    extraction=invoice_json(edited.invoice),
+                    placements=placements_json(edited.placements),
+                    checks=checks_json(edited.checks),
+                    journal=journal_json(edited.journal),
+                    identity_vendor=edited.identity.vendor if edited.identity else None,
+                    identity_number=edited.identity.number if edited.identity else None,
+                    content_hash=edited.identity.content if edited.identity else None,
+                    duplicate_of=edited.duplicate_of,
+                    duplicate_same_content=edited.duplicate_same_content,
                     corrections=[*current.corrections, correction],
                     updated_at=now,
                 )
