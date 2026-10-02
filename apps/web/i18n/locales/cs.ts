@@ -4,6 +4,8 @@
 //
 // vue-i18n reads { } as placeholders and @ and | as syntax, so plain text avoids them.
 import { vlnaDeep } from '#shared/typography'
+import kit from './boards/kit.cs'
+import lb01 from './boards/lb-01.cs'
 import type { Messages } from './en'
 
 const cs = {
@@ -130,7 +132,26 @@ const cs = {
     statusText: 'Ve vývoji, fáze {n}. Živé demo, jeho vývojová deska a Scope se tu otevřou, jakmile bude díl hotový.',
     otherParts: 'Další díly',
     allSystems: 'Všechny systémy',
+    openBoard: 'Otevřít vývojovou desku',
+    boardOpen: 'Vývojová deska tohoto dílu je otevřená. Začíná na vybraných ukázkách a váš vlastní text běží naživo v rámci denní kvóty.',
   },
+  boardPage: {
+    title: '{name}, vývojová deska',
+    back: 'Zpět na katalogový list',
+    missing: 'Tento díl zatím nemá vývojovou desku',
+    missingText: 'Jeho katalogový list je otevřený a živé demo přibude, jakmile bude díl hotový.',
+    loading: 'Načítám vývojovou desku…',
+  },
+  runs: {
+    title: 'Záznam běhu {id}',
+    heading: 'Záznam běhu',
+    lede: 'Záznam jednoho běhu ze Scope: každý krok, volání nástroje a volání modelu s časováním. Uchovávají se jen metadata, nikdy to, co se psalo nebo odpovídalo, a záznam se po 24 hodinách maže.',
+    system: 'Systém',
+    runId: 'ID běhu',
+    back: 'Zpět do katalogu',
+  },
+  board: kit,
+  lb01,
   error: {
     code: 'Chyba {code}',
     notFound: 'Díl nenalezen',

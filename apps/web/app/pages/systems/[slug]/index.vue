@@ -6,7 +6,7 @@ import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 
 import { findSystemIn } from '#shared/data/datasheets'
-import type { ReadingMode } from '~/stores/reading'
+import { hasBoard } from '~/boards/registry'
 import { useReadingStore } from '~/stores/reading'
 
 // Key the page by path so moving between parts, or languages, builds a fresh page.
@@ -27,12 +27,10 @@ useSeoMeta({
   description: system.function,
 })
 
-// The reading mode is shared with every datasheet, and remembered between visits.
+// The reading mode is shared with every datasheet and board, and remembered between visits.
 const { mode } = storeToRefs(useReadingStore())
-const readingOptions = computed<{ value: ReadingMode, label: string }[]>(() => [
-  { value: 'technical', label: t('datasheet.technical') },
-  { value: 'brief', label: t('datasheet.brief') },
-])
+// A part whose evaluation board has shipped links to it, and says so in its status.
+const board = hasBoard(system.slug)
 
 // The parts before and after this one, for the pager at the bottom.
 const index = datasheets.value.findIndex(item => item.slug === system.slug)
@@ -68,17 +66,7 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
       </div>
     </header>
 
-    <div class="mode-row">
-      <span
-        class="lb-label"
-        aria-hidden="true"
-      >{{ t('datasheet.readingMode') }}</span>
-      <LbSegmented
-        v-model="mode"
-        :options="readingOptions"
-        :label="t('datasheet.readingMode')"
-      />
-    </div>
+    <ReadingModeSwitch />
 
     <div
       class="part-body"
@@ -150,7 +138,18 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
 
     <p class="status">
       <span class="lb-label">{{ t('datasheet.status') }}</span>
-      {{ t('datasheet.statusText', { n: system.phase }) }}
+      {{ board ? t('datasheet.boardOpen') : t('datasheet.statusText', { n: system.phase }) }}
+      <NuxtLinkLocale
+        v-if="board"
+        :to="`/systems/${system.slug}/board`"
+        class="board-link"
+      >
+        {{ t('datasheet.openBoard') }}
+        <LbIcon
+          name="arrow-right"
+          :size="16"
+        />
+      </NuxtLinkLocale>
     </p>
 
     <nav
@@ -240,13 +239,6 @@ h1 {
   font-size: 10.5px;
   color: var(--lb-graphite);
   white-space: nowrap;
-}
-
-.mode-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
 }
 
 .part-body {
@@ -358,6 +350,13 @@ h1 {
   padding: 12px 14px;
   font-size: 14px;
   border: 1px dashed var(--lb-rule);
+}
+
+.board-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
 }
 
 .pager {

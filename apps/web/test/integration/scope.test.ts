@@ -189,7 +189,7 @@ describe('the recordings of the curated samples', () => {
     return startTestSite({ keys, backendUrl: mock.url, clock, recordings })
   }
 
-  it('lists the samples that have a recording a visitor may be shown, in name order', async () => {
+  it('lists the samples that have a recording a visitor may be shown, in name order (the test build also shows the mock\'s)', async () => {
     const holding = await siteWith({
       'lb-01/torn-bag': recording('torn-bag'),
       'lb-01/late-parcel': recording('late-parcel'),
@@ -204,7 +204,7 @@ describe('the recordings of the curated samples', () => {
       const list = await browser.request('GET', '/api/recordings/lb-01')
 
       expect(list.status).toBe(200)
-      expect(list.json).toEqual({ system: 'lb-01', samples: ['late-parcel', 'torn-bag'] })
+      expect(list.json).toEqual({ system: 'lb-01', samples: ['late-parcel', 'mock-one', 'torn-bag'] })
       expect(list.headers.get('cache-control')).toBe('public, max-age=300')
       expect(browser.setCookies).toEqual([])
       expect((await browser.request('GET', '/api/recordings/lb-02')).json).toEqual({ system: 'lb-02', samples: [] })
@@ -221,7 +221,7 @@ describe('the recordings of the curated samples', () => {
     expect((await browser.request('GET', '/api/recordings/lb-01/torn-bag')).status).toBe(404)
   })
 
-  it('sends one recording, checked with its schema, and never a mock\'s, a damaged one or another sample\'s', async () => {
+  it('sends one recording, checked with its schema, and never a damaged one or another sample\'s (the test build also sends a mock\'s)', async () => {
     const holding = await siteWith({
       'lb-01/torn-bag': recording('torn-bag'),
       'lb-01/mock-one': recording('mock-one', 'mock'),
@@ -234,7 +234,8 @@ describe('the recordings of the curated samples', () => {
       const sent = await browser.request('GET', '/api/recordings/lb-01/torn-bag')
       expect(sent.status).toBe(200)
       expect(sent.json).toEqual(recording('torn-bag'))
-      for (const sample of ['mock-one', 'broken', 'wrong-name', 'nothing-here']) {
+      expect((await browser.request('GET', '/api/recordings/lb-01/mock-one')).json).toEqual(recording('mock-one', 'mock'))
+      for (const sample of ['broken', 'wrong-name', 'nothing-here']) {
         const reply = await browser.request('GET', `/api/recordings/lb-01/${sample}`)
         expect(reply.status, sample).toBe(404)
         expect(reply.json.error.code).toBe('not_found')

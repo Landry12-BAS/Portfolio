@@ -39,6 +39,14 @@ export default createConfigForNuxt({
   .append({ ignores: ['packages/api-clients/src/generated/**'] })
   .append(vueA11y.configs['flat/recommended'])
   .append({
+    name: 'lb/accessibility',
+    rules: {
+      // A label tied to its control by `for` and `id` is valid HTML and is how the boards' forms
+      // are built; the plugin's default also demands the control be nested inside the label.
+      'vuejs-accessibility/label-has-for': ['error', { required: { some: ['nesting', 'id'] } }],
+    },
+  })
+  .append({
     name: 'lb/security',
     plugins: { security },
     rules: {

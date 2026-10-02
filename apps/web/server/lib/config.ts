@@ -81,7 +81,7 @@ function isLoopback(host: string): boolean {
 }
 
 /** Checks that a text is the origin of a service: HTTPS (HTTP only on this machine), no login, no path, no query. */
-function isServiceOrigin(text: string): boolean {
+export function isServiceOrigin(text: string): boolean {
   let url: URL
   try {
     url = new URL(text)
@@ -94,7 +94,7 @@ function isServiceOrigin(text: string): boolean {
 }
 
 /** Reads a key's JWK text and checks that it is an Ed25519 private key whose halves match. */
-function readPrivateKey(text: string): KeyObject | undefined {
+export function readPrivateKey(text: string): KeyObject | undefined {
   try {
     return privateKeyFromJwk(JSON.parse(text) as unknown)
   }

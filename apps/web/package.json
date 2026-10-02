@@ -12,9 +12,13 @@
     "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck",
+    "typecheck": "nuxt typecheck && tsc -p tsconfig.tools.json",
     "test": "vitest run",
     "e2e": "playwright test",
+    "samples": "node scripts/samples.ts",
+    "check": "node scripts/samples.ts --check",
+    "record-sample": "node scripts/record-sample.ts",
+    "record:fixtures": "node scripts/record-fixtures.ts",
     "check:build": "node scripts/check-production-build.ts"
   },
   "dependencies": {

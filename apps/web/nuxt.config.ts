@@ -13,6 +13,13 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 // this flag with `false` (see shared/build-flags.d.ts), so none of that code is in its bundle.
 const testBuild = process.env.LB_TEST_BUILD === '1'
 
+// What a board page adds to the site's Content Security Policy: the Turnstile widget's frame and
+// the one Trusted Types policy that makes its script's address.
+const BOARD_POLICY = {
+  'frame-src': ['https://challenges.cloudflare.com'],
+  'trusted-types': ['vue', 'lb-turnstile'],
+}
+
 export default defineNuxtConfig({
   extends: ['@lb/ui'],
   modules: ['@pinia/nuxt', '@nuxtjs/i18n', 'nuxt-security'],
@@ -55,6 +62,12 @@ export default defineNuxtConfig({
     // demo that invites visitors to try to break it must hand to the system, and its size check
     // answers in another shape. Pages keep both.
     '/api/**': { security: { xssValidator: false, requestSizeLimiter: false } },
+    // The evaluation boards, and only they, may run Cloudflare's Turnstile widget before a visitor's
+    // first live run: it draws in an iframe from its own origin, and its script's address is made
+    // by one Trusted Types policy, named here (app/board-kit/turnstile.ts). Nothing else on the
+    // policy changes: the script is trusted by the nonce of the page's own code (strict-dynamic).
+    '/systems/*/board': { security: { headers: { contentSecurityPolicy: BOARD_POLICY } } },
+    '/cs/systems/*/board': { security: { headers: { contentSecurityPolicy: BOARD_POLICY } } },
   },
   compatibilityDate: '2026-09-28',
   nitro: {

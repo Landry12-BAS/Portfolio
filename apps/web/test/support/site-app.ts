@@ -132,7 +132,11 @@ export async function startTestSite(options: TestSiteOptions): Promise<TestSite>
     event.context.lbSite = services
   }))
   const router = createRouter()
-  for (const route of SERVER_ROUTES) router.use(route.route, await loadHandler(route.handler), route.method ?? 'all')
+  for (const route of SERVER_ROUTES) {
+    const handler = await loadHandler(route.handler)
+    if (route.method) router.use(route.route, handler, route.method)
+    else router.use(route.route, handler)
+  }
   app.use(router)
   const server: Server = createServer(toNodeListener(app))
   await new Promise<void>((resolve) => {

@@ -8,7 +8,7 @@
 // `false`: it is not in a production bundle, and CI proves it.
 import { z } from 'zod'
 
-import { TEST_TURNSTILE_STAND_IN } from './turnstile-test.ts'
+import { TEST_TURNSTILE_STAND_IN } from '../../shared/turnstile-stand-in.ts'
 
 // Where Cloudflare checks a token, and how long to wait for it before the check counts as unavailable.
 export const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'

@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startMockBackend } from '@lb/api-clients/testing'
 import type { MockBackend } from '@lb/api-clients/testing'
 
-import { TEST_TURNSTILE_STAND_IN } from '../../server/lib/turnstile-test.ts'
+import { TEST_TURNSTILE_STAND_IN } from '../../shared/turnstile-stand-in.ts'
 import { verifyTurnstile } from '../../server/lib/turnstile.ts'
 import { Browser } from '../support/browser.ts'
 import { makeTestKeys, startTestSite } from '../support/site-app.ts'

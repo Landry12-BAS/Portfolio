@@ -115,7 +115,7 @@ describe('the session cookie', () => {
     const browser = new Browser(site)
     await browser.request('GET', '/api/session')
     const original = browser.session ?? ''
-    const [version, payload, signature] = original.split('.')
+    const [version, payload, signature = ''] = original.split('.')
     const forged = [version, Buffer.from(JSON.stringify({ i: 'AAAAAAAAAAAAAAAAAAAAAA', d: '2026-10-05', v: 1 })).toString('base64url'), signature].join('.')
     const otherSite = await startTestSite({ keys, backendUrl: mock.url, clock })
     const stranger = new Browser(otherSite)

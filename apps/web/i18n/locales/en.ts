@@ -3,6 +3,9 @@
 //
 // vue-i18n reads { } as placeholders and @ and | as syntax, so plain text avoids them.
 
+import kit from './boards/kit.en'
+import lb01 from './boards/lb-01.en'
+
 const en = {
   site: {
     description: 'Ten live AI systems, built for one fictional coffee company and open to every visitor, with a trace of every step they take.',
@@ -127,7 +130,26 @@ const en = {
     statusText: 'In build, Phase {n}. The live demo, its evaluation board and the Scope open here when this part ships.',
     otherParts: 'Other parts',
     allSystems: 'All systems',
+    openBoard: 'Open the evaluation board',
+    boardOpen: 'The evaluation board for this part is open. It starts on curated samples, and your own text runs live within your daily allowance.',
   },
+  boardPage: {
+    title: '{name}, evaluation board',
+    back: 'Back to the datasheet',
+    missing: 'This part has no evaluation board yet',
+    missingText: 'Its datasheet is open, and its live demo arrives when the part ships.',
+    loading: 'Loading the evaluation board…',
+  },
+  runs: {
+    title: 'Trace of run {id}',
+    heading: 'Trace of a run',
+    lede: 'The Scope\'s record of one run: every step, tool call and model call, with its timing. Only metadata is kept, never what was typed or answered, and a trace is deleted after 24 hours.',
+    system: 'System',
+    runId: 'Run ID',
+    back: 'Back to the catalog',
+  },
+  board: kit,
+  lb01,
   error: {
     code: 'Error {code}',
     notFound: 'Part not found',
