@@ -55,6 +55,6 @@ plugins = ["pydantic.mypy"]
 exclude = ["migrations/"]
 
 [[tool.mypy.overrides]]
-# Testcontainers ships no type information.
-module = ["testcontainers.*"]
+# These ship no type information: Testcontainers, the S3 client and its fake, the PDF renderer, the PDF writer, the OCR.
+module = ["testcontainers.*", "boto3.*", "botocore.*", "moto.*", "pypdfium2.*", "reportlab.*", "rapidocr.*"]
 ignore_missing_imports = true
