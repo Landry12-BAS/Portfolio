@@ -7,9 +7,9 @@ never their values, so a secret can't reach a log this way.
 
 import re
 from collections.abc import Mapping
-from typing import Self
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError, field_validator, model_validator
 
 from lb_common.gateway import check_gateway_url
 from lb_common.tokens import check_service_name
@@ -19,6 +19,10 @@ from lb_common.visitors import load_public_key
 REDIS_PREFIX = re.compile(r"[a-z0-9-]{1,24}:")
 # A DuckDB memory limit as this service accepts it: a whole number of megabytes or gigabytes.
 MEMORY_LIMIT = re.compile(r"[1-9][0-9]{0,3}(?:MB|GB)")
+# An S3 bucket name, an S3 endpoint (a scheme and a host, with an optional port, and no path), and a region.
+BUCKET_NAME = re.compile(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]")
+S3_ENDPOINT = re.compile(r"https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?|http://(?:127\.0\.0\.1|localhost)(?::[0-9]{1,5})?")
+S3_REGION = re.compile(r"[a-z0-9-]{1,32}")
 
 # Each variable, and the field it fills.
 VARIABLES = {
@@ -35,6 +39,16 @@ VARIABLES = {
     "LB05_WAREHOUSE_DIR": "lb05_warehouse_dir",
     "LB05_DUCKDB_MEMORY_LIMIT": "duckdb_memory_limit",
     "LB05_DUCKDB_THREADS": "duckdb_threads",
+    "LB03_DATABASE_URL": "lb03_database_url",
+    "LB03_STORAGE": "lb03_storage",
+    "LB03_FILES_DIR": "lb03_files_dir",
+    "LB03_S3_BUCKET": "lb03_s3_bucket",
+    "LB03_S3_ENDPOINT": "lb03_s3_endpoint",
+    "LB03_S3_REGION": "lb03_s3_region",
+    "LB03_S3_ACCESS_KEY_ID": "lb03_s3_access_key_id",
+    "LB03_S3_SECRET_ACCESS_KEY": "lb03_s3_secret_access_key",
+    "LB03_OCR_WORKERS": "lb03_ocr_workers",
+    "LB03_SCRATCH_DIR": "lb03_scratch_dir",
 }
 # The three variables that together say how to call the AI gateway.
 GATEWAY_FIELDS = ("gateway_url", "service_name", "service_key_file")
@@ -55,6 +69,14 @@ class Environment(BaseModel):
     tokens are checked against; without it, every visitor call is refused. The gateway
     settings are all or nothing: without them the service runs, but cannot answer a
     question. The DuckDB limits cap what one query may use on the machine.
+
+    LB-03's settings follow the same pattern. `lb03_database_url` is its own role's login, as LB-05's is.
+    `lb03_storage` says where uploaded files are kept: `local` (a folder, `lb03_files_dir`, by default
+    data/generated/lb03/files) or `s3` (a bucket on any S3-compatible service, such as Cloudflare R2, with
+    the bucket, its endpoint, region and an access key pair, all of which are then required; the secret
+    is held as a secret, so it can't be printed by accident). `lb03_ocr_workers` is how many OCR
+    processes may run at once, and `lb03_scratch_dir` is where each one gets its own folder to work in
+    (the system's temporary folder by default; the stack gives it a small memory-backed one).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -72,8 +94,18 @@ class Environment(BaseModel):
     lb05_warehouse_dir: str | None = None
     duckdb_memory_limit: str = "1GB"
     duckdb_threads: int = Field(default=2, ge=1, le=8)
+    lb03_database_url: str | None = None
+    lb03_storage: Literal["local", "s3"] = "local"
+    lb03_files_dir: str | None = None
+    lb03_s3_bucket: str | None = None
+    lb03_s3_endpoint: str | None = None
+    lb03_s3_region: str = "auto"
+    lb03_s3_access_key_id: str | None = None
+    lb03_s3_secret_access_key: SecretStr | None = None
+    lb03_ocr_workers: int = Field(default=1, ge=1, le=4)
+    lb03_scratch_dir: str | None = None
 
-    @field_validator("database_url", "lb05_database_url")
+    @field_validator("database_url", "lb05_database_url", "lb03_database_url")
     @classmethod
     def _check_database_url(cls, url: str | None) -> str | None:
         """Accept only Postgres URLs."""
@@ -131,6 +163,44 @@ class Environment(BaseModel):
             raise ValueError("must be a whole number of MB or GB, such as 1GB")
         return limit
 
+    @field_validator("lb03_s3_bucket")
+    @classmethod
+    def _check_bucket_name(cls, name: str | None) -> str | None:
+        """Accept only a bucket name as S3 allows it: lowercase letters, digits, dots and hyphens, 3 to 63 long."""
+        if name is not None and not BUCKET_NAME.fullmatch(name):
+            raise ValueError("must be a bucket name: 3 to 63 lowercase letters, digits, dots or hyphens")
+        return name
+
+    @field_validator("lb03_s3_endpoint")
+    @classmethod
+    def _check_s3_endpoint(cls, endpoint: str | None) -> str | None:
+        """Accept an https:// endpoint, or plain http:// only for a server on this machine, with no path."""
+        if endpoint is not None and not S3_ENDPOINT.fullmatch(endpoint):
+            raise ValueError("must be an https:// URL (http:// only for localhost or 127.0.0.1) with no path")
+        return endpoint
+
+    @field_validator("lb03_s3_region")
+    @classmethod
+    def _check_s3_region(cls, region: str) -> str:
+        """Accept a region name such as `auto` or `eu-central-1`."""
+        if not S3_REGION.fullmatch(region):
+            raise ValueError("must be a region name such as auto or eu-central-1")
+        return region
+
+    @model_validator(mode="after")
+    def _check_storage_is_complete(self) -> Self:
+        """Require the bucket, the endpoint-or-AWS region and both halves of the key when files are kept in S3."""
+        if self.lb03_storage != "s3":
+            return self
+        missing = [
+            variable_for(name)
+            for name in ("lb03_s3_bucket", "lb03_s3_access_key_id", "lb03_s3_secret_access_key")
+            if getattr(self, name) is None
+        ]
+        if missing:
+            raise ValueError("LB03_STORAGE=s3 also needs " + ", ".join(missing))
+        return self
+
     @model_validator(mode="after")
     def _check_gateway_is_complete(self) -> Self:
         """Require the gateway's URL, service name and key file together, or none of them."""
@@ -138,6 +208,11 @@ class Environment(BaseModel):
         if any(given) and not all(given):
             raise ValueError("LB_GATEWAY_URL, LB_SERVICE_NAME and LB_SERVICE_KEY_FILE must be set together")
         return self
+
+    def database_url_for(self, schema: str) -> str:
+        """Return the URL a system's engine connects with: its own role's when it has one, else the shared one."""
+        own = {"lb05": self.lb05_database_url, "lb03": self.lb03_database_url}.get(schema)
+        return own or self.database_url
 
     def gateway_is_configured(self) -> bool:
         """Tell whether the service has everything it needs to call the AI gateway."""

@@ -94,7 +94,10 @@ def connect_platform(environment: Environment) -> Platform:
     )
     span_writer = RedisSpanWriter(redis, prefix=environment.redis_prefix)
     tracer = Tracer(span_writer)
-    engines = system_engines(environment.database_url, {"lb05": environment.lb05_database_url})
+    engines = system_engines(
+        environment.database_url,
+        {"lb05": environment.lb05_database_url, "lb03": environment.lb03_database_url},
+    )
     return Platform(
         environment=environment,
         engines=engines,
