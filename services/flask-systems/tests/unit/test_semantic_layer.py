@@ -157,6 +157,12 @@ def test_a_missing_file_is_a_data_file_error(tmp_path: Path) -> None:
         read_semantic_layer(tmp_path)
 
 
+def test_the_layer_names_its_metrics_and_the_keys_its_joins_use(layer: SemanticLayer) -> None:
+    """What a chart is told about a result's columns: the metrics the layer defines, and the columns it joins on."""
+    assert {"revenue", "orders", "average_order_value", "lost_repeat_buyers"} <= layer.metric_names()
+    assert layer.key_column_names() == {"customer_id", "order_id", "product_id", "subscription_id"}
+
+
 @pytest.mark.parametrize(
     ("old", "new", "complaint"),
     [

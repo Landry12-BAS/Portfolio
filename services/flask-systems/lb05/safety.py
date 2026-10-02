@@ -13,6 +13,11 @@ from enum import StrEnum
 MAX_ROWS = 1_000
 STATEMENT_TIMEOUT_SECONDS = 5.0
 QUESTIONS_PER_DAY = 25
+# How many questions a day a visitor is given back when the service fails to answer them. Almost any such failure
+# can be provoked on purpose (a question that makes the model's reply unreadable, or slow enough to run out of
+# time), so the refunds are capped: past the allowance a failed question counts like any other. Answers delivered
+# are capped at QUESTIONS_PER_DAY whatever happens; this bounds the attempts, and so the work, that cost nothing.
+MAX_REFUNDS_PER_DAY = 5
 # Calls to models for one question: the SQL (with a repair), one self-correction (with a
 # repair) and the explanation. The gateway's per-run cap in routing.yaml is the same number.
 MAX_MODEL_CALLS = 5

@@ -23,7 +23,7 @@ from tests.support import VALID_ENVIRONMENT
 
 pytestmark = pytest.mark.integration
 
-QUOTA_COLUMNS = {"session_key", "day", "used", "busy_until"}
+QUOTA_COLUMNS = {"session_key", "day", "used", "busy_until", "refunds"}
 
 
 def fresh_engine(make_database: Callable[[], str]) -> Engine:
@@ -44,10 +44,29 @@ def test_upgrading_an_empty_database_builds_the_schema_and_the_quota_table(
     assert {column["name"] for column in inspector.get_columns("quota_usage", schema="lb05")} == QUOTA_COLUMNS
     assert inspector.get_pk_constraint("quota_usage", schema="lb05")["constrained_columns"] == ["session_key", "day"]
     checks = inspector.get_check_constraints("quota_usage", schema="lb05")
-    assert [check["name"] for check in checks] == ["quota_usage_used_range"]
+    assert {check["name"] for check in checks} == {"quota_usage_refunds_range", "quota_usage_used_range"}
     assert "alembic_version" in inspector.get_table_names(schema="lb05")
     with engine.connect() as connection:
-        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0001"
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0002"
+    engine.dispose()
+
+
+def test_a_database_with_counters_keeps_them_when_the_refund_count_is_added(
+    make_database: Callable[[], str],
+) -> None:
+    """Upgrading a live ledger from its first migration: every counter is kept, and starts with no refunds."""
+    engine = fresh_engine(make_database)
+    upgrade(engine, "lb05", MIGRATIONS, revision="0001")
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO quota_usage (session_key, day, used) VALUES (:key, :day, :used)"),
+            {"key": "a" * 64, "day": datetime(2026, 10, 1, tzinfo=UTC).date(), "used": 7},
+        )
+
+    upgrade(engine, "lb05", MIGRATIONS)
+
+    with engine.connect() as connection:
+        assert connection.execute(select(QuotaUsage.used, QuotaUsage.refunds)).one() == (7, 0)
     engine.dispose()
 
 

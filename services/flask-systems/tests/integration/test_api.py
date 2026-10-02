@@ -24,7 +24,7 @@ from core.registry import SystemModule
 from core.structured import ChatMessage, Completion
 from lb05.models import QuotaUsage
 from lb05.module import build_runtime
-from lb05.safety import QUESTIONS_PER_DAY
+from lb05.safety import MAX_REFUNDS_PER_DAY, QUESTIONS_PER_DAY
 from lb_common.tracing import RedisSpanWriter, Span, Tracer
 from tests.support import (
     EXPLANATION,
@@ -157,6 +157,24 @@ def test_the_twenty_sixth_question_is_refused_and_the_limit_survives_a_restart(
     assert refused.get_json()["error"]["resets_at"] == "2026-10-02T00:00:00+00:00"
     assert after_restart.status_code == 429
     assert stored_count(engine) == QUESTIONS_PER_DAY
+
+
+def test_questions_that_keep_failing_are_stopped_after_thirty_attempts_in_postgres(
+    serve: Callable[..., Served], engine: Engine
+) -> None:
+    """Free attempts are capped on real parts too: five are given back, the rest count, and the day ends."""
+    attempts = 2 * QUESTIONS_PER_DAY
+    served = serve(FakeChat({"lb-reason": [unavailable() for _ in range(attempts)]}))
+
+    statuses = [served.ask().status_code for _ in range(attempts)]
+
+    assert statuses == [200] * (QUESTIONS_PER_DAY + MAX_REFUNDS_PER_DAY) + [429] * (
+        attempts - QUESTIONS_PER_DAY - MAX_REFUNDS_PER_DAY
+    )
+    assert stored_count(engine) == QUESTIONS_PER_DAY
+    with engine.connect() as connection:
+        refunds = connection.execute(select(QuotaUsage.refunds).where(QuotaUsage.session_key == SESSION)).scalar_one()
+    assert refunds == MAX_REFUNDS_PER_DAY
 
 
 def test_the_next_day_starts_again_from_zero(serve: Callable[..., Served], engine: Engine) -> None:

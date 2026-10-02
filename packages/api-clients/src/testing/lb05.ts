@@ -10,8 +10,8 @@ import { randomBytes } from 'node:crypto'
 
 import type { Answer } from './lb01.ts'
 import { errorAnswer } from './lb01.ts'
-import { buildChart } from './lb05-chart.ts'
-import type { MockCell, MockColumn } from './lb05-chart.ts'
+import { buildChart, hintsOf } from './lb05-chart.ts'
+import type { ChartHints, MockCell, MockColumn } from './lb05-chart.ts'
 import { lb05Spans } from './lb05-spans.ts'
 import type { Lb05Flow, MockRefusal } from './lb05-spans.ts'
 import type { AttackSeed, Lb05Seed } from './lb05-seed.ts'
@@ -218,6 +218,7 @@ function destructiveWord(question: string): string | undefined {
 /** The mock's LB-05: its questions, the visitors' counts of them and the traces they leave. */
 export class Lb05Mock {
   readonly #seed: Lb05Seed
+  readonly #hints: ChartHints
   readonly #now: () => number
   readonly #asked = new Map<string, number[]>()
   readonly #runs = new Map<string, MockSpan[]>()
@@ -225,6 +226,7 @@ export class Lb05Mock {
   /** Starts with no questions asked. */
   constructor(seed: Lb05Seed, now: () => number) {
     this.#seed = seed
+    this.#hints = hintsOf(seed.layer)
     this.#now = now
   }
 
@@ -325,7 +327,7 @@ export class Lb05Mock {
   /** A question whose query ran: possibly after a correction, possibly cut at the row cap. */
   #ran(canned: Canned, corrected: { refusal: MockRefusal, sql: string } | undefined, truncated: boolean, modelSql?: string): Decision {
     const stopped = corrected ? [{ sql: corrected.sql, stopped_by: corrected.refusal.layer, rule: corrected.refusal.rule, message: REFUSAL_MESSAGES[corrected.refusal.rule] ?? 'The query was stopped.' }] : []
-    const chart = buildChart(canned.columns, canned.rows)
+    const chart = buildChart(canned.columns, canned.rows, this.#hints)
     return {
       flow: { kind: 'answered', rows: canned.rows.length, chart: chart?.kind ?? 'none', truncated, corrected: corrected?.refusal },
       attempts: [...stopped, { sql: modelSql ?? canned.sql.replace(/ LIMIT 1000$/, ''), stopped_by: null, rule: null, message: null }],
@@ -360,7 +362,7 @@ export class Lb05Mock {
   /** Writes a decision as the API's answer. */
   #out(runId: string, decision: Decision, remaining: number): Record<string, unknown> {
     const { canned } = decision
-    const chart = canned ? buildChart(canned.columns, canned.rows) : undefined
+    const chart = canned ? buildChart(canned.columns, canned.rows, this.#hints) : undefined
     const last = decision.attempts.at(-1)
     const refusedMessage = decision.flow.kind === 'refused' && last ? `Stopped by the ${last.stopped_by} check (${last.rule}): ${last.message}` : null
     const spans = this.#runs.get(runId) ?? []

@@ -1,0 +1,201 @@
+{
+  "about": "The cases LB-05's two chart builders are held to: the real one (services/flask-systems/lb05/chart.py, tests/unit/test_chart.py) and the mock's copy (packages/api-clients/src/testing/lb05-chart.ts, test/mock-lb05.test.ts). A case gives a result, what the semantic layer says about its columns (metrics, keys), and the chart that must come out (its kind, the columns on x, y and the series, and the kind of x axis), or null with the reason it has none. Change a rule in one builder and these fail in the other.",
+  "cases": [
+    {
+      "id": "a-date-and-a-number-make-a-line",
+      "note": "A series over time.",
+      "columns": [["month", "date"], ["revenue", "integer"]],
+      "rows": [["2025-01-01", 100], ["2025-02-01", 150], ["2025-03-01", 120]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "line", "x": "month", "xType": "temporal", "y": "revenue", "series": null}
+    },
+    {
+      "id": "a-label-and-a-number-make-bars",
+      "note": "A ranking.",
+      "columns": [["product", "text"], ["revenue", "integer"]],
+      "rows": [["Zebra Blend", 900], ["Alpha Roast", 500], ["Middle Bean", 100]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "product", "xType": "nominal", "y": "revenue", "series": null}
+    },
+    {
+      "id": "a-second-label-with-few-values-colours-the-series",
+      "note": "Bars by country, coloured by segment.",
+      "columns": [["country", "text"], ["segment", "text"], ["orders", "integer"]],
+      "rows": [["CZ", "home", 10], ["CZ", "business", 4], ["SK", "home", 3], ["SK", "business", 2]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "country", "xType": "nominal", "y": "orders", "series": "segment"}
+    },
+    {
+      "id": "a-year-in-whole-numbers-is-an-ordered-label",
+      "note": "A year is not a quantity.",
+      "columns": [["year", "integer"], ["orders", "integer"]],
+      "rows": [[2024, 10], [2025, 12], [2026, 15]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "year", "xType": "ordinal", "y": "orders", "series": null}
+    },
+    {
+      "id": "two-numbers-make-a-scatter",
+      "note": "With no metric named, the second number goes up the y axis.",
+      "columns": [["items", "integer"], ["total", "number"]],
+      "rows": [[1, 10.5], [2, 22.0], [3, 31.5]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "point", "x": "items", "xType": "quantitative", "y": "total", "series": null}
+    },
+    {
+      "id": "a-single-row-has-no-chart",
+      "note": "One row has nothing to compare.",
+      "columns": [["product", "text"], ["revenue", "integer"]],
+      "rows": [["Basalt Blend", 100]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "too_few_rows"
+    },
+    {
+      "id": "a-table-of-text-has-no-chart",
+      "note": "Labels only: there is no quantity.",
+      "columns": [["product", "text"], ["kind", "text"]],
+      "rows": [["a", "x"], ["b", "y"]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "no_measure"
+    },
+    {
+      "id": "identifier-columns-are-not-drawn",
+      "note": "order_id is a label for a row, not a quantity: the line is total_czk by day.",
+      "columns": [["order_id", "integer"], ["ordered_at", "date"], ["total_czk", "integer"]],
+      "rows": [[1, "2025-01-01", 280], [2, "2025-01-02", 300], [3, "2025-01-03", 320]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "line", "x": "ordered_at", "xType": "temporal", "y": "total_czk", "series": null}
+    },
+    {
+      "id": "a-result-of-identifiers-and-labels-has-no-chart",
+      "note": "Nothing here is a quantity once the identifiers are put aside.",
+      "columns": [["order_id", "integer"], ["customer_id", "integer"], ["status", "text"]],
+      "rows": [[1, 7, "delivered"], [2, 8, "shipped"]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "no_measure"
+    },
+    {
+      "id": "a-bare-id-and-a-key-of-the-layer-are-not-drawn",
+      "note": "`id` is an identifier by name, and buyer_number because the layer joins on it.",
+      "columns": [["product", "text"], ["id", "integer"], ["buyer_number", "integer"], ["revenue", "integer"]],
+      "rows": [["a", 1, 11, 100], ["b", 2, 12, 200]],
+      "metrics": [],
+      "keys": ["buyer_number"],
+      "expect": {"kind": "bar", "x": "product", "xType": "nominal", "y": "revenue", "series": null}
+    },
+    {
+      "id": "without-the-layers-key-the-same-column-is-a-number",
+      "note": "The same result when the layer does not name buyer_number as a key.",
+      "columns": [["product", "text"], ["id", "integer"], ["buyer_number", "integer"], ["revenue", "integer"]],
+      "rows": [["a", 1, 11, 100], ["b", 2, 12, 200]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "product", "xType": "nominal", "y": "buyer_number", "series": null}
+    },
+    {
+      "id": "a-dump-of-every-order-has-no-chart",
+      "note": "SELECT * FROM orders: ids put aside, many rows share a day and a status, so it is a list of records.",
+      "columns": [["order_id", "integer"], ["customer_id", "integer"], ["ordered_at", "date"], ["status", "text"], ["total_czk", "integer"]],
+      "rows": [[1, 7, "2025-01-01", "delivered", 280], [2, 9, "2025-01-01", "delivered", 300], [3, 11, "2025-01-02", "shipped", 310], [4, 13, "2025-01-02", "shipped", 290], [5, 15, "2025-01-03", "roasted", 350], [6, 17, "2025-01-03", "roasted", 330]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "repeated_points"
+    },
+    {
+      "id": "a-metric-of-the-layer-is-drawn-before-other-numbers",
+      "note": "revenue is a metric the layer defines.",
+      "columns": [["country", "text"], ["customers", "integer"], ["revenue", "integer"]],
+      "rows": [["CZ", 10, 100], ["SK", 5, 50]],
+      "metrics": ["revenue"],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "country", "xType": "nominal", "y": "revenue", "series": null}
+    },
+    {
+      "id": "without-a-metric-the-first-number-is-drawn",
+      "note": "The same result when the layer names no metric among its columns.",
+      "columns": [["country", "text"], ["customers", "integer"], ["revenue", "integer"]],
+      "rows": [["CZ", 10, 100], ["SK", 5, 50]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "country", "xType": "nominal", "y": "customers", "series": null}
+    },
+    {
+      "id": "a-metric-goes-up-the-y-axis-of-a-scatter",
+      "note": "The metric is y whichever column comes first.",
+      "columns": [["revenue", "integer"], ["items", "integer"]],
+      "rows": [[100, 1], [200, 2]],
+      "metrics": ["revenue"],
+      "keys": [],
+      "expect": {"kind": "point", "x": "items", "xType": "quantitative", "y": "revenue", "series": null}
+    },
+    {
+      "id": "a-year-is-not-the-number-drawn",
+      "note": "The period is skipped when the number is chosen.",
+      "columns": [["product", "text"], ["year", "integer"], ["orders", "integer"]],
+      "rows": [["a", 2025, 10], ["b", 2025, 20]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "bar", "x": "product", "xType": "nominal", "y": "orders", "series": null}
+    },
+    {
+      "id": "the-same-place-in-different-series-is-not-a-repeat",
+      "note": "Two products in each month: one point for each place and series.",
+      "columns": [["month", "date"], ["product", "text"], ["revenue", "integer"]],
+      "rows": [["2025-01-01", "a", 1], ["2025-01-01", "b", 2], ["2025-02-01", "a", 3], ["2025-02-01", "b", 4]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "line", "x": "month", "xType": "temporal", "y": "revenue", "series": "product"}
+    },
+    {
+      "id": "one-place-twice-in-one-series-is-a-list-of-records",
+      "note": "CZ twice with nothing to tell the rows apart.",
+      "columns": [["country", "text"], ["revenue", "integer"]],
+      "rows": [["CZ", 1], ["CZ", 2], ["SK", 3]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "repeated_points"
+    },
+    {
+      "id": "a-scatter-may-draw-several-points-at-one-x",
+      "note": "Many points at one x is what a scatter is.",
+      "columns": [["items", "integer"], ["total", "integer"]],
+      "rows": [[1, 10], [1, 12], [2, 20]],
+      "metrics": [],
+      "keys": [],
+      "expect": {"kind": "point", "x": "items", "xType": "quantitative", "y": "total", "series": null}
+    },
+    {
+      "id": "one-number-and-nothing-to-set-it-against-has-no-chart",
+      "note": "A single quantity, once the identifier is put aside.",
+      "columns": [["revenue", "integer"], ["order_id", "integer"]],
+      "rows": [[1, 5], [2, 6]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "no_axis"
+    },
+    {
+      "id": "a-missing-label-twice-is-a-repeat",
+      "note": "Two rows whose label is missing are the same place.",
+      "columns": [["country", "text"], ["revenue", "integer"]],
+      "rows": [[null, 1], [null, 2]],
+      "metrics": [],
+      "keys": [],
+      "expect": null,
+      "why": "repeated_points"
+    }
+  ]
+}

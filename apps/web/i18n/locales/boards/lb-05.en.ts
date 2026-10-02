@@ -38,7 +38,7 @@ const lb05 = {
   attack: {
     title: 'Try to make it delete data',
     intro: 'The analyst only reads. Pick an attack, or write your own, and a model is asked to do it. Whatever SQL the model writes meets six layers of checks, and the answer says which layer stopped it. The layers do not depend on the model saying no.',
-    fourOrSix: 'The datasheet counts four defences: a read-only connection, a SELECT-only check, a forced row limit and a query timeout. The service names six checks, because the SELECT-only check has two halves and the plan check is a step of its own.',
+    sixChecks: 'Six checks stand between a question and the data, in this order. The SELECT-only check has two halves, the parse and the allowlist, and the plan check reads the query without running it. The datasheet counts the same six.',
     hiddenColumns: 'The data holds two columns the semantic layer leaves out on purpose, a customer\'s email address and an order\'s payment reference. Ask for them and see which layer says no.',
     samplesLegend: 'Choose an attack',
     questionSent: 'What is sent to the model',
@@ -153,7 +153,7 @@ const lb05 = {
     declinedAfter: 'It said so after its first query was stopped by the {layer} layer ({rule}).',
     refusedText: 'A layer stopped the query. Nothing ran, and no table, chart or explanation was made.',
     refusedNoRetry: 'This kind of refusal gets no second try.',
-    unavailableText: 'The analyst could not answer this question, so it was not counted.',
+    unavailableText: 'The analyst could not answer this question. The line below says why, and whether it was counted.',
     explanation: 'Explanation',
     fromModel: 'Written by the model from the question, the SQL and a preview of the result.',
     fromNumbers: 'A fixed sentence built from the numbers: the model\'s explanation was not available.',

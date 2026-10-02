@@ -471,10 +471,20 @@ describe('the answer', () => {
     expect(wrapper.get('[data-testid="declined"]').text()).toContain('No query ran')
   })
 
-  it('says a question the service could not answer was not counted', () => {
+  it('says a question the service could not answer was not counted, in the back end\'s own sentence', () => {
     const wrapper = mountWithSite(AnswerView, { props: propsFor(unavailable()) })
     expect(wrapper.get('[data-testid="ask-notice"]').attributes('data-kind')).toBe('unavailable')
-    expect(wrapper.get('[data-testid="ask-notice"]').text()).toContain('not counted')
+    expect(wrapper.get('[data-testid="ask-notice-detail"]').text()).toContain('not counted')
+  })
+
+  it('leaves it to the back end\'s own sentence to say whether the question was counted, since after a few failures a day it is', () => {
+    const counted = { ...unavailable(), message: 'The language models are not answering right now, and this question was counted: a visitor is given back at most 5 such questions a day.' }
+    const wrapper = mountWithSite(AnswerView, { props: propsFor(counted) })
+    const notice = wrapper.get('[data-testid="ask-notice"]').text()
+
+    expect(notice).toContain('whether it was counted')
+    expect(notice).not.toContain('so it was not counted')
+    expect(wrapper.get('[data-testid="ask-notice-detail"]').text()).toContain('this question was counted')
   })
 
   it('shows a curated question in English and leaves a visitor\'s own question to the language of the page', () => {

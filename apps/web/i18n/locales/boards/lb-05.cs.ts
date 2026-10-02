@@ -36,7 +36,7 @@ const lb05 = {
   attack: {
     title: 'Zkuste ho přimět, aby smazal data',
     intro: 'Analytik data jen čte. Vyberte útok, nebo napište vlastní, a model dostane za úkol ho provést. Jakékoli SQL model napíše, projde šesti vrstvami kontrol a odpověď řekne, která vrstva ho zastavila. Vrstvy nezávisejí na tom, že model odmítne.',
-    fourOrSix: 'Katalogový list počítá čtyři ochrany: připojení jen pro čtení, kontrolu jen pro SELECT, vynucený limit řádků a časový limit dotazu. Služba jmenuje šest kontrol, protože kontrola jen pro SELECT má dvě poloviny a kontrola plánu je samostatný krok.',
+    sixChecks: 'Mezi otázkou a daty stojí šest kontrol, v tomto pořadí. Kontrola jen pro SELECT má dvě poloviny, rozbor a seznam povolených prvků, a kontrola plánu čte dotaz, aniž by ho spustila. Katalogový list počítá stejných šest.',
     hiddenColumns: 'Data obsahují dva sloupce, které sémantická vrstva záměrně vynechává: e-mailovou adresu zákazníka a platební referenci objednávky. Zeptejte se na ně a uvidíte, která vrstva řekne ne.',
     samplesLegend: 'Vyberte útok',
     questionSent: 'Co se odešle modelu',
@@ -151,7 +151,7 @@ const lb05 = {
     declinedAfter: 'Řekl to poté, co jeho první dotaz zastavila vrstva {layer} ({rule}).',
     refusedText: 'Dotaz zastavila vrstva. Nic neproběhlo a nevznikla tabulka, graf ani vysvětlení.',
     refusedNoRetry: 'Takové odmítnutí druhý pokus nedostane.',
-    unavailableText: 'Analytik na tuto otázku nedokázal odpovědět, takže se nepočítala.',
+    unavailableText: 'Analytik na tuto otázku nedokázal odpovědět. Řádek níže říká proč a zda se otázka započítala.',
     explanation: 'Vysvětlení',
     fromModel: 'Napsal model z otázky, SQL a náhledu výsledku.',
     fromNumbers: 'Pevná věta sestavená z čísel: vysvětlení od modelu nebylo k dispozici.',

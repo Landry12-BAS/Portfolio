@@ -147,7 +147,7 @@ export const systems = [
     chain: ['resolve metrics', 'write SQL', 'parse + allowlist', 'EXPLAIN', 'run read-only', 'self-correct', 'chart + explain'],
     stack: ['Flask (sync)', 'gunicorn threaded workers', 'DuckDB', 'sqlglot', 'Vega-Lite', 'Vue'],
     highlights: [
-      'Four layers of SQL safety: a read-only connection, a SELECT-only parse-tree check, a forced row limit and a query timeout.',
+      'Six layers of SQL safety: a SELECT-only parse, an allowlist of tables, columns and functions, a plan check before anything runs, a locked read-only connection, a forced row limit and a query timeout.',
       'Sync on purpose. Queries are short and CPU-bound, threads cover the model wait, and the code stays simple. The datasheet publishes a load test against an async build.',
       'Execution accuracy measured on 100 question and answer pairs.',
     ],

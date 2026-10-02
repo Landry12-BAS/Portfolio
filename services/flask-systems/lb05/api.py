@@ -3,7 +3,7 @@
 Every route needs a visitor token minted for `lb-05` (core/visitors.py): visitors have no accounts, and
 the only thing known about one is the hash of their session. A question is admitted by the quota
 ledger first (25 a day, one at a time), answered synchronously by the pipeline, and then the ledger
-is told how it ended; a question the service itself failed to answer is given back.
+is told how it ended; a question the service itself failed to answer is given back, up to a few a day.
 
 An answer that is a refusal is a normal 200: a visitor who tries to make the model delete data is
 supposed to see which layer stopped the query, and why. Only a request the service can't take at
@@ -28,6 +28,7 @@ from lb05.prompts import MAX_QUESTION_CHARS
 from lb05.quota import Admission, Ledger, midnight_after
 from lb05.safety import (
     MAX_MODEL_CALLS,
+    MAX_REFUNDS_PER_DAY,
     MAX_ROWS,
     QUESTION_DEADLINE_SECONDS,
     QUESTIONS_PER_DAY,
@@ -46,15 +47,18 @@ SYSTEM_KEY = "lb-05"
 MIN_QUESTION_CHARS = 5
 
 # What a visitor is told when there is no answer for a reason of the service's, by the code in `Answer.reason`.
-NOT_COUNTED = "so this question was not counted"
-UNAVAILABLE_MESSAGES: dict[str, str] = {
-    Unavailable.MODEL_FAILED.value: f"The language models are not answering right now, {NOT_COUNTED}.",
-    Unavailable.MODEL_BUDGET.value: f"Today's free model capacity is used up, {NOT_COUNTED}.",
-    Unavailable.MODEL_OUTPUT.value: f"The model's reply could not be read, {NOT_COUNTED}. Try it again.",
-    Unavailable.TIME_LIMIT.value: f"The question took longer than the 90 seconds it is given, {NOT_COUNTED}.",
-    Unavailable.CALL_LIMIT.value: f"The question needed more model calls than it is given, {NOT_COUNTED}.",
-    Unavailable.WAREHOUSE_BUSY.value: f"The data engine is busy with other questions, {NOT_COUNTED}. Try again.",
+UNAVAILABLE_REASONS: dict[str, str] = {
+    Unavailable.MODEL_FAILED.value: "The language models are not answering right now",
+    Unavailable.MODEL_BUDGET.value: "Today's free model capacity is used up",
+    Unavailable.MODEL_OUTPUT.value: "The model's reply could not be read",
+    Unavailable.TIME_LIMIT.value: "The question took longer than the 90 seconds it is given",
+    Unavailable.CALL_LIMIT.value: "The question needed more model calls than it is given",
+    Unavailable.WAREHOUSE_BUSY.value: "The data engine is busy with other questions",
 }
+# The reasons after which trying again is the right advice.
+TRY_AGAIN = frozenset({Unavailable.MODEL_OUTPUT.value, Unavailable.WAREHOUSE_BUSY.value})
+NOT_COUNTED = "so this question was not counted."
+COUNTED = f"and this question was counted: a visitor is given back at most {MAX_REFUNDS_PER_DAY} such questions a day."
 NOT_SERVING_MESSAGE = "The analyst is not available right now."
 DAILY_LIMIT_MESSAGE = f"You have asked today's {QUESTIONS_PER_DAY} questions. The count starts again at midnight UTC."
 BUSY_MESSAGE = "Your last question is still being answered. Wait for it, then ask again."
@@ -294,7 +298,16 @@ def chart_out(chart: Chart | None) -> ChartOut | None:
     return ChartOut(kind=chart.kind, spec=chart.spec, omitted_rows=chart.omitted_rows)
 
 
-def message_for(answer: Answer) -> str | None:
+def unavailable_message(reason: str | None, given_back: bool) -> str:
+    """Say why a question could not be answered, and whether it still cost the visitor one of their questions."""
+    sentence = UNAVAILABLE_REASONS.get(reason or "")
+    if sentence is None:
+        return NOT_SERVING_MESSAGE
+    advice = " Try it again." if reason in TRY_AGAIN else ""
+    return f"{sentence}, {NOT_COUNTED if given_back else COUNTED}{advice}"
+
+
+def message_for(answer: Answer, given_back: bool) -> str | None:
     """Write the sentence for people that goes with an answer that has no table: why not, in plain words."""
     if answer.outcome is Outcome.DECLINED:
         return answer.reason
@@ -302,12 +315,12 @@ def message_for(answer: Answer) -> str | None:
         last = answer.attempts[-1]
         return f"Stopped by the {last.stopped_by} check ({last.rule}): {last.message}"
     if answer.outcome is Outcome.UNAVAILABLE:
-        return UNAVAILABLE_MESSAGES.get(answer.reason or "", NOT_SERVING_MESSAGE)
+        return unavailable_message(answer.reason, given_back)
     return None
 
 
-def answer_out(answer: Answer, remaining: int) -> AnswerOut:
-    """Turn the pipeline's answer into the API's, with the visitor's questions left."""
+def answer_out(answer: Answer, remaining: int, given_back: bool = False) -> AnswerOut:
+    """Turn the pipeline's answer into the API's, with the questions left and whether this one was given back."""
     executed = answer.executed
     result = None
     if executed is not None:
@@ -331,7 +344,7 @@ def answer_out(answer: Answer, remaining: int) -> AnswerOut:
             AttemptOut(sql=attempt.sql, stopped_by=attempt.stopped_by, rule=attempt.rule, message=attempt.message)
             for attempt in answer.attempts
         ],
-        message=message_for(answer),
+        message=message_for(answer, given_back),
         result=result,
         chart=chart_out(answer.chart),
         explanation=answer.explanation,
@@ -347,12 +360,16 @@ def not_admitted(admission: Admission) -> Response:
     return error_response(429, "daily_limit", DAILY_LIMIT_MESSAGE, resets_at=midnight_after(admission.day).isoformat())
 
 
-def end_question(ledger: Ledger, admission: Admission, refund: bool) -> None:
-    """Tell the ledger a question ended. A ledger that can't be reached must not lose the visitor their answer."""
+def end_question(ledger: Ledger, admission: Admission, refund: bool) -> bool:
+    """Tell the ledger a question ended, and say whether the visitor got their place back.
+
+    A ledger that can't be reached must not lose the visitor their answer; the place is then not given back.
+    """
     try:
-        ledger.finish(admission, refund)
+        return ledger.finish(admission, refund)
     except SQLAlchemyError as error:
         logger.error("Could not end a question's quota entry: %s", describe_failure(error))
+        return False
 
 
 def build_blueprint(service: Lb05Service | None, web_token_key: str | None) -> APIBlueprint:
@@ -375,7 +392,8 @@ def build_blueprint(service: Lb05Service | None, web_token_key: str | None) -> A
         """Answer a question about the sales data, synchronously: the SQL, the table, a chart and an explanation.
 
         Counts against the visitor's 25 questions a day, which the service enforces itself, and a
-        visitor has one question running at a time. A question the service itself fails to answer is not counted.
+        visitor has one question running at a time. A question the service itself fails to answer is not
+        counted, for up to five such questions a day: after that a failed question counts too.
         """
         if service is None or service.pipeline is None:
             return error_response(503, "unavailable", NOT_SERVING_MESSAGE)
@@ -388,9 +406,8 @@ def build_blueprint(service: Lb05Service | None, web_token_key: str | None) -> A
         except BaseException:
             end_question(service.ledger, admission, refund=True)
             raise
-        refund = answer.outcome is Outcome.UNAVAILABLE
-        end_question(service.ledger, admission, refund)
-        return answer_out(answer, admission.remaining + int(refund)).model_dump(mode="json")
+        given_back = end_question(service.ledger, admission, refund=answer.outcome is Outcome.UNAVAILABLE)
+        return answer_out(answer, admission.remaining + int(given_back), given_back).model_dump(mode="json")
 
     @blueprint.get("/semantic-layer", responses={200: SemanticLayerOut})
     def semantic_layer() -> Response | dict[str, Any]:

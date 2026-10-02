@@ -152,6 +152,15 @@ class SemanticLayer(StrictEntry):
         """Return the type of every column, by table."""
         return {table.name: {column.name: column.type for column in table.columns} for table in self.tables}
 
+    def metric_names(self) -> frozenset[str]:
+        """Return the names of the metrics the layer defines, which is what a result's measure columns are called."""
+        return frozenset(metric.name for metric in self.metrics)
+
+    def key_column_names(self) -> frozenset[str]:
+        """Return the names of the columns the layer's joins use: keys that label a row and are never a quantity."""
+        references = [reference for join in self.joins for reference in (join.left, join.right)]
+        return frozenset(reference.partition(".")[2] for reference in references)
+
     def join_pairs(self) -> frozenset[frozenset[tuple[str, str]]]:
         """Return the allowed joins as unordered pairs of (table, column), so either side may come first."""
         pairs = set()

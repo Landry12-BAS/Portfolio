@@ -20,10 +20,17 @@ from core.app import create_app
 from core.platform import Platform
 from core.registry import SystemModule, SystemRuntime
 from lb05.api import BUSY_MESSAGE, DAILY_LIMIT_MESSAGE, SYSTEM_KEY, build_blueprint
+from lb05.golden import read_adversarial_set
 from lb05.pipeline import AnalystPipeline
 from lb05.prompts import MAX_QUESTION_CHARS
 from lb05.quota import Admission, Ledger, Usage, midnight_after
-from lb05.safety import MAX_MODEL_CALLS, MAX_ROWS, QUESTION_DEADLINE_SECONDS, QUESTIONS_PER_DAY
+from lb05.safety import (
+    MAX_MODEL_CALLS,
+    MAX_REFUNDS_PER_DAY,
+    MAX_ROWS,
+    QUESTION_DEADLINE_SECONDS,
+    QUESTIONS_PER_DAY,
+)
 from lb05.semantic_layer import SemanticLayer
 from lb05.service import Lb05Service
 from lb05.sql_policy import SqlPolicy
@@ -51,10 +58,12 @@ ROUTES = [("post", "/api/lb05/ask"), ("get", "/api/lb05/semantic-layer"), ("get"
 
 @dataclass
 class MemoryLedger:
-    """A ledger kept in memory with the Postgres one's rules: a limit a day, one question at a time, refunds."""
+    """A ledger kept in memory with the Postgres one's rules: a limit a day, one question at a time, capped refunds."""
 
     limit: int = QUESTIONS_PER_DAY
+    max_refunds: int = MAX_REFUNDS_PER_DAY
     used: dict[str, int] = field(default_factory=dict)
+    refunds: dict[str, int] = field(default_factory=dict)
     running: set[str] = field(default_factory=set)
     ended: list[tuple[str, bool]] = field(default_factory=list)
 
@@ -74,14 +83,18 @@ class MemoryLedger:
         self.running.add(session_key)
         return Admission(True, "ok", session_key, day, used + 1, self.limit)
 
-    def finish(self, admission: Admission, refund: bool) -> None:
-        """End a question: the visitor can ask again, and gets the place back when `refund` is true."""
+    def finish(self, admission: Admission, refund: bool) -> bool:
+        """End a question: the visitor can ask again, and gets the place back if a refund is asked for and allowed."""
         if not admission.allowed:
-            return
-        self.running.discard(admission.session_key)
-        if refund:
-            self.used[admission.session_key] -= 1
-        self.ended.append((admission.session_key, refund))
+            return False
+        key = admission.session_key
+        self.running.discard(key)
+        given_back = refund and self.refunds.get(key, 0) < self.max_refunds
+        if given_back:
+            self.used[key] -= 1
+            self.refunds[key] = self.refunds.get(key, 0) + 1
+        self.ended.append((key, given_back))
+        return given_back
 
     def usage(self, session_key: str) -> Usage:
         """Return a visitor's count for today."""
@@ -91,7 +104,7 @@ class MemoryLedger:
 class LedgerThatCannotFinish(MemoryLedger):
     """A ledger whose database goes away while a question runs, so ending the question fails."""
 
-    def finish(self, admission: Admission, refund: bool) -> None:  # noqa: ARG002 - the Ledger signature
+    def finish(self, admission: Admission, refund: bool) -> bool:  # noqa: ARG002 - the Ledger signature
         """Fail as a lost connection does, with a message that quotes a visitor."""
         raise OperationalError(SECRET_WORDS, {}, Exception(SECRET_WORDS))
 
@@ -191,6 +204,29 @@ def test_a_question_is_answered_with_the_sql_the_table_and_an_explanation(make_r
     assert rig.ledger.ended == [(SESSION, False)]
 
 
+def test_a_dump_of_every_order_is_answered_cut_at_the_cap_with_no_chart(make_rig: Callable[..., Rig]) -> None:
+    """The dump-all-orders attack: a thousand rows, said to be cut, and no chart of order numbers by day."""
+    attack = next(item for item in read_adversarial_set().attempts if item.id == "dump-all-orders")
+    rig = make_rig({"lb-reason": [sql_reply(attack.sql)], "lb-fast": [EXPLANATION]})
+
+    body = rig.ask(attack.question).get_json()
+
+    assert body["outcome"] == "answered"
+    assert (body["result"]["row_count"], body["result"]["truncated"]) == (MAX_ROWS, True)
+    assert body["chart"] is None
+
+
+def test_a_summary_of_orders_by_month_is_answered_with_a_line_chart(make_rig: Callable[..., Rig]) -> None:
+    """The other side of the same rule: one row for each month is a summary, and it is drawn."""
+    sql = "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, COUNT(*) AS orders FROM orders GROUP BY 1 ORDER BY 1"
+    rig = make_rig({"lb-reason": [sql_reply(sql)], "lb-fast": [EXPLANATION]})
+
+    body = rig.ask().get_json()
+
+    assert body["chart"]["kind"] == "line"
+    assert body["chart"]["spec"]["encoding"]["y"]["title"] == "orders"
+
+
 def test_the_answer_carries_the_sql_that_ran_and_never_the_visitors_session(make_rig: Callable[..., Rig]) -> None:
     """The visitor sees the checked SQL, and nothing in the answer says who the visitor is."""
     rig = make_rig(one_question())
@@ -273,6 +309,77 @@ def test_a_crash_inside_a_question_is_a_500_that_frees_and_refunds_the_visitor(
     assert rig.ledger.ended[0] == (SESSION, True)
     assert again.get_json()["outcome"] == "answered"
     assert rig.ledger.used[SESSION] == 1
+
+
+def test_a_crash_after_the_allowance_of_refunds_counts_like_any_other_failure(
+    make_rig: Callable[..., Rig],
+) -> None:
+    """A bug that can be provoked is no free pass: with the refunds used up, the crashed question stays counted."""
+    ledger = MemoryLedger(refunds={SESSION: MAX_REFUNDS_PER_DAY})
+    rig = make_rig({"lb-reason": [RuntimeError(SECRET_WORDS)]}, ledger=ledger)
+
+    crashed = rig.ask()
+
+    assert crashed.status_code == 500
+    assert ledger.ended == [(SESSION, False)]
+    assert ledger.used[SESSION] == 1
+    assert ledger.running == set()
+
+
+def test_failures_that_cost_nothing_are_capped_so_a_visitor_cannot_try_without_end(
+    make_rig: Callable[..., Rig],
+) -> None:
+    """Failures can be provoked on purpose, so only five a day are given back: the thirty-first attempt is refused.
+
+    Without the cap every failed question is free, and a visitor who keeps the models failing (or too slow, or
+    their replies unreadable) never reaches the limit of 25: this loop would run to its end with no 429.
+    """
+    attempts = 2 * QUESTIONS_PER_DAY
+    rig = make_rig({"lb-reason": [unavailable() for _ in range(attempts)]})
+
+    answers = []
+    for _ in range(attempts):
+        response = rig.ask()
+        if response.status_code == 429:
+            break
+        answers.append(response.get_json())
+    else:
+        pytest.fail("A visitor whose questions all fail was never stopped.")
+
+    given_back = [body for body in answers if "was not counted" in body["message"]]
+    counted = [body for body in answers if "was counted" in body["message"]]
+    assert len(answers) == QUESTIONS_PER_DAY + MAX_REFUNDS_PER_DAY
+    assert len(given_back) == MAX_REFUNDS_PER_DAY
+    assert len(counted) == QUESTIONS_PER_DAY
+    assert [body["remaining_questions"] for body in given_back] == [QUESTIONS_PER_DAY] * MAX_REFUNDS_PER_DAY
+    assert counted[-1]["remaining_questions"] == 0
+    assert str(MAX_REFUNDS_PER_DAY) in counted[0]["message"]
+    assert rig.ledger.used[SESSION] == QUESTIONS_PER_DAY
+
+
+def test_however_many_questions_fail_a_visitor_is_never_given_more_than_twenty_five_answers(
+    make_rig: Callable[..., Rig],
+) -> None:
+    """Answers and failures mixed: the answers a visitor receives stay within 25, and the day still comes to an end."""
+    pairs = 2 * QUESTIONS_PER_DAY
+    replies: dict[str, list[str | Exception]] = {
+        "lb-reason": [reply for _ in range(pairs) for reply in (unavailable(), sql_reply(REVENUE_SQL))],
+        "lb-fast": [EXPLANATION] * pairs,
+    }
+    rig = make_rig(replies)
+
+    outcomes = []
+    for _ in range(2 * pairs):
+        response = rig.ask()
+        if response.status_code == 429:
+            break
+        outcomes.append(response.get_json()["outcome"])
+    else:
+        pytest.fail("A visitor who mixes answers and failures was never stopped.")
+
+    assert outcomes.count("answered") <= QUESTIONS_PER_DAY
+    assert outcomes.count("answered") + outcomes.count("unavailable") - MAX_REFUNDS_PER_DAY == QUESTIONS_PER_DAY
+    assert rig.ledger.used[SESSION] == QUESTIONS_PER_DAY
 
 
 def test_the_twenty_sixth_question_of_the_day_is_refused_before_any_model_is_asked(

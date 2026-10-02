@@ -4,13 +4,14 @@
 // day count down and then say when they start again; the semantic layer is the real file's; a run's
 // spans are the pipeline's, with the root last; and every answer fits the OpenAPI document.
 import { generateKeyPairSync } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 import { mintServiceToken } from '@lb/common/tokens'
 import { mintVisitorToken } from '@lb/common/visitors'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildChart, readLb05Seed, startMockBackend } from '../src/testing/index.ts'
-import type { MockBackend } from '../src/testing/index.ts'
+import { buildChart, hintsOf, readLb05Seed, startMockBackend } from '../src/testing/index.ts'
+import type { MockBackend, MockCell, MockColumn } from '../src/testing/index.ts'
 
 const site = generateKeyPairSync('ed25519')
 const web = generateKeyPairSync('ed25519')
@@ -156,13 +157,13 @@ describe('the attacks', () => {
     expect(answer.model_calls).toBe(3)
   })
 
-  it('holds a dump of every order by answering with the thousand rows the cap allows, and saying it cut them', async () => {
+  it('holds a dump of every order by answering with the thousand rows the cap allows, saying it cut them, and drawing no chart of a list of records', async () => {
     const answer = (await ask(attack('dump-all-orders').question)).json
 
     expect(answer.outcome).toBe('answered')
     expect(answer.result).toMatchObject({ row_count: 1_000, truncated: true })
     expect(answer.result.rows).toHaveLength(1_000)
-    expect(answer.chart.omitted_rows).toBe(800)
+    expect(answer.chart).toBeNull()
     expect(mock.violations).toEqual([])
   })
 
@@ -288,7 +289,46 @@ describe('a run\'s trace', () => {
   })
 })
 
+/** One case both chart builders are held to (evals/lb05/chart-cases.json). */
+interface ChartCase {
+  id: string
+  columns: [string, MockColumn['kind']][]
+  rows: MockCell[][]
+  metrics: string[]
+  keys: string[]
+  expect: { kind: string, x: string, xType: string, y: string, series: string | null } | null
+}
+
+const chartCases = (JSON.parse(readFileSync(new URL('../../../evals/lb05/chart-cases.json', import.meta.url), 'utf8')) as { cases: ChartCase[] }).cases
+
+/** Writes a column's name as the chart titles it. */
+function titled(name: string): string {
+  return name.replaceAll('_', ' ')
+}
+
 describe('the chart the mock builds', () => {
+  it.each(chartCases)('comes out as the shared case says: $id', (item) => {
+    const chart = buildChart(item.columns.map(([name, kind]) => ({ name, kind })), item.rows, { metrics: item.metrics, keys: item.keys })
+
+    if (item.expect === null) {
+      expect(chart).toBeUndefined()
+      return
+    }
+    const encoding = chart?.spec.encoding as Record<string, { title: string, type: string } | undefined>
+    expect(chart?.kind).toBe(item.expect.kind)
+    expect(encoding.x).toMatchObject({ title: titled(item.expect.x), type: item.expect.xType })
+    expect(encoding.y?.title).toBe(titled(item.expect.y))
+    if (item.expect.series === null) expect(encoding.color).toBeUndefined()
+    else expect(encoding.color?.title).toBe(titled(item.expect.series))
+  })
+
+  it('takes its hints from the semantic layer the mock serves: the metrics it defines and the keys it joins on', () => {
+    const hints = hintsOf(seed.layer)
+
+    expect(hints.metrics).toEqual(expect.arrayContaining(['revenue', 'orders', 'repeat_buyers']))
+    expect([...new Set(hints.keys)].sort()).toEqual(['customer_id', 'order_id', 'product_id', 'subscription_id'])
+  })
+
   it('follows the real rules: a date and a number make a line, a label and a number bars, two numbers points, one row nothing', () => {
     expect(buildChart([{ name: 'month', kind: 'date' }, { name: 'revenue', kind: 'integer' }], [['2025-01-01', 1], ['2025-02-01', 2]])?.kind).toBe('line')
     expect(buildChart([{ name: 'product', kind: 'text' }, { name: 'revenue', kind: 'integer' }], [['a', 1], ['b', 2]])?.kind).toBe('bar')

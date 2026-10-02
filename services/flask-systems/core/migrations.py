@@ -29,13 +29,13 @@ def alembic_config(script_location: Path) -> Config:
     return config
 
 
-def upgrade(engine: Engine, schema: str, script_location: Path) -> None:
-    """Bring a system's schema up to its latest migration, creating the schema first when it is missing."""
+def upgrade(engine: Engine, schema: str, script_location: Path, revision: str = "head") -> None:
+    """Bring a system's schema up to a migration (the latest by default), making the schema first if it is missing."""
     with engine.begin() as connection:
         ensure_schema(connection, schema)
         config = alembic_config(script_location)
         config.attributes["connection"] = connection
-        command.upgrade(config, "head")
+        command.upgrade(config, revision)
 
 
 def migrate_on(environment: Any, connection: Connection, metadata: MetaData) -> None:

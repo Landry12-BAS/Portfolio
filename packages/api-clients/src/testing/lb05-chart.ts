@@ -1,8 +1,11 @@
 // The chart the mock's LB-05 builds from a result, by the same rules as the real one
 // (services/flask-systems/lb05/chart.py): a date and a number make a line, a label and a number make
 // bars (coloured by a second label when it has few values), a period in whole numbers is a label in
-// order, two numbers make a scatter, and anything else has no honest chart. The spec is the closed
-// subset of Vega-Lite 5 the real service writes, with the generated field names `x`, `y` and `series`.
+// order, two numbers make a scatter, and anything else has no honest chart. Identifier columns are never
+// drawn, the number drawn is a metric the semantic layer defines when the result has one, and a result with
+// several rows for one point (a list of records) has no chart. The spec is the closed subset of Vega-Lite 5
+// the real service writes, with the generated field names `x`, `y` and `series`. The two builders are held
+// to the same cases (evals/lb05/chart-cases.json) by their tests.
 
 /** The kinds of value a result column holds. */
 export type ColumnKind = 'text' | 'integer' | 'number' | 'date' | 'boolean' | 'other'
@@ -23,8 +26,17 @@ export interface MockChart {
   omitted_rows: number
 }
 
+/** What the semantic layer says about a result's columns: the metrics it defines, and the keys it joins on. */
+export interface ChartHints {
+  metrics: readonly string[]
+  keys: readonly string[]
+}
+
 /** The kinds of axis a chart has. */
 type AxisType = 'nominal' | 'ordinal' | 'quantitative' | 'temporal'
+
+/** No hints: nothing is known about the columns but their names and kinds. */
+export const NO_HINTS: ChartHints = { metrics: [], keys: [] }
 
 // The most points a chart draws, and the most colours it uses (chart.py).
 const MAX_POINTS = 200
@@ -51,10 +63,25 @@ interface Axes {
   xType: AxisType
 }
 
-/** Groups a result's columns by what can be drawn. */
-function groupColumns(columns: readonly MockColumn[]): Groups {
+/** Takes the chart's hints from the semantic layer: its metric names, and the names of the columns its joins use. */
+export function hintsOf(layer: { metrics: readonly { name: string }[], joins: readonly { left: string, right: string }[] }): ChartHints {
+  return {
+    metrics: layer.metrics.map(metric => metric.name),
+    keys: layer.joins.flatMap(join => [join.left, join.right]).map(reference => reference.split('.')[1] ?? ''),
+  }
+}
+
+/** Tells whether a column only labels a row: `id`, a name ending in `_id`, or a key the semantic layer joins on. */
+function isIdentifier(column: MockColumn, hints: ChartHints): boolean {
+  const name = column.name.toLowerCase()
+  return name === 'id' || name.endsWith('_id') || hints.keys.includes(name)
+}
+
+/** Groups a result's columns by what can be drawn; identifiers and the rest are left out. */
+function groupColumns(columns: readonly MockColumn[], hints: ChartHints): Groups {
   const groups: Groups = { text: [], date: [], number: [] }
   columns.forEach((column, position) => {
+    if (isIdentifier(column, hints)) return
     if (column.kind === 'text') groups.text.push(position)
     else if (column.kind === 'date') groups.date.push(position)
     else if (column.kind === 'integer' || column.kind === 'number') groups.number.push(position)
@@ -72,6 +99,25 @@ function namesAPeriod(column: MockColumn): boolean {
 /** Makes a column's name a short axis title. */
 function titleOf(column: MockColumn | undefined): string {
   return (column?.name ?? '').replaceAll('_', ' ').slice(0, MAX_LABEL)
+}
+
+/** Finds the first of these columns that is named for a metric the semantic layer defines. */
+function metricPosition(columns: readonly MockColumn[], positions: readonly number[], hints: ChartHints): number | undefined {
+  return positions.find(position => hints.metrics.includes((columns[position]?.name ?? '').toLowerCase()))
+}
+
+/** Finds the first of these columns that is not `taken`. */
+function firstOther(positions: readonly number[], taken: number): number | undefined {
+  return positions.find(position => position !== taken)
+}
+
+/** Picks the quantities of a scatter: a metric up the y axis when there is one, else the second against the first. */
+function scatterAxes(quantities: readonly number[], named: number | undefined): Axes | undefined {
+  if (quantities.length < 2) return undefined
+  const y = named ?? quantities[1]
+  if (y === undefined) return undefined
+  const x = firstOther(quantities, y)
+  return x === undefined ? undefined : { x, y, series: undefined, xType: 'quantitative' }
 }
 
 /** Picks a text column to colour the series by, when it has few enough different values to tell apart. */
@@ -94,18 +140,26 @@ function numberOrNull(cell: MockCell | undefined): number | null {
   return typeof cell === 'number' ? cell : null
 }
 
-/** Writes the chart's data: one entry per row, with generated field names and bounded values. */
+/** Writes a point for every row, with generated field names and bounded values. */
 function pointsOf(rows: readonly MockCell[][], axes: Axes): Record<string, string | number | null>[] {
-  return rows.slice(0, MAX_POINTS).map((row) => {
+  return rows.map((row) => {
     const point: Record<string, string | number | null> = { x: xValue(row[axes.x], axes.xType), y: numberOrNull(row[axes.y]) }
     if (axes.series !== undefined) point.series = String(row[axes.series]).slice(0, MAX_LABEL)
     return point
   })
 }
 
-/** Builds the spec for one chart over the given columns of a result. */
-function makeChart(kind: MockChart['kind'], columns: readonly MockColumn[], rows: readonly MockCell[][], axes: Axes): MockChart {
-  const values = pointsOf(rows, axes)
+/** Tells whether two of the drawn points are the same: the same place along x, in the same series. */
+function repeatsAPoint(points: readonly Record<string, string | number | null>[]): boolean {
+  const places = new Set(points.map(point => JSON.stringify([point.x, point.series ?? null])))
+  return places.size < points.length
+}
+
+/** Builds the spec for one chart over the given columns of a result, or returns undefined when it would draw one point twice (judged on the whole result, not on the part drawn). */
+function makeChart(kind: MockChart['kind'], columns: readonly MockColumn[], rows: readonly MockCell[][], axes: Axes): MockChart | undefined {
+  const points = pointsOf(rows, axes)
+  if (kind !== 'point' && repeatsAPoint(points)) return undefined
+  const values = points.slice(0, MAX_POINTS)
   const labels = [...new Set(values.map(point => String(point.x)))]
   const xColumn = columns[axes.x]
   const yColumn = columns[axes.y]
@@ -130,24 +184,25 @@ function makeChart(kind: MockChart['kind'], columns: readonly MockColumn[], rows
 }
 
 /** Chooses a chart for a result from its shape, or returns undefined when it has no honest chart. */
-export function buildChart(columns: readonly MockColumn[], rows: readonly MockCell[][]): MockChart | undefined {
+export function buildChart(columns: readonly MockColumn[], rows: readonly MockCell[][], hints: ChartHints = NO_HINTS): MockChart | undefined {
   if (rows.length < 2) return undefined
-  const found = groupColumns(columns)
-  const firstDate = found.date[0]
-  const firstText = found.text[0]
-  const firstNumber = found.number[0]
-  if (firstDate !== undefined && firstNumber !== undefined) {
-    return makeChart('line', columns, rows, { x: firstDate, y: firstNumber, series: seriesPosition(rows, found.text, [firstDate, firstNumber]), xType: 'temporal' })
-  }
-  if (firstText !== undefined && firstNumber !== undefined) {
-    return makeChart('bar', columns, rows, { x: firstText, y: firstNumber, series: seriesPosition(rows, found.text.slice(1), [firstText, firstNumber]), xType: 'nominal' })
-  }
+  const found = groupColumns(columns, hints)
   const periods = found.number.filter(position => namesAPeriod(columns[position] ?? { name: '', kind: 'other' }))
   const quantities = found.number.filter(position => !periods.includes(position))
+  const firstQuantity = quantities[0]
+  if (firstQuantity === undefined) return undefined
+  const named = metricPosition(columns, quantities, hints)
+  const measure = named ?? firstQuantity
+  const firstDate = found.date[0]
+  const firstText = found.text[0]
+  if (firstDate !== undefined) {
+    return makeChart('line', columns, rows, { x: firstDate, y: measure, series: seriesPosition(rows, found.text, [firstDate, measure]), xType: 'temporal' })
+  }
+  if (firstText !== undefined) {
+    return makeChart('bar', columns, rows, { x: firstText, y: measure, series: seriesPosition(rows, found.text.slice(1), [firstText, measure]), xType: 'nominal' })
+  }
   const period = periods[0]
-  const quantity = quantities[0]
-  if (period !== undefined && quantity !== undefined) return makeChart('bar', columns, rows, { x: period, y: quantity, series: undefined, xType: 'ordinal' })
-  const [first, second] = found.number
-  if (first !== undefined && second !== undefined) return makeChart('point', columns, rows, { x: first, y: second, series: undefined, xType: 'quantitative' })
-  return undefined
+  if (period !== undefined) return makeChart('bar', columns, rows, { x: period, y: measure, series: undefined, xType: 'ordinal' })
+  const scatter = scatterAxes(quantities, named)
+  return scatter === undefined ? undefined : makeChart('point', columns, rows, scatter)
 }
