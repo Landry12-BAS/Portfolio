@@ -5,21 +5,21 @@
 // (the owner's rules and the sample contracts), `golden` (the golden set and its grader), `db` (the
 // schema), `engine` (contracts, the queue, the sweep) and `routes` (the API).
 import { createVisitorVerifier } from '@lb/common'
-import type { Gateway, VisitorVerifier } from '@lb/common'
+import type { VisitorVerifier } from '@lb/common'
 import type { FastifyInstance } from 'fastify'
 
 import { seedDirectory } from '../../core/data-files.ts'
 import type { Env } from '../../core/env.ts'
 import type { RunningModule, SystemModule } from '../../core/module.ts'
 import { openRedis } from '../../core/redis.ts'
-import { ALIASES, GatewayJsonModel, MAX_OUTPUT_TOKENS } from './analysis/model.ts'
 import { DEFAULT_CONFIG } from './config.ts'
 import type { Lb04Config } from './config.ts'
 import { readSampleFile, readSampleList } from './data/samples.ts'
 import { migrateLb04, openLb04Database } from './db/connection.ts'
 import { LB04_SCHEMA } from './db/schema.ts'
-import type { Lb04Deps, ReviewServices } from './engine/deps.ts'
+import type { Lb04Deps } from './engine/deps.ts'
 import { BullScheduler, startMaintenance, startReviewWorker } from './engine/queue.ts'
+import { reviewServices } from './engine/services.ts'
 import { readPlaybook } from './playbook/playbook.ts'
 import { LB04_SCHEMA_NAMES, registerLb04Routes } from './routes/index.ts'
 
@@ -34,23 +34,6 @@ function databaseUrl(env: Env): string {
 /** Where the synthetic data lives for a given environment. */
 function seedDirectoryOf(env: Env): string {
   return seedDirectory({ LB_SEED_DIR: env.LB_SEED_DIR })
-}
-
-/** The models a review asks, behind the gateway's virtual aliases, and the guard. Exported so the tests build the models exactly as production does. */
-export function reviewServices(gateway: Gateway): ReviewServices {
-  return {
-    models: {
-      long: new GatewayJsonModel(gateway.chat(ALIASES.long), MAX_OUTPUT_TOKENS.long),
-      reason: new GatewayJsonModel(gateway.chat(ALIASES.reason), MAX_OUTPUT_TOKENS.reason),
-      fast: new GatewayJsonModel(gateway.chat(ALIASES.fast), MAX_OUTPUT_TOKENS.fast),
-    },
-    guard: {
-      check: async (text) => {
-        const verdict = await gateway.guard(text)
-        return { flagged: verdict.flagged, score: verdict.score }
-      },
-    },
-  }
 }
 
 /**

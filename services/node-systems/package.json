@@ -16,6 +16,7 @@
     "seed": "node --env-file-if-exists=.env src/cli/seed.ts",
     "openapi": "node src/cli/openapi.ts",
     "eval:lb08": "node --env-file-if-exists=.env src/cli/eval-lb08.ts",
+    "eval:lb04": "node --env-file-if-exists=.env src/cli/eval-lb04.ts",
     "contracts:lb04": "node scripts/lb04-contracts.ts",
     "check": "node src/cli/check.ts && node scripts/lb04-contracts.ts --check",
     "lint": "eslint .",

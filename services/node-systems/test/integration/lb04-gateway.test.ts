@@ -12,7 +12,7 @@ import type { ContractGateway } from '../../../../packages/common/test/support/c
 import { ALIASES, GatewayJsonModel, MAX_OUTPUT_TOKENS } from '../../src/modules/lb04/analysis/model.ts'
 import { makeRedline, startContract } from '../../src/modules/lb04/engine/service.ts'
 import { readContractView, readReportView } from '../../src/modules/lb04/engine/store.ts'
-import { reviewServices } from '../../src/modules/lb04/index.ts'
+import { reviewServices } from '../../src/modules/lb04/engine/services.ts'
 import { createLb04Harness, drive } from '../support/lb04-engine.ts'
 import type { Lb04Harness } from '../support/lb04-engine.ts'
 import { guardSegments, referenceReplies, scriptReview, startLb04Gateway } from '../support/lb04-gateway.ts'
@@ -75,7 +75,7 @@ describe('a review through the gateway', () => {
     expect(report.findings.length).toBeGreaterThan(3)
     const segments = await guardSegments('wholesale-supply')
     expect(gw.provider.requests).toHaveLength(segments + 2)
-    const sent = gw.provider.requests as { body: { model: string, messages: { role: string, content: string }[], [key: string]: unknown }, headers: Record<string, string | string[] | undefined> }[]
+    const sent = gw.provider.requests as unknown as { body: { model: string, messages: { role: string, content: string }[], [key: string]: unknown }, headers: Record<string, string | string[] | undefined> }[]
     // The guard reads each overlapping segment as a message of its own, on the classifier.
     for (const request of sent.slice(0, segments)) {
       expect(request.body.model).toBe('alpha/guard-model')
