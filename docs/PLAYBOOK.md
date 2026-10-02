@@ -48,12 +48,16 @@ can.
    Keep untrusted content (uploads, tickets, web pages) out of instruction slots, and
    require human approval for any side effect.
 6. **Evaluation board.** Build the live demo UI on the curated samples, wire the Scope
-   trace, and support the Brief and Technical reading modes.
+   trace, and support the Brief and Technical reading modes. The kit (shell, limits,
+   Scope, Turnstile gate, notices, replay) is in `apps/web`, and so is the recipe; LB-01's
+   board is the reference (`apps/web/README.md`, "Adding a board").
 7. **Tests.** Unit tests for logic, integration tests against real Postgres and Redis
    (Testcontainers), one Playwright journey, and the eval gate in CI.
 8. **Threat model.** Write short notes on spoofing, tampering, data exposure, denial
    of service and privilege escalation, and set the operating limits.
-9. **Replays.** Record real runs for every sample and store them for replay mode.
+9. **Replays.** Record real runs for every sample and store them for replay mode:
+   `just record-sample <system> <sample>` runs a sample on the live back end and writes the
+   recording (`apps/web/recordings`), which the board replays under a "Replay" badge.
 10. **Release.** Replace the datasheet targets with measured values, then deploy.
 
 ## Definition of done

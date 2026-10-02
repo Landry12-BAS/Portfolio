@@ -60,13 +60,98 @@ flowchart LR
 - **Private by design.** IP addresses are kept only as salted hashes, and the salt
   rotates daily.
 
+### What the site's server does
+
+The Nuxt server (Nitro routes in `apps/web/server`) is the only thing a visitor's browser
+talks to for data. It holds the site's secrets (the signing key for visitor tokens, the
+`web` service key, the Turnstile secret and the session secret: the `NUXT_LB_*` variables
+of [`docs/DEPLOY.md`](DEPLOY.md), part 10), checks them with Zod at startup, and refuses to
+start when some are set and any is wrong, naming the variable and never its value. With none
+set it serves the catalog and the datasheets and answers every demo route with 503, which is
+how a Vercel preview runs.
+
+- **Session.** A call to `GET /api/session` creates the visitor's session the first time and
+  says whether this deployment has a back end, whether the Turnstile check has passed today
+  and when the day's quotas turn over. The cookie is `__Host-lb_session`, worth
+  `v1.<payload>.<signature>`: the payload holds a random 128-bit ID, the UTC date it was
+  made and the "verified" flag, and the signature is an HMAC-SHA-256 under a key derived
+  (HKDF) from `NUXT_LB_SESSION_SECRET`. A cookie the server did not sign, or one from
+  another day, is ignored and replaced by a fresh session, so a visitor cannot choose their
+  own ID (session fixation), and a day's verification does not carry past midnight UTC, where
+  the quotas turn over too. The subject of a visitor token is a second keyed hash of the ID,
+  derived under a different key, so a token never shows the cookie's ID. Pages set no cookie:
+  only a call to `/api/*` creates a session.
+- **Turnstile.** `POST /api/session/verify` sends the widget's token to Cloudflare's
+  `siteverify` with the secret key and checks the hostname; a pass sets the "verified" flag in
+  the cookie for the rest of the day. Every request to a back end that is not a read needs the
+  flag, or it is answered 403 `verification_required`. The widget loads only when a visitor
+  starts a live run (never for the catalog, a datasheet, a replay or a trace), from
+  `challenges.cloudflare.com`, and its script's address is made by one named Trusted Types
+  policy, `lb-turnstile`, that hands out that address and no other. The test build accepts a
+  fixed stand-in token instead of the widget's; the stand-in is compiled out of the production
+  bundle, and `just check-build` (run in CI) fails if any trace of it is left there.
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb05/...` and `/api/lb08/...`
+  forward a visitor's call to that system with a visitor token the server signs (EdDSA,
+  5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
+  ends' committed OpenAPI documents are forwarded, with the methods those documents give
+  (`packages/api-clients` generates the table, and `pnpm check` fails when it is stale);
+  anything else is a 404 from the site, and the back end never sees it.
+- **The Scope's route.** `GET /api/runs/{id}/spans` reads a run's trace from the gateway with
+  the `web` service token (a permission that cannot call a model, see "Service tokens") and
+  hands the page on after checking it with the span schema. A trace holds names, timings,
+  models and token counts, never what was typed or answered, and expires within a day, so
+  whoever has a run's ID (8 to 64 unguessable characters) may read it: that is what makes a
+  permalink possible, and why it needs no session.
+- **Recordings.** `GET /api/recordings/{system}[/{sample}]` serves the recordings of the
+  curated samples, which are bundled with the site, checked with their schema on every read and
+  looked up by a name that must match `[a-z0-9-]{1,60}`. Only a recording whose `origin` is
+  `live` is served; one made on the test mock is refused, except by the end-to-end build, which
+  needs it to drive the replay player.
+
+### Threat model of the proxy
+
+| Threat | Control |
+|---|---|
+| SSRF: a visitor makes the server call somewhere else | The address is the configured origin plus a path the route table matched, and is checked to still be that origin before the call. A path parameter may hold only `[\w-]{1,64}` and a query value `[\w.:-]{1,64}`, so no dot segment, escape, slash or space reaches a back end. A redirect is never followed: a 3xx is a failure |
+| Request smuggling and desync | The visitor's bytes are never forwarded. The body is read with a size cap per system (the `Content-Length` is checked before a byte is read, and a chunked body is counted as it arrives), must be JSON, is parsed and written again, and the request to the back end is made with fixed headers only: the token, an `accept` and a JSON content type. Node's HTTP parser refuses conflicting or repeated length headers before any handler runs |
+| Token leakage | A visitor token is made per call, lives 5 minutes and never reaches the browser. The one exception is LB-02's WebSocket, whose grant goes in the connection's first frame and never in an address. Errors name the rule that was broken and never repeat a value, the server logs an unexpected error by its name and route and never its message or stack, every answer is `no-store`, and no CORS header is ever sent |
+| A back end, or something between, answering with more than it should | An answer must be JSON within a size limit and a deadline, with a status from a short list; an error is passed on only in the platform's error shape and only with the fields that shape allows, so a stack trace, an HTML page or a database message becomes a generic failure. Only `Retry-After` goes back as a header, and never a cookie |
+| CSRF | `SameSite=Strict` on the cookie, plus an `Origin` check on every request that changes anything (the origin must be the site's own, and `Sec-Fetch-Site` must say `same-origin` when a browser sends it), and no CORS, so no other site can read an answer |
+| Session fixation and forgery | A cookie the server did not sign is replaced, never adopted; a visitor cannot choose an ID, and there is no login to fix a session to |
+| Quota evasion by clearing cookies | A new cookie is a new session, with a fresh daily quota: the daily limits are per session because there are no accounts. What bounds a visitor who keeps clearing it is the Turnstile check before the first live run, Cloudflare's per-IP limits on the API hostnames, and the gateway's per-system and per-provider budgets, which cap total spend however many sessions ask. See the known gaps |
+| Body bombs and slow requests | A size cap and a deadline for each system (`apps/web/server/lib/policy.ts`), set a little above what the system itself allows |
+| Markup in what the models write or a visitor types | Everything is rendered as text by Vue, `v-html` is banned by lint, and the site's API accepts a ticket that quotes a tag so the system can be tried with it (the XSS filter of `nuxt-security` is off for `/api/**`, where it would read the body first and refuse what a demo invites visitors to try) |
+
+### Known gaps
+
+- **Clearing cookies resets a session's quota.** See the threat model: the daily limits are
+  per session, so a determined visitor can spend more than their share until Cloudflare's
+  per-IP limits or the gateway's budgets stop them.
+- **The per-IP layer sees the site's server, not the visitor.** The site's server calls the
+  API from its host (Vercel), so Cloudflare's per-IP rate limit on the API hostnames sees that
+  host's addresses for everything the site relays. It still protects the API hostnames from
+  direct abuse, but abuse relayed by the site is bounded only by the Turnstile check, the
+  per-session quotas and the gateway's budgets. The site has no rate limiter of its own on
+  purpose: one per serverless instance would not see all requests.
+- **The real Turnstile widget has not been run under this policy.** The loader, the Trusted
+  Types policy and the board pages' headers are tested (component tests with a stand-in
+  widget, and a header test in the end-to-end suite), but no network or Cloudflare account
+  was available when they were built, so the first deployment needs one manual pass: open a
+  board, start a live run, and check the console for a policy violation.
+- **Long calls on a serverless host.** LB-05 and LB-08 answer within 90 seconds, and the
+  site's proxy waits 95 for them (`policy.ts`); whether the Vercel plan in use lets a function
+  run that long has not been checked. If it does not, those two boards must poll.
+
 ## 3. Application
 
 - **Content Security Policy** with per-request nonces and `strict-dynamic`, plus
   Trusted Types (`require-trusted-types-for 'script'`), so injected script can't run
   even if markup slips through. `nuxt-security` sets the headers and nonces. The only
   Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
-  markup.
+  markup; the evaluation boards' pages alone add `lb-turnstile` (see "What the site's
+  server does") and Cloudflare's frame, and nothing else changes. Zod is told not to build
+  its parsers with `new Function` (`apps/web/app/plugins/00.zod-jitless.ts`): the policy
+  would report each probe as a violation.
 - **Headers:** `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy: same-origin`,
   `Cross-Origin-Resource-Policy: same-origin`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`,

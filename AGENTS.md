@@ -15,7 +15,12 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 
 Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
 `packages/ui` (the design system as a Nuxt layer), `apps/web` (the site in English and
-Czech: catalog, datasheets, themes, security headers), `services/gateway` (the LB-00 AI
+Czech: catalog, datasheets, themes, security headers; its Nitro server between the browser
+and the back ends, with the anonymous session, Turnstile and a proxy that forwards only the
+routes the back ends document; the evaluation-board kit with the Scope and the replay player;
+and LB-01's board at `/systems/lb-01/board`; see its [README](apps/web/README.md)),
+`packages/api-clients` (typed clients generated from the back ends' OpenAPI documents, and
+the mock back end the site's tests run against), `services/gateway` (the LB-00 AI
 gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
 prompt-injection guard; see its [README](services/gateway/README.md)),
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
@@ -128,8 +133,10 @@ Add each new command to the Commands section in the change that introduces it.
 ## Languages
 
 - English is the default (`/`) and Czech the second language (`/cs`), decision D6.
-  Every visible string lives in `apps/web/i18n/locales/en.ts` and `cs.ts`; `cs.ts`
-  must satisfy the English shape, so a missing translation fails the type check.
+  Every visible string lives in `apps/web/i18n/locales/en.ts` and `cs.ts`, or in a module
+  they import: the board kit and each system's board keep theirs in
+  `i18n/locales/boards/<name>.en.ts` and `.cs.ts`. `cs.ts` must satisfy the English
+  shape, so a missing translation fails the type check.
 - Datasheet text: English in `apps/web/shared/data/systems.ts` (the source of truth),
   Czech in `systems.cs.ts`. Unit tests check that the two match field by field.
 - The language lives in the URL, never in a cookie. Links use `<NuxtLinkLocale>` so a
@@ -162,12 +169,13 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 |---|---|
 | `just install` | Install every workspace dependency (`pnpm install`, then `uv sync`) |
 | `just dev` | Run the site with hot reload on http://localhost:3000 |
+| `just dev-mock` | Run the site on http://localhost:3000 against the mock back end (http://127.0.0.1:8120), with throwaway keys: every demo works with no back end, model or keys |
 | `just build` | Build the site for production (`apps/web/.output`) |
 | `just gateway` | Run the AI gateway with reload on http://127.0.0.1:8080 (settings in `services/gateway/.env`, from `.env.example`) |
 | `just gateway-token keygen\|mint <service> <key-file>` | Make a service key pair, or mint a service token for local gateway calls |
 | `just lint` | ESLint on every TypeScript and Vue package; Ruff and the docstring check on Python |
 | `just format` | Format the Python code with Ruff and apply its safe fixes (ESLint formats TypeScript) |
-| `just typecheck` | Strict type-check with `vue-tsc` and `tsc`, and mypy for Python |
+| `just typecheck` | Strict type-check with `vue-tsc` and `tsc` (the site's scripts, tests and journeys included), and mypy for Python |
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
 | `just django` | Run the Django systems' API and WebSockets with reload on http://127.0.0.1:8001 (settings in `services/django-systems/.env`, from `.env.example`; frames over 8 KB are refused) |
 | `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweeps, the nightly reseed, and LB-02's minute-by-minute hold sweep and nightly calendar reset |
@@ -190,8 +198,12 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
 | `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
-| `just e2e` | Build, then run the Playwright journeys, axe checks and security-header tests |
-| `just check` (`pnpm check`) | Fail when a generated file is stale or `routing.yaml` is invalid (the CI drift check) |
+| `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
+| `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
+| `just samples` | Regenerate LB-01's curated samples (`apps/web/shared/data/samples/lb01.ts`) from the golden set's `sample: true` cases |
+| `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
+| `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
+| `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite) or `routing.yaml` is invalid (the CI drift check) |
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
 | `just stack-secrets [--again]` | Make throwaway secrets for the local stack in `infra/.dev` (git-ignored) |
 | `just stack <docker compose command>` | Run the whole platform locally, hardened as on the box: `just stack up -d --wait`, then Caddy answers on http://127.0.0.1:8180; `just stack down -v` removes it (needs Docker) |

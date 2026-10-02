@@ -16,7 +16,7 @@ dev:
 build:
     pnpm --filter @lb/web build
 
-# Run the site with hot reload against the mock back end on http://127.0.0.1:8120: every demo works with no back end, model or keys.
+# Run the site on http://localhost:3000 against the mock back end (http://127.0.0.1:8120): every demo works with no back end, model or keys.
 dev-mock:
     pnpm --filter @lb/web dev:mock
 
@@ -154,13 +154,21 @@ audit:
     pnpm audit --audit-level high
     uv audit --preview-features audit-command
 
-# The journeys run against a test build, which differs from the production build in one way: it accepts
-# a fixed stand-in for a Turnstile token and bundles the test recordings (`pnpm --filter @lb/web check:build`
-# proves the production build holds no trace of either). Both back ends are mocks.
+# The journeys run against a test build, which differs from the production build in two ways: it accepts a
+# fixed stand-in for a Turnstile token, and it bundles the test recordings (`just check-build` proves the
+# production build holds no trace of either). Playwright starts it with the mock back end and throwaway keys.
 # Build the site for testing, then run the end-to-end, accessibility and security-header tests.
 e2e:
     pnpm --filter @lb/web build:e2e
     pnpm --filter @lb/web e2e
+
+# Regenerate LB-01's curated samples from the golden set's `sample: true` cases (`just check` fails while they are stale).
+samples:
+    pnpm --filter @lb/web samples
+
+# Make the recordings the end-to-end tests replay, by running LB-01 samples on the mock (apps/web/e2e/fixtures/recordings).
+record-fixtures:
+    pnpm --filter @lb/web record:fixtures
 
 # Needs a live back end, the gateway and the site's keys (docs/DEPLOY.md, parts 6 and 10): set LB_API_URL,
 # LB_GATEWAY_URL, LB_WEB_SIGNING_KEY_FILE and LB_GATEWAY_SERVICE_KEY_FILE. Spends the sample's model calls once.

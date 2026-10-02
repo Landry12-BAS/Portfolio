@@ -200,7 +200,10 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   refetches, such as quota and run history.
 - **Streaming.** One SSE stream per run multiplexes tokens, spans and the final
   result; a Pinia store consumes it, and the Scope panel draws from the store. LB-02
-  and LB-06 use WebSockets.
+  and LB-06 use WebSockets. A system that streams no tokens does without: LB-01's board
+  polls its ticket and the run's trace once a second (the trace through the site's own
+  route, which reads the gateway), which needs no connection kept open on a serverless
+  host.
 - **Data.** `openapi-fetch` clients generated from each service's OpenAPI spec; Zod
   at every boundary.
 - **Design system.** `packages/ui` is a Nuxt layer: the colour tokens with light and

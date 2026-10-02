@@ -516,10 +516,18 @@ the API refuses their origin on purpose: it answers cross-origin calls from
 | `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile's site key (public) |
 
 Mark everything except `NUXT_LB_API_URL`, `NUXT_LB_GATEWAY_URL` and
-`NUXT_PUBLIC_TURNSTILE_SITE_KEY` as Sensitive. The site's demo code that reads these
-names is not written yet: the names and the key formats above are the ones this runbook
-and the secrets templates use, so confirm them against `apps/web`'s runtime config when
-the demos land.
+`NUXT_PUBLIC_TURNSTILE_SITE_KEY` as Sensitive. The site reads exactly these names
+(`apps/web/nuxt.config.ts`; `apps/web/.env.example` lists them with a line each) and checks
+them when it starts: with none set it serves the catalog and the datasheets and answers every
+demo with "not connected", as a preview does; with some set it refuses to start unless every
+one is right, and the log names the variable that is wrong and never its value. Turnstile's
+widget mode stays Managed: the site draws it with `appearance: interaction-only`, so a visitor
+sees it only when Cloudflare needs them to do something.
+
+The site's server calls LB-05 and LB-08 and waits up to 95 seconds for them
+(`apps/web/server/lib/policy.ts`), so the Vercel plan must let a function run that long. Check
+the plan's maximum function duration (it is a Vercel setting, not something the repository
+sets), and read part 12 before relying on it.
 
 ## 11. Verification checklist
 
@@ -539,6 +547,18 @@ From a machine **outside** the tailnet:
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' -H 'Origin: https://evil.example' https://api.example.com/ws/lb02/x`
       is `403`: a WebSocket from another origin is refused.
 - [ ] `https://example.com` loads, in both languages, in both themes.
+- [ ] `curl -si https://example.com/api/session` carries one `set-cookie`, `__Host-lb_session`
+      with `HttpOnly`, `Secure` and `SameSite=Strict`, and no `access-control-allow-origin`;
+      `curl -si https://example.com/systems/lb-01` carries none.
+- [ ] `curl -si -X POST -H 'content-type: application/json' -d '{}' https://example.com/api/lb01/tickets`
+      is `403` `forbidden_origin`: a change that does not say it comes from the site is refused.
+- [ ] `https://example.com/systems/lb-01/board` opens with the console clean (no policy
+      violation, no error), the samples list says which have a recording, and a recorded
+      sample replays under a "Replay" badge with nothing sent to the API.
+- [ ] A live run from your own text: the check passes (Turnstile's widget loads under the
+      page's policy, which only the board pages relax), the ticket is worked through the nine
+      steps, the cited draft appears, the Scope fills in, and `https://example.com/runs/<id>`
+      shows the same trace in a private window.
 
 On the box (`tailscale ssh deploy@lb-box`; `compose` below is
 `/opt/lb/current/infra/scripts/compose.sh`):
@@ -615,7 +635,15 @@ config`, hadolint, shellcheck and actionlint.
   workflow checks its own signature with the same pattern, so if GitHub's certificate
   names something else, the first `images` job fails right after signing, with the
   identity in the error, and nothing is deployed.
-- **Vercel**, and the site's side of the keys (the demo code does not exist yet).
+- **Vercel**, and the site's side of the keys. The site's server (session, Turnstile check,
+  proxy, trace route) and LB-01's board are run and tested here against the mock back end,
+  and the trace route against the real gateway and a real Redis (`apps/web`'s contract
+  test), in a real browser with the production policy; they were never deployed, never run
+  against Cloudflare's Turnstile (the widget is tested with a stand-in), and never run with a
+  model behind LB-01. So no **recording** exists: `just record-sample lb-01 torn-bag` needs
+  the live back end and records nothing until it has run there, and until it has the boards
+  say "No recording yet" and offer the live run. Not checked either: whether the Vercel plan
+  lets a function wait the 95 seconds the proxy allows LB-05 and LB-08.
 - Real provider traffic: no provider key was available.
 
 ## 13. Day to day
