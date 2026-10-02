@@ -52,8 +52,9 @@ function report(): Lb04Report {
     findings: [risk, absent],
     radar: LB04_TOPICS.map(topic => ({ topic, score: topic === 'liability' ? 4 : 0, findings: topic === 'liability' ? 1 : 0 })),
     verification: { checked: 3, kept: 2, dropped: 1, reasons: { quote_not_found: 1, quote_too_short: 0, quote_too_long: 0, quote_in_instruction: 0, unknown_rule: 0, topic_mismatch: 0, absent_contradicted: 0, duplicate: 0, over_limit: 0 } },
-    screen: { verdict: 'clean', guardScore: 0.0004, passages: [] },
+    screen: { verdict: 'clean', guardScore: 0.0004, passages: [], passageCount: 0 },
     calls: 3,
+    calibrated: true,
     redlines: [],
     notLegalAdvice: NOT_LEGAL_ADVICE,
   }
@@ -102,6 +103,16 @@ describe('a report', () => {
     const many = Array.from({ length: LB04_LIMITS.maxFindings + 1 }, (_, index) => ({ ...risk, id: `f${index + 1}` }))
 
     expect(lb04ReportSchema.safeParse({ ...report(), findings: many }).success).toBe(false)
+  })
+
+  it('shows at most eight passages that talk to a reviewer, and counts all of them', () => {
+    const passage = { page: 1, start: 10, end: 80 }
+    const screen = (shown: number, count: number) => ({ verdict: 'flagged', guardScore: 0.97, passages: Array.from({ length: shown }, () => passage), passageCount: count })
+
+    expect(lb04ReportSchema.safeParse({ ...report(), screen: screen(8, 11) }).success).toBe(true)
+    expect(lb04ReportSchema.safeParse({ ...report(), screen: screen(9, 9) }).success).toBe(false)
+    expect(lb04ReportSchema.safeParse({ ...report(), screen: screen(1, 65) }).success).toBe(false)
+    expect(lb04ReportSchema.safeParse({ ...report(), screen: { verdict: 'flagged', guardScore: 0.97, passages: [passage] } }).success).toBe(false)
   })
 })
 

@@ -127,8 +127,10 @@ export const lb04ScreenSchema = z.strictObject({
   verdict: z.enum(['clean', 'flagged', 'unchecked']),
   // The guard model's highest injection probability over what it read, or null when it could not be asked.
   guardScore: z.number().min(0).max(1).nullable(),
-  // Passages that address an AI reviewer. The review treats them as contract text, and no finding may rest on one.
+  // The first passages that address an AI reviewer. The model is never shown them, and no finding may rest on one.
   passages: z.array(lb04CitationSchema).max(8),
+  // How many such passages the contract holds in all (at most 64 are looked for).
+  passageCount: z.int().min(0).max(64),
 })
 
 /** One piece of a redline: text both versions share, text only the contract has (deleted), or text only the proposal has (inserted). */
@@ -161,6 +163,8 @@ export const lb04ReportSchema = z.strictObject({
   screen: lb04ScreenSchema,
   // The model calls the review made, the injection check included.
   calls: z.int().min(0).max(8),
+  // False when the second model's answer could not be used, so the playbook's own severities and wording stand in for its calibration.
+  calibrated: z.boolean(),
   redlines: z.array(lb04RedlineSchema).max(LB04_LIMITS.redlinesPerContract),
   notLegalAdvice: label,
 })
