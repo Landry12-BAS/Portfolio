@@ -7,7 +7,7 @@
 // finished review or fail a reviewed one twice.
 import { createHash } from 'node:crypto'
 
-import { LB04_LIMITS, NOT_LEGAL_ADVICE } from '@lb/contracts'
+import { LB04_FAILURE_MESSAGES, LB04_LIMITS, NOT_LEGAL_ADVICE } from '@lb/contracts'
 import type { Lb04ContractView, Lb04FailureCode, Lb04FileView, Lb04PagesView, Lb04Redline, Lb04Report, Lb04State } from '@lb/contracts'
 import { and, asc, desc, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 
@@ -21,22 +21,6 @@ import { dailyLimit, release, reserve } from './usage.ts'
 
 /** The states in which a contract is still being worked on. */
 const OPEN_STATES: readonly Lb04State[] = ['queued', 'extracting', 'analysing', 'verifying']
-
-/** What a failed contract says in plain words: a sentence for the API. The board words each code itself, in its own language. */
-const FAILURE_MESSAGES: Readonly<Record<Lb04FailureCode, string>> = {
-  pdf_unreadable: 'The file could not be read as a PDF.',
-  pdf_encrypted: 'The PDF is encrypted, and encrypted files are not read.',
-  pdf_xfa: 'The PDF holds an XFA form, which is not read.',
-  pdf_embedded_files: 'The PDF carries embedded files, which are not read.',
-  too_many_pages: `The contract has more than ${LB04_LIMITS.maxPages} pages.`,
-  no_text_layer: 'The PDF has no text layer, as a scan has, and no OCR is done.',
-  too_much_text: 'The PDF holds more text than a review reads.',
-  extraction_timeout: 'Reading the PDF took too long.',
-  extraction_failed: 'Reading the PDF failed.',
-  analysis_unavailable: 'The model could not be reached, or its free quota for today is spent.',
-  analysis_invalid: 'The model did not answer in a form that could be used.',
-  internal: 'The review failed.',
-}
 
 /** The error for a contract that isn't there for this visitor: never made, someone else's, or deleted. */
 export function contractNotFound(): AppError {
@@ -110,7 +94,7 @@ function viewOf(row: ContractRow): Lb04ContractView {
     origin: row.origin,
     sampleId: row.sampleId,
     state: row.state,
-    failure: row.failureCode === null ? null : { code: row.failureCode, message: FAILURE_MESSAGES[row.failureCode] },
+    failure: row.failureCode === null ? null : { code: row.failureCode, message: LB04_FAILURE_MESSAGES[row.failureCode] },
     pages: row.pages,
     createdAt: row.createdAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),

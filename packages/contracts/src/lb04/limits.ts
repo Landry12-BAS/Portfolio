@@ -78,6 +78,22 @@ export const LB04_FAILURE_CODES = [
 /** One reason a review failed. */
 export type Lb04FailureCode = (typeof LB04_FAILURE_CODES)[number]
 
+/** What a failed review says in plain words: a sentence for the API, shared by the service and the mock back end. The board words each code itself, in its own language. */
+export const LB04_FAILURE_MESSAGES: Readonly<Record<Lb04FailureCode, string>> = {
+  pdf_unreadable: 'The file could not be read as a PDF.',
+  pdf_encrypted: 'The PDF is encrypted, and encrypted files are not read.',
+  pdf_xfa: 'The PDF holds an XFA form, which is not read.',
+  pdf_embedded_files: 'The PDF carries embedded files, which are not read.',
+  too_many_pages: `The contract has more than ${LB04_LIMITS.maxPages} pages.`,
+  no_text_layer: 'The PDF has no text layer, as a scan has, and no OCR is done.',
+  too_much_text: 'The PDF holds more text than a review reads.',
+  extraction_timeout: 'Reading the PDF took too long.',
+  extraction_failed: 'Reading the PDF failed.',
+  analysis_unavailable: 'The model could not be reached, or its free quota for today is spent.',
+  analysis_invalid: 'The model did not answer in a form that could be used.',
+  internal: 'The review failed.',
+}
+
 /** The failures that are the file's own, so the visitor gets their place of the day back and the file is not tried again. */
 export const LB04_FILE_FAILURES: readonly Lb04FailureCode[] = ['pdf_unreadable', 'pdf_encrypted', 'pdf_xfa', 'pdf_embedded_files', 'too_many_pages', 'no_text_layer', 'too_much_text', 'extraction_timeout', 'extraction_failed']
 
