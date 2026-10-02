@@ -102,6 +102,11 @@ export function readFrame(text: string): { frame: Frame } | { problem: 'invalid'
   return { problem: 'invalid' }
 }
 
+/** Lets a timer die with the process, where the timer is one that can (a test's fake timers and a DOM's may not be). */
+function unref(timer: ReturnType<typeof setTimeout>): void {
+  if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref()
+}
+
 /** Makes a random ID of URL-safe characters, as the real conversation IDs look. */
 function newPublicId(): string {
   return randomBytes(12).toString('base64url')
@@ -128,7 +133,7 @@ export class Lb02Hub {
       ...options,
     }
     this.calendar = new MockCalendar(offerings, options.now)
-    this.#concierge = new MockConcierge(this.calendar, options.now)
+    this.#concierge = new MockConcierge(this.calendar, options.now, () => this.options.messagesPerConversation)
   }
 
   /** Changes the hub's limits while it runs, for a test that wants a conversation to hit one quickly. Only numbers are taken. */
@@ -272,7 +277,7 @@ export class Lb02Connection {
     this.#hub = hub
     this.#transport = transport
     this.#helloTimer = setTimeout(() => this.#shut(CLOSE.timedOut), hub.options.helloTimeoutMs)
-    this.#helloTimer.unref()
+    unref(this.#helloTimer)
   }
 
   /** The conversation this connection is in, once its hello has been accepted. */
@@ -313,7 +318,7 @@ export class Lb02Connection {
   #armIdle(): void {
     if (this.#idleTimer !== undefined) clearTimeout(this.#idleTimer)
     this.#idleTimer = setTimeout(() => this.#shut(CLOSE.timedOut), this.#hub.options.idleTimeoutMs)
-    this.#idleTimer.unref()
+    unref(this.#idleTimer)
   }
 
   /** Sends an event. */

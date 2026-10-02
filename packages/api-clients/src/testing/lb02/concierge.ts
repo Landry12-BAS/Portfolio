@@ -196,11 +196,13 @@ interface Answer {
 export class MockConcierge {
   readonly #calendar: MockCalendar
   readonly #now: () => number
+  readonly #limit: () => number
 
-  /** Plays the real booking rules on a calendar, by a clock. */
-  constructor(calendar: MockCalendar, now: () => number) {
+  /** Plays the real booking rules on a calendar, by a clock, with a limit of messages a conversation takes. */
+  constructor(calendar: MockCalendar, now: () => number, limit: () => number = () => MESSAGES_PER_CONVERSATION) {
     this.#calendar = calendar
     this.#now = now
+    this.#limit = limit
   }
 
   /** The offering's title in a language. */
@@ -220,7 +222,7 @@ export class MockConcierge {
     const details = conversation.details
     const known = [details.offering ? `Wants ${details.offering}` : '', details.partySize ? `for ${details.partySize}` : '', details.name ? `Name ${details.name}` : ''].filter(Boolean).join(', ')
     this.#record(conversation, 'action', `Handed to a person: ${reason}.`)
-    const text = receipt(kind, conversation.language, { limit: MESSAGES_PER_CONVERSATION })
+    const text = receipt(kind, conversation.language, { limit: this.#limit() })
     conversation.handoff = { reason, summary: known, createdAt: this.#now(), transcript: [...conversation.lines] }
     return { text, receipt: kind, tools: kind === 'message_limit' ? [] : [{ name: 'handoff_to_person', executed: true, ok: true, error: '' }], chat: kind === 'message_limit' ? 0 : 1, changes }
   }
@@ -366,7 +368,7 @@ export class MockConcierge {
       return { text: answer.text, receipt: answer.receipt, tools: answer.tools ?? [], calls: { guard, chat: answer.chat }, detectedLanguage: wasFirst, changes: answer.changes ?? [] }
     }
     if (conversation.handoff) return finish({ text: receipt('closed', conversation.language), receipt: 'closed', chat: 0 }, 0)
-    if (conversation.messagesUsed > MESSAGES_PER_CONVERSATION) return finish(this.#handOff(conversation, 'message_limit', 'message_limit'), 0)
+    if (conversation.messagesUsed > this.#limit()) return finish(this.#handOff(conversation, 'message_limit', 'message_limit'), 0)
     const said = understand(text)
     if (said.language !== undefined) conversation.language = said.language
     if (said.injection) {
