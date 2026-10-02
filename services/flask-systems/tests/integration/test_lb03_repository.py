@@ -26,6 +26,7 @@ from lb03.repository import (
     NewDocument,
     checks_from_json,
     invoice_from_json,
+    placements_from_json,
 )
 from lb03.states import DocumentState, FailureCode
 
@@ -303,10 +304,10 @@ def test_a_correction_is_saved_with_a_note_of_the_change_and_only_on_a_ready_doc
     edited = edited_reading(reading, vendor="Bohemia Packaging a.s.")
     correction = {"path": "vendor", "was": "Bohemia Packaging s.r.o.", "now": "Bohemia Packaging a.s."}
 
-    assert not repository.save_edit("doc-sam", SAM, edited, correction, NOW)
+    assert repository.save_edit("doc-sam", SAM, edited, correction, 0, NOW) == "missing"
     repository.finish_ready("doc-sam", reading, NOW)
-    assert repository.save_edit("doc-sam", SAM, edited, correction, NOW)
-    assert repository.save_edit("doc-sam", SAM, edited, correction, NOW)
+    assert repository.save_edit("doc-sam", SAM, edited, correction, 0, NOW) == "saved"
+    assert repository.save_edit("doc-sam", SAM, edited, correction, 1, NOW) == "saved"
 
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
@@ -327,27 +328,32 @@ def test_nobody_edits_another_visitors_document_or_one_that_has_expired(reposito
     repository.finish_ready("doc-sam", reading, NOW)
     edited = edited_reading(reading, vendor="Someone Else")
 
-    other_visitor = repository.save_edit("doc-sam", ALEX, edited, {"path": "vendor"}, NOW)
-    too_late = repository.save_edit("doc-sam", SAM, edited, {"path": "vendor"}, NOW + timedelta(hours=2))
+    other_visitor = repository.save_edit("doc-sam", ALEX, edited, {"path": "vendor"}, 0, NOW)
+    too_late = repository.save_edit("doc-sam", SAM, edited, {"path": "vendor"}, 0, NOW + timedelta(hours=2))
 
-    assert (other_visitor, too_late) == (False, False)
+    assert (other_visitor, too_late) == ("missing", "missing")
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
     assert (stored.extraction or {}).get("vendor") == "Bohemia Packaging s.r.o."
     assert stored.corrections == []
 
 
-def test_two_corrections_arriving_together_are_both_kept(repository: DocumentRepository) -> None:
-    """The corrections list is appended to under a row lock, so a race can't lose one."""
+def test_a_correction_made_on_an_older_reading_is_refused_so_none_is_lost_to_a_race(
+    repository: DocumentRepository,
+) -> None:
+    """Ten corrections made on the same reading, arriving together: exactly one is saved, the rest are conflicts."""
     reading = finished_reading()
     repository.create(new_document("doc-sam"), NOW)
     repository.finish_ready("doc-sam", reading, NOW)
     barrier = threading.Barrier(10)
+    outcomes: list[str] = [""] * 10
 
     def correct(index: int) -> None:
-        """Wait for the others, then save a correction of this thread's own."""
+        """Wait for the others, then try to save a correction worked out from the reading with no corrections."""
         barrier.wait()
-        repository.save_edit("doc-sam", SAM, edited_reading(reading), {"path": "vendor", "n": index}, NOW)
+        outcomes[index] = repository.save_edit(
+            "doc-sam", SAM, edited_reading(reading), {"path": "vendor", "n": index}, 0, NOW
+        )
 
     threads = [threading.Thread(target=correct, args=(index,)) for index in range(10)]
     for thread in threads:
@@ -355,9 +361,37 @@ def test_two_corrections_arriving_together_are_both_kept(repository: DocumentRep
     for thread in threads:
         thread.join()
 
+    assert sorted(outcomes) == ["conflict"] * 9 + ["saved"]
     stored = repository.get("doc-sam", SAM, NOW)
     assert stored is not None
-    assert sorted(item["n"] for item in stored.corrections) == list(range(10))
+    assert len(stored.corrections) == 1
+
+
+def test_the_boxes_of_a_document_read_back_as_the_same_placements(repository: DocumentRepository) -> None:
+    """What the pipeline saved as JSON becomes the placements a correction starts from."""
+    reading = finished_reading()
+    repository.create(new_document("doc-sam"), NOW)
+    repository.finish_ready("doc-sam", reading, NOW)
+
+    stored = repository.get("doc-sam", SAM, NOW)
+
+    assert stored is not None
+    assert stored.placements is not None
+    assert placements_from_json(stored.placements) == reading.placements
+
+
+def test_a_document_waiting_to_be_read_counts_the_ones_uploaded_before_it(repository: DocumentRepository) -> None:
+    """The board says how many documents are ahead: those still waiting, of anyone, uploaded earlier."""
+    first = repository.create(new_document("first", ALEX), NOW)
+    second = repository.create(new_document("second", SAM), NOW + timedelta(seconds=1))
+    third = repository.create(new_document("third", SAM), NOW + timedelta(seconds=2))
+    repository.advance("first", DocumentState.OCR, [], NOW + timedelta(seconds=3))
+
+    assert (repository.queued_ahead(first), repository.queued_ahead(second), repository.queued_ahead(third)) == (
+        0,
+        0,
+        1,
+    )
 
 
 def test_the_duplicate_check_sees_only_the_visitors_other_finished_documents_of_the_hour(

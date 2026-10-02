@@ -8,7 +8,13 @@ calls it directly (core/registry.py). `just seed-lb03`, `just eval-lb03`, `just 
 import sys
 from collections.abc import Sequence
 
+from core.errors import describe_failure
 from core.platform import Platform
+from lb03.quota import PostgresLedger
+from lb03.repository import DocumentRepository
+from lb03.service import build_store
+from lb03.storage import StorageError
+from lb03.sweeper import sweep
 
 
 def write_line(text: str, *, error: bool = False) -> None:
@@ -96,6 +102,31 @@ def ocr_lb03(arguments: Sequence[str], platform: Platform) -> int:  # noqa: ARG0
         for problem in problems:
             write_line(problem, error=True)
         return 1 if problems else 0
+    return 0
+
+
+def sweep_lb03(arguments: Sequence[str], platform: Platform) -> int:
+    """Delete what is past its hour, as the service itself does every minute, and say what it found.
+
+    It ends documents lost with a dead worker (giving their visitors their places back), deletes each expired
+    document with its files, deletes document folders that no document owns once their newest file is older than
+    the hour, and deletes the daily counters of days that are over. Safe to run at any time, and twice.
+    """
+    if arguments:
+        write_line("sweep_lb03 takes no arguments.", error=True)
+        return 2
+    engine = platform.engines["lb03"]
+    try:
+        store = build_store(platform.environment)
+    except (StorageError, OSError) as error:
+        write_line(f"The file store can't be opened: {describe_failure(error)}", error=True)
+        return 1
+    report = sweep(DocumentRepository(engine), PostgresLedger(engine, platform.clock), store, platform.clock())
+    write_line(
+        f"Ended {report.recovered} lost documents, deleted {report.expired} expired documents "
+        f"({report.files_deleted} with files), {report.orphans} folders of files that no document owned "
+        f"and {report.counters} quota counters."
+    )
     return 0
 
 

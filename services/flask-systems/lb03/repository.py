@@ -15,9 +15,9 @@ the schema of each column is in one place, and nothing read from the database is
 from collections.abc import Sequence
 from dataclasses import dataclass, field, fields
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import Any, Literal, cast
 
-from sqlalchemy import Engine, delete, insert, select, update
+from sqlalchemy import Engine, delete, func, insert, select, update
 from sqlalchemy.engine import Row
 
 from lb03 import limits
@@ -27,8 +27,10 @@ from lb03.checks import CheckId, CheckResult, Severity
 from lb03.duplicates import Identity, Known
 from lb03.invoice import ExtractedInvoice
 from lb03.models import Document
+from lb03.ocr.protocol import Quad
 from lb03.states import ACTIVE_STATES, FINAL_STATES, DocumentState, FailureCode
 
+type SaveOutcome = Literal["saved", "conflict", "missing"]
 FINAL_VALUES = tuple(state.value for state in FINAL_STATES)
 ACTIVE_VALUES = tuple(state.value for state in ACTIVE_STATES)
 
@@ -85,6 +87,20 @@ def placements_json(found: dict[str, Placement]) -> dict[str, Any]:
             "match": placement.match,
         }
         for path, placement in found.items()
+    }
+
+
+def placements_from_json(content: dict[str, Any]) -> dict[str, Placement]:
+    """Read the boxes of the fields back from their column."""
+    return {
+        path: Placement(
+            path=path,
+            page=int(item["page"]),
+            quad=cast(Quad, tuple(float(value) for value in item["quad"])),
+            confidence=float(item["confidence"]),
+            match=float(item["match"]),
+        )
+        for path, item in content.items()
     }
 
 
@@ -336,12 +352,19 @@ class DocumentRepository:
         return bool(changed)
 
     def save_edit(
-        self, document_id: str, session_key: str, edited: EditedReading, correction: dict[str, Any], now: datetime
-    ) -> bool:
+        self,
+        document_id: str,
+        session_key: str,
+        edited: EditedReading,
+        correction: dict[str, Any],
+        corrections_seen: int,
+        now: datetime,
+    ) -> SaveOutcome:
         """Save a visitor's correction of a field: the new reading, all that follows from it, and a note of the change.
 
-        Only a `ready` document of this visitor, within its hour, can be edited; the corrections list is appended
-        to under a row lock, so two edits arriving together are both kept.
+        Only a `ready` document of this visitor, within its hour, can be edited (`missing` otherwise). The reading
+        the correction was made on had `corrections_seen` corrections; if another one was saved since, this one was
+        worked out from an older reading and is not saved (`conflict`), so no correction is ever lost to a race.
         """
         with self.engine.begin() as connection:
             current = connection.execute(
@@ -355,7 +378,9 @@ class DocumentRepository:
                 .with_for_update()
             ).one_or_none()
             if current is None:
-                return False
+                return "missing"
+            if len(current.corrections) != corrections_seen:
+                return "conflict"
             connection.execute(
                 update(Document)
                 .where(Document.id == document_id)
@@ -373,7 +398,20 @@ class DocumentRepository:
                     updated_at=now,
                 )
             )
-        return True
+        return "saved"
+
+    def queued_ahead(self, document: StoredDocument) -> int:
+        """Count the documents of anyone that were uploaded before this one and are still waiting to be read."""
+        with self.engine.connect() as connection:
+            return connection.execute(
+                select(func.count())
+                .select_from(Document)
+                .where(
+                    Document.state == DocumentState.UPLOADED.value,
+                    Document.created_at < document.created_at,
+                    Document.expires_at > document.created_at,
+                )
+            ).scalar_one()
 
     def known_identities(self, session_key: str, now: datetime, exclude: str) -> list[Known]:
         """Return the identities of a visitor's other finished documents of the hour, oldest first."""

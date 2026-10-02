@@ -172,6 +172,50 @@
         "title": "AttemptOut",
         "type": "object"
       },
+      "Band": {
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ],
+        "type": "string"
+      },
+      "BoxOut": {
+        "description": "Where a field is printed: its page (from 1), the four corners of the words, and how sure the service is.\n\nCorners are `x, y` as a share of the page's width and height, clockwise from the top left. `confidence` is the\nwords' own certainty times how well they match the value, and `band` is that number in a word, so the board\nnever says it with colour alone.",
+        "properties": {
+          "band": {
+            "$ref": "#/components/schemas/Band"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "match": {
+            "title": "Match",
+            "type": "number"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "quad": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Quad",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "quad",
+          "confidence",
+          "match",
+          "band"
+        ],
+        "title": "BoxOut",
+        "type": "object"
+      },
       "CellValue": {
         "anyOf": [
           {
@@ -221,6 +265,88 @@
           "omitted_rows"
         ],
         "title": "ChartOut",
+        "type": "object"
+      },
+      "CheckId": {
+        "description": "The name of each check: what the API reports, what the board's words are keyed by, what a repair names.",
+        "enum": [
+          "required_fields",
+          "dates_valid",
+          "currency_known",
+          "signs_agree",
+          "line_math",
+          "line_items_sum",
+          "vat_math",
+          "vat_bases",
+          "total_reconciles",
+          "fields_on_page",
+          "not_duplicate"
+        ],
+        "title": "CheckId",
+        "type": "string"
+      },
+      "CheckOut": {
+        "description": "One check's verdict, with the numbers that disagree and the fields it is about.",
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "$ref": "#/components/schemas/CheckId"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "severity",
+          "message",
+          "fields",
+          "expected",
+          "actual"
+        ],
+        "title": "CheckOut",
         "type": "object"
       },
       "ColumnDescriptionOut": {
@@ -296,6 +422,50 @@
         "title": "ColumnOut",
         "type": "object"
       },
+      "CorrectionOut": {
+        "description": "One correction a visitor made: which field, what it was and what it became.",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "now": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "was": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Was"
+          }
+        },
+        "required": [
+          "path",
+          "was",
+          "now",
+          "at"
+        ],
+        "title": "CorrectionOut",
+        "type": "object"
+      },
       "DimensionOut": {
         "description": "A way to slice a metric, with its exact definition.",
         "properties": {
@@ -334,6 +504,394 @@
           "synonyms"
         ],
         "title": "DimensionOut",
+        "type": "object"
+      },
+      "DocumentId": {
+        "pattern": "^[A-Za-z0-9_-]{22}$",
+        "type": "string"
+      },
+      "DocumentListOut": {
+        "description": "The visitor's documents of the hour, newest first.",
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentSummaryOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "title": "DocumentListOut",
+        "type": "object"
+      },
+      "DocumentOut": {
+        "description": "A document as the API shows it: where it is, and once it is read, everything that was made of it.",
+        "properties": {
+          "byte_size": {
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "can_export": {
+            "title": "Can Export",
+            "type": "boolean"
+          },
+          "checks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CheckOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checks"
+          },
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionOut"
+            },
+            "title": "Corrections",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "elapsed_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Ms"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JournalOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "journal_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JournalStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "ocr_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Ms"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "prices_include_vat": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prices Include Vat"
+          },
+          "queued_ahead": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queued Ahead"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/DocumentState"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "text_cut": {
+            "title": "Text Cut",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "failure",
+          "label",
+          "kind",
+          "byte_size",
+          "pages",
+          "created_at",
+          "updated_at",
+          "expires_at",
+          "queued_ahead",
+          "text_cut",
+          "model",
+          "model_calls",
+          "run_id",
+          "ocr_ms",
+          "elapsed_ms",
+          "steps",
+          "prices_include_vat",
+          "fields",
+          "checks",
+          "duplicate",
+          "journal",
+          "journal_status",
+          "corrections",
+          "can_export"
+        ],
+        "title": "DocumentOut",
+        "type": "object"
+      },
+      "DocumentState": {
+        "description": "Where a document is in the pipeline.",
+        "enum": [
+          "uploaded",
+          "ocr",
+          "extract",
+          "validate",
+          "repair",
+          "ready",
+          "failed"
+        ],
+        "title": "DocumentState",
+        "type": "string"
+      },
+      "DocumentSummaryOut": {
+        "description": "A document in a list: enough to find it again and see how it stands.",
+        "properties": {
+          "byte_size": {
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "can_export": {
+            "title": "Can Export",
+            "type": "boolean"
+          },
+          "checks_failed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checks Failed"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "state": {
+            "$ref": "#/components/schemas/DocumentState"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "failure",
+          "label",
+          "kind",
+          "byte_size",
+          "pages",
+          "created_at",
+          "expires_at",
+          "checks_failed",
+          "can_export"
+        ],
+        "title": "DocumentSummaryOut",
+        "type": "object"
+      },
+      "DuplicateOut": {
+        "description": "The document this one repeats: one of the visitor's own, or one of the samples, with the same content or not.",
+        "properties": {
+          "of": {
+            "title": "Of",
+            "type": "string"
+          },
+          "same_content": {
+            "title": "Same Content",
+            "type": "boolean"
+          },
+          "source": {
+            "enum": [
+              "document",
+              "sample"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "of",
+          "source",
+          "same_content"
+        ],
+        "title": "DuplicateOut",
         "type": "object"
       },
       "ErrorDetail": {
@@ -392,6 +950,133 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "FailureCode": {
+        "description": "Why a document has no result.",
+        "enum": [
+          "unsupported_file",
+          "too_large",
+          "too_many_pages",
+          "image_too_big",
+          "unreadable_file",
+          "unsafe_file",
+          "no_text",
+          "ocr_failed",
+          "injection_suspected",
+          "unchecked",
+          "model_failed",
+          "model_budget",
+          "model_output",
+          "time_limit",
+          "call_limit",
+          "interrupted"
+        ],
+        "title": "FailureCode",
+        "type": "string"
+      },
+      "FailureOut": {
+        "description": "Why a document has no result: the code the board has words for, and a sentence for someone reading the API.",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/FailureCode"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "FailureOut",
+        "type": "object"
+      },
+      "FieldEditIn": {
+        "additionalProperties": false,
+        "description": "A correction: the text the visitor typed into one field. Empty text empties the field.",
+        "properties": {
+          "value": {
+            "maxLength": 200,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "FieldEditIn",
+        "type": "object"
+      },
+      "FieldKind": {
+        "enum": [
+          "choice",
+          "text",
+          "date",
+          "currency",
+          "amount",
+          "quantity",
+          "rate"
+        ],
+        "type": "string"
+      },
+      "FieldOut": {
+        "description": "One field of the invoice: its value as text, its box when it was found on the page, and what the checks say.",
+        "properties": {
+          "box": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoxOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckId"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "edited": {
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/FieldKind"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "path",
+          "kind",
+          "value",
+          "box",
+          "edited",
+          "checks"
+        ],
+        "title": "FieldOut",
+        "type": "object"
+      },
+      "FieldPathText": {
+        "pattern": "^(?:[a-z_]{1,20}|(?:line_items|vat)\\.[0-9]{1,2}\\.[a-z_]{1,20})$",
+        "type": "string"
+      },
       "HealthOut": {
         "description": "The liveness answer.",
         "properties": {
@@ -425,6 +1110,90 @@
         "title": "JoinOut",
         "type": "object"
       },
+      "JournalLineOut": {
+        "description": "One line of a journal entry: an account, and an amount on one side.",
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "title": "Debit",
+            "type": "string"
+          },
+          "memo": {
+            "title": "Memo",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "name",
+          "debit",
+          "credit",
+          "memo"
+        ],
+        "title": "JournalLineOut",
+        "type": "object"
+      },
+      "JournalOut": {
+        "description": "A balanced journal entry as the board shows it: amounts as decimal strings, with the two totals.",
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/JournalLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "total_credit": {
+            "title": "Total Credit",
+            "type": "string"
+          },
+          "total_debit": {
+            "title": "Total Debit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "reference",
+          "currency",
+          "lines",
+          "total_debit",
+          "total_credit"
+        ],
+        "title": "JournalOut",
+        "type": "object"
+      },
+      "JournalStatus": {
+        "enum": [
+          "made",
+          "blocked_by_checks",
+          "does_not_balance"
+        ],
+        "type": "string"
+      },
       "Layer": {
         "description": "The defences a query passes through, in order. Each can stop it.",
         "enum": [
@@ -439,35 +1208,45 @@
         "type": "string"
       },
       "LimitsOut": {
-        "description": "The limits LB-05 enforces, which are the ones its datasheet promises.",
+        "description": "The limits LB-03 enforces, which are the ones its datasheet promises.",
         "properties": {
-          "max_model_calls_per_question": {
-            "title": "Max Model Calls Per Question",
+          "concurrent_documents": {
+            "title": "Concurrent Documents",
             "type": "integer"
           },
-          "query_timeout_seconds": {
-            "title": "Query Timeout Seconds",
+          "document_deadline_seconds": {
+            "title": "Document Deadline Seconds",
             "type": "number"
           },
-          "question_deadline_seconds": {
-            "title": "Question Deadline Seconds",
-            "type": "number"
-          },
-          "questions_per_day": {
-            "title": "Questions Per Day",
+          "documents_per_day": {
+            "title": "Documents Per Day",
             "type": "integer"
           },
-          "row_cap": {
-            "title": "Row Cap",
+          "file_lifetime_seconds": {
+            "title": "File Lifetime Seconds",
+            "type": "integer"
+          },
+          "max_model_calls_per_document": {
+            "title": "Max Model Calls Per Document",
+            "type": "integer"
+          },
+          "max_pages": {
+            "title": "Max Pages",
+            "type": "integer"
+          },
+          "max_upload_bytes": {
+            "title": "Max Upload Bytes",
             "type": "integer"
           }
         },
         "required": [
-          "questions_per_day",
-          "query_timeout_seconds",
-          "row_cap",
-          "max_model_calls_per_question",
-          "question_deadline_seconds"
+          "documents_per_day",
+          "concurrent_documents",
+          "max_upload_bytes",
+          "max_pages",
+          "file_lifetime_seconds",
+          "max_model_calls_per_document",
+          "document_deadline_seconds"
         ],
         "title": "LimitsOut",
         "type": "object"
@@ -543,8 +1322,16 @@
         "type": "string"
       },
       "QuotaOut": {
-        "description": "A visitor's questions today, and the limits.",
+        "description": "A visitor's documents today, the limits, and whether the service can read documents at all right now.",
         "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "can_read": {
+            "title": "Can Read",
+            "type": "boolean"
+          },
           "limits": {
             "$ref": "#/components/schemas/LimitsOut"
           },
@@ -565,7 +1352,9 @@
         "required": [
           "used",
           "remaining",
+          "active",
           "resets_at",
+          "can_read",
           "limits"
         ],
         "title": "QuotaOut",
@@ -765,6 +1554,65 @@
         "title": "SemanticLayerOut",
         "type": "object"
       },
+      "Severity": {
+        "description": "Whether a failed check stops the export (an error) or only asks for a look (a warning).",
+        "enum": [
+          "error",
+          "warning"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "StepOut": {
+        "description": "One step of a document's run: what it was, how it ended, how long it took, and a few counts about it.",
+        "properties": {
+          "detail": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Detail",
+            "type": "object"
+          },
+          "ms": {
+            "title": "Ms",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "ms",
+          "detail"
+        ],
+        "title": "StepOut",
+        "type": "object"
+      },
       "TableOut": {
         "description": "A table of the semantic layer.",
         "properties": {
@@ -790,6 +1638,22 @@
           "columns"
         ],
         "title": "TableOut",
+        "type": "object"
+      },
+      "UploadIn": {
+        "additionalProperties": false,
+        "description": "The upload: exactly one part, `file`. Nothing else is accepted next to it.",
+        "properties": {
+          "file": {
+            "format": "binary",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "UploadIn",
         "type": "object"
       }
     },
@@ -836,6 +1700,667 @@
         "summary": "Report that the process is up. It checks nothing else, so a database blip never restarts it.",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/lb03/documents": {
+      "get": {
+        "operationId": "lb03_list_documents_documents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "List the visitor's documents of the hour, newest first, so the board can find them after a reload.",
+        "tags": [
+          "lb-03"
+        ]
+      },
+      "post": {
+        "description": "<br/>Answers 202 at once with the document in state `uploaded`; poll it to watch it being read. Counts against<br/>the visitor's 10 documents a day, which the service enforces itself, and two documents are read at a time.<br/>A document the service itself fails to read is not counted, for up to three such documents a day.",
+        "operationId": "lb03_upload_documents_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Upload an invoice, a credit note or a till receipt (PDF, PNG, JPEG or WebP, up to 10 MB and 5 pages).",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
+    "/api/lb03/documents/{document_id}": {
+      "delete": {
+        "operationId": "lb03_delete_document_documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Delete a document that has ended, with its files. A document still being read can't be deleted yet.",
+        "tags": [
+          "lb-03"
+        ]
+      },
+      "get": {
+        "operationId": "lb03_get_document_documents__document_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read one document: its state while it is being read, and when it is ready its fields, boxes and checks.",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
+    "/api/lb03/documents/{document_id}/export": {
+      "get": {
+        "description": "<br/>The CSV exports are refused (409) while a failed check stops the export. The JSON always goes.",
+        "operationId": "lb03_export_document_documents__document_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "csv",
+                "journal",
+                "json"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The export: a CSV file (UTF-8 with a byte order mark) or the JSON of the whole reading."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Export a read document: its lines or its journal entry as CSV, or everything as JSON.",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
+    "/api/lb03/documents/{document_id}/fields/{field_path}": {
+      "patch": {
+        "description": "<br/>A corrected field counts as confirmed by the visitor and loses its box. The duplicate check and the journal<br/>entry are made again from the corrected reading.",
+        "operationId": "lb03_edit_field_documents__document_id__fields__field_path__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field_path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/FieldPathText"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldEditIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Correct one field of a read document: every check runs again, and the correction is recorded.",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
+    "/api/lb03/documents/{document_id}/pages/{number}": {
+      "get": {
+        "operationId": "lb03_get_page_documents__document_id__pages__int_number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "maximum": 5,
+              "minimum": 1.0,
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The JPEG picture of one page."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read the picture of one page of the visitor's document, for the viewer. Never served any other way.",
+        "tags": [
+          "lb-03"
+        ]
+      }
+    },
+    "/api/lb03/quota": {
+      "get": {
+        "operationId": "lb03_quota_quota_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotaOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read how many documents the visitor has left today, how many are being read, and the limits.",
+        "tags": [
+          "lb-03"
         ]
       }
     },
@@ -1073,6 +2598,9 @@
   "tags": [
     {
       "name": "lb-05"
+    },
+    {
+      "name": "lb-03"
     },
     {
       "name": "health"
