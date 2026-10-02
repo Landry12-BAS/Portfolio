@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { createI18n } from 'vue-i18n'
 
-import { BAND_LINES, BAND_SEGMENTS, clampPage, confidencePercent, pageCount, placedOnPage, polygonPoints } from '~/boards/lb-03/boxes'
+import { BAND_LINES, BAND_SEGMENTS, clampPage, confidencePercent, growQuad, pageCount, placedOnPage, polygonPoints } from '~/boards/lb-03/boxes'
 import { addressOf, fieldAt, fieldLabel, firstFieldToShow, groupFields, labelKey, rowNumber } from '~/boards/lb-03/fields'
 import type { Translate } from '~/boards/lb-03/fields'
 import type { Field } from '~/boards/lb-03/schemas'
@@ -127,6 +127,32 @@ describe('a box on its page', () => {
 
   it('is clipped to the page when a corner strays outside it', () => {
     expect(polygonPoints([-0.2, 0.2, 1.4, 0.2, 1.4, 0.3, -0.2, 0.3])).toBe('0.00000,0.20000 1.00000,0.20000 1.00000,0.30000 0.00000,0.30000')
+  })
+
+  it('is drawn a margin outside the words when one is given, so an outline lies around the letters and not on them', () => {
+    const tight = [0.1, 0.2, 0.5, 0.2, 0.5, 0.3, 0.1, 0.3]
+    expect(growQuad(tight, { x: 0.01, y: 0.005 }).map(value => Number(value.toFixed(5)))).toEqual([0.09, 0.195, 0.51, 0.195, 0.51, 0.305, 0.09, 0.305])
+    expect(polygonPoints(tight, { x: 0.01, y: 0.005 })).toBe('0.09000,0.19500 0.51000,0.19500 0.51000,0.30500 0.09000,0.30500')
+    expect(growQuad(tight, { x: 0, y: 0 })).toEqual(tight)
+  })
+
+  it('grows a crooked box of a photograph outwards at every corner, and keeps a grown box on the page', () => {
+    const crooked = [0.30, 0.20, 0.52, 0.22, 0.51, 0.26, 0.29, 0.24]
+    const grown = growQuad(crooked, { x: 0.01, y: 0.01 })
+    expect(grown).toHaveLength(8)
+    // The top corners move up and the bottom corners down; the left corners move left and the right corners right.
+    expect(grown[1]).toBeLessThan(0.20)
+    expect(grown[3]).toBeLessThan(0.22)
+    expect(grown[5]).toBeGreaterThan(0.26)
+    expect(grown[7]).toBeGreaterThan(0.24)
+    expect(grown[0]).toBeLessThan(0.30)
+    expect(grown[2]).toBeGreaterThan(0.52)
+    expect(polygonPoints([0, 0, 1, 0, 1, 1, 0, 1], { x: 0.05, y: 0.05 })).toBe('0.00000,0.00000 1.00000,0.00000 1.00000,1.00000 0.00000,1.00000')
+  })
+
+  it('leaves a box with no corners, and a box with no size, as they are', () => {
+    expect(growQuad([], { x: 0.01, y: 0.01 })).toEqual([])
+    expect(growQuad([0.4, 0.4, 0.4, 0.4], { x: 0.01, y: 0.01 })).toEqual([0.4, 0.4, 0.4, 0.4])
   })
 
   it('lists the fields found on a page, in the service\'s order, and none for a document with no fields', () => {

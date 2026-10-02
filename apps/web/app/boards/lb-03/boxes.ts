@@ -28,11 +28,50 @@ function onPage(value: number): number {
   return Math.min(Math.max(value, 0), 1)
 }
 
-/** Writes a box's corners as the `points` of an SVG polygon on a page that is 1 wide and 1 high. */
-export function polygonPoints(quad: readonly number[]): string {
+/** How far a box is drawn outside the words it was found around, as shares of the page's width and height. */
+export interface Margin {
+  x: number
+  y: number
+}
+
+/** No margin: the box is drawn exactly where the service said it is. */
+const NO_MARGIN: Margin = { x: 0, y: 0 }
+
+/** Which way a corner lies from the middle of its box: -1 to the left or above, 1 to the right or below, 0 on it. */
+function sideOf(offset: number): number {
+  if (Math.abs(offset) < 1e-9) return 0
+  return offset < 0 ? -1 : 1
+}
+
+/**
+ * Moves each corner of a box away from the box's middle by a margin. The service's box is as tight as the
+ * words, so an outline drawn on it lies on the letters and hides them; with a margin it lies around them.
+ * Boxes of a photograph are crooked, and moving each corner outwards on both axes still keeps them so.
+ */
+export function growQuad(quad: readonly number[], margin: Margin): number[] {
+  const corners = Math.floor(quad.length / 2)
+  if (corners === 0) return []
+  let middleX = 0
+  let middleY = 0
+  for (let corner = 0; corner < corners; corner += 1) {
+    middleX += (quad[corner * 2] ?? 0) / corners
+    middleY += (quad[corner * 2 + 1] ?? 0) / corners
+  }
+  const grown: number[] = []
+  for (let corner = 0; corner < corners; corner += 1) {
+    const x = quad[corner * 2] ?? 0
+    const y = quad[corner * 2 + 1] ?? 0
+    grown.push(x + sideOf(x - middleX) * margin.x, y + sideOf(y - middleY) * margin.y)
+  }
+  return grown
+}
+
+/** Writes a box's corners as the `points` of an SVG polygon on a page that is 1 wide and 1 high, grown by a margin if one is given. */
+export function polygonPoints(quad: readonly number[], margin: Margin = NO_MARGIN): string {
+  const corners = growQuad(quad, margin)
   const points: string[] = []
-  for (let corner = 0; corner + 1 < quad.length; corner += 2) {
-    points.push(`${onPage(quad[corner] ?? 0).toFixed(5)},${onPage(quad[corner + 1] ?? 0).toFixed(5)}`)
+  for (let corner = 0; corner + 1 < corners.length; corner += 2) {
+    points.push(`${onPage(corners[corner] ?? 0).toFixed(5)},${onPage(corners[corner + 1] ?? 0).toFixed(5)}`)
   }
   return points.join(' ')
 }

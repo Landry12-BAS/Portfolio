@@ -115,6 +115,7 @@ const lb03 = {
     next: 'Next page',
     pageOf: 'Page {page} of {pages}',
     showAll: 'Show every box',
+    openFull: 'Open the page at full size, in a new tab',
     missing: 'The picture of this page is not available. The fields are still the reading.',
     pickOne: 'Choose a field in the table to see where it is on the page.',
     typed: 'You typed this value, so it has no box on the page.',

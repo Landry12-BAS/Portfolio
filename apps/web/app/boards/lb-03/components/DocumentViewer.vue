@@ -13,8 +13,16 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { BAND_LINES, clampPage, confidencePercent, placedOnPage, polygonPoints } from '../boxes'
+import type { Margin } from '../boxes'
 import { fieldAt, fieldLabel } from '../fields'
 import type { Field } from '../schemas'
+
+/** How far outside its words a box is drawn, as a share of the page's width: a little under two pixels on a page of the usual size. */
+const BOX_MARGIN = 0.004
+/** The same for the box of the field in view, which has a heavier outline that must not lie on the letters. */
+const LIT_MARGIN = 0.008
+/** The width over the height of an A4 page, which a picture is taken to have until it is loaded and measured. */
+const A4_SHAPE = 210 / 297
 
 const props = defineProps<{
   /** The address of the picture of the page being shown. */
@@ -42,10 +50,23 @@ const { t } = useI18n()
 const showAll = ref(true)
 // Whether the picture could not be loaded: the boxes are then not drawn over nothing.
 const broken = ref(false)
+// The width over the height of the picture, so that a margin is as many pixels above a box as beside it.
+const shape = ref(A4_SHAPE)
 
 watch(() => props.pictureUrl, () => {
   broken.value = false
 })
+
+const margin = computed<Margin>(() => ({ x: BOX_MARGIN, y: BOX_MARGIN * shape.value }))
+const litMargin = computed<Margin>(() => ({ x: LIT_MARGIN, y: LIT_MARGIN * shape.value }))
+
+/** Measures the picture once it is loaded. */
+function measure(event: Event): void {
+  const image = event.target
+  if (image instanceof HTMLImageElement && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    shape.value = image.naturalWidth / image.naturalHeight
+  }
+}
 
 const placed = computed(() => placedOnPage(props.fields, props.page))
 // An SVG paints in document order, so the lit box goes last to be on top of any box it overlaps.
@@ -124,6 +145,14 @@ function go(page: number): void {
         >
         <span>{{ t('lb03.viewer.showAll') }}</span>
       </label>
+      <a
+        v-if="!broken"
+        class="full"
+        :href="pictureUrl"
+        target="_blank"
+        rel="noopener"
+        data-testid="open-page"
+      >{{ t('lb03.viewer.openFull') }}</a>
     </div>
 
     <div class="sheet">
@@ -132,6 +161,7 @@ function go(page: number): void {
         :src="pictureUrl"
         :alt="alt"
         data-testid="page-picture"
+        @load="measure"
         @error="broken = true"
       >
       <svg
@@ -147,7 +177,7 @@ function go(page: number): void {
           :key="item.path"
           class="box"
           :class="[`line-${BAND_LINES[item.box.band]}`, { lit: item.path === selected }]"
-          :points="polygonPoints(item.box.quad)"
+          :points="polygonPoints(item.box.quad, item.path === selected ? litMargin : margin)"
           :data-path="item.path"
           :data-lit="item.path === selected ? 'true' : undefined"
           aria-hidden="true"
@@ -243,6 +273,13 @@ function go(page: number): void {
   accent-color: var(--lb-board);
 }
 
+.full {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 13px;
+}
+
 /* The sheet is the picture and, over it, an SVG as big as the picture: the boxes are drawn in the page's own units. */
 .sheet {
   position: relative;
@@ -265,9 +302,10 @@ function go(page: number): void {
   height: 100%;
 }
 
+/* The picture is white paper in both themes, so the marks on it use the page tokens, which do not change with the theme. */
 .box {
   fill: transparent;
-  stroke: var(--lb-signal);
+  stroke: var(--lb-page-line);
   stroke-width: 1.5px;
   vector-effect: non-scaling-stroke;
   cursor: pointer;
@@ -285,10 +323,10 @@ function go(page: number): void {
 
 /* The lit box: the highlighter colour under a heavy outline, over every other box. */
 .box.lit {
-  fill: var(--lb-marker);
-  fill-opacity: 0.55;
-  stroke: var(--lb-ink);
-  stroke-width: 3px;
+  fill: var(--lb-page-marker);
+  fill-opacity: 0.5;
+  stroke: var(--lb-page-ink);
+  stroke-width: 2.5px;
 }
 
 .broken {

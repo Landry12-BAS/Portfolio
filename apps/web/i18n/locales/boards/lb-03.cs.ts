@@ -113,6 +113,7 @@ const lb03 = {
     next: 'Další strana',
     pageOf: 'Strana {page} z {pages}',
     showAll: 'Zobrazit všechny rámečky',
+    openFull: 'Otevřít stránku v plné velikosti na nové kartě',
     missing: 'Obrázek této strany není k dispozici. Pole jsou přesto výsledek čtení.',
     pickOne: 'Vyberte pole v tabulce a uvidíte, kde je na stránce.',
     typed: 'Tuto hodnotu jste napsali vy, takže nemá na stránce rámeček.',

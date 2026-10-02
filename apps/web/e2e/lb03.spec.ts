@@ -90,6 +90,7 @@ test.describe('replaying a recorded sample', () => {
     await expect(page.getByTestId('replay-banner')).toContainText('none of your allowance is used')
     await waitForReading(page)
     await expect(page.getByTestId('page-picture')).toHaveAttribute('src', '/lb03/pages/clean-pdf-1.jpg')
+    await expect(page.getByTestId('open-page')).toHaveAttribute('href', '/lb03/pages/clean-pdf-1.jpg')
     await expect.poll(() => isDrawn(page.getByTestId('page-picture'))).toBe(true)
     expect(await page.getByTestId('box').count()).toBeGreaterThan(10)
     await expect(litBoxes(page)).toHaveCount(1)
@@ -186,6 +187,12 @@ test.describe('a document read live', () => {
     await expect(page.getByTestId('board-state')).toHaveText('Live')
     await expect(page.getByTestId('page-picture')).toHaveAttribute('src', /^\/api\/lb03\/documents\/[\w-]+\/pages\/1$/)
     await expect.poll(() => isDrawn(page.getByTestId('page-picture'))).toBe(true)
+
+    // The page at full size opens in a tab of its own, as the browser's own picture of the service's JPEG.
+    const [tab] = await Promise.all([context.waitForEvent('page'), page.getByTestId('open-page').click()])
+    await expect(tab).toHaveURL(/\/api\/lb03\/documents\/[\w-]+\/pages\/1$/)
+    expect(await tab.evaluate(() => document.contentType)).toBe('image/jpeg')
+    await tab.close()
     await expect(fieldRow(page, 'vat.2.rate').getByTestId('field-value')).toHaveText('19')
     await expect(page.locator('[data-testid="check"][data-status="passed"]')).toHaveCount(11)
     await expect(page.getByTestId('scope-row').first()).toContainText('invoice reading')

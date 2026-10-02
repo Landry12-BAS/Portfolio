@@ -276,6 +276,47 @@ describe('DocumentViewer', () => {
     expect(wrapper.get('[data-testid="picture-missing"]').text()).toBe('The picture of this page is not available. The fields are still the reading.')
   })
 
+  it('draws each box a little outside the words, and the lit box a little further, so the outline does not lie on the letters', () => {
+    const fields = [
+      { path: 'vendor', kind: 'text' as const, value: 'A', box: { page: 1, quad: [0.2, 0.2, 0.4, 0.2, 0.4, 0.25, 0.2, 0.25], confidence: 0.95, match: 1, band: 'high' as const }, edited: false, checks: [] },
+      { path: 'total', kind: 'amount' as const, value: '1', box: { page: 1, quad: [0.2, 0.5, 0.4, 0.5, 0.4, 0.55, 0.2, 0.55], confidence: 0.95, match: 1, band: 'high' as const }, edited: false, checks: [] },
+    ]
+    const wrapper = mountWithSite(DocumentViewer, { props: { ...props, fields, selected: 'total' } })
+    /** The left edge and the width of a polygon, from its points. */
+    const widthOf = (path: string): { left: number, width: number } => {
+      const points = (wrapper.get(`[data-testid="box"][data-path="${path}"]`).attributes('points') ?? '').split(' ').map(pair => Number(pair.split(',')[0]))
+      return { left: Math.min(...points), width: Math.max(...points) - Math.min(...points) }
+    }
+    expect(widthOf('vendor').left).toBeLessThan(0.2)
+    expect(widthOf('vendor').width).toBeGreaterThan(0.2)
+    expect(widthOf('total').left).toBeLessThan(widthOf('vendor').left)
+    expect(widthOf('total').width).toBeGreaterThan(widthOf('vendor').width)
+  })
+
+  it('keeps the same margin above a box as beside it once the picture is loaded and its shape is known', async () => {
+    const wrapper = mountWithSite(DocumentViewer, { props: { ...props, selected: undefined } })
+    const picture = wrapper.get('[data-testid="page-picture"]')
+    const firstBox = (): number[] => (wrapper.get('[data-testid="box"]').attributes('points') ?? '').split(' ').map(pair => Number(pair.split(',')[1]))
+    const before = firstBox()
+    // A picture twice as wide as it is high: the same number of pixels is twice the share of its height as of its width.
+    Object.defineProperty(picture.element, 'naturalWidth', { value: 2000 })
+    Object.defineProperty(picture.element, 'naturalHeight', { value: 1000 })
+    await picture.trigger('load')
+    const after = firstBox()
+    expect(Math.max(...after) - Math.min(...after)).toBeGreaterThan(Math.max(...before) - Math.min(...before))
+  })
+
+  it('links to the page at full size in a new tab, which needs no script, and offers no link for a picture that cannot be loaded', async () => {
+    const wrapper = mountWithSite(DocumentViewer, { props })
+    const link = wrapper.get('[data-testid="open-page"]')
+    expect(link.attributes('href')).toBe('/lb03/pages/planted-total-1.jpg')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toContain('noopener')
+    expect(link.text()).toBe('Open the page at full size, in a new tab')
+    await wrapper.get('[data-testid="page-picture"]').trigger('error')
+    expect(wrapper.find('[data-testid="open-page"]').exists()).toBe(false)
+  })
+
   it('says a field has no box because it was typed in, or because it was not found', () => {
     const typed = { path: 'total', kind: 'amount' as const, value: '1', box: null, edited: true, checks: [] }
     expect(mountWithSite(DocumentViewer, { props: { ...props, fields: [typed], selected: 'total' } }).get('.where').text()).toBe('You typed this value, so it has no box on the page.')
