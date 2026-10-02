@@ -478,7 +478,7 @@ describe('the answer', () => {
   })
 
   it('leaves it to the back end\'s own sentence to say whether the question was counted, since after a few failures a day it is', () => {
-    const counted = { ...unavailable(), message: 'The language models are not answering right now, and this question was counted: today\'s 5 questions that could not be answered have been given back already.' }
+    const counted = { ...unavailable(), message: 'The language models are not answering right now, and this question was counted: a visitor is given back at most 5 such questions a day.' }
     const wrapper = mountWithSite(AnswerView, { props: propsFor(counted) })
     const notice = wrapper.get('[data-testid="ask-notice"]').text()
 

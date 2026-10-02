@@ -58,10 +58,7 @@ UNAVAILABLE_REASONS: dict[str, str] = {
 # The reasons after which trying again is the right advice.
 TRY_AGAIN = frozenset({Unavailable.MODEL_OUTPUT.value, Unavailable.WAREHOUSE_BUSY.value})
 NOT_COUNTED = "so this question was not counted."
-COUNTED = (
-    f"and this question was counted: today's {MAX_REFUNDS_PER_DAY} questions that could not be answered "
-    "have been given back already."
-)
+COUNTED = f"and this question was counted: a visitor is given back at most {MAX_REFUNDS_PER_DAY} such questions a day."
 NOT_SERVING_MESSAGE = "The analyst is not available right now."
 DAILY_LIMIT_MESSAGE = f"You have asked today's {QUESTIONS_PER_DAY} questions. The count starts again at midnight UTC."
 BUSY_MESSAGE = "Your last question is still being answered. Wait for it, then ask again."

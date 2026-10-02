@@ -202,7 +202,7 @@ since an exception's message can quote a visitor.
 
 ## Tests
 
-890 tests: 858 unit and 32 integration, run with `just test` or from this folder with
+939 tests: 899 unit and 40 integration, run with `just test` or from this folder with
 `uv run pytest`. The unit tests need no Docker.
 
 - **The layers.** Each layer and each rule has tests; the adversarial set runs through the real
