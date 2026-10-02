@@ -158,7 +158,9 @@ Add each new command to the Commands section in the change that introduces it.
   and a dark value. Archivo (display and text) and Martian Mono (data). No hard-coded
   colors, and no gradients outside the LB mark.
 - Signal blue, the logo's ribbon, is the one accent colour. The evaluation board, in
-  a deep shade of it, marks live demos and nothing else.
+  a deep shade of it, marks live demos and nothing else. A chart that must tell series
+  apart uses the eight `--lb-series-*` tokens (the first is signal blue, so a chart of
+  one series is blue), for data marks only.
 - Icons come only from `@lb/icons`, drawn in the logo's pattern. No emoji, no
   third-party icon sets.
 - The LB mark comes only from the files in `brand/`: `lb-mark-light.svg` in the light
