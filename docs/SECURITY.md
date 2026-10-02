@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb05/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -162,6 +162,32 @@ how a Vercel preview runs.
   conversation, the calendar or a recording, and a WebSocket does not pass through a service
   worker at all. The page is fetched from the network first, so a visitor who is online always
   gets the current page. A test fails if the worker ever stores an API or WebSocket address.
+- **LB-04's board: the PDF viewer.** The viewer draws a contract's PDF with pdf.js
+  (`pdfjs-dist`), loaded only when a visitor asks to see the pages (the build leaves it out of
+  the page's prefetch hints), and only from the site's own origin. pdf.js works in a Web Worker,
+  and a worker's address is a script address, so under `require-trusted-types-for 'script'` the
+  page cannot start one from a string. Only LB-04's two board pages (English and Czech) get a
+  longer Content Security Policy, and each addition is the smallest that works: `trusted-types`
+  gains `lb-pdf-worker`, one policy whose rule throws for every address but the worker file's
+  own (there is never a `default` policy, and no `allow-duplicates`), and `worker-src 'self'`.
+  Nothing else changes: `script-src` keeps its nonce and `strict-dynamic`, and `connect-src`,
+  `font-src` and `img-src` stay as they are. pdf.js 6 evaluates no code, so there is no
+  `unsafe-eval` or `wasm-unsafe-eval`; it loads no script, font, image or style from anywhere
+  (the bytes are the ones the board already holds, and fonts that are not in the PDF are the
+  system's), and the viewer opens a PDF with XFA off. The additions are made when the server
+  starts (`apps/web/server/lib/lb04-csp.ts`), unit-tested for what they add and for what they
+  leave alone (`apps/web/test/unit/lb04-viewer-policy.test.ts`), and tested against the headers
+  and a real Chromium (`apps/web/e2e/lb04.spec.ts`): the worker is requested from the site's own
+  origin and only after the pages are asked for, the page can start no other worker and make no
+  policy of its own (the browser's own reports of each refusal are asserted), and no other page
+  carries either addition. A visitor's PDF is a stranger's file, and it is parsed twice without
+  trust in either: on the server in a worker thread with a deadline and a memory limit (section
+  5), and in the browser inside pdf.js's worker. The viewer draws a highlight only on a page where
+  the browser's pdf.js read exactly the text the server's did (both build the text with the same
+  function, `extractPageText` in `@lb/contracts`, and the viewer compares them page by page); on a
+  page where they differ it leaves the highlight off and says so, and the passage is still shown
+  as text. That the two agree is checked in a browser on every sample the system can review, not
+  assumed for a visitor's own file.
 
 ### Threat model of the proxy
 
@@ -212,8 +238,9 @@ how a Vercel preview runs.
   even if markup slips through. `nuxt-security` sets the headers and nonces. The only
   Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
   markup; the evaluation boards' pages alone add `lb-turnstile` (see "What the site's
-  server does") and Cloudflare's frame, and LB-02's two board pages add `lb-service-worker`,
-  `worker-src 'self'` and the API's WebSocket origin to `connect-src` (same section), and
+  server does") and Cloudflare's frame, LB-02's two board pages add `lb-service-worker`,
+  `worker-src 'self'` and the API's WebSocket origin to `connect-src`, and LB-04's two board
+  pages add `lb-pdf-worker` and `worker-src 'self'` (both in the same section), and
   nothing else changes. Zod is told not to build
   its parsers with `new Function` (`apps/web/app/plugins/00.zod-jitless.ts`): the policy
   would report each probe as a violation.
