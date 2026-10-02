@@ -79,6 +79,7 @@ const lb02 = {
     you: 'Vy',
     concierge: 'Asistent',
     note: 'Poznámka',
+    later: 'o {minutes} min později',
     working: 'Asistent na tom pracuje…',
     receipt: 'Napsal systém',
     receiptHelp: 'Tuto zprávu sepsal kód rezervace z faktů rezervace, ne model, takže nemůže slíbit nic, co rezervace neobsahuje.',

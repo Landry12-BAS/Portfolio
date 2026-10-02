@@ -96,6 +96,10 @@ defineExpose({ focus })
           <span class="note-label">{{ t('lb02.chat.note') }}</span>
           <span class="note">{{ line.text }}</span>
         </template>
+        <span
+          v-else-if="line.kind === 'pause'"
+          class="note"
+        >{{ t('lb02.chat.later', { minutes: line.minutes }) }}</span>
         <template v-else>
           <span class="who">{{ line.kind === 'visitor' ? t('lb02.chat.you') : t('lb02.chat.concierge') }}</span>
           <p
@@ -196,7 +200,8 @@ defineExpose({ focus })
   justify-self: start;
 }
 
-.line--action {
+.line--action,
+.line--pause {
   justify-self: center;
   justify-items: center;
   max-width: 100%;

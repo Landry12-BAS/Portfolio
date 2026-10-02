@@ -58,6 +58,35 @@ export class Backend {
     return this.#target.clock
   }
 
+  /** The origin of the API, for a connection that goes to it directly (a WebSocket) instead of through a call. */
+  get apiUrl(): URL {
+    return this.#target.apiUrl
+  }
+
+  /** Makes a fresh visitor token for a system, for a connection that carries it in its first frame instead of a header. */
+  visitorToken(system: string): string {
+    const target = this.#target
+    return mintVisitorToken(target.signingKey, { system, sessionKey: this.#sessionKey }, target.clock.now() / 1_000)
+  }
+
+  /** Starts another synthetic visitor on the same back end, who shares nothing with this one but what every visitor shares. */
+  another(): Backend {
+    return new Backend(this.#target)
+  }
+
+  /**
+   * Lets minutes pass, for a sample that waits (a hold running out). On a real back end the recorder
+   * waits that long on its clock. The test mock keeps a clock of its own for its bookings, which
+   * waiting would not move, so it is told to move it.
+   */
+  async waitMinutes(minutes: number): Promise<void> {
+    const target = this.#target
+    await target.clock.sleep(minutes * 60_000)
+    if (!(await this.isMock())) return
+    const answer = await target.fetch(new URL('/__mock/lb02/advance', target.apiUrl), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ minutes }) })
+    if (!answer.ok) throw new Error(`The mock would not move its clock (status ${answer.status}).`)
+  }
+
   /** Calls the system's API as the visitor, with a fresh token for the system. */
   async call(system: string, method: 'GET' | 'POST', path: string, body?: unknown): Promise<Answer> {
     const target = this.#target
@@ -107,9 +136,11 @@ export class Backend {
 
   /**
    * Reads a run's whole trace: every page, until the run's root span has arrived. Gives up after
-   * `patienceMs` of waiting, since a trace that never finishes is not one to record.
+   * `patienceMs` of waiting, since a trace that never finishes is not one to record. A run that has no
+   * root span by design (a conversation, which goes on in turns) is `rootless`: it is complete when a
+   * read finds nothing new after one that found something.
    */
-  async readTrace(runId: string, patienceMs: number): Promise<Span[]> {
+  async readTrace(runId: string, patienceMs: number, options: { rootless?: boolean } = {}): Promise<Span[]> {
     const { clock } = this.#target
     const startedAt = clock.now()
     const spans: Span[] = []
@@ -120,6 +151,7 @@ export class Backend {
         spans.push(...page.spans)
         cursor = page.cursor
         if (page.finished && !page.more) return spans
+        if (options.rootless === true && !page.more && page.spans.length === 0 && spans.length > 0) return spans
       }
       if (clock.now() - startedAt > patienceMs) throw new Error(`The trace of run ${runId} did not finish within ${Math.round(patienceMs / 1_000)} seconds.`)
       await clock.sleep(page?.more ? 0 : 500)

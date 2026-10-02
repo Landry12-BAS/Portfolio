@@ -90,6 +90,13 @@ describe('the chat log', () => {
     expect(wrapper.text()).toContain('<i>made_up_tool</i>')
   })
 
+  it('shows a pause between two messages as a note in the log', () => {
+    const wrapper = mountLog({ lines: [{ id: 1, kind: 'pause', minutes: 6 }, { id: 2, kind: 'visitor', text: 'Is it free now?' }] })
+    expect(wrapper.get('[data-testid="line-pause"]').text()).toBe('6 min later')
+    const czech = mountLog({ lines: [{ id: 1, kind: 'pause', minutes: 6 }] }, 'cs')
+    expect(czech.get('[data-testid="line-pause"]').text()).toBe(cs.lb02.chat.later.replace('{minutes}', '6'))
+  })
+
   it('says what it is waiting for while the log is empty, and that the concierge is working while it is', () => {
     const empty = mountLog({ lines: [] })
     expect(empty.text()).toContain('Nothing yet.')

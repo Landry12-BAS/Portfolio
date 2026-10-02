@@ -3,6 +3,11 @@
 // message to a recorded booking, the visitor's own conversation, a second visitor changing the calendar
 // while the first watches, a handoff to a person, a connection that closes and is picked up again, the
 // Brief reading, a deployment with no back end, and Czech.
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { recordingSchema } from '@lb/contracts'
+import type { Recording } from '@lb/contracts'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -35,6 +40,13 @@ class MemoryStorage {
   removeItem(key: string): void {
     this.items.delete(key)
   }
+}
+
+/** Reads one of the recordings the recorder made on the mock (scripts/record-fixtures.ts). */
+function recordingOf(sample: string): Recording {
+  // Tests run from the app's own folder (`pnpm test`), where the fixtures are.
+  const file = join(process.cwd(), 'e2e/fixtures/recordings/lb-02', `${sample}.json`)
+  return recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')))
 }
 
 /** Mounts the board against a fake site and waits for what it reads when it opens. */
@@ -190,6 +202,87 @@ describe('LB-02\'s board', () => {
       const receipt = wrapper.get('[data-testid="receipt"]')
       expect(receipt.text()).toContain(en.lb02.chat.receipts.injection_refused)
       expect(wrapper.find('[data-testid="booking-code"]').exists()).toBe(false)
+    })
+  })
+
+  describe('a sample replayed from its recording', () => {
+    it('offers a recorded sample as a free replay and any other as a live run', async () => {
+      const { wrapper } = await openBoard({ recordings: [recordingOf('book-cupping-en')] })
+      expect(wrapper.get('[data-testid="start-sample"]').text()).toBe(en.lb02.start.replay)
+      expect(wrapper.find('[data-testid="no-recording"]').exists()).toBe(false)
+      await chooseSample(wrapper, 'book-tasting-cs')
+      expect(wrapper.get('[data-testid="start-sample"]').text()).toBe(en.lb02.start.runSampleLive)
+      expect(wrapper.find('[data-testid="no-recording"]').exists()).toBe(true)
+    })
+
+    it('replays the booking with no token, no socket and no write, labelled as a replay, and ends on the booking and the recorded email', async () => {
+      const { wrapper, site } = await openBoard({ recordings: [recordingOf('book-cupping-en')] })
+      await wrapper.get('[data-testid="start-sample"]').trigger('click')
+      await settle()
+      expect(wrapper.get('[data-testid="board-state"]').text()).toBe('Replay')
+      expect(wrapper.find('[data-testid="replay-banner"]').exists()).toBe(true)
+      expect(wrapper.get('[data-testid="connection"]').text()).toBe(en.lb02.phone.status.replay)
+      expect(wrapper.get('[data-testid="composer-hint"]').text()).toBe(en.lb02.composer.replaying)
+      expect(wrapper.get('[data-testid="composer-field"]').attributes('disabled')).toBeDefined()
+
+      await seconds(4)
+      await settle()
+      expect(lines(wrapper, 'visitor')).toHaveLength(3)
+      expect(lines(wrapper, 'concierge')).toHaveLength(3)
+      expect(wrapper.findAll('[data-testid="receipt"]').map(receipt => receipt.text())).toEqual([
+        `${en.lb02.chat.receipt}: ${en.lb02.chat.receipts.hold_placed}`,
+        `${en.lb02.chat.receipt}: ${en.lb02.chat.receipts.booking_confirmed}`,
+      ])
+      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^BB-/)
+      expect(wrapper.find('[data-testid="hold-timer"]').exists()).toBe(false)
+      expect(wrapper.get('[data-testid="email-badge"]').text()).toBe(en.lb02.email.badge)
+      expect(wrapper.get('[data-testid="email-to"]').text()).toBe('jana@example.test')
+      expect(wrapper.get('[data-testid="calendar"]').text()).toContain(en.lb02.calendar.recorded)
+      expect(wrapper.get('[data-testid="slots"] [data-state="booked"]').text()).toContain(en.lb02.calendar.status.bookedMine)
+
+      expect(site.sockets).toHaveLength(0)
+      expect(site.callsTo('/api/tokens')).toHaveLength(0)
+      expect(site.calls.filter(call => call.method !== 'GET')).toEqual([])
+      // The list of the visitor's conversations is read for the allowance; no conversation is read in full.
+      expect(site.calls.filter(call => call.path.startsWith('/api/lb02/conversations/'))).toEqual([])
+    })
+
+    it('plays the replay again, and runs the same sample live when asked', async () => {
+      const { wrapper, site } = await openBoard({ recordings: [recordingOf('book-cupping-en')] })
+      await wrapper.get('[data-testid="start-sample"]').trigger('click')
+      await seconds(4)
+      await settle()
+      const again = wrapper.findAll('[data-testid="replay-banner"] button')[0]
+      await again?.trigger('click')
+      await seconds(4)
+      await settle()
+      expect(lines(wrapper, 'visitor')).toHaveLength(3)
+      expect(site.sockets).toHaveLength(0)
+
+      await wrapper.findAll('[data-testid="replay-banner"] button')[1]?.trigger('click')
+      await settle()
+      expect(wrapper.get('[data-testid="board-state"]').text()).toBe('Live')
+      expect(site.sockets).toHaveLength(1)
+      expect(wrapper.get('[data-testid="script-progress"]').text()).toBe('Message 1 of 3 sent')
+    })
+
+    it('shows the wait in the Czech conversation in which another visitor\'s hold runs out, and ends on a booking', async () => {
+      const { wrapper } = await openBoard({ locale: 'cs', recordings: [recordingOf('two-tabs-held-by-other-cs')] })
+      await chooseSample(wrapper, 'two-tabs-held-by-other-cs')
+      await wrapper.get('[data-testid="start-sample"]').trigger('click')
+      await seconds(10)
+      await settle()
+      expect(wrapper.get('[data-testid="line-pause"]').text()).toBe(cs.lb02.chat.later.replace('{minutes}', '6'))
+      expect(lines(wrapper, 'visitor')).toHaveLength(4)
+      expect(wrapper.get('[data-testid="booking-code"]').text()).toMatch(/^BB-/)
+      expect(wrapper.get('[data-testid="email-badge"]').text()).toBe(cs.lb02.email.badge)
+      expect(wrapper.get('[data-testid="board-state"]').text()).toBe(cs.board.replay)
+    })
+
+    it('says the sample has no recording yet when it has none, and offers the live run', async () => {
+      const { wrapper } = await openBoard({ recordings: [] })
+      expect(wrapper.get('[data-testid="no-recording"]').text()).toContain(en.lb02.start.noRecording)
+      expect(wrapper.get('[data-testid="start-sample"]').text()).toBe(en.lb02.start.runSampleLive)
     })
   })
 

@@ -598,6 +598,7 @@ export const useLb02Store = defineStore('lb02', () => {
         onReady(recorded.ready, false)
         break
       case 'message':
+        if (recorded.request.waitMinutes > 0) lines.value = [...lines.value, { id: numbers.next(), kind: 'pause', minutes: recorded.request.waitMinutes }]
         lines.value = [...lines.value, { id: numbers.next(), kind: 'visitor', text: recorded.request.text }]
         for (const event of recorded.turn.calendar) applyCalendarEvent(event)
         onReply(recorded.turn.reply, false)

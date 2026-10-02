@@ -80,6 +80,7 @@ const lb02 = {
     you: 'You',
     concierge: 'Concierge',
     note: 'Note',
+    later: '{minutes} min later',
     working: 'The concierge is working on it…',
     receipt: 'Written by the system',
     receiptHelp: 'The booking code wrote this message from the booking\'s facts, not the model, so it cannot promise anything the booking does not hold.',

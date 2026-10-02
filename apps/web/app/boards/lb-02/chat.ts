@@ -26,8 +26,15 @@ export interface ActionLine {
   text: string
 }
 
+/** A pause between two messages, such as the minutes a recorded conversation waited for another visitor's hold to run out. */
+export interface PauseLine {
+  id: number
+  kind: 'pause'
+  minutes: number
+}
+
 /** One line of the chat. */
-export type ChatLine = VisitorLine | ConciergeLine | ActionLine
+export type ChatLine = VisitorLine | ConciergeLine | ActionLine | PauseLine
 
 /** Hands out the lines' IDs, which only keep the list's items apart as it changes. */
 export class LineNumbers {
