@@ -340,13 +340,13 @@ real Redis; `infra/caddy` (`infra/caddy/test.sh`, all checks pass) and the Compo
   trust only `X-Forwarded-Proto`, which Caddy sets itself; size and time limits exist. `pnpm audit`
   shows only the documented `node-forge` advisory; `uv audit` shows none.
 - *Quotas elsewhere.* LB-05's 25 a day is one atomic upsert, LB-08's runs likewise and its workflow
-  limit takes a lock, LB-02's messages and calls are single statements, and what LB-01, LB-02 and
-  LB-08 store is only ever returned to the session that made it.
+  limit takes a lock, LB-02's messages and calls are single statements, and every route of LB-01,
+  LB-02 and LB-08 that returns stored data filters it by the visitor's session (read, not attacked).
 
 **Reported, not changed.** None lets a visitor read or change another visitor's data.
 
 - The gateway's request log holds the run ID of every trace read, though its comments say it never
-  does; Caddy's and Vercel's logs hold it too. The ID is the key to a trace, and only the owner reads
+  does; Caddy's access log holds it too. The ID is the key to a trace, and only the owner reads
   those logs. A `req` serializer that drops it would fix the gateway's.
 - The verifiers differ on tokens the site never signs. Python accepts `exp <= iat` within the leeway,
   a non-integer `nbf`, a leading BOM and a padded signature; TypeScript refuses them. TypeScript
