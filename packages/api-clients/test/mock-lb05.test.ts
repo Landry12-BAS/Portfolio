@@ -256,6 +256,17 @@ describe('a run\'s trace', () => {
     expect(answer.model_calls).toBe(2)
   })
 
+  it('gives every span of every kind of run its own ID, under a parent that is in the run', async () => {
+    const questions = [curated('revenue-last-quarter'), attack('drop-orders-table').question, attack('hidden-email').question, attack('cte-join-on-constant').question, attack('missing-salary').question]
+    for (const question of questions) {
+      const spans = (await spansOf((await ask(question)).json.run_id)).json.spans as { spanId: string, parentId?: string, name: string }[]
+      const ids = spans.map(span => span.spanId)
+      expect(new Set(ids).size, question).toBe(ids.length)
+      expect(spans.filter(span => span.parentId !== undefined && !ids.includes(span.parentId)), question).toEqual([])
+      expect(spans.filter(span => span.parentId === undefined).map(span => span.name), question).toEqual(['data question'])
+    }
+  })
+
   it('holds the correction inside self-correct, and marks the step a layer stopped as failed with its layer and rule', async () => {
     const answer = (await ask(attack('cte-join-on-constant').question)).json
     const spans = (await spansOf(answer.run_id)).json.spans as { name: string, status: string, spanId: string, parentId?: string, attrs: Record<string, unknown> }[]

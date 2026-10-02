@@ -23,6 +23,16 @@ export const DEFAULT_LIMITS: Limits = {
  */
 export const ASK_PATIENCE_MS = 100_000
 
+/** The shortest and the longest question the back end takes (lb05/api.py: MIN_QUESTION_CHARS, lb05/prompts.py: MAX_QUESTION_CHARS). */
+export const MIN_QUESTION_CHARS = 5
+export const MAX_QUESTION_CHARS = 300
+
+/** Tells whether a question is one the back end would take, so the board never sends one it would refuse. */
+export function isAcceptableQuestion(question: string): boolean {
+  const text = question.trim()
+  return text.length >= MIN_QUESTION_CHARS && text.length <= MAX_QUESTION_CHARS
+}
+
 /** Turns the back end's account of the visitor's day into the allowance the kit's panel shows. */
 export function quotaFrom(answer: QuotaAnswer): Quota {
   return { limit: answer.limits.questions_per_day, used: answer.used, remaining: answer.remaining, resetsAt: answer.resets_at }

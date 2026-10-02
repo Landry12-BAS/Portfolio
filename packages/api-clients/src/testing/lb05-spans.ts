@@ -106,7 +106,7 @@ function checkAndRun(planner: Planner, suffix: string, refusal: MockRefusal | un
     return
   }
   planner.step(`plan${suffix}`, 'explain plan', 26, { operators: 6, estimated_rows: 1_200 }, { kind: 'system.tool' })
-  planner.step(`run${suffix}`, 'run read-only', 41, { rows: result?.rows ?? 0, columns: 2, elapsed_ms: 38, capped: result?.truncated ?? false }, { kind: 'system.tool' })
+  planner.step(`exec${suffix}`, 'run read-only', 41, { rows: result?.rows ?? 0, columns: 2, elapsed_ms: 38, capped: result?.truncated ?? false }, { kind: 'system.tool' })
 }
 
 /** Adds the first attempt at the SQL and its checks. */

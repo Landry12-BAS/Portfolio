@@ -2,8 +2,9 @@
 // components: the session and its Turnstile check, LB-01's routes played by the same in-memory
 // mock the integration tests use, the Scope's trace route, and the recordings. It is a `fetch`
 // replacement, so a test installs it with `vi.stubGlobal('fetch', site.fetch)`, and it keeps a log
-// of every call so a test can say what the board did and did not ask for.
-import { Lb01Mock, readSeed } from '@lb/api-clients/testing'
+// of every call so a test can say what the board did and did not ask for. LB-05's routes are played by
+// its mock too, and a call can be held back (`delayNext`) to test a board that waits.
+import { Lb01Mock, Lb05Mock, readLb05Seed, readSeed } from '@lb/api-clients/testing'
 import type { Answer, MockSpan, RunIdDisclosure } from '@lb/api-clients/testing'
 import type { Recording } from '@lb/contracts'
 
@@ -39,6 +40,23 @@ interface Scripted {
   answer: Answer
 }
 
+/** A call to hold back once: which one, and for how long. */
+interface Delayed {
+  match: string
+  ms: number
+}
+
+/** Waits for a number of milliseconds, or fails as a browser's `fetch` does when its request is aborted. */
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      reject(new DOMException('The operation was aborted.', 'AbortError'))
+    }, { once: true })
+  })
+}
+
 // The visitor's one session, and the clock the mock's day runs on.
 const SESSION = 'fake-session'
 const NOW = Date.parse('2026-10-02T09:30:00.000Z')
@@ -57,16 +75,19 @@ function failure(status: number, code: string, message: string): Answer {
 /** The fake site, its mock back end and its log. */
 export class FakeSite {
   readonly mock: Lb01Mock
+  readonly lb05: Lb05Mock
   readonly calls: FakeCall[] = []
   verified: boolean
   available: boolean
   readonly #options: FakeSiteOptions
   readonly #scripted: Scripted[] = []
+  readonly #delayed: Delayed[] = []
 
   /** Starts a fake site with an empty mock back end. */
   constructor(options: FakeSiteOptions = {}) {
     this.#options = options
     this.mock = new Lb01Mock(readSeed(), () => NOW, { pollsToFinish: options.pollsToFinish, runId: options.runId })
+    this.lb05 = new Lb05Mock(readLb05Seed(), () => NOW)
     this.verified = options.verified ?? false
     this.available = options.available ?? true
   }
@@ -74,6 +95,11 @@ export class FakeSite {
   /** Makes the next call whose "METHOD /path" starts with `match` answer as given, once. */
   failNext(match: string, answer: Answer): void {
     this.#scripted.push({ match, answer })
+  }
+
+  /** Holds back the next call whose "METHOD /path" starts with `match` for `ms` milliseconds before it is answered, once. */
+  delayNext(match: string, ms: number): void {
+    this.#delayed.push({ match, ms })
   }
 
   /** The calls made to paths that start with a prefix, in order. */
@@ -90,6 +116,8 @@ export class FakeSite {
     const path = `${url.pathname}${url.search}`
     this.calls.push({ method: request.method, path, body })
     const key = `${request.method} ${path}`
+    const held = this.#delayed.findIndex(item => key.startsWith(item.match))
+    if (held >= 0) await wait(this.#delayed.splice(held, 1)[0]?.ms ?? 0, request.signal)
     const index = this.#scripted.findIndex(item => key.startsWith(item.match))
     if (index >= 0) return respond(this.#scripted.splice(index, 1)[0]?.answer ?? failure(500, 'internal_error', 'x'))
     return respond(this.#answer(request.method, url, body))
@@ -107,6 +135,19 @@ export class FakeSite {
       if (method !== 'GET' && !this.verified) return failure(403, 'verification_required', 'Run the check that proves you are a person before using a demo with your own text.')
       return this.#lb01(method, path, body)
     }
+    if (path.startsWith('/api/lb05/')) {
+      if (!this.available) return failure(503, 'unavailable', 'This part of the site is not available right now.')
+      if (method !== 'GET' && !this.verified) return failure(403, 'verification_required', 'Run the check that proves you are a person before using a demo with your own text.')
+      return this.#lb05(method, path, body)
+    }
+    return failure(404, 'not_found', 'There is nothing at this address.')
+  }
+
+  /** Answers LB-05's routes from its mock. */
+  #lb05(method: string, path: string, body: unknown): Answer {
+    if (method === 'GET' && path === '/api/lb05/quota') return this.lb05.quota(SESSION)
+    if (method === 'GET' && path === '/api/lb05/semantic-layer') return this.lb05.semanticLayer()
+    if (method === 'POST' && path === '/api/lb05/ask') return this.lb05.ask(SESSION, (body as { question: string }).question)
     return failure(404, 'not_found', 'There is nothing at this address.')
   }
 
@@ -137,7 +178,7 @@ export class FakeSite {
 
   /** Answers a read of a run's trace with all the spans so far; the cursor is the count already seen. */
   #spans(runId: string, search: URLSearchParams): Answer {
-    const spans: MockSpan[] | undefined = this.mock.spansOf(runId)
+    const spans: MockSpan[] | undefined = this.mock.spansOf(runId) ?? this.lb05.spansOf(runId)
     if (!spans) return failure(404, 'run_not_found', 'There is no trace for that run: its ID is unknown, or its trace has expired.')
     const seen = Number(search.get('after')?.split('-')[0] ?? 0)
     const finished = spans.some(span => span.kind === 'system.run' && span.parentId === undefined)
