@@ -35,8 +35,9 @@ API and Celery worker so far, and LB-02's back end: the Booking Concierge's sche
 the database-enforced no-double-booking constraint, its synthetic calendar
 (`data/seed/lb02`), golden set (`evals/lb02`), state-gated tool calling, WebSocket
 (Django Channels) and live calendar, visitor API, and golden-set eval (see its
-[README](services/django-systems/README.md)); next come the recorded sample runs, LB-01's
-demo, and LB-02's demo (the phone-frame PWA) on the site. Also in build:
+[README](services/django-systems/README.md)); next come LB-01's recorded sample runs
+(`just record-sample`, which needs the live back end with a model behind it) and LB-02's
+demo (the phone-frame PWA) on the site. Also in build:
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
