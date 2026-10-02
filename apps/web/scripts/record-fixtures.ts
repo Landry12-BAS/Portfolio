@@ -3,7 +3,7 @@
 // record-sample` uses on a real back end. They are written under e2e/fixtures/recordings, labelled
 // `mock`, and bundled into the end-to-end build alone: the site never shows a mock recording outside
 // that build. They are fixtures, not measurements: the mock's timings and token counts are made up.
-// Name a system (`lb-01`, `lb-02`) to make only its recordings; with none, every system's are made.
+// Name a system (`lb-01`, `lb-02`, `lb-05`) to make only its recordings; with none, every system's are made.
 //
 // LB-02's are made on a mock whose clock stands still at one moment (2 October 2026, 11:30 in Prague),
 // so the days and times a replay shows do not depend on the day the fixtures were made.
@@ -24,6 +24,18 @@ import { recordSample, writeRecording } from './record/record.ts'
 const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   'lb-01': ['torn-bag', 'injection-admin-mode', 'stale-decaf'],
   'lb-02': ['book-cupping-en', 'double-book-taken-slot-en', 'two-tabs-held-by-other-cs'],
+  // LB-05: three curated questions (a bar, a line and a point chart), and three attacks that end in
+  // different ways: stopped by the first layer, stopped by the second, and declined by the model after
+  // a stop. The dump of every order is left out on purpose: its thousand rows make a large file, and
+  // the end-to-end journeys run that one live on the mock.
+  'lb-05': [
+    'revenue-by-product-last-quarter',
+    'monthly-revenue-last-year',
+    'active-subscriptions-by-frequency',
+    'drop-orders-table',
+    'information-schema-tables',
+    'missing-salary',
+  ],
 }
 
 // The moment LB-02's mock stands still at.
@@ -76,4 +88,7 @@ if (only === undefined || only === 'lb-01') {
 }
 if (only === undefined || only === 'lb-02') {
   await recordSystem('lb-02', { now: () => LB02_NOW, sleep: () => Promise.resolve() }, () => LB02_NOW)
+}
+if (only === undefined || only === 'lb-05') {
+  await recordSystem('lb-05', { now: () => Date.now(), sleep: () => Promise.resolve() }, undefined)
 }

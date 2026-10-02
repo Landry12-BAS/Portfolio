@@ -27,6 +27,8 @@ import { readSeed } from './seed.ts'
 import type { Language } from './seed.ts'
 import { Lb02Mock } from './lb02/index.ts'
 import { attachSockets } from './lb02/socket-server.ts'
+import { Lb05Mock } from './lb05.ts'
+import { readLb05Seed } from './lb05-seed.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread.
 const MAX_BODY_BYTES = 1_048_576
@@ -95,6 +97,8 @@ export interface MockBackend {
   lb01: Lb01Mock
   // LB-02's state and controls: other visitors, the clock, the connections.
   lb02: Lb02Mock
+  // LB-05's state, for tests that look inside.
+  lb05: Lb05Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -140,6 +144,7 @@ class MockSite {
   readonly violations: string[] = []
   readonly lb01: Lb01Mock
   readonly lb02: Lb02Mock
+  readonly lb05: Lb05Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -153,7 +158,8 @@ class MockSite {
     this.#now = options.now ?? Date.now
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId))
+    this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -168,6 +174,7 @@ class MockSite {
     this.#scripts.length = 0
     this.lb01.reset()
     this.lb02.reset()
+    this.lb05.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -279,6 +286,9 @@ class MockSite {
       case 'GET /api/lb02/calendar': return this.lb02.calendar(session, search)
       case 'GET /api/lb02/conversations': return this.lb02.conversations(session)
       case 'GET /api/lb02/conversations/{conversation_id}': return this.lb02.conversation(session, params.conversation_id ?? '')
+      case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
+      case 'GET /api/lb05/quota': return this.lb05.quota(session)
+      case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
       default: return undefined
     }
   }
@@ -369,6 +379,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     violations: site.violations,
     lb01: site.lb01,
     lb02: site.lb02,
+    lb05: site.lb05,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {

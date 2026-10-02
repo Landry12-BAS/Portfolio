@@ -22,6 +22,19 @@
   --lb-ch2: #0a8fb0;
   --lb-ch3: #b32c8c;
   --lb-ch4: #2f5bd6;
+  /* Chart series, in the order a chart gives them out. The first is signal blue, the accent, so a chart
+     of one series is drawn in it. The eight were checked as a set against the sheet in both themes:
+     lightness band, chroma, colour-blind separation of neighbours and contrast. Three light values
+     (aqua, yellow, pink) fall under 3:1 on white, so a chart that uses them always has its legend
+     and a table of its values beside it. */
+  --lb-series-1: var(--lb-signal);
+  --lb-series-2: #eb6834;
+  --lb-series-3: #1baf7a;
+  --lb-series-4: #eda100;
+  --lb-series-5: #e87ba4;
+  --lb-series-6: #008300;
+  --lb-series-7: #4a3aa7;
+  --lb-series-8: #e34948;
   --lb-icon-accent: var(--lb-signal);
   --lb-show-light: inline;
   --lb-show-dark: none;
@@ -49,6 +62,15 @@ html.dark {
   --lb-ch2: #27b3d6;
   --lb-ch3: #db4fb0;
   --lb-ch4: #6d95ff;
+  /* The chart series for the dark sheet: the same eight hues, stepped to the dark lightness band and
+     checked as a set. The first follows signal blue. */
+  --lb-series-2: #d95926;
+  --lb-series-3: #199e70;
+  --lb-series-4: #c98500;
+  --lb-series-5: #d55181;
+  --lb-series-6: #008300;
+  --lb-series-7: #9085e9;
+  --lb-series-8: #e66767;
   --lb-show-light: none;
   --lb-show-dark: inline;
   color-scheme: dark;

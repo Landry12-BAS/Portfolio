@@ -8,7 +8,9 @@ its threat model). Rules for the code: [`AGENTS.md`](../../AGENTS.md).
 
 Built so far: the catalog, the datasheets, the server (session, Turnstile, the proxy, the Scope's
 route, the recordings), the evaluation-board kit, **LB-01's board**, the reference every other
-board follows, and **LB-02's board**, the one that streams (a WebSocket) and can be installed as an app.
+board follows, **LB-02's board**, the one that streams (a WebSocket) and can be installed as an app, and
+**LB-05's board** (the Data Analyst: a question that takes up to 90 seconds in one request, a result table, a chart
+drawn in the browser, and the safety demo).
 
 ## Run it
 
@@ -20,7 +22,7 @@ All of it through the root `justfile` (see the Commands table in `AGENTS.md`):
 | `just dev` | The site alone. With no `NUXT_*` settings the demos say they are not connected |
 | `just build` / `just check-build` | The production build, and the proof that it holds no trace of the test build's Turnstile stand-in |
 | `just e2e` | The test build, then the Playwright journeys against it and the mock back end |
-| `just samples` | Regenerate the curated samples from the golden sets (LB-01's and LB-02's) and LB-02's installable-app files: icon, manifests, offline pages (`just check` fails while they are stale) |
+| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's and LB-05's) and LB-02's installable-app files: icon, manifests, offline pages (`just check` fails while they are stale) |
 | `just record-sample <system> <sample>` | Record a sample's run on a live back end (see "Replay and recordings") |
 
 The settings are the `NUXT_*` variables of [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 10;
@@ -37,7 +39,7 @@ app/
   components/board/                the evaluation-board kit (components)
   board-kit/                       the kit's logic: plain modules, no Nuxt, tested alone
   boards/registry.ts               which systems have a board
-  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...)
+  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...; LB-05 also chart/)
   stores/                          Pinia: session, scope, replay (kit-wide), reading, catalog
   plugins/00.zod-jitless.ts        Zod without `new Function`, which the CSP forbids
 public/                            static files; LB-02's service worker is written by hand, its icon, manifests and offline pages are generated
@@ -115,6 +117,14 @@ answer carries an ID (`followRun`), so it works with both. The mock back end pla
 (`runId: 'when-finished'`) and can play the other (`'at-filing'`). Check what your system's API does
 before you design its live view.
 
+**A system that answers in one long request** (LB-05's Flask, synchronous on purpose) names its run only
+in the answer, so there is nothing to follow while it works. The board says so instead of pretending:
+a clock counting the seconds used of the seconds a question is given, a way to stop waiting (the
+service keeps going and the question still counts), a deadline a little past the site's own, and the
+steps and the Scope filled in from the finished trace when the answer arrives. A replay of such a
+system is one recorded exchange: the board plays the recorded trace first and shows the answer at the
+end (`scope.replayed` and `scope.phase === 'finished'`).
+
 ## Adding a board
 
 Take LB-01's folder as the template. For a system `LB-0N`:
@@ -174,6 +184,20 @@ Take LB-01's folder as the template. For a system `LB-0N`:
     calendar nobody has touched: the mock's `/__mock/lb02/*` controls (`reset`, `limits`,
     `other-visitor`, `advance`, `sweep`, `drop`) set the scene, and no other spec uses LB-02's mock.
     `pnpm --filter @lb/web record:fixtures lb-02` makes only LB-02's recordings.
+13. **Heavy code.** Load it with `import()` when it is first used, and leave it out of the page's
+    `prefetch` hints: Nuxt would otherwise have every visitor of the board fetch it while idle. LB-05's
+    chart (Vega, about 270 kB gzipped) is excluded by the `build:manifest` hook in `nuxt.config.ts`;
+    `e2e/lb05.spec.ts` checks that no big script loads before a chart is drawn.
+14. **Model output and database cells are untrusted.** Show every cell and every query as text (LB-05's SQL
+    is split into spans, never parsed as markup), check anything a board is asked to draw against a
+    strict schema before it reaches a drawing library (`app/boards/lb-05/chart/spec.ts`), and prove the
+    drawing needs no `eval`: the test build's policy has no `unsafe-eval`, and a headless test runs the
+    drawing under `node --disallow-code-generation-from-strings`.
+15. **Code the recorder shares with the app.** `scripts/record/*.ts` run under plain Node, which cannot
+    resolve the `#shared` alias; `package.json` maps `#shared/*` to `./shared/*.ts` so a board's schemas
+    can be read by the recorder. A call that may take longer than 30 seconds passes its own timeout to
+    `Backend.call`. Do not import another folder by a relative `.ts` path from app code: the server build
+    would leave that import unresolved.
 
 ## Replay and recordings
 
@@ -196,7 +220,8 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
 
 - **unit**: plain modules, stores, locale files, the server's building blocks (Node).
 - **components**: Vue components in a DOM (happy-dom) with the real messages; includes the whole
-  LB-01 board in both languages against `FakeSite`.
+  LB-01 and LB-05 boards in both languages against `FakeSite` (`delayNext` holds a call back, `failNext`
+  makes one fail).
 - **integration**: the site's server over HTTP against the mock back end, route by route; the recorder
   and the `record-sample` command.
 - **contract**: the site's server against the real gateway and a real Redis (Testcontainers, or
@@ -215,7 +240,7 @@ The mock plays what the OpenAPI documents allow; the real service does what its 
 differ. LB-01's API names a ticket's run only when the pipeline has finished, which its document allows
 and the first mock did not do, so every live run failed on the real service until a run against it found
 that. Before a board is called done, run it once against the real service with fake models. It is not a
-command yet, because it needs a Postgres with pgvector and a Redis:
+command yet, because it needs a Postgres with pgvector and a Redis. For a Django system (LB-01):
 
 1. A scratch database, then `manage.py migrate --database lb01` and `seed_lb01`, with the variables in
    `services/django-systems/.env.example` and `LB_WEB_TOKEN_KEY` set to the public half of a throwaway
@@ -241,6 +266,28 @@ a mock closes connections politely and a network does not. The first run of LB-0
 five-second socket timeout, the same length as channels-redis 4.3's blocking read) and the last (a
 dropped turn leaves the visitor's message in the transcript with no answer, which the board now says).
 
+For a Flask system (LB-05) the recipe is the same shape with different parts, and it found real
+differences between the mock and the service in its first run:
+
+1. A scratch Postgres database, `manage.py migrate`, and `manage.py seed_lb05 --size small --today <day>`
+   into a scratch folder (`LB05_WAREHOUSE_DIR`), with `LB_WEB_TOKEN_KEY` set to the public half of a
+   throwaway site key.
+2. The gateway as in step 2 above, on the same Redis and key prefix as the service (`LB_REDIS_PREFIX`).
+3. The Flask app under gunicorn, but built by a small module of your own instead of `wsgi.py`: a
+   `Platform` with the real engines and a `RedisSpanWriter` tracer and a fake in place of `GatewayChat`.
+   The fake answers a question with the golden set's reference query, an attack with the adversarial
+   set's query, and the explainer with a sentence; it reads from a file how long to take and whether to
+   fail, so a run can be slow or `unavailable` without a restart.
+4. The test build of the site pointed at them, and a browser: every curated question and every attack,
+   a wait of 4, 18 and 100 seconds, a second question while one runs, the day's 25 questions, the
+   service failing, and a bad explanation.
+
+What it found: the real service writes a `DATE_TRUNC` result as a timestamp (`2025-01-01T00:00:00`), a
+date-only value from a `DATE` column, a chart for `SELECT *` that plots an ID, and a count it takes when a
+question is admitted (so a stopped or timed-out question must be counted again by reading the quota). It
+found nothing wrong with the mock's flow of outcomes, and the attacks were stopped at the layers and for
+the rules `evals/lb05/adversarial.yaml` names.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -259,6 +306,17 @@ dropped turn leaves the visitor's message in the transcript with no answer, whic
   in place of the models; the production build ran with the real Turnstile widget and Cloudflare's
   published test keys. LB-02's board ran against the real Django and Channels service, the real Redis
   channel layer, Postgres with its booking constraint and the real tracer, with fake models, and was cut
-  off mid-turn from the browser's side. Not run: a real model, a real Turnstile site key and challenge,
-  Vercel, an installation of the app on a phone, and the recorder against a live back end. What that
-  leaves open is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 12.
+  off mid-turn from the browser's side. LB-05's board ran against the real Flask service (real Postgres
+  ledger, DuckDB warehouse of the small size, SQL checks and pipeline, gateway and spans) with a fake in
+  place of the models, on a dataset of about 28,000 orders, not the full two million. Not run: a real
+  model, a real Turnstile site key and challenge, Vercel, an installation of the app on a phone, the full
+  dataset, and the recorder against a live back end. What that leaves open is in
+  [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 12.
+- **LB-05's chart.** The back end writes a Vega-Lite spec; the board checks it against a strict subset
+  (`chart/spec.ts`: a bar, line or point mark, inline data, no `url`, no expression) and only then hands
+  it to Vega with `vega-interpreter`, so nothing is compiled from a string and the page's policy keeps
+  `unsafe-eval` out. It is drawn on a canvas with no tooltip, in the design tokens' colours read at draw
+  time (eight series tokens, validated for colour-blind separation in both themes; three light slots
+  are under 3:1 on the sheet, which the legend and the data table make up for), in the page's language
+  (number and month names from `Intl`), with a time axis counted in UTC so a day reads the same in
+  every time zone. Every chart has a text alternative and a table of its points.

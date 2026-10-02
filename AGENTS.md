@@ -42,8 +42,12 @@ app; see the web README); next come the recorded sample runs of LB-01 and LB-02
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
-and live eval sets (see its [README](services/flask-systems/README.md)); next come
-LB-05's recorded sample runs and its demo on the site. The Node side: `packages/contracts`
+and live eval sets (see its [README](services/flask-systems/README.md)). LB-05's demo is
+on the site at `/systems/lb-05/board`: a question in plain words, the long wait counted honestly, the
+answer with its SQL, table, chart and chain of steps, the safety demo that names the layer which
+stopped each attack, and the semantic layer browser, in English and Czech (see the
+[web README](apps/web/README.md)); next come LB-05's recorded sample runs (`just record-sample lb-05
+<sample>`, which needs the live back end with a model behind it). The Node side: `packages/contracts`
 (the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
 `lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
 Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
@@ -155,7 +159,9 @@ Add each new command to the Commands section in the change that introduces it.
   and a dark value. Archivo (display and text) and Martian Mono (data). No hard-coded
   colors, and no gradients outside the LB mark.
 - Signal blue, the logo's ribbon, is the one accent colour. The evaluation board, in
-  a deep shade of it, marks live demos and nothing else.
+  a deep shade of it, marks live demos and nothing else. A chart that must tell series
+  apart uses the eight `--lb-series-*` tokens (the first is signal blue, so a chart of
+  one series is blue), for data marks only.
 - Icons come only from `@lb/icons`, drawn in the logo's pattern. No emoji, no
   third-party icon sets.
 - The LB mark comes only from the files in `brand/`: `lb-mark-light.svg` in the light
@@ -202,7 +208,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
-| `just samples` | Regenerate LB-01's curated samples (`apps/web/shared/data/samples/lb01.ts`) from the golden set's `sample: true` cases, and LB-02's (`lb02.ts`) with its installable-app files (icon, manifests, offline pages in `apps/web/public`) |
+| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set), and LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
 | `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite) or `routing.yaml` is invalid (the CI drift check) |

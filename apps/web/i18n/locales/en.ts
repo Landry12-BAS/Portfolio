@@ -6,6 +6,7 @@
 import kit from './boards/kit.en'
 import lb01 from './boards/lb-01.en'
 import lb02 from './boards/lb-02.en'
+import lb05 from './boards/lb-05.en'
 
 const en = {
   site: {
@@ -152,6 +153,7 @@ const en = {
   board: kit,
   lb01,
   lb02,
+  lb05,
   error: {
     code: 'Error {code}',
     notFound: 'Part not found',

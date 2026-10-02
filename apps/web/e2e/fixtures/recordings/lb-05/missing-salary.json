@@ -1,0 +1,236 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "missing-salary",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T05:38:30.015Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "What is the average salary of our employees?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "run_id": "run-4fee6753aa8843955d72",
+          "outcome": "declined",
+          "as_of": "2026-10-01",
+          "model_calls": 2,
+          "elapsed_ms": 3613,
+          "attempts": [
+            {
+              "sql": "SELECT AVG(salary) FROM employees",
+              "stopped_by": "allowlist",
+              "rule": "unknown_table",
+              "message": "That table is not in the semantic layer."
+            }
+          ],
+          "message": "The semantic layer has nothing under that name, so the question cannot be answered.",
+          "result": null,
+          "chart": null,
+          "explanation": null,
+          "explanation_source": null,
+          "remaining_questions": 19
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-4fee6753aa8843955d72",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "a9ae681a5db5a58c",
+        "parentId": "399167e36dbeb8b5",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1790919510011,
+        "endMs": 1790919510014,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "805df51e8850288f",
+        "parentId": "4c4f2cc9b7342967",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790919510018,
+        "endMs": 1790919511810,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "4c4f2cc9b7342967",
+        "parentId": "12a3526c525bdcbe",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1790919510016,
+        "endMs": 1790919511812,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "12a3526c525bdcbe",
+        "parentId": "399167e36dbeb8b5",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1790919510014,
+        "endMs": 1790919511814,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 180
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "e891bf58cc035562",
+        "parentId": "399167e36dbeb8b5",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "error",
+        "startMs": 1790919511814,
+        "endMs": 1790919511818,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "unknown_table",
+          "retryable": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "c5c876f4e5dd6fe5",
+        "parentId": "a804f98cfbc9f33a",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790919511822,
+        "endMs": 1790919513614,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "a804f98cfbc9f33a",
+        "parentId": "8f7358b0b57f4a9d",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1790919511820,
+        "endMs": 1790919513616,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "8f7358b0b57f4a9d",
+        "parentId": "d10bc6f85b80bced",
+        "kind": "system.step",
+        "name": "write SQL again",
+        "status": "ok",
+        "startMs": 1790919511818,
+        "endMs": 1790919513618,
+        "attrs": {
+          "attempts": 1,
+          "answerable": false,
+          "sql_chars": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "d10bc6f85b80bced",
+        "parentId": "399167e36dbeb8b5",
+        "kind": "system.step",
+        "name": "self-correct",
+        "status": "ok",
+        "startMs": 1790919511818,
+        "endMs": 1790919513619,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "unknown_table",
+          "retryable": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-4fee6753aa8843955d72",
+        "system": "lb-05",
+        "spanId": "399167e36dbeb8b5",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1790919510011,
+        "endMs": 1790919513624,
+        "attrs": {
+          "outcome": "declined",
+          "queries": 1,
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 5,
+    "durationMs": 3613
+  }
+}

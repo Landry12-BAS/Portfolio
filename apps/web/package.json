@@ -4,6 +4,9 @@
   "private": true,
   "description": "The portfolio site: the systems catalog, the datasheets and, as each system ships, its live demo.",
   "type": "module",
+  "imports": {
+    "#shared/*": "./shared/*.ts"
+  },
   "scripts": {
     "dev": "nuxt dev",
     "dev:mock": "node scripts/dev-with-mock.ts",
@@ -33,6 +36,9 @@
     "nuxt": "^4.5.2",
     "nuxt-security": "^2.6.0",
     "pinia": "^4.0.3",
+    "vega": "^6.4.0",
+    "vega-interpreter": "^2.3.2",
+    "vega-lite": "^6.4.3",
     "vue": "^3.5.43",
     "vue-i18n": "^11.4.12",
     "zod": "^4.6.5"

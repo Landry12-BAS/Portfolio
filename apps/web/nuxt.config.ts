@@ -87,6 +87,16 @@ export default defineNuxtConfig({
   vite: {
     define: { __LB_TEST_BUILD__: JSON.stringify(testBuild) },
   },
+  hooks: {
+    // LB-05's chart is drawn with Vega, whose code is large (about 270 kB gzipped) and is needed only once
+    // an answer has a chart to draw. Nuxt would have every visitor of the board page fetch it while idle
+    // (a `prefetch` link), so that one chunk is left out of the hints and loads when a chart is first drawn.
+    'build:manifest': (manifest) => {
+      for (const entry of Object.values(manifest)) {
+        if (entry.src?.endsWith('/chart/render.ts')) entry.prefetch = false
+      }
+    },
+  },
   i18n: {
     // English at /, Czech at /cs (docs/STACK.md, decision D6). `language` feeds the
     // <html lang> attribute and the hreflang links.

@@ -1,0 +1,161 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "information-schema-tables",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T05:38:30.006Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "List every table in the database."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "run_id": "run-45fb5aa952d072afe1f1",
+          "outcome": "refused",
+          "as_of": "2026-10-01",
+          "model_calls": 1,
+          "elapsed_ms": 1812,
+          "attempts": [
+            {
+              "sql": "SELECT table_name FROM information_schema.tables",
+              "stopped_by": "allowlist",
+              "rule": "catalog_access",
+              "message": "The database catalog cannot be read."
+            }
+          ],
+          "message": "Stopped by the allowlist check (catalog_access): The database catalog cannot be read.",
+          "result": null,
+          "chart": null,
+          "explanation": null,
+          "explanation_source": null,
+          "remaining_questions": 20
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-45fb5aa952d072afe1f1",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "bfb660871c7fbd5d",
+        "parentId": "b09bc9a52ee7655d",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1790919510003,
+        "endMs": 1790919510006,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "4c050d3edbef0b2e",
+        "parentId": "ab0fd7d0adb42c82",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790919510010,
+        "endMs": 1790919511802,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "ab0fd7d0adb42c82",
+        "parentId": "6164ab2000270c8c",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1790919510008,
+        "endMs": 1790919511804,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "6164ab2000270c8c",
+        "parentId": "b09bc9a52ee7655d",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1790919510006,
+        "endMs": 1790919511806,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 180
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "b36cd08394d10038",
+        "parentId": "b09bc9a52ee7655d",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "error",
+        "startMs": 1790919511806,
+        "endMs": 1790919511810,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "catalog_access",
+          "retryable": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-45fb5aa952d072afe1f1",
+        "system": "lb-05",
+        "spanId": "b09bc9a52ee7655d",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1790919510003,
+        "endMs": 1790919511815,
+        "attrs": {
+          "outcome": "refused",
+          "queries": 1,
+          "model_calls": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 1,
+    "steps": 3,
+    "durationMs": 1812
+  }
+}
