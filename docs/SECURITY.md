@@ -291,3 +291,87 @@ attempts. Every prompt change must pass it.
 - Runbook: block at the edge, rotate the affected key, switch systems to replay mode,
   rebuild from seed.
 - `/.well-known/security.txt` points to the disclosure policy.
+
+## Review log
+
+### 2 Oct 2026: the site's server, the proxy, the tokens and the Scope
+
+**Scope.** `apps/web/server` and its configuration, run as the real Nitro build (production and
+test) and attacked over raw sockets; `packages/common` and `packages/api-clients`; the visitor-token
+verifiers in TypeScript and Python (Django and Flask share one), run against each other on 116
+signed tokens bent in every claim and header; the gateway's trace route, permissions and logs, on a
+real Redis; `infra/caddy` (`infra/caddy/test.sh`, all checks pass) and the Compose rules
+(`infra/scripts/check-compose.sh`); the visitors' quota counters in LB-01, LB-02, LB-05 and LB-08;
+`pnpm audit` and `uv audit`.
+
+**Found and fixed**, each with a test that failed before the fix:
+
+- **LB-01's 20-tickets-a-day limit could be raced.** The count and the save were two steps, so a
+  verified visitor who sent eight requests at once had all eight accepted (27 tickets in the test).
+  Each extra ticket is a row and a queued pipeline run; only the gateway's per-session call cap
+  limited the model spend. One visitor's tickets now take turns behind a Postgres advisory lock
+  (`core/locks.py`).
+- **LB-02's 10-conversations-a-day limit had the same flaw** over the WebSocket (12 of 12 starts
+  accepted), and each conversation brings 30 messages and 64 model calls. Same fix.
+- **`/.well-known/security.txt`, which section 8 promises, did not exist** (the path answered the
+  HTML 404). It is served now, and a test fails if it goes missing or is about to lapse.
+
+**Checked and found sound.**
+
+- *Session and Turnstile.* The cookie's flags, signature, key separation and daily rotation; a forged
+  or stale cookie is replaced. The Origin check refuses no Origin, `null`, lookalike hosts, user-info
+  tricks, doubled headers and every `Sec-Fetch-Site` but `same-origin`; a non-JSON body is 415. The
+  test build's stand-in is absent from the production bundle (`pnpm check:build`), no request or
+  runtime variable can switch it on, and the production server refuses it.
+- *Proxy.* More than 100 hostile requests: dot segments and escapes (a path that climbs out lands on
+  the one documented route it names, with that route's own token), encoded slashes and NUL, absolute
+  and protocol-relative targets, repeated or smuggled query names, every method, two lengths,
+  chunked bodies with trailers or extensions, truncated, oversize and deeply nested bodies. Only the
+  fixed headers reach a back end, and nothing but `Retry-After` comes back.
+- *Secrets in the browser.* No server-only setting is in any page payload or client script.
+- *Tokens.* `none`, HS256, `crit`, `kid`, `jku`, an embedded `jwk`, array and mixed `aud`, string,
+  float and boolean times, `nbf`, duplicate keys, a bent signature: no verifier accepts a token that
+  was not signed with the site's key, and a token for one system is refused by every other.
+- *Gateway.* The `web` token reads traces and cannot call a model (403); a model-calling service
+  cannot read traces (403); a run ID cannot reach another Redis key.
+- *Edge and network.* Only the documented paths reach a service, dot-segment and escape bypasses
+  included; a WebSocket with no Origin or a foreign one gets 403; services read no client address and
+  trust only `X-Forwarded-Proto`, which Caddy sets itself; size and time limits exist. `pnpm audit`
+  shows only the documented `node-forge` advisory; `uv audit` shows none.
+- *Quotas elsewhere.* LB-05's 25 a day is one atomic upsert, LB-08's runs likewise and its workflow
+  limit takes a lock, LB-02's messages and calls are single statements, and what LB-01, LB-02 and
+  LB-08 store is only ever returned to the session that made it.
+
+**Reported, not changed.** None lets a visitor read or change another visitor's data.
+
+- The gateway's request log holds the run ID of every trace read, though its comments say it never
+  does; Caddy's and Vercel's logs hold it too. The ID is the key to a trace, and only the owner reads
+  those logs. A `req` serializer that drops it would fix the gateway's.
+- The verifiers differ on tokens the site never signs. Python accepts `exp <= iat` within the leeway,
+  a non-integer `nbf`, a leading BOM and a padded signature; TypeScript refuses them. TypeScript
+  accepts `1.0` and `1e9` as times and a mixed `aud` list, which Python refuses, and caps a token's
+  length, which Python does not. All of them need the site's key to sign. One shared corpus run by
+  both would keep the verifiers level.
+- A Vercel build with `LB_TEST_BUILD=1` in its environment compiles the stand-in in, and CI's check
+  looks at CI's build, not Vercel's. Refusing that variable when `VERCEL` is set would close it.
+- `GET /api` (no slash) answers 503, not 404: the services are attached to paths under `/api/` only.
+- Cloudflare's per-IP rule on the API host sees Vercel's addresses, so one visitor can trip it for
+  everyone. Key it on something the site does not share, or exempt the site.
+- `GET /api/runs/{id}/spans` needs no session and costs the gateway about 10 ms at `limit=500`; a flood
+  is volume denial of service (out of scope in `../SECURITY.md`) that would slow every model call. A
+  one-second cache at the site, or a per-run limit in the gateway, would bound it.
+- LB-05 gives a question back when it ends in `time_limit`, `call_limit` or `warehouse_busy`, so a
+  visitor can retry an expensive one; the gateway's 125 calls a day per session bound the spend.
+- From the code: LB-02 keeps one coroutine per queued frame and caps neither those nor a visitor's
+  open connections.
+- A visitor who uses `example.com`, `www.` and the `*.vercel.app` address gets a session, and so a
+  quota, for each. Redirect them to one host.
+- The Origin and Turnstile-hostname checks trust `X-Forwarded-Host` and `-Proto`, which is safe only
+  if Vercel overwrites what a client sends.
+- Section 2 names `services/django-systems/core/visitors.py` as the home of the claims; they are in
+  `python/lb-common/src/lb_common/visitors.py` and `packages/common/src/visitors.ts`.
+
+**Not tested.** Anything that needs Vercel, Cloudflare (the tunnel, the rate-limit rule, the real
+Turnstile widget and hostname), Oracle or Tailscale; the Redis ACL and Postgres role proofs
+(`infra/redis/test-acl.sh`, `infra/postgres/test-roles.sh`), which start containers of their own;
+arm64.
