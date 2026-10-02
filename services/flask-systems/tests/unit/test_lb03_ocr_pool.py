@@ -87,7 +87,7 @@ def test_the_worker_gets_no_secret_and_its_own_session(tmp_path: Path, monkeypat
 
 
 def test_the_environment_holds_only_the_settings_the_pool_promises(tmp_path: Path) -> None:
-    """Five fixed settings, the package path and the thread count: that is the whole environment."""
+    """Four fixed settings, the package path and the thread count: that is the whole environment."""
     environment = pool_for(tmp_path, "ok").environment()
     assert sorted(environment) == [
         "LANG",

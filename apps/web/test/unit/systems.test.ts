@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { TECHNIQUES } from '#shared/catalog'
 import { findSystemIn, LOCALES, systemsIn } from '#shared/data/datasheets'
 import { systems } from '#shared/data/systems'
+import { LB03_SITE_FILE_BYTES } from '#shared/lb03-limits'
 import { SystemSchema } from '#shared/schema/system'
 
 describe('the English datasheets', () => {
@@ -80,6 +81,31 @@ describe('the Czech datasheets', () => {
   it('never leaves a single-letter word at the end of a line', () => {
     const text = JSON.stringify(czech)
     expect(text).not.toMatch(/(?:^|[\s(„])[aikosuvz] /i)
+  })
+})
+
+describe('the LB-03 datasheet', () => {
+  const english = systems.find(system => system.slug === 'lb-03')!
+  const czech = findSystemIn('lb-03', 'cs')!
+
+  it('names the stack the service is built on: its own structured-output helper, not instructor, and a pipeline of its own, not async views', () => {
+    for (const sheet of [english, czech]) {
+      const text = JSON.stringify([sheet.stack, sheet.highlights])
+      expect(text).not.toMatch(/instructor|async views|asynchronní pohledy/i)
+    }
+    expect(english.stack).toContain('Pydantic v2 structured output')
+  })
+
+  it('states the file limit the site enforces (shared/lb03-limits.ts), not the larger one of the service', () => {
+    const megabytes = LB03_SITE_FILE_BYTES / 1_048_576
+
+    expect(english.limits.find(limit => limit.label === 'File limit')?.value).toBe(`${megabytes} MB, 5 pages`)
+    expect(czech.limits.find(limit => limit.label === 'Limit souboru')?.value).toBe(`${megabytes} MB, 5 stran`)
+  })
+
+  it('states the model calls a document costs: the injection check and the extraction, and five at most', () => {
+    expect(english.limits.find(limit => limit.label.startsWith('Model calls per'))?.value).toBe('2–5')
+    expect(czech.limits.find(limit => limit.label.startsWith('Volání modelu'))?.value).toBe('2–5')
   })
 })
 

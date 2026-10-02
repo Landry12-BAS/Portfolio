@@ -124,6 +124,26 @@ seed-lb05 *args:
 eval-lb05 *args:
     uv run --directory services/flask-systems --env-file .env python manage.py eval_lb05 {{args}}
 
+# `--check` only says whether the committed documents, their manifest and the golden set are current with the generator.
+# Draw LB-03's synthetic invoices, receipts and photographs, their manifest and its golden set.
+seed-lb03 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py seed_lb03 {{args}}
+
+# Needs the gateway with provider keys, and costs two to five calls a document (about 215 for the set): `--samples` or `--case ID` run fewer, `--pause SECONDS` paces them.
+# Put LB-03's golden set to the live pipeline and grade it by rules.
+eval-lb03 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py eval_lb03 {{args}}
+
+# Needs no model and spends no call: it reads about forty documents at a few seconds each. `--check` compares with evals/lb03/ocr-baseline.json.
+# Measure the OCR on LB-03's synthetic documents with the real caged worker.
+ocr-lb03 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py ocr_lb03 {{args}}
+
+# Safe to run at any time, and twice. The service does the same every minute (settings in services/flask-systems/.env).
+# Delete LB-03's files and documents that are past their hour, and end the documents a dead worker lost.
+sweep-lb03:
+    uv run --directory services/flask-systems --env-file .env python manage.py sweep_lb03
+
 # Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in services/node-systems/.env).
 node-api:
     pnpm --filter @lb/node-systems dev

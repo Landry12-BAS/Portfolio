@@ -11,7 +11,7 @@ service's authenticated route, which streams it to the visitor whose document it
 private (docs/DEPLOY.md says how), and nothing in this code could make an object public.
 
 Keys have one shape, `docs/<document id>/<name>`, and every key is checked against it before it touches a path or
-a bucket, so a key can never climb out of its folder. Expiry is the service's own job (lb03/expiry.py deletes by the
+a bucket, so a key can never climb out of its folder. Expiry is the service's own job (lb03/sweeper.py deletes by the
 document's `expires_at`, and `sweep_files` here deletes anything older than the lifetime that has no document); a
 bucket's lifecycle rule works in whole days at best, so it is only a backstop.
 """

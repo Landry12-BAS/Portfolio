@@ -4,7 +4,7 @@ This is the web service's side of the cage, and it trusts nothing the worker han
 
 1. waits for a free slot (the pool runs at most `workers` workers at once; the rest queue in order),
 2. makes a scratch folder only the service's user can open,
-3. starts `python -m lb03.ocr.worker` with that folder as its working directory, an environment holding five
+3. starts `python -m lb03.ocr.worker` with that folder as its working directory, an environment holding six
    plain settings and no secret, no inherited descriptors, and its own session (so the whole group can be killed),
 4. sends the limits and the file down its standard input and reads at most a few kilobytes of status back,
 5. kills the group if the wall-clock limit passes, whatever the worker is doing,

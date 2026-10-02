@@ -1,8 +1,12 @@
 """The operating limits LB-03 enforces: the datasheet's promises, as the constants the code enforces them with.
 
-The datasheet says 10 documents a visitor a day, 10 MB and 5 pages a file, files kept an hour and
-one to two model calls a document. Each of those is a name here, and the API reports these same
-numbers (`GET /api/lb03/quota`), so what a visitor is told and what the service does cannot differ.
+The datasheet says 10 documents a visitor a day, 5 pages a file, files kept an hour and two to five
+model calls a document. Each of those is a name here, and the API reports these same numbers
+(`GET /api/lb03/quota`), so what a visitor is told and what the service does cannot differ.
+
+One number differs on purpose: the service takes files of 10 MB, and the datasheet says 4 MB, because
+the hosted site is a Vercel function whose request body may not be larger than 4.5 MB
+(apps/web/shared/lb03-limits.ts). The service keeps the larger limit so it never depends on the site's.
 """
 
 # Documents a visitor may upload in a day (UTC), counted atomically in Postgres (lb03/quota.py).
