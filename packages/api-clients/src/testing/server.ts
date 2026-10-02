@@ -21,6 +21,8 @@ import { MOCK_IDENTITY_PATH } from '../mock-identity.ts'
 import { MockGateway } from './gateway.ts'
 import { Lb01Mock, errorAnswer } from './lb01.ts'
 import type { Answer, RunIdDisclosure } from './lb01.ts'
+import { Lb08Mock } from './lb08.ts'
+import { readLb08Seed } from './lb08-seed.ts'
 import { OpenApiDocuments } from './openapi.ts'
 import type { MockOperation } from './openapi.ts'
 import { readSeed } from './seed.ts'
@@ -88,6 +90,8 @@ export interface MockBackend {
   violations: string[]
   // LB-01's state, for tests that look inside.
   lb01: Lb01Mock
+  // LB-08's state: its workflows, runs and sandbox.
+  lb08: Lb08Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -132,6 +136,7 @@ class MockSite {
   readonly requests: RecordedRequest[] = []
   readonly violations: string[] = []
   readonly lb01: Lb01Mock
+  readonly lb08: Lb08Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -144,7 +149,8 @@ class MockSite {
     this.#options = options
     this.#now = options.now ?? Date.now
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId))
+    this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb08.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -158,6 +164,7 @@ class MockSite {
     this.violations.length = 0
     this.#scripts.length = 0
     this.lb01.reset()
+    this.lb08.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -249,13 +256,13 @@ class MockSite {
     }
     const problems = this.#documents.checkRequest(operation, json)
     if (problems.length > 0) return { status: 422, body: { error: { code: 'invalid_request', message: 'The request does not fit its schema.', fields: problems.join('; ') } } }
-    const answer = this.#handler(operation, params, visitor, json) ?? this.#example(operation)
+    const answer = this.#handler(operation, params, visitor, json, url.searchParams) ?? this.#example(operation)
     this.#check(operation, answer)
     return answer
   }
 
   /** Runs the handler written for an operation, if there is one: LB-01's. */
-  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown): Answer | undefined {
+  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown, query: URLSearchParams): Answer | undefined {
     const session = visitor.sessionKey
     switch (`${operation.method} ${operation.template}`) {
       case 'GET /api/lb01/customers': return this.lb01.customers()
@@ -264,6 +271,31 @@ class MockSite {
       case 'GET /api/lb01/tickets/{ticket_id}': return this.lb01.get(session, params.ticket_id ?? '')
       case 'POST /api/lb01/tickets/{ticket_id}/decision': return this.lb01.decide(session, params.ticket_id ?? '', json as { action: string, text?: string | null })
       case 'GET /api/lb01/stats': return this.lb01.stats(session)
+      default: return this.#lb08Handler(operation, params, session, json, query)
+    }
+  }
+
+  /** Runs the handler written for one of LB-08's operations, if there is one. */
+  #lb08Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown, query: URLSearchParams): Answer | undefined {
+    const id = params.id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb08/catalogue': return this.lb08.catalogue()
+      case 'GET /api/lb08/samples': return this.lb08.samples()
+      case 'GET /api/lb08/limits': return this.lb08.limits(session)
+      case 'POST /api/lb08/workflows': return this.lb08.createWorkflow(session, json as Parameters<Lb08Mock['createWorkflow']>[1])
+      case 'GET /api/lb08/workflows': return this.lb08.listWorkflows(session)
+      case 'GET /api/lb08/workflows/{id}': return this.lb08.getWorkflow(session, id)
+      case 'PUT /api/lb08/workflows/{id}': return this.lb08.saveWorkflow(session, id, json as Parameters<Lb08Mock['saveWorkflow']>[2])
+      case 'DELETE /api/lb08/workflows/{id}': return this.lb08.deleteWorkflow(session, id)
+      case 'POST /api/lb08/workflows/{id}/runs': return this.lb08.startRun(session, id, json as Parameters<Lb08Mock['startRun']>[2])
+      case 'GET /api/lb08/runs': return this.lb08.listRuns(session)
+      case 'GET /api/lb08/runs/{id}': return this.lb08.getRun(session, id)
+      case 'GET /api/lb08/runs/{id}/events': return this.lb08.runEvents(session, id, Number(query.get('after') ?? 0))
+      case 'POST /api/lb08/runs/{id}/replay': return this.lb08.replayRun(session, id)
+      case 'POST /api/lb08/runs/{id}/steps/{nodeId}/decision': return this.lb08.decide(session, id, params.nodeId ?? '', (json as { decision: 'approved' | 'rejected' }).decision)
+      case 'GET /api/lb08/sent': return this.lb08.sent(session, query.get('rootRunId') ?? undefined)
+      case 'GET /api/lb08/dead-letters': return this.lb08.deadLetters(session)
+      case 'POST /api/lb08/dead-letters/{id}/replay': return this.lb08.replayDeadLetter(session, id)
       default: return undefined
     }
   }
@@ -302,6 +334,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     requests: site.requests,
     violations: site.violations,
     lb01: site.lb01,
+    lb08: site.lb08,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {

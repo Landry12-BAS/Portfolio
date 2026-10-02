@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto'
 export interface MockSpan {
   v: 1
   runId: string
-  system: 'lb-01'
+  system: `lb-${string}`
   spanId: string
   parentId?: string
   kind: 'system.run' | 'system.step' | 'system.tool' | 'gateway.call' | 'gateway.attempt'

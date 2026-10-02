@@ -448,8 +448,11 @@ function checkTemplates(node: ActionNode | ApprovalNode, index: number, graph: G
   return issues
 }
 
-// Which comparisons make sense for each kind of value.
-const OPS_BY_KIND = {
+/**
+ * Which comparisons make sense for each kind of value. The validator refuses any other pairing
+ * (`invalid_condition`), and the editor offers only these, so both read the same table.
+ */
+export const OPS_BY_KIND = {
   number: ['eq', 'neq', 'gt', 'gte', 'lt', 'lte'],
   boolean: ['eq', 'neq'],
   text: ['eq', 'neq', 'contains'],
