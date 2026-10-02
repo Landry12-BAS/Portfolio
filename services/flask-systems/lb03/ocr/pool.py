@@ -336,8 +336,8 @@ class OcrPool:
 
     async def read(self, data: bytes) -> Reading:
         """Read one document's pages: raises `OcrError` with the reason when it can't be read."""
-        started = time.monotonic()
         async with self.slots:
+            started = time.monotonic()
             scratch = await asyncio.to_thread(self.make_scratch)
             try:
                 output, exit_status = await self.run_worker(scratch, data)
