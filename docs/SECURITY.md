@@ -229,7 +229,9 @@ how a Vercel preview runs.
   model text is ever parsed as markup.
 - **Uploads:** checked by magic bytes, size and page count; parsed in a worker with
   CPU, memory and time limits; stored in R2 under random keys; deleted by lifecycle
-  rules.
+  rules. LB-04's contract upload keeps its PDF in Postgres for an hour instead (see
+  section 5), and Caddy gives that one route a larger body limit (3 MB, for a 2 MB PDF as
+  base64 inside JSON) while every other route keeps 1 MB.
 - **Target:** A+ on Mozilla Observatory, checked in CI.
 
 ## 4. AI-specific risks
@@ -283,10 +285,11 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues, and for every service its own run
+  channel layer, the Node systems' BullMQ queues (LB-08's and LB-04's, each under its
+  own pattern), and for every service its own run
   spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's and LB-08's, and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's and LB-04's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
@@ -298,7 +301,20 @@ attempts. Every prompt change must pass it.
 - **R2:** one scoped token per bucket.
 - **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box, to
   public keys whose private halves stay off the box: a stolen box cannot read its own
-  backups.
+  backups. The dump has the shape of LB-04's contract tables and none of their rows (the
+  contract with the name of the file the visitor chose, the PDF, its text, the report and
+  the redlines): a visitor's file is kept for an hour, and a backup is kept for weeks, so
+  no backup may hold it. `infra/postgres/test-roles.sh` proves that no word of a contract
+  is in the dump.
+- **LB-04's contracts:** the PDF's bytes are stored in Postgres (the `lb04` schema, under
+  its own role) for an hour and no longer: every row that belongs to a contract references
+  it and cascades, a sweep deletes the expired every minute, a contract is not found once its hour
+  is up even before the sweep, a failed review deletes its file and text at once, and the
+  visitor can delete a contract early. The file is opened only in a worker thread with no
+  environment, no flags and its own heap limits, which a deadline ends, and the model
+  never sees a passage that talks to it. Its limits and what is not covered are in
+  [`services/node-systems/README.md`](../services/node-systems/README.md), "Threat model of
+  LB-04".
 
 ## 6. Containers and host
 

@@ -287,7 +287,8 @@ from one IP", Cloudflare blocks Vercel's address, and every demo stops for every
 block ends. A higher number only makes the rule harder to trip by accident; a visitor who
 wants to trip it can still do so deliberately, from the site's address. The box's real limits
 are per session and per system, and they see the visitor: each system's quotas (LB-01's 20
-tickets a day, LB-02's 10 conversations, LB-05's 25 questions, LB-08's runs), the gateway's
+tickets a day, LB-02's 10 conversations, LB-05's 25 questions, LB-08's runs, LB-04's 3
+contracts), the gateway's
 per-session calls and its per-system and per-provider budgets, the Turnstile check before a
 live run, and the gateway's limit on how often one run's trace is read.
 
@@ -353,7 +354,7 @@ base64url string. The private half stays in the file. Where each goes:
 |---|---|---|
 | `django-systems`: the Django systems calling the gateway | An entry of `LB_SERVICE_KEYS` in the gateway's secrets | `LB_SERVICE_KEY_JWK_B64` in the Django secrets: the file, as one line of base64 |
 | `flask-systems`: the Flask systems (LB-05) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Flask secrets |
-| `node-systems`: the Node systems (LB-08) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API only: the worker makes no model call and is given no key |
+| `node-systems`: the Node systems (LB-08, LB-04) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API (describing a workflow, writing a redline) and the worker (LB-04's reviews): both start only with it |
 | `web`: the site's server calling the gateway (the run-spans route) | An entry of `LB_SERVICE_KEYS` | Vercel: `NUXT_LB_GATEWAY_SERVICE_KEY` |
 | `site`: the site signing its visitors' tokens | `LB_WEB_TOKEN_KEY` in the compose settings: the public key alone, which all three back ends verify visitor tokens against | Vercel: `NUXT_LB_WEB_SIGNING_KEY` |
 
@@ -564,7 +565,7 @@ set (Vercel sets it), `LB_TEST_BUILD=1` stops `nuxt build` with an error that na
 and a server built that way refuses to start. If a deployment fails with that error, remove the
 variable from the project's environment (Settings, Environment Variables) and deploy again.
 
-The site's server calls LB-05 and LB-08 and waits up to 95 seconds for them
+The site's server calls LB-05, LB-08 and LB-04 and waits up to 95 seconds for them
 (`apps/web/server/lib/policy.ts`), so the Vercel plan must let a function run that long. Check
 the plan's maximum function duration (it is a Vercel setting, not something the repository
 sets), and read part 12 before relying on it.
@@ -580,7 +581,7 @@ From a machine **outside** the tailnet:
       `server: cloudflare`).
 - [ ] `curl -si https://api.example.com/api/lb01/customers` is `401`: LB-01's API is
       reached, and asks for a visitor token. So are `/api/lb02/offerings` (LB-02),
-      `/api/lb05/quota` (LB-05) and `/api/lb08/limits` (LB-08).
+      `/api/lb05/quota` (LB-05), `/api/lb08/limits` (LB-08) and `/api/lb04/limits` (LB-04).
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' https://api.example.com/api/healthz` is `404`,
       and so are `/api/openapi.json` and `/v1/models`: only the routes in the Caddyfile
       exist.
@@ -645,9 +646,9 @@ with real visitor tokens, the real database roles and the egress proxies, and LB
 read-only warehouse) and LB-08 (a workflow run through BullMQ to its worker) answer
 through it; every Compose service passes the security rules and the memory budgets
 (`infra/scripts/check-compose.sh`, which also has tests that show each rule can fail); the
-Postgres roles cannot reach each other's schemas, for every pair of the four systems
+Postgres roles cannot reach each other's schemas, for every pair of the five systems
 (`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
-consumer, LB-05's integration and LB-08's whole test suites and a Celery worker's, with an
+consumer, LB-05's integration and the Node systems' whole test suites (LB-08's and LB-04's) and a Celery worker's, with an
 empty ACL log (`infra/redis/test-acl.sh`); Caddy's routes, headers, streaming, timeouts, a
 quiet WebSocket and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
 restores into a scratch database and over the live one, and a wrong key cannot open it; the
@@ -663,9 +664,17 @@ config`, hadolint, shellcheck and actionlint.
   QEMU. The first arm64 build runs in CI. The two new images carry native wheels (DuckDB,
   numpy, cryptography, psycopg) and BullMQ's optional speed-up: all publish arm64 builds,
   but nobody has run them on one.
+- LB-04 in the **Compose stack and in its image**: its module, queue, extraction thread and
+  worker run as real processes against the real gateway on a fake provider, through the
+  Redis ACL, the Postgres roles and Caddy's routes, but the Node image could not be built
+  where this was written (the base images were out of reach), so nothing proves that the
+  image's production install carries `pdfjs-dist` and runs the extraction thread under the
+  distroless Node, or that the worker holds in the 768 MiB it is given (two extractions of
+  a 30-page contract at once measured 291 MiB on a development machine, with the process's
+  own working set about 400 MiB).
 - Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
   list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
-  limits of what runs all the time add up to 7040 MiB (6.9 GiB; the sums are at the top of
+  limits of what runs all the time add up to 7424 MiB (7.25 GiB; the sums are at the top of
   `infra/docker-compose.yml`); idle, the stack used about 0.7 GiB here (without `cloudflared`
   and the proxies), LB-05's data job peaked at 923 MB, and the service's warehouse code at
   452 MB while it answered the 100 reference questions on the full dataset, on a four-core
@@ -700,7 +709,7 @@ config`, hadolint, shellcheck and actionlint.
   **recording** exists: `just record-sample lb-01 torn-bag` needs the live back end and
   records nothing until it has run there, and until it has the boards say "No recording yet"
   and offer the live run. Not checked either: whether the Vercel plan lets a function wait the
-  95 seconds the proxy allows LB-05 and LB-08.
+  95 seconds the proxy allows LB-05, LB-08 and LB-04.
 - Real provider traffic: no provider key was available.
 
 ## 13. Day to day
@@ -775,7 +784,12 @@ compose up -d --force-recreate flask-api
 
 A systemd timer runs the `backup` job at 02:30 UTC: `pg_dump` is piped straight into
 `age`, so the dump never exists unencrypted, and only the encrypted file is uploaded to
-`r2:lb-backups/postgres`. A failed dump uploads nothing. Look at the last run:
+`r2:lb-backups/postgres`. A failed dump uploads nothing. The dump leaves out the rows of
+the tables that hold what visitors upload (`infra/backup/excluded-data.txt`: LB-04's
+contracts, their files, their text, their reports and their redlines), because a visitor's
+file is kept for an hour and a backup for weeks. A restore makes those tables empty, which
+is what they are an hour after any restore. `infra/postgres/test-roles.sh` proves it: no
+word of a contract is in the dump. Look at the last run:
 
 ```sh
 journalctl -u lb-backup.service -n 30 --no-pager
