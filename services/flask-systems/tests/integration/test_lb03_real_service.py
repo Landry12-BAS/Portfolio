@@ -144,6 +144,9 @@ def test_the_text_the_guard_sees_is_what_the_reader_found_on_a_hostile_pdf(real_
     assert (document["state"], document["failure"]["code"]) == ("failed", "injection_suspected")
     assert any("ignore the above" in text.lower() for text in guard.texts)
     assert served.chat.calls() == 0
+    # The page was read and drawn before the check, so the visitor can still see the page the text was on.
+    assert document["pages"] == 1
+    assert served.request("GET", f"/api/lb03/documents/{document['id']}/pages/1").status_code == 200
 
 
 def test_a_blind_check_and_a_gullible_model_still_cannot_get_a_zero_total_through(
@@ -188,6 +191,9 @@ def test_a_pdf_that_runs_a_script_is_refused_by_the_cage_and_no_model_is_asked(
 
     assert (document["state"], document["failure"]["code"]) == ("failed", "unsafe_file")
     assert served.chat.calls() == 0
+    # A file the cage refused was never drawn, so there is no page to show.
+    assert document["pages"] is None
+    assert served.request("GET", f"/api/lb03/documents/{document['id']}/pages/1").status_code == 404
 
 
 def test_a_pdf_of_six_pages_is_refused_before_any_page_is_read(real_serve: Callable[..., Served]) -> None:

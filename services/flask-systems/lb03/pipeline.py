@@ -171,13 +171,19 @@ class GoneError(Exception):
 
 @dataclass
 class Work:
-    """One document while it is being read: its run, its call budget, and the steps finished so far."""
+    """One document while it is being read: its run, its call budget, and the steps finished so far.
+
+    `page_count` is how many pages were read and had their pictures stored: it stays unset until the OCR has finished,
+    so a document that fails later (the injection check, a model) can still show the pages it was read from, and one the
+    OCR refused has none.
+    """
 
     job: Job
     run_id: str
     budget: CallBudget | None = None
     steps: list[dict[str, Any]] = field(default_factory=list)
     unsaved: list[dict[str, Any]] = field(default_factory=list)
+    page_count: int | None = None
 
     def note(self, name: str, started: float, now: float, status: str = "ok", detail: Detail | None = None) -> None:
         """Record a finished step: what it was, whether it worked, how long it took and a few counts."""
@@ -320,6 +326,7 @@ class Pipeline:
             work.calls(),
             work.run_id,
             work.steps,
+            work.page_count,
         )
         return Ended(code, wrote, work.calls(), work.run_id)
 
@@ -362,6 +369,7 @@ class Pipeline:
             if words == 0:
                 raise StopError("ocr", FailureCode.NO_TEXT)
             await self.keep_pictures(work, reading)
+            work.page_count = len(reading.pages)
         sandbox = reading.sandbox
         detail: Detail = {
             "pages": len(reading.pages),

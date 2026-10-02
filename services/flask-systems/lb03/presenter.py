@@ -151,6 +151,7 @@ class DocumentOut(BaseModel):
     label: str
     kind: str
     byte_size: int
+    # Set once the pages have been read and drawn: also for a document that failed afterwards, which can still show them.
     pages: int | None
     created_at: datetime
     updated_at: datetime

@@ -331,8 +331,13 @@ class DocumentRepository:
         model_calls: int,
         run_id: str | None,
         steps: list[dict[str, Any]],
+        page_count: int | None = None,
     ) -> bool:
-        """Mark a document `failed` with the code that says why; False if it had already ended."""
+        """Mark a document `failed` with the code that says why; False if it had already ended.
+
+        `page_count` is given when the pages were read and their pictures kept before the document failed: it is
+        what lets the visitor see the page the reading stopped on.
+        """
         values: dict[str, Any] = {
             "state": DocumentState.FAILED.value,
             "failure_code": code.value,
@@ -341,6 +346,8 @@ class DocumentRepository:
             "run_id": run_id,
             "steps": steps,
         }
+        if page_count is not None:
+            values["page_count"] = page_count
         return self.end(document_id, values)
 
     def end(self, document_id: str, values: dict[str, Any]) -> bool:
