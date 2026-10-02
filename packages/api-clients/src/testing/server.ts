@@ -21,6 +21,10 @@ import { MOCK_IDENTITY_PATH } from '../mock-identity.ts'
 import { MockGateway } from './gateway.ts'
 import { Lb01Mock, errorAnswer } from './lb01.ts'
 import type { Answer, RunIdDisclosure } from './lb01.ts'
+import { Lb03Mock } from './lb03.ts'
+import type { Lb03FileAnswer, Lb03MockOptions } from './lb03.ts'
+import { readLb03Seed } from './lb03-seed.ts'
+import { parseUpload } from './lb03-upload.ts'
 import { Lb08Mock } from './lb08.ts'
 import { readLb08Seed } from './lb08-seed.ts'
 import { OpenApiDocuments } from './openapi.ts'
@@ -32,8 +36,11 @@ import { attachSockets } from './lb02/socket-server.ts'
 import { Lb05Mock } from './lb05.ts'
 import { readLb05Seed } from './lb05-seed.ts'
 
-// Nothing the site sends is bigger than this; a bigger body is refused unread.
+// Nothing the site sends is bigger than this; a bigger body is refused unread. LB-03's upload is a file, so its
+// route may take what the real service takes (10 MB and the few bytes of a multipart form around it).
 const MAX_BODY_BYTES = 1_048_576
+const UPLOAD_PATH = '/api/lb03/documents'
+const MAX_UPLOAD_BODY_BYTES = 10 * 1_048_576 + 65_536
 
 /** What the mock was set up with. */
 export interface MockBackendOptions {
@@ -55,6 +62,8 @@ export interface MockBackendOptions {
   // LB-02's conversation: how long a connection has to say hello and may be silent, how many messages and
   // conversations are allowed, and how long the concierge "thinks". The real service's limits by default.
   lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
+  // LB-03: how many polls a new document waits for a reader, and how many documents are said to be ahead of it.
+  lb03?: Lb03MockOptions
 }
 
 /** Something the mock should do instead of answering normally, once or several times. */
@@ -103,6 +112,8 @@ export interface MockBackend {
   lb05: Lb05Mock
   // LB-08's state: its workflows, runs and sandbox.
   lb08: Lb08Mock
+  // LB-03's state: its documents, the visitors' counts of them and the traces they leave.
+  lb03: Lb03Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -120,16 +131,21 @@ const LEAKY_HEADERS: Record<string, string> = {
   'via': '1.1 mock-proxy',
 }
 
-/** Reads a request's body, or returns undefined when it is bigger than the limit. */
-async function readBody(request: IncomingMessage): Promise<string | undefined> {
+/** Reads a request's body whole, or returns undefined when it is bigger than the limit. */
+async function readBody(request: IncomingMessage, limit: number): Promise<Buffer | undefined> {
   const chunks: Buffer[] = []
   let length = 0
   for await (const chunk of request) {
     length += (chunk as Buffer).length
-    if (length > MAX_BODY_BYTES) return undefined
+    if (length > limit) return undefined
     chunks.push(chunk as Buffer)
   }
-  return Buffer.concat(chunks).toString('utf8')
+  return Buffer.concat(chunks)
+}
+
+/** Tells whether an answer is a file in place of JSON. */
+function isFileAnswer(answer: Answer): answer is Lb03FileAnswer {
+  return 'file' in answer
 }
 
 /** Turns the header values of a request into one lower-case map of single values. */
@@ -150,6 +166,7 @@ class MockSite {
   readonly lb02: Lb02Mock
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
+  readonly lb03: Lb03Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -165,7 +182,8 @@ class MockSite {
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId))
+    this.lb03 = new Lb03Mock(readLb03Seed(), this.#now, options.lb03)
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -182,6 +200,7 @@ class MockSite {
     this.lb02.reset()
     this.lb05.reset()
     this.lb08.reset()
+    this.lb03.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -201,6 +220,14 @@ class MockSite {
     if (text !== undefined && !('content-type' in headers)) headers['content-type'] = 'application/json; charset=utf-8'
     response.writeHead(status, headers)
     response.end(text)
+  }
+
+  /** Sends a handler's answer: a file with its Content-Type and headers, or the JSON body it holds. */
+  #reply(response: ServerResponse, answer: Answer): void {
+    if (!isFileAnswer(answer)) return this.#send(response, answer.status, answer.body)
+    const headers: Record<string, string> = { ...(this.#options.leakyHeaders === false ? {} : LEAKY_HEADERS), 'content-type': answer.file.contentType, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...answer.file.headers }
+    response.writeHead(answer.status, headers)
+    response.end(answer.file.bytes)
   }
 
   /** Plays a scripted answer. */
@@ -234,9 +261,12 @@ class MockSite {
   async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? '/', 'http://mock.local')
     const method = request.method ?? 'GET'
-    const body = await readBody(request)
+    const isUpload = method === 'POST' && url.pathname === UPLOAD_PATH
+    const raw = await readBody(request, isUpload ? MAX_UPLOAD_BODY_BYTES : MAX_BODY_BYTES)
+    // An upload is bytes, so what a test reads back of it is the bytes one to one (latin1), and nothing is lost to a decoder.
+    const body = raw?.toString(isUpload ? 'latin1' : 'utf8')
     this.requests.push({ method, path: url.pathname, query: url.search, headers: flatten(request.headers), body: body ?? '' })
-    if (body === undefined) return this.#send(response, 413, errorAnswer(413, 'payload_too_large', 'The request is too big.').body)
+    if (raw === undefined || body === undefined) return this.#send(response, 413, errorAnswer(413, 'payload_too_large', 'The request is too big.').body)
 
     const script = this.#takeScript(method, url.pathname)
     if (script) return this.#play(script, request, response)
@@ -253,16 +283,22 @@ class MockSite {
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
-    const answer = this.#answer(found.operation, found.params, url, request.headers.authorization, body)
-    this.#send(response, answer.status, answer.body)
+    const answer = this.#answer(found.operation, found.params, url, request.headers.authorization, body, isUpload ? { raw, contentType: request.headers['content-type'] } : undefined)
+    this.#reply(response, answer)
   }
 
   /** Answers a documented operation: the visitor's token, the body, the handler or an example, and a check of the answer. */
-  #answer(operation: MockOperation, params: Record<string, string>, url: URL, authorization: string | undefined, text: string): Answer {
+  #answer(operation: MockOperation, params: Record<string, string>, url: URL, authorization: string | undefined, text: string, upload?: { raw: Buffer, contentType: string | undefined }): Answer {
     const system = /^\/api\/lb(\d{2})\//.exec(url.pathname)?.[1]
     if (system === undefined) return this.#example(operation)
     const visitor = this.#visitor(authorization, `lb-${system}`)
     if (!visitor) return errorAnswer(401, 'unauthorized', 'Send a visitor token for this system.')
+    if (upload !== undefined) {
+      // A file upload is not JSON: the form is read here, and its one file part goes to LB-03.
+      const answer = this.lb03.upload(visitor.sessionKey, parseUpload(upload.raw, upload.contentType))
+      this.#check(operation, answer)
+      return answer
+    }
     let json: unknown
     if (text !== '') {
       try {
@@ -296,7 +332,22 @@ class MockSite {
       case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
       case 'GET /api/lb05/quota': return this.lb05.quota(session)
       case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
-      default: return this.#lb08Handler(operation, params, session, json, search)
+      default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb08Handler(operation, params, session, json, search)
+    }
+  }
+
+  /** Runs the handler written for one of LB-03's operations, if there is one. The upload is read in `#answer`, as it is not JSON. */
+  #lb03Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown, search: URLSearchParams): Answer | undefined {
+    const id = params.document_id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb03/quota': return this.lb03.quota(session)
+      case 'GET /api/lb03/documents': return this.lb03.list(session)
+      case 'GET /api/lb03/documents/{document_id}': return this.lb03.get(session, id)
+      case 'DELETE /api/lb03/documents/{document_id}': return this.lb03.remove(session, id)
+      case 'POST /api/lb03/documents/{document_id}/corrections': return this.lb03.correct(session, id, json as { path: string, value: string })
+      case 'GET /api/lb03/documents/{document_id}/pages/{number}': return this.lb03.page(session, id, Number(params.number))
+      case 'GET /api/lb03/documents/{document_id}/export': return this.lb03.exportDocument(session, id, search.get('format') ?? 'json')
+      default: return undefined
     }
   }
 
@@ -417,6 +468,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb02: site.lb02,
     lb05: site.lb05,
     lb08: site.lb08,
+    lb03: site.lb03,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {
