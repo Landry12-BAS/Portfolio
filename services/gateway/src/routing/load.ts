@@ -37,6 +37,10 @@ export interface Model {
   capabilities: ReadonlySet<Capability>
   limits: Limits | undefined
   neurons: { input: number, output: number } | undefined
+  // Speech-to-text only: the Neurons a minute of audio costs.
+  neuronsPerAudioMinute: number | undefined
+  // Which of the provider's APIs serves the model: its OpenAI-compatible one or its own `runUrl`.
+  api: 'openai' | 'run'
   // Rerankers only: whether their scores are raw logits or already probabilities.
   scores: 'logits' | 'probabilities' | undefined
 }
@@ -46,8 +50,11 @@ export interface Alias {
   name: string
   description: string
   kind: AliasKind
+  // Zero on a speech-to-text alias, which is limited in seconds of audio instead.
   maxInputTokens: number
   maxOutputTokens: number
+  // Speech-to-text only: the longest recording one call may carry.
+  maxAudioSeconds: number | undefined
   // Guards only: the injection probability at which a text is flagged.
   threshold: number | undefined
   timeouts: Timeouts
@@ -148,6 +155,16 @@ function minuteTokens(limits: Limits | undefined): number | undefined {
   return limits?.minute?.tokens
 }
 
+/** Lists every audio-seconds limit in a set of limits, by the window it counts over. */
+function audioLimits(limits: Limits | undefined): { window: 'minute' | 'hour' | 'day', seconds: number }[] {
+  const found: { window: 'minute' | 'hour' | 'day', seconds: number }[] = []
+  for (const window of ['minute', 'hour', 'day'] as const) {
+    const seconds = limits?.[window]?.audioSeconds
+    if (seconds !== undefined) found.push({ window, seconds })
+  }
+  return found
+}
+
 /**
  * Checks the trace readers against the systems. A reader may only name systems that
  * exist, and it must own none: a service that makes model calls never reads traces, and
@@ -206,9 +223,14 @@ export function loadRouting(text: string, env: Env): Routing {
     for (const [modelKey, modelConfig] of Object.entries(config.models)) {
       const ref = `${key}/${modelKey}`
       const meteredInNeurons = hasNeuronLimit(config.limits) || hasNeuronLimit(modelConfig.limits)
-      if (meteredInNeurons && !modelConfig.neurons) {
+      // Speech-to-text is priced by the minute of audio, every other model by the token.
+      const transcribes = modelConfig.capabilities.includes('transcription')
+      if (meteredInNeurons && !(transcribes ? modelConfig.neuronsPerAudioMinute : modelConfig.neurons)) {
         issues.push(`${ref} is metered in Neurons but has no neurons rates`)
       }
+      if (!transcribes && modelConfig.neuronsPerAudioMinute) issues.push(`${ref}: neuronsPerAudioMinute only applies to speech-to-text models`)
+      if (transcribes && modelConfig.neurons) issues.push(`${ref}: a speech-to-text model is priced by neuronsPerAudioMinute, not by token`)
+      if (modelConfig.api === 'run' && config.runUrl === undefined) issues.push(`${ref} is served by the provider's own API, so providers.${key} needs a runUrl`)
       // Rerankers are called on the provider's own endpoint, and their scores must be
       // mapped to 0 to 1 the same way every time.
       const reranks = modelConfig.capabilities.includes('rerank')
@@ -223,6 +245,8 @@ export function loadRouting(text: string, env: Env): Routing {
         capabilities: new Set(modelConfig.capabilities),
         limits: modelConfig.limits,
         neurons: modelConfig.neurons,
+        neuronsPerAudioMinute: modelConfig.neuronsPerAudioMinute,
+        api: modelConfig.api,
         scores: modelConfig.scores,
       })
     }
@@ -255,19 +279,40 @@ export function loadRouting(text: string, env: Env): Routing {
     if (config.kind !== 'guard' && config.threshold !== undefined) {
       issues.push(`aliases.${name}: only guard aliases have a threshold`)
     }
+    // A recording has no tokens: speech-to-text is limited in seconds, and nothing else is.
+    const transcribes = config.kind === 'transcription'
+    if (transcribes && config.maxAudioSeconds === undefined) {
+      issues.push(`aliases.${name}: speech-to-text aliases need maxAudioSeconds`)
+    }
+    if (!transcribes && config.maxAudioSeconds !== undefined) {
+      issues.push(`aliases.${name}: only speech-to-text aliases have maxAudioSeconds`)
+    }
+    if (transcribes && (config.maxInputTokens !== undefined || config.maxOutputTokens !== undefined)) {
+      issues.push(`aliases.${name}: speech-to-text aliases are limited in seconds, not tokens`)
+    }
+    if (!transcribes && config.maxInputTokens === undefined) {
+      issues.push(`aliases.${name}: aliases need maxInputTokens`)
+    }
 
     // The biggest call the alias allows must fit every model's context window and
     // tokens-per-minute budget, or that model could never serve it. A guard reads its
     // text in segments sized to the model, so only the minute budget applies to it.
     const maxOutputTokens = config.maxOutputTokens ?? 0
-    const largestCall = config.maxInputTokens + maxOutputTokens
+    const largestCall = (config.maxInputTokens ?? 0) + maxOutputTokens
     for (const model of chain) {
-      if (config.kind !== 'guard' && model.context < largestCall) {
+      if (!transcribes && config.kind !== 'guard' && model.context < largestCall) {
         issues.push(`aliases.${name}: ${model.ref} holds ${model.context} tokens, less than the alias maximum of ${largestCall}`)
       }
       for (const tokens of [minuteTokens(model.limits), minuteTokens(model.provider.limits)]) {
-        if (tokens !== undefined && tokens * file.budgets.minuteCeiling < largestCall) {
+        if (!transcribes && tokens !== undefined && tokens * file.budgets.minuteCeiling < largestCall) {
           issues.push(`aliases.${name}: ${model.ref} allows ${Math.floor(tokens * file.budgets.minuteCeiling)} tokens a minute, less than the alias maximum of ${largestCall}`)
+        }
+      }
+      // The same for the longest recording: no window of audio seconds may be smaller than it.
+      for (const { window, seconds } of transcribes ? [...audioLimits(model.limits), ...audioLimits(model.provider.limits)] : []) {
+        const ceiling = window === 'day' ? file.budgets.dayCeiling : file.budgets.minuteCeiling
+        if (config.maxAudioSeconds !== undefined && seconds * ceiling < config.maxAudioSeconds) {
+          issues.push(`aliases.${name}: ${model.ref} allows ${Math.floor(seconds * ceiling)} audio seconds a ${window}, less than the alias maximum of ${config.maxAudioSeconds}`)
         }
       }
     }
@@ -282,8 +327,9 @@ export function loadRouting(text: string, env: Env): Routing {
       name,
       description: config.description,
       kind: config.kind,
-      maxInputTokens: config.maxInputTokens,
+      maxInputTokens: config.maxInputTokens ?? 0,
       maxOutputTokens,
+      maxAudioSeconds: config.maxAudioSeconds,
       threshold: config.threshold,
       timeouts: { ...file.timeouts, ...config.timeouts },
       chain,

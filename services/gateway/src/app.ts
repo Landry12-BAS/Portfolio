@@ -25,6 +25,7 @@ import { registerGuard } from './routes/guard.ts'
 import { registerHealth, registerInfo } from './routes/info.ts'
 import { registerRerank } from './routes/rerank.ts'
 import { registerRuns } from './routes/runs.ts'
+import { registerTranscriptions } from './routes/transcriptions.ts'
 import { RedisSpanReader, RedisSpanSink } from './spans.ts'
 
 declare module 'fastify' {
@@ -97,6 +98,10 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
       if (error.retryAfterMs !== undefined) reply.header('retry-after', String(Math.ceil(error.retryAfterMs / 1000)))
       return reply.code(error.status).send(error.toBody())
     }
+    // A body past a route's limit is as much "too large" as a prompt past an alias's.
+    if (error.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
+      return reply.code(413).send(errorBody(413, 'input_too_large', 'The request body is larger than this route takes.'))
+    }
     // Fastify's own client errors: malformed JSON, a body over the limit, a wrong type.
     if (error.statusCode !== undefined && error.statusCode >= 400 && error.statusCode < 500) {
       return reply.code(error.statusCode).send(errorBody(error.statusCode, 'invalid_request', error.message))
@@ -123,6 +128,7 @@ export async function buildGateway(options: GatewayOptions): Promise<FastifyInst
     registerGuard(v1, ctx)
     registerInfo(v1, ctx)
     registerRuns(v1, ctx)
+    await registerTranscriptions(v1, ctx)
   }, { prefix: '/v1' })
 
   return app

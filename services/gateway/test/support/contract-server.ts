@@ -103,7 +103,7 @@ async function control(request: IncomingMessage, response: ServerResponse): Prom
   if (request.method === 'GET' && url.pathname === '/requests') {
     const provider = providers[url.searchParams.get('provider') ?? '']
     if (!provider) return send(response, 400, { error: 'Name a provider.' })
-    return send(response, 200, provider.requests.map(({ path, headers, body }) => ({ path, authorization: headers.authorization, body })))
+    return send(response, 200, provider.requests.map(({ path, headers, body, form }) => ({ path, authorization: headers.authorization, body, form })))
   }
   return send(response, 404, { error: 'Unknown control request.' })
 }

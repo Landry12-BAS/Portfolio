@@ -47,7 +47,7 @@ describe('the committed routing table', () => {
     expect(workers?.baseUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/v1')
     expect(workers?.runUrl).toBe('https://api.cloudflare.com/client/v4/accounts/acc123/ai/run')
     expect([...routing.aliases.keys()]).toEqual([
-      'lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed', 'lb-rerank', 'lb-guard',
+      'lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed', 'lb-rerank', 'lb-guard', 'lb-stt',
     ])
   })
 
@@ -180,6 +180,7 @@ describe('mistakes the loader catches', () => {
     expect(issues).toEqual([
       'workers-ai/bge-reranker-base reranks, so providers.workers-ai needs a runUrl',
       'workers-ai/bge-reranker-base reranks, so it needs scores: logits or probabilities',
+      'workers-ai/whisper-large-v3-turbo is served by the provider\'s own API, so providers.workers-ai needs a runUrl',
     ])
   })
 

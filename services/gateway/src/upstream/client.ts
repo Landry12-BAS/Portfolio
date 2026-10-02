@@ -3,16 +3,17 @@
 import type { Model } from '../routing/load.ts'
 
 /**
- * The provider endpoints the gateway calls: the OpenAI-compatible chat and embeddings
- * endpoints, and a provider's own endpoint for one model (Workers AI's /ai/run).
+ * The provider endpoints the gateway calls: the OpenAI-compatible chat, embeddings and
+ * transcription endpoints, and a provider's own endpoint for one model (Workers AI's /ai/run).
  */
-export type Endpoint = 'chat' | 'embeddings' | 'run'
+export type Endpoint = 'chat' | 'embeddings' | 'audio' | 'run'
 
 /** Returns the URL of an endpoint for one model. */
 export function endpointUrl(model: Model, endpoint: Endpoint): string {
   const provider = model.provider
   if (endpoint === 'chat') return `${provider.baseUrl}/chat/completions`
   if (endpoint === 'embeddings') return `${provider.baseUrl}/embeddings`
+  if (endpoint === 'audio') return `${provider.baseUrl}/audio/transcriptions`
   return `${provider.runUrl}/${model.id}`
 }
 
@@ -50,6 +51,27 @@ export async function sendUpstream(model: Model, endpoint: Endpoint, body: Recor
       'accept': stream ? 'text/event-stream' : 'application/json',
     },
     body: JSON.stringify(body),
+    redirect: 'error',
+    signal,
+  })
+}
+
+/**
+ * Sends a multipart request, the transcription endpoint's kind, with the provider's API key.
+ * Like `sendUpstream`, it refuses redirects. It sets no content type: `fetch` makes the
+ * boundary and writes the header itself.
+ */
+export async function sendUpstreamForm(model: Model, form: FormData, signal: AbortSignal): Promise<Response> {
+  const provider = model.provider
+  return fetch(endpointUrl(model, 'audio'), {
+    method: 'POST',
+    headers: {
+      // Provider extras first, so they can never replace the credentials.
+      ...provider.headers,
+      authorization: `Bearer ${provider.apiKey}`,
+      accept: 'application/json',
+    },
+    body: form,
     redirect: 'error',
     signal,
   })

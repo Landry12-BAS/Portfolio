@@ -19,6 +19,9 @@ export interface TokenEstimate {
   // Requests the call sends to the provider: one, unless said otherwise. The guard
   // sends one per segment of its text.
   requests?: number
+  // Speech-to-text only: the seconds of audio the provider will bill, counted from the
+  // recording itself. Such a call has no tokens, so `input` and `output` are zero.
+  audioSeconds?: number
 }
 
 /** Estimates how many tokens a piece of text becomes, erring on the high side. */
