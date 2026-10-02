@@ -84,6 +84,7 @@ class Documents(Protocol):
         model_calls: int,
         run_id: str | None,
         steps: list[dict[str, Any]],
+        page_count: int | None = None,
     ) -> bool:
         """Mark a document `failed` with the code that says why; False if it had already ended."""
         ...

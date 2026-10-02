@@ -114,9 +114,10 @@ class MemoryDocuments:
         model_calls: int,
         run_id: str | None,
         steps: list[dict[str, Any]],
+        page_count: int | None = None,
     ) -> bool:
         """Mark a document failed with its code; False if it had already ended."""
-        del now, run_id, steps
+        del now, run_id, steps, page_count
         record = self.open_record(document_id)
         if record is None:
             return False
