@@ -14,7 +14,7 @@ same rules, and the gateway it talks to is
 | `run` | `createRun`, `runScope`, `currentRun`: the run a piece of work belongs to, kept in an `AsyncLocalStorage` |
 | `tracing` | `Tracer` and `RedisSpanWriter`: run spans in the gateway's format, written to the same Redis streams |
 | `tokens` | `ServiceTokens` and `loadServiceKey`: the short-lived Ed25519 service tokens the gateway checks |
-| `visitors` | `createVisitorVerifier` and `verifyVisitorToken`: the check every system runs on the visitor token the site mints, on `node:crypto` alone |
+| `visitors` | `mintVisitorToken`: the signer the site's server uses for a visitor's token. `createVisitorVerifier` and `verifyVisitorToken`: the check every system runs on it. Both on `node:crypto` alone |
 
 ## Using it
 
@@ -82,7 +82,11 @@ fails the system's own schema is not the gateway's fault, and `gatewayErrorOf` r
   to start under `NODE_USE_ENV_PROXY`, so a token can't be sent anywhere else.
 - **Visitor tokens.** EdDSA only: `none`, HMAC and tokens with header extensions are
   refused. Issuer `lb-web`, audience the system, at most 300 seconds, and a subject that
-  is a session hash. Without the site's key, every token fails.
+  is a session hash. Without the site's key, every token fails. The signer refuses to
+  make a token the verifiers would refuse (a longer life, a malformed subject or system),
+  and python/lb-common's `test_visitor_contract.py` runs the real signer and checks its
+  tokens with Python's real verifier, tampered, expired, wrong-audience and over-long ones
+  included.
 - **Metadata only.** Span details are short labels and numbers. When a step fails, its
   span records the error's name, never its message, which could quote a visitor's words.
 
@@ -94,7 +98,10 @@ start `services/gateway`'s own app on a fake provider and a real Redis (Testcont
 with this client: tokens, run headers, chat and JSON answers, error codes, and spans that
 nest across the two sides.
 
-`@lb/common/testing` is for other packages' tests: it makes the site's key pair and mints
-visitor tokens the way the site does (`makeSiteKeys`, `mintVisitorToken`), so a service can
-test its own token check without a copy of the minting code. Never import it from a service's
-own code.
+`@lb/common/testing` is for other packages' tests: it makes the site's key pair and signs
+tokens with claims of the test's choosing (`makeSiteKeys`, and a `mintVisitorToken` that, unlike
+the site's signer of the same name in `@lb/common/visitors`, takes any claims and any header, so a
+test can build a token that is wrong on purpose). Never import it from a service's own code.
+
+The site's server imports only the two small modules it needs, `@lb/common/visitors` and
+`@lb/common/tokens`, so its bundle carries `node:crypto` and nothing of the AI SDK or Redis.

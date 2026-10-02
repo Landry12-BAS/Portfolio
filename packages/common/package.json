@@ -9,6 +9,8 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./visitors": "./src/visitors.ts",
     "./testing": "./src/testing.ts"
   },
   "scripts": {

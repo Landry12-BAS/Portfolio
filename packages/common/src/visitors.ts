@@ -15,7 +15,13 @@
 // This is the twin of python/lb-common's lb_common.visitors, with the same rules, built on
 // node:crypto alone. Without the site's public key (LB_WEB_TOKEN_KEY), no token verifies,
 // so a system fails closed rather than serve anyone unchecked.
-import { createPublicKey, verify } from 'node:crypto'
+//
+// The file holds both ends of the token: the signer the site's server uses
+// (`mintVisitorToken`, with the site's private key) and the check every system runs
+// (`verifyVisitorToken`, with its public key). They sit side by side so one format has one
+// home, and a contract test (python/lb-common/tests/integration/test_visitor_contract.py)
+// proves that tokens signed here are the ones Python's verifier accepts.
+import { createPublicKey, sign, verify } from 'node:crypto'
 import type { KeyObject } from 'node:crypto'
 
 /** Who mints visitor tokens: the site's server. */
@@ -43,6 +49,36 @@ export class VisitorTokenError extends Error {
 export interface Visitor {
   readonly sessionKey: string
   readonly system: string
+}
+
+// A system's name, such as `lb-08`: what the token's audience must be.
+const SYSTEM_NAME = /^lb-\d{2}$/
+
+/** Encodes a value as one base64url JSON segment of a token. */
+function encodeSegment(value: unknown): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url')
+}
+
+/**
+ * Signs a visitor token, the way the site's server mints it for one request to one system:
+ * EdDSA, issuer `lb-web`, the system as audience, the visitor's session hash as subject,
+ * and a lifetime of `ttlSeconds` (at most 300) from `nowSeconds`, which is Unix time in
+ * seconds. The token carries no other claim. Refuses a system or a session hash the
+ * verifiers would refuse, so a mistake fails here and not as a 401 somewhere else; error
+ * messages name the rule, never the value.
+ */
+export function mintVisitorToken(key: KeyObject, visitor: Visitor, nowSeconds: number, ttlSeconds: number = MAX_LIFETIME_SECONDS): string {
+  if (!SYSTEM_NAME.test(visitor.system)) throw new RangeError('A visitor token is for a system named like lb-08.')
+  if (!SESSION_KEY.test(visitor.sessionKey)) throw new RangeError('A visitor token\'s subject is a session hash: 16 to 128 letters, digits, underscores or hyphens.')
+  if (!Number.isFinite(nowSeconds)) throw new RangeError('A visitor token needs the time it is issued at, in seconds.')
+  if (!Number.isInteger(ttlSeconds) || ttlSeconds < 1 || ttlSeconds > MAX_LIFETIME_SECONDS) {
+    throw new RangeError(`A visitor token lives from 1 to ${MAX_LIFETIME_SECONDS} seconds.`)
+  }
+  const issuedAt = Math.floor(nowSeconds)
+  const header = { alg: 'EdDSA', typ: 'JWT' }
+  const claims = { iss: VISITOR_ISSUER, aud: visitor.system, sub: visitor.sessionKey, iat: issuedAt, exp: issuedAt + ttlSeconds }
+  const signingInput = `${encodeSegment(header)}.${encodeSegment(claims)}`
+  return `${signingInput}.${sign(null, Buffer.from(signingInput), key).toString('base64url')}`
 }
 
 /** Reads the site's Ed25519 public key from its base64url form (a JWK's `x`). */
