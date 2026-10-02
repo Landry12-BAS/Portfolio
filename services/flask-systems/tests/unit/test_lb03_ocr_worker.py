@@ -103,7 +103,8 @@ def test_a_clean_pdf_is_read_word_for_word(outcomes: dict[str, Outcome]) -> None
     assert (page.width, page.height) == (1272, 1800)
     assert all(0.0 <= word.confidence <= 1.0 for word in page.words)
     assert all(0.0 <= value <= 1.0 for word in page.words for value in word.quad)
-    assert reading.model_picture is not None
+    # A PDF is read as text, so no picture is drawn for the vision model: only a photograph is sent to it.
+    assert reading.model_picture is None
 
 
 def test_a_photograph_is_read_and_its_pictures_are_jpegs(outcomes: dict[str, Outcome]) -> None:

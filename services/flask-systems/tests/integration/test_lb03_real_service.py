@@ -104,6 +104,14 @@ def test_a_real_pdf_is_read_in_the_cage_with_its_words_boxes_and_page_picture(
     assert document["state"] == "ready", document["failure"]
     assert case.printed is not None
     assert compare_fields(case.printed, export_invoice(served, document["id"])).wrong == []
+    # A PDF is read as text: no picture goes to the model, so the text alias answers and the vision alias is kept for
+    # photographs. (The real worker once drew a picture for every file, so every PDF went to the vision model.)
+    alias, messages = served.chat.requests[0]
+    assert alias == "lb-fast"
+    assert isinstance(messages[1], ChatMessage)
+    assert messages[1].images == ()
+    extract = next(step for step in document["steps"] if step["name"] == "extract")
+    assert extract["detail"]["picture"] is False
     ocr = next(step for step in document["steps"] if step["name"] == "ocr")
     assert ocr["detail"]["seccomp"] is True
     assert ocr["detail"]["landlock_abi"] >= 1

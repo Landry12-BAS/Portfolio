@@ -31,6 +31,7 @@ from lb03.ocr.decode import DecodeError, decode_document
 from lb03.ocr.engine import build_engine, read_words
 from lb03.ocr.protocol import MODEL_PICTURE, RESULT_FILE, OcrPage, OcrResult, SandboxReport, WorkerLimits, WorkerStatus
 from lb03.ocr.sandbox import SandboxError, apply_rlimits, apply_sandbox
+from lb03.sniff import PDF
 from lb03.states import FailureCode
 
 # The limits line is a short JSON object; a longer line is not the service speaking.
@@ -90,11 +91,15 @@ def read_document(limits: WorkerLimits, scratch: Path, engine: RapidOCR, started
         pages = write_pages(document.pages, engine, scratch)
         if not any(page.words for page in pages):
             raise DecodeError(FailureCode.NO_TEXT)
-        write_model_picture(document.pages[0], limits, scratch)
+        # Only a photograph is shown to the vision model. A PDF is drawn cleanly by pdfium, so the words read from it
+        # are what a text model needs, and the picture would only send the document to the dearer vision alias.
+        photographed = document.kind != PDF
+        if photographed:
+            write_model_picture(document.pages[0], limits, scratch)
         result = OcrResult(
             kind=document.kind.name,
             pages=pages,
-            model_picture=MODEL_PICTURE,
+            model_picture=MODEL_PICTURE if photographed else None,
             sandbox=report,
             elapsed_ms=round((time.monotonic() - started) * 1000),
         )
