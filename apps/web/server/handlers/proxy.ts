@@ -1,4 +1,4 @@
-// /api/lb01/**, /api/lb02/**, /api/lb05/** and /api/lb08/**: the visitor's browser calls the site's
+// /api/lb01/**, /api/lb02/**, /api/lb05/**, /api/lb08/** and /api/lb04/**: the visitor's browser calls the site's
 // own server at the same paths the back ends use, and this forwards the call, as the visitor, to
 // the back end (docs/STACK.md, "Backend-for-frontend"). Nothing is forwardable unless the three
 // committed OpenAPI documents describe it (packages/api-clients' route table): the method, the

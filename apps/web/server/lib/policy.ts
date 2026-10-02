@@ -24,12 +24,16 @@ const MIB = 1_024 * KIB
  * - LB-02's routes here only read: its conversation runs over the WebSocket.
  * - LB-05 answers a question synchronously within 90 seconds (the edge gives it 95), and a result may hold rows.
  * - LB-08 takes a workflow graph of at most 16 steps; its describe call may make two model calls (95 seconds at the edge).
+ * - LB-04 takes a PDF of at most 2 MiB as base64 in JSON, a body of about 2.8 MB (the edge allows that one route 3 MB, which is
+ *   under the 4.5 MB a Vercel function takes), and answers a contract's file the same way. A review is queued at once and read by
+ *   polling; a redline is one model call, which may try the gateway's three fallbacks one after another (45 seconds at most).
  */
 export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-01': { maxBodyBytes: 8 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
   'lb-02': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
   'lb-05': { maxBodyBytes: 4 * KIB, timeoutMs: 95_000, maxResponseBytes: MIB },
   'lb-08': { maxBodyBytes: 64 * KIB, timeoutMs: 95_000, maxResponseBytes: MIB },
+  'lb-04': { maxBodyBytes: 3 * MIB, timeoutMs: 60_000, maxResponseBytes: 4 * MIB },
 }
 
 /** The most a trace page from the gateway may weigh: the gateway cuts its pages at 256 KB, and this leaves room for the envelope. */

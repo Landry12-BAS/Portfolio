@@ -120,6 +120,7 @@ describe('who the back end thinks is calling', () => {
     await browser.request('GET', '/api/lb02/offerings')
     await browser.request('GET', '/api/lb05/quota')
     await browser.request('GET', '/api/lb08/limits')
+    await browser.request('GET', '/api/lb04/limits')
 
     const publicKey = loadPublicKey(keys.sitePublic)
     const seen = mock.requests.map((sent) => {
@@ -128,7 +129,7 @@ describe('who the back end thinks is calling', () => {
       return verifyVisitorToken(token, `lb-${system}`, publicKey, () => site.clock.now / 1_000)
     })
 
-    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-04'])
     expect(new Set(seen.map(visitor => visitor.sessionKey)).size).toBe(1)
   })
 
@@ -485,9 +486,70 @@ describe('the token for LB-02\'s WebSocket', () => {
     expect((await browser.request('POST', '/api/tokens/lb-02')).status).toBe(403)
     await browser.verify()
     expect((await browser.request('POST', '/api/tokens/lb-02', { origin: 'https://evil.example' })).status).toBe(403)
-    for (const system of ['lb-01', 'lb-05', 'lb-08', 'lb-99', 'lb-02/extra']) {
+    for (const system of ['lb-01', 'lb-05', 'lb-08', 'lb-04', 'lb-99', 'lb-02/extra']) {
       expect((await browser.request('POST', `/api/tokens/${system}`)).status, system).toBe(404)
     }
     expect((await browser.request('GET', '/api/tokens/lb-02')).status).toBe(404)
+  })
+})
+
+describe('LB-04\'s PDFs through the proxy', () => {
+  /** A PDF of exactly the size the limit allows, which is nothing a reader could open: the proxy and the service only check its size and its first bytes. */
+  function fullSizePdf(): Buffer {
+    const bytes = Buffer.alloc(2 * 1_024 * 1_024)
+    bytes.write('%PDF-1.7\n')
+    return bytes
+  }
+
+  it('forwards a PDF of 2 MiB, which is a JSON body of about 2.8 MB, and gives its file back whole', async () => {
+    const browser = await verified()
+    const pdf = fullSizePdf()
+
+    const made = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'upload', filename: 'big.pdf', contentBase64: pdf.toString('base64') } })
+    const file = await browser.request('GET', `/api/lb04/contracts/${made.json.id}/file`)
+
+    expect(made.status).toBe(201)
+    expect(mock.requests.find(sent => sent.method === 'POST')?.body.length).toBeGreaterThan(2_790_000)
+    expect(file.status).toBe(200)
+    expect(file.json.size).toBe(pdf.byteLength)
+    expect(Buffer.from(file.json.base64, 'base64').equals(pdf)).toBe(true)
+  })
+
+  it('refuses a body over 3 MiB at the door, before the back end sees anything of it', async () => {
+    const browser = await verified()
+    const tooBig = Buffer.alloc(3 * 1_024 * 1_024)
+
+    const reply = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'upload', filename: 'huge.pdf', contentBase64: tooBig.toString('base64') } })
+
+    expect(reply.status).toBe(413)
+    expect(reply.json.error.code).toBe('payload_too_large')
+    expect(mock.requests).toEqual([])
+  })
+
+  it('passes a spent day on as the back end says it: 429 with when it starts again, as a time and as a wait', async () => {
+    const browser = await verified()
+    for (let count = 0; count < 3; count += 1) expect((await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'clean-supply' } })).status).toBe(201)
+
+    const spent = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'clean-supply' } })
+
+    expect(spent.status).toBe(429)
+    expect(spent.json.error).toMatchObject({ code: 'daily_limit', resets_at: '2026-10-06T00:00:00.000Z' })
+    expect(spent.headers.get('retry-after')).toBe(String(15 * 3_600))
+  })
+
+  it('reviews a sample start to finish as the demo does: queued, polled to done, and a redline made', async () => {
+    const browser = await verified()
+    const made = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'wholesale-supply' } })
+    let state = made.json.state
+    for (let poll = 0; poll < 6 && state !== 'done'; poll += 1) state = (await browser.request('GET', `/api/lb04/contracts/${made.json.id}`)).json.state
+    const report = await browser.request('GET', `/api/lb04/contracts/${made.json.id}/report`)
+    const redline = await browser.request('POST', `/api/lb04/contracts/${made.json.id}/findings/${report.json.findings[0].id}/redline`, { body: { smuggled: true } })
+
+    expect(made.status).toBe(201)
+    expect(state).toBe('done')
+    expect(report.json.findings.length).toBeGreaterThan(0)
+    expect(redline.status).toBe(201)
+    expect(mock.requests.at(-1)?.body).toBe('')
+    expect(mock.violations).toEqual([])
   })
 })
