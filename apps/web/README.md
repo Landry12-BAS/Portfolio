@@ -336,6 +336,26 @@ block makes every read of the Scope a 502. Then drive the board in a browser: ev
 times, the dead letter and its replay, the approval, a described process and a refused one, and the
 eleventh run, which two tabs of one visitor can reach.
 
+For LB-03 (a Flask system with a caged OCR, an upload and files out) the service runs as production runs it
+(`gunicorn --config gunicorn.conf.py wsgi:app`, so the cage, pdfium and RapidOCR are real) on a scratch Postgres
+database, a Redis key prefix and a folder of its own, and the models are not faked inside it but behind the real
+gateway (`buildGateway`, in your own process) on a copy of the real `services/gateway/routing.yaml` whose three
+providers' addresses are pointed at a scripted provider. The script answers the injection classifier by what the text
+says, and each extraction with what a perfect model says for the golden document it recognises in the prompt (the
+printed truth in `evals/lb03/golden.yaml`); it reads from a control port how long to take and whether to fail. The
+test build of the site goes on top, and a browser: every sample, files of the visitor's own, each refusal (a pixel
+bomb, a script in a PDF, a truncated file, an SVG, an empty one, a file the site's limit stops), three tabs of one
+visitor (the third document is refused), the day's ten, the models failing, slow or answering nonsense, the gateway
+unreachable, a document of three pages, a correction with its downloads, the shelf and its deletes, the trace's own
+page, and the worker killed in the middle of a document.
+
+What it found, none of which a test with fake readers could: every document, PDFs too, went to the vision alias,
+because the OCR worker drew a picture for each file and the pipeline picks the alias by whether a picture exists; a
+document stopped after the OCR had no page count, so the page of a stopped document, which a replay shows, could not be
+shown live; and a worker that gunicorn respawned swept nothing until the first upload, so the documents a killed worker
+had been reading stayed "being read" and files past their hour stayed on disk. All three are fixed, with tests that
+fail without the fix. It found nothing wrong with the mock's flow of states.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -394,3 +414,30 @@ eleventh run, which two tabs of one visitor can reach.
   visitor's language), and its global key handlers for Backspace, Space, Control and Shift would stop
   those keys working anywhere on the page while the canvas is open, so they are switched off and
   Delete, Space and the arrow keys are handled on the steps themselves.
+- **LB-03's page and its boxes.** The page is a plain `<img>` of the service's own JPEG (a replay's is the sample's
+  static page under `public/lb03/pages`), and over it an SVG whose view box is the page itself, 0 to 1 on both sides:
+  a box is four corners as shares of the page, drawn as a polygon, so it follows the picture at any size and a
+  crooked box of a photograph stays crooked. The service's boxes are as tight as the words, so each is drawn a small
+  margin outside them (the same number of pixels above as beside, whatever the picture's shape), or the outline would
+  lie on the letters. How sure the reader is of a box is said in words and a percentage and drawn with its own kind of
+  line (solid, dashed, dotted) and a three-segment meter, never colour alone. The picture is white paper in both
+  themes, so the marks on it use their own tokens (`--lb-page-line`, `--lb-page-ink`, `--lb-page-marker`, the same in
+  both themes); the dark theme's near-white ink vanishes on it. The overlay is a convenience for a pointer and is
+  hidden from assistive technology: the table of fields does everything it does, from the keyboard. The page also
+  opens at full size in a tab of its own, since at the width of a column an invoice's print is too small to read.
+  A document that failed after its pages were read still shows its page, with no box and a caption that says why.
+- **LB-03's wait is told, not decorated.** The service gives a state, the place in the queue and nothing else, so the
+  board shows the stages it has, the place in the line, and a clock, and never a percentage it would have to make up.
+  It polls once a second, says when a reading is slow, and stops waiting after 300 seconds (the service ends every
+  reading with a result or a reason, within 240). The run is named only when it is over, so the Scope waits and then
+  fills in, as for LB-01.
+- **LB-03's file goes in through the typed client** (`apiClients().flask.POST(...)` with a `bodySerializer` that hands
+  the `FormData` on), after checks the board makes for the visitor's sake and the server makes again (4 MiB, the four
+  kinds, no SVG, not empty). A correction is live only: a replay's fields are read-only, since a correction is a write.
+  The documents of the hour are the visitor's shelf, from `GET /api/lb03/documents`, and deleting one is theirs.
+- **What ran against the real thing for LB-03.** The board ran against the real Flask service as production runs it
+  (the real OCR cage, Postgres, Redis, files on disk and its own sweep), behind the real gateway on the real routing
+  table, with the test build of the site and a browser (see "Against the real services"); the providers were a script.
+  Not run: a real model (so the extraction's accuracy and the injection classifier's hit rate are unmeasured), the real
+  Turnstile, a recording made on a live back end (the three recordings in `e2e/fixtures` are the mock's and say so),
+  R2, and the box's own two ARM cores (the timings are from this machine's four x86 cores).

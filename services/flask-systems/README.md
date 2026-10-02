@@ -103,8 +103,16 @@ pool lets one run at a time on the two-core box (`LB03_OCR_WORKERS`).
 
 The runner also keeps what it holds alive: every half minute it says its documents are still being worked on, every
 minute it runs the sweep (below), and a worker that is told to stop gives its documents 20 seconds, then ends the
-rest as `interrupted` and gives the visitors their places back. At most eight documents are in the pipeline and 64
-more may wait; beyond that an upload is a 503 `readers_busy`, so a flood can't pile up work without bound.
+rest as `interrupted` and gives the visitors their places back. It starts as the worker boots (`wsgi.py` asks the app
+factory to start each system's background work), so a worker that gunicorn respawned after a crash sweeps at once; when
+it started at the first upload, the documents a killed worker had been reading stayed "being read" until somebody
+uploaded. At most eight documents are in the pipeline and 64 more may wait; beyond that an upload is a 503
+`readers_busy`, so a flood can't pile up work without bound.
+
+A worker killed in the middle of a document (`kill -9`, on the real service behind the real gateway) is recovered by
+its replacement in 60 to 150 seconds: a document counts as lost after 90 seconds without a sign of life, and the sweep
+looks every minute. The board shows it being read, with its clock and then a note that it is slow, until the sweep
+ends it as `interrupted` and gives the place back (measured once: 124 seconds).
 
 How this is shown, with no model and no provider:
 

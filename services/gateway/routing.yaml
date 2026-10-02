@@ -386,7 +386,7 @@ systems:
     sessionDailyCalls: 50
     # About 30 custom documents a day at two to three calls each, and a pass of the golden set
     # (43 documents; a clean one costs 2 calls, at most 5, `just eval-lb03`) when a prompt changes.
-    # The five samples are recorded and cost nothing. These are ceilings, to be rebalanced from
+    # The six samples are replayed from recordings and cost nothing. These are ceilings, to be rebalanced from
     # measured use once the systems run live (docs/STACK.md, Capacity).
     dailyCalls: 250
 
