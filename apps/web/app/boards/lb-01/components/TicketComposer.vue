@@ -25,6 +25,8 @@ const props = defineProps<{
   busy: boolean
   /** Whether a live run is possible: the deployment has a back end and the day's tickets are not used up. */
   canRunLive: boolean
+  /** True when a live run is off because the day's tickets are used up, so the hint can say that and not blame the site. */
+  allowanceUsedUp: boolean
   /** True when the list of customers could not be read, so the visitor's own ticket cannot be filed yet. */
   customersFailed: boolean
   /** The language to start the form in: the one the site is shown in. */
@@ -63,6 +65,8 @@ const chosenSample = computed(() => props.samples.find(sample => sample.id === c
 const chosenLanguage = computed(() => chosenSample.value?.language ?? 'en')
 const bodyLength = computed(() => body.value.length)
 const canFile = computed(() => !props.busy && props.canRunLive && customer.value !== '' && body.value.trim().length > 0 && bodyLength.value <= MAX_BODY)
+// Why a live run is off, in the visitor's words: no ticket left today, or this copy of the site has no back end.
+const liveHint = computed(() => (props.canRunLive ? undefined : props.allowanceUsedUp ? 'lb01.compose.noAllowance' : 'lb01.compose.noLive'))
 
 // Start with the first customer once the list arrives, and keep a choice the visitor made.
 watch(() => props.customers, (list) => {
@@ -153,10 +157,11 @@ function fileOwn(): void {
         </button>
       </div>
       <p
-        v-if="!canRunLive"
+        v-if="liveHint"
         class="hint"
+        data-testid="live-hint"
       >
-        {{ t('lb01.compose.noLive') }}
+        {{ t(liveHint) }}
       </p>
     </div>
 
@@ -238,10 +243,11 @@ function fileOwn(): void {
         </button>
       </div>
       <p
-        v-if="!canRunLive"
+        v-if="liveHint"
         class="hint"
+        data-testid="live-hint"
       >
-        {{ t('lb01.compose.noLive') }}
+        {{ t(liveHint) }}
       </p>
     </form>
 

@@ -193,6 +193,7 @@ test.describe('when something fails', () => {
     await expect(notice).toContainText('Today\'s allowance is used up')
     await expect(page.getByTestId('quota')).toContainText('0 of 20')
     await expect(page.getByText('None left today.')).toBeVisible()
+    await expect(page.getByTestId('live-hint')).toContainText('Today\'s tickets are used up')
     expect(problems.errors.join(' ')).toContain('429')
     problems.errors.length = 0
 

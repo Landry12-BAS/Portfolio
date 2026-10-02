@@ -143,6 +143,8 @@ describe('LB-01\'s board', () => {
     expect(notice.attributes('data-kind')).toBe('quota')
     expect(notice.text()).toContain('Today\'s allowance is used up')
     expect(wrapper.get('[data-testid="quota"]').text()).toContain('0 of 20')
+    expect(wrapper.get('[data-testid="live-hint"]').text()).toContain('Today\'s tickets are used up')
+    expect(wrapper.text()).not.toContain('cannot run tickets live right now')
     await wrapper.findAll('.composer .lb-seg__btn')[0]?.trigger('click')
     expect(wrapper.get('[data-testid="start-sample"]').text()).toBe('Replay this sample')
     expect(wrapper.get('[data-testid="start-sample"]').attributes('disabled')).toBeUndefined()

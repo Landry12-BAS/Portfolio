@@ -64,6 +64,8 @@ const sampleBodies = Object.fromEntries(LB01_SAMPLES.map(sample => [sample.id, s
 const recorded = computed(() => replay.recorded[SYSTEM])
 const available = computed(() => session.available)
 const canRunLive = computed(() => available.value && (quota.value?.remaining ?? 1) > 0)
+// The back end is there but the visitor has no ticket left today: the composer says so instead of blaming the site.
+const allowanceUsedUp = computed(() => available.value && quota.value !== undefined && quota.value.remaining <= 0)
 const unavailable = computed(() => session.loading === 'ready' && !session.available)
 // The session's state could not be read at all: the site itself could not be reached.
 const disconnected = computed(() => session.loading === 'failed')
@@ -217,6 +219,7 @@ onBeforeUnmount(() => {
       :customers="customers"
       :busy="phase === 'filing' || (runMode === 'live' && phase === 'running')"
       :can-run-live="canRunLive"
+      :allowance-used-up="allowanceUsedUp"
       :customers-failed="customersStatus === 'failed'"
       :default-language="code"
       :bodies="sampleBodies"

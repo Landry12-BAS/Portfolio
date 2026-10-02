@@ -217,7 +217,7 @@ describe('TicketComposer', () => {
   ]
   const samples = LB01_SAMPLES.map(sample => ({ id: sample.id, title: sample.id, note: 'note', language: sample.language, excerpt: sample.body }))
   const bodies = Object.fromEntries(LB01_SAMPLES.map(sample => [sample.id, sample.body]))
-  const props = { samples, recorded: [] as string[], customers, busy: false, canRunLive: true, customersFailed: false, defaultLanguage: 'en' as const, bodies }
+  const props = { samples, recorded: [] as string[], customers, busy: false, canRunLive: true, allowanceUsedUp: false, customersFailed: false, defaultLanguage: 'en' as const, bodies }
 
   it('opens on the curated samples, with the first chosen, its text shown and what it is there to show', () => {
     const wrapper = mountWithSite(TicketComposer, { props })
@@ -265,6 +265,23 @@ describe('TicketComposer', () => {
     expect(wrapper.text()).toContain('cannot run tickets live right now')
     const none = mountWithSite(TicketComposer, { props: { ...props, canRunLive: false } })
     expect(none.get('[data-testid="start-sample"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('says the day\'s tickets are used up, and does not blame the site, when that is why a live run is off', async () => {
+    const wrapper = mountWithSite(TicketComposer, { props: { ...props, recorded: ['torn-bag'], canRunLive: false, allowanceUsedUp: true } })
+    expect(wrapper.get('[data-testid="live-hint"]').text()).toContain('Today\'s tickets are used up')
+    expect(wrapper.text()).not.toContain('cannot run tickets live right now')
+    await wrapper.findAll('.lb-seg__btn')[1]?.trigger('click')
+    expect(wrapper.get('[data-testid="live-hint"]').text()).toContain('Today\'s tickets are used up')
+    expect(wrapper.get('[data-testid="file-ticket"]').attributes('disabled')).toBeDefined()
+
+    const czech = mountWithSite(TicketComposer, { locale: 'cs', props: { ...props, canRunLive: false, allowanceUsedUp: true, defaultLanguage: 'cs' } })
+    expect(czech.get('[data-testid="live-hint"]').text()).toContain('Dnešní požadavky jsou vyčerpané')
+  })
+
+  it('shows no hint while a live run is possible', () => {
+    const wrapper = mountWithSite(TicketComposer, { props })
+    expect(wrapper.find('[data-testid="live-hint"]').exists()).toBe(false)
   })
 
   it('files the visitor\'s own ticket as a chosen customer, in a chosen language', async () => {
