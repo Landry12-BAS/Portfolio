@@ -1,0 +1,26 @@
+{
+  "id": "/cs/systems/lb-02/board",
+  "name": "Rezervační asistent Basalt & Bean",
+  "short_name": "Asistent",
+  "description": "Chatovací asistent, který rezervuje degustace, cuppingy a pražící workshopy v živém kalendáři, jejž nejde obsadit dvakrát. Ukázka na smyšlených datech.",
+  "lang": "cs",
+  "dir": "ltr",
+  "start_url": "/cs/systems/lb-02/board",
+  "scope": "/cs/systems/lb-02/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#eceff2",
+  "categories": [
+    "food",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/lb02-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

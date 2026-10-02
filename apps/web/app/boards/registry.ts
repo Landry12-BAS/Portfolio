@@ -12,11 +12,29 @@ export type BoardLoader = () => Promise<Component>
 // Keyed by the system's slug, the part number in lower case.
 const BOARDS: Readonly<Record<string, BoardLoader>> = {
   'lb-01': async () => (await import('./lb-01/Lb01Board.vue')).default,
+  'lb-02': async () => (await import('./lb-02/Lb02Board.vue')).default,
+}
+
+// What a board adds to the head of its page, by the system's slug and the language: today the web app
+// manifest of the one board that can be installed (public/lb02.<language>.webmanifest, generated).
+const BOARD_LINKS: Readonly<Record<string, (code: 'en' | 'cs') => BoardLink[]>> = {
+  'lb-02': code => [{ rel: 'manifest', href: `/lb02.${code}.webmanifest` }],
+}
+
+/** A link a board adds to its page's head. A type alias, not an interface, so it fits the head's link type with its `data-` attributes. */
+export type BoardLink = {
+  rel: 'manifest'
+  href: string
 }
 
 /** Tells whether a system has an evaluation board. */
 export function hasBoard(slug: string): boolean {
   return Object.hasOwn(BOARDS, slug)
+}
+
+/** Returns the links a system's board adds to its page's head in a language: none for most boards. */
+export function boardLinks(slug: string, code: 'en' | 'cs'): BoardLink[] {
+  return Object.hasOwn(BOARD_LINKS, slug) ? (BOARD_LINKS[slug]?.(code) ?? []) : []
 }
 
 /** Returns the loader for a system's board, or undefined when it has none. */

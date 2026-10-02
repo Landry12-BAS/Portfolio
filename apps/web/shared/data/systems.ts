@@ -64,6 +64,8 @@ export const systems = [
       { label: 'Slot hold', value: '5 min' },
       { label: 'Demo calendar reset', value: 'Nightly' },
       { label: 'Model calls per booking (est.)', value: '6–10' },
+      { label: 'Conversations per visitor per day', value: '10' },
+      { label: 'Visitor data kept', value: '24 h' },
     ],
   },
   {

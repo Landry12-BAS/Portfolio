@@ -25,6 +25,8 @@ import { OpenApiDocuments } from './openapi.ts'
 import type { MockOperation } from './openapi.ts'
 import { readSeed } from './seed.ts'
 import type { Language } from './seed.ts'
+import { Lb02Mock } from './lb02/index.ts'
+import { attachSockets } from './lb02/socket-server.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread.
 const MAX_BODY_BYTES = 1_048_576
@@ -46,6 +48,9 @@ export interface MockBackendOptions {
   // Whether answers carry the headers a real framework adds (a server banner, a cookie, a
   // permissive CORS header), so tests can see the site's server drop them. On by default.
   leakyHeaders?: boolean
+  // LB-02's conversation: how long a connection has to say hello and may be silent, how many messages and
+  // conversations are allowed, and how long the concierge "thinks". The real service's limits by default.
+  lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
 }
 
 /** Something the mock should do instead of answering normally, once or several times. */
@@ -88,6 +93,8 @@ export interface MockBackend {
   violations: string[]
   // LB-01's state, for tests that look inside.
   lb01: Lb01Mock
+  // LB-02's state and controls: other visitors, the clock, the connections.
+  lb02: Lb02Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -132,6 +139,7 @@ class MockSite {
   readonly requests: RecordedRequest[] = []
   readonly violations: string[] = []
   readonly lb01: Lb01Mock
+  readonly lb02: Lb02Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -144,7 +152,8 @@ class MockSite {
     this.#options = options
     this.#now = options.now ?? Date.now
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId))
+    this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -158,6 +167,7 @@ class MockSite {
     this.violations.length = 0
     this.#scripts.length = 0
     this.lb01.reset()
+    this.lb02.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -226,6 +236,7 @@ class MockSite {
       const answer = await this.#gateway.spans(request.headers.authorization, decodeURIComponent(spans[1] ?? ''), url.searchParams)
       return this.#send(response, answer.status, answer.body)
     }
+    if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
     const answer = this.#answer(found.operation, found.params, url, request.headers.authorization, body)
@@ -249,13 +260,13 @@ class MockSite {
     }
     const problems = this.#documents.checkRequest(operation, json)
     if (problems.length > 0) return { status: 422, body: { error: { code: 'invalid_request', message: 'The request does not fit its schema.', fields: problems.join('; ') } } }
-    const answer = this.#handler(operation, params, visitor, json) ?? this.#example(operation)
+    const answer = this.#handler(operation, params, visitor, json, url.searchParams) ?? this.#example(operation)
     this.#check(operation, answer)
     return answer
   }
 
-  /** Runs the handler written for an operation, if there is one: LB-01's. */
-  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown): Answer | undefined {
+  /** Runs the handler written for an operation, if there is one: LB-01's and LB-02's. */
+  #handler(operation: MockOperation, params: Record<string, string>, visitor: Visitor, json: unknown, search: URLSearchParams): Answer | undefined {
     const session = visitor.sessionKey
     switch (`${operation.method} ${operation.template}`) {
       case 'GET /api/lb01/customers': return this.lb01.customers()
@@ -264,7 +275,61 @@ class MockSite {
       case 'GET /api/lb01/tickets/{ticket_id}': return this.lb01.get(session, params.ticket_id ?? '')
       case 'POST /api/lb01/tickets/{ticket_id}/decision': return this.lb01.decide(session, params.ticket_id ?? '', json as { action: string, text?: string | null })
       case 'GET /api/lb01/stats': return this.lb01.stats(session)
+      case 'GET /api/lb02/offerings': return this.lb02.offerings()
+      case 'GET /api/lb02/calendar': return this.lb02.calendar(session, search)
+      case 'GET /api/lb02/conversations': return this.lb02.conversations(session)
+      case 'GET /api/lb02/conversations/{conversation_id}': return this.lb02.conversation(session, params.conversation_id ?? '')
       default: return undefined
+    }
+  }
+
+  /**
+   * The controls of a test for LB-02, at `/__mock/lb02/<action>`: another visitor takes a slot, the clock
+   * moves on, the calendar is reset, the connections drop, the limits change. They take JSON, so a web page
+   * on another origin cannot send one without a preflight the mock never answers, and the mock listens on
+   * the loopback address only; the site's proxy forwards nothing outside the documents' routes.
+   */
+  #control(action: string, method: string, contentType: string | undefined, text: string, response: ServerResponse): void {
+    const answer = this.#controlAnswer(action, method, contentType, text)
+    this.#send(response, answer.status, answer.body)
+  }
+
+  /** Works out what a control answers. */
+  #controlAnswer(action: string, method: string, contentType: string | undefined, text: string): Answer {
+    const lb02 = this.lb02
+    if (method === 'GET' && action === 'state') return { status: 200, body: { openConnections: lb02.hub.openConnections, conversations: lb02.hub.conversations.size, now: lb02.now() } }
+    if (method !== 'POST' || !contentType?.startsWith('application/json')) return errorAnswer(415, 'unsupported', 'Send JSON with POST.')
+    let body: Record<string, unknown>
+    try {
+      body = text === '' ? {} : JSON.parse(text) as Record<string, unknown>
+    }
+    catch {
+      return errorAnswer(400, 'invalid_request', 'The body is not JSON.')
+    }
+    const done: Answer = { status: 200, body: { ok: true } }
+    switch (action) {
+      case 'other-visitor':
+        return { status: 200, body: { ok: lb02.otherVisitor(body.action === 'holds' ? 'holds' : 'books', String(body.offering), Number(body.day), String(body.time)) } }
+      case 'advance':
+        lb02.advance(Number(body.minutes))
+        return done
+      case 'sweep':
+        lb02.hub.sweep()
+        return done
+      case 'reset-calendar':
+        lb02.hub.resetCalendar()
+        return done
+      case 'drop':
+        lb02.hub.dropAll(typeof body.code === 'number' ? body.code : 1001)
+        return done
+      case 'limits':
+        lb02.hub.configure(body)
+        return done
+      case 'reset':
+        lb02.reset()
+        return done
+      default:
+        return errorAnswer(404, 'not_found', 'There is no such control.')
     }
   }
 
@@ -293,6 +358,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
       response.end(JSON.stringify({ error: { code: 'mock_failure', message: 'The mock back end failed.' } }))
     })
   })
+  const detachSockets = attachSockets(server, site.lb02.hub)
   await new Promise<void>((resolve) => {
     server.listen(options.port ?? 0, '127.0.0.1', resolve)
   })
@@ -302,9 +368,11 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     requests: site.requests,
     violations: site.violations,
     lb01: site.lb01,
+    lb02: site.lb02,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {
+      detachSockets()
       server.closeAllConnections()
       server.close(() => resolve())
     }),

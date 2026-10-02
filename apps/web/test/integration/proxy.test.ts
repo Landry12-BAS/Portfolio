@@ -99,7 +99,8 @@ describe('what is forwarded', () => {
   it('carries only the query a route documents, each name once, each value a short plain one', async () => {
     const browser = await verified()
 
-    expect((await browser.request('GET', '/api/lb02/calendar?from=2026-10-05&days=7&conversation=ab12cd34')).status).toBe(200)
+    // The mock answers a conversation nobody started with a 404, as the real back end does; what matters here is what was forwarded.
+    expect((await browser.request('GET', '/api/lb02/calendar?from=2026-10-05&days=7&conversation=ab12cd34')).status).toBe(404)
     expect(mock.requests.at(-1)?.query).toBe('?conversation=ab12cd34&days=7&from=2026-10-05')
     mock.reset()
     for (const query of ['?debug=1', '?days=7&days=8', '?days=%2e%2e%2f', '?days=', '?days=a b', '?DAYS=7', '?days=7&x=1']) {

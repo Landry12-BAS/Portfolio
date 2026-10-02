@@ -179,3 +179,53 @@ describe('the Scope store', () => {
     expect(scope.spans).toHaveLength(0)
   })
 })
+
+describe('the Scope store, for a run that goes on in turns', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the spans already shown when the same run is followed again, and starts over for another run or without the option', async () => {
+    const { site, scope, ticket } = start()
+    advance(site, ticket.id)
+    advance(site, ticket.id)
+    scope.follow(ticket.run_id, { notFoundGraceMs: 10_000 })
+    await vi.advanceTimersByTimeAsync(3_000)
+    const shown = scope.spans.length
+    expect(shown).toBeGreaterThan(0)
+
+    scope.follow(ticket.run_id, { keepSpans: true })
+    expect(scope.spans).toHaveLength(shown)
+    expect(scope.phase).toBe('following')
+    await vi.advanceTimersByTimeAsync(3_000)
+    expect(scope.spans).toHaveLength(shown)
+
+    scope.follow('run-another-one-0000', { keepSpans: true })
+    expect(scope.spans).toHaveLength(0)
+    scope.follow(ticket.run_id)
+    scope.follow(ticket.run_id)
+    expect(scope.spans).toHaveLength(0)
+  })
+
+  it('calls a trace with no root span complete when the board says the run is over, and stops reading', async () => {
+    const { site, scope } = start()
+    const recording = recordLb01Sample()
+    scope.showRecorded(recording.trace.runId, recording.trace.spans.filter(span => span.kind !== 'system.run'), false)
+    expect(scope.phase).toBe('following')
+    scope.finish()
+    expect(scope.phase).toBe('finished')
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(site.callsTo('/api/runs/')).toHaveLength(0)
+  })
+
+  it('does not call a run complete that never wrote a span', () => {
+    const { scope } = start()
+    scope.follow('run-nothing-written-0', { notFoundGraceMs: 1_000 })
+    scope.finish()
+    expect(scope.phase).toBe('following')
+  })
+})

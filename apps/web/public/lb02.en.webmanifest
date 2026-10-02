@@ -1,0 +1,26 @@
+{
+  "id": "/systems/lb-02/board",
+  "name": "Basalt & Bean booking concierge",
+  "short_name": "Concierge",
+  "description": "A chat concierge that books tastings, cuppings and roasting workshops on a live calendar that cannot be double-booked. A demo on synthetic data.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/systems/lb-02/board",
+  "scope": "/systems/lb-02/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#eceff2",
+  "categories": [
+    "food",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/lb02-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

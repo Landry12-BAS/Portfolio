@@ -35,9 +35,10 @@ API and Celery worker so far, and LB-02's back end: the Booking Concierge's sche
 the database-enforced no-double-booking constraint, its synthetic calendar
 (`data/seed/lb02`), golden set (`evals/lb02`), state-gated tool calling, WebSocket
 (Django Channels) and live calendar, visitor API, and golden-set eval (see its
-[README](services/django-systems/README.md)); next come LB-01's recorded sample runs
-(`just record-sample`, which needs the live back end with a model behind it) and LB-02's
-demo (the phone-frame PWA) on the site. Also in build:
+[README](services/django-systems/README.md)); LB-02's demo is on the site at
+`/systems/lb-02/board` (a phone-frame chat beside the live calendar, installable as an
+app; see the web README); next come the recorded sample runs of LB-01 and LB-02
+(`just record-sample`, which needs the live back end with a model behind it). Also in build:
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
@@ -201,7 +202,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
-| `just samples` | Regenerate LB-01's curated samples (`apps/web/shared/data/samples/lb01.ts`) from the golden set's `sample: true` cases |
+| `just samples` | Regenerate LB-01's curated samples (`apps/web/shared/data/samples/lb01.ts`) from the golden set's `sample: true` cases, and LB-02's (`lb02.ts`) with its installable-app files (icon, manifests, offline pages in `apps/web/public`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
 | `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite) or `routing.yaml` is invalid (the CI drift check) |
