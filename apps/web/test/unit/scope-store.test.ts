@@ -170,6 +170,56 @@ describe('the Scope store', () => {
     expect(scope.phase).toBe('finished')
   })
 
+  describe('a trace with no root span, as a workflow run\'s is', () => {
+    /** One step span of a run that has no span around its steps. */
+    const stepSpan = { v: 1, runId: 'run-rootless000', system: 'lb-08', spanId: '00000000000000a1', kind: 'system.step', name: 'step.check_stock', status: 'ok', startMs: 1_000, endMs: 1_025, attrs: {} }
+
+    /** Answers every read of the trace with the same page: the step span, never a root span. */
+    function rootless() {
+      const fetchSpy = vi.fn(() => Promise.resolve(Response.json({ runId: 'run-rootless000', spans: [stepSpan], cursor: '1-1', more: false, finished: false })))
+      vi.stubGlobal('fetch', fetchSpy)
+      return fetchSpy
+    }
+
+    it('keeps following it until the board says the run is over, then closes it as complete once a read brings nothing new', async () => {
+      rootless()
+      const scope = (setActivePinia(createPinia()), useScopeStore())
+      scope.follow('run-rootless000', { notFoundGraceMs: 10_000 })
+      await vi.advanceTimersByTimeAsync(5_000)
+      expect(scope.phase).toBe('following')
+      expect(scope.spans).toHaveLength(1)
+
+      scope.closeWhenQuiet()
+      await vi.advanceTimersByTimeAsync(5_000)
+
+      expect(scope.phase).toBe('finished')
+    })
+
+    it('does not close a trace that is still growing', async () => {
+      let page = 0
+      vi.stubGlobal('fetch', vi.fn(() => {
+        page += 1
+        return Promise.resolve(Response.json({ runId: 'run-rootless000', spans: [{ ...stepSpan, spanId: `00000000000000${String(page).padStart(2, '0')}`, name: `step.${page}` }], cursor: `1-${page}`, more: false, finished: false }))
+      }))
+      const scope = (setActivePinia(createPinia()), useScopeStore())
+      scope.follow('run-rootless000', { notFoundGraceMs: 10_000 })
+      await vi.advanceTimersByTimeAsync(1_500)
+      scope.closeWhenQuiet()
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      expect(scope.phase).toBe('following')
+      expect(scope.spans.length).toBeGreaterThan(1)
+    })
+
+    it('says a run whose name never came has no trace, when the board says it is over', () => {
+      const scope = (setActivePinia(createPinia()), useScopeStore())
+      scope.wait()
+      scope.closeWhenQuiet()
+
+      expect(scope.phase).toBe('missing')
+    })
+  })
+
   it('empties itself for the next run', () => {
     const { scope } = start()
     const recording = recordLb01Sample()

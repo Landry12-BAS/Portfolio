@@ -577,6 +577,32 @@ test.describe('using only the keyboard', () => {
   })
 })
 
+test.describe('the page policy', () => {
+  for (const language of languages) {
+    test(`needs nothing the other boards do not have, in ${language.code}: a nonce policy with Trusted Types and no eval`, async ({ request }) => {
+      const response = await request.get(`${language.prefix}/systems/lb-08/board`)
+      const csp = response.headers()['content-security-policy'] ?? ''
+
+      expect(csp).toMatch(/script-src 'self' 'strict-dynamic' 'nonce-[\w+/=-]{16,}'/)
+      expect(csp).not.toContain('unsafe-eval')
+      expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/)
+      expect(csp).toContain('require-trusted-types-for \'script\'')
+      // The one list every board has: Vue's, and the check's own. The canvas adds no policy.
+      expect(csp).toContain('trusted-types vue lb-turnstile')
+      expect(csp).toContain('frame-ancestors \'none\'')
+    })
+  }
+
+  test('lets the canvas draw its steps and connections with no violation of it', async ({ page }) => {
+    await openBoard(page)
+    await openLive(page, languages[0].samples.wholesale)
+    await expect(page.locator('.vue-flow__edge')).toHaveCount(4)
+    await expect(page.locator('.vue-flow__node').first()).toHaveCSS('position', 'absolute')
+    // The fixture fails the test on any CSP or Trusted Types violation; this says it looked.
+    expect(await page.evaluate(() => window.__cspViolations)).toEqual([])
+  })
+})
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 

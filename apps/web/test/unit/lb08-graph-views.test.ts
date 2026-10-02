@@ -2,7 +2,7 @@
 // step sits when nobody has placed it) and the outline (the steps in the order a run reaches them),
 // and of the values a step may read, which must agree with what the validator accepts.
 import { validateWorkflow } from '@lb/contracts'
-import type { WorkflowGraph } from '@lb/contracts'
+import type { WorkflowGraph, WorkflowNode } from '@lb/contracts'
 import { describe, expect, it } from 'vitest'
 
 import { addStep, connect, moveStep } from '~/boards/lb-08/graph/edit'
@@ -54,6 +54,23 @@ describe('the outline', () => {
     expect(items).toHaveLength(3)
     expect(items.find(item => item.node.id === 'stock_alert')?.outgoing[0]?.target).toBeUndefined()
     expect(items.find(item => item.node.id === 'reorder_task')?.incoming).toEqual([])
+  })
+
+  it('puts a step no run can reach after the steps that run, so one just added does not push the others out of their places', () => {
+    const graph = addStep(sampleGraph('wholesale-order'), { type: 'action', id: 'webhook', label: 'Tell the ERP', connector: 'webhook', params: { endpoint: 'erp', event: 'order.large', fields: {} } })
+    const items = outlineOf(graph)
+
+    expect(items.map(item => item.node.id)).toEqual(['order_received', 'big_order', 'check_stock', 'alert_roastery', 'email_cafe', 'webhook'])
+    expect(items.at(-1)?.number).toBe(6)
+  })
+
+  it('keeps a step that is cut off after the ones that run, wherever the graph lists it', () => {
+    const graph = sampleGraph('wholesale-order')
+    const [trigger, condition, stock, alert, email] = graph.nodes as [WorkflowNode, WorkflowNode, WorkflowNode, WorkflowNode, WorkflowNode]
+    // The e-mail is listed second and nothing leads to it, so it has the same column as the trigger.
+    const cut: WorkflowGraph = { ...graph, nodes: [trigger, email, condition, stock, alert], edges: graph.edges.filter(edge => edge.to !== 'email_cafe') }
+
+    expect(outlineOf(cut).map(item => item.node.id)).toEqual(['order_received', 'big_order', 'check_stock', 'alert_roastery', 'email_cafe'])
   })
 })
 
