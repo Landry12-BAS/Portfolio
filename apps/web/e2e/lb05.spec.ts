@@ -64,6 +64,27 @@ async function paintedPixels(page: Page): Promise<number> {
   })
 }
 
+/** Reads the colour of the chart's top-left pixel, which is its background, as "r,g,b". */
+async function chartBackground(page: Page): Promise<string> {
+  return page.locator('[data-testid="chart-canvas"] canvas').evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext('2d')
+    const { data } = context ? context.getImageData(0, 0, 1, 1) : { data: [] }
+    return `${data[0]},${data[1]},${data[2]}`
+  })
+}
+
+/** Reads the colour a token has on the page now, as "r,g,b", by letting the browser resolve it. */
+async function tokenColour(page: Page, token: string): Promise<string> {
+  return page.evaluate((name) => {
+    const probe = document.createElement('span')
+    probe.style.color = `var(${name})`
+    document.body.append(probe)
+    const resolved = getComputedStyle(probe).color
+    probe.remove()
+    return resolved.match(/\d+/g)?.slice(0, 3).join(',') ?? ''
+  }, token)
+}
+
 /** The states of the six layers, in order. */
 async function layerStates(page: Page): Promise<(string | null)[]> {
   return page.getByTestId('layer').evaluateAll(layers => layers.map(layer => layer.getAttribute('data-state')))
@@ -141,6 +162,35 @@ test.describe('replaying a recorded question', () => {
       await expect(page.getByTestId('chart-canvas')).toHaveAttribute('data-status', 'ready')
       expect(await paintedPixels(page)).toBeGreaterThan(300)
     }
+  })
+
+  test('draws the chart again in the other theme when the visitor changes it, in that theme\'s sheet colour', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' })
+    await openBoard(page)
+    await page.getByRole('radio', { name: /Revenue by product/ }).check()
+    await page.getByTestId('start-sample').click()
+    await expect(page.getByTestId('chart-canvas')).toHaveAttribute('data-status', 'ready', { timeout: 30_000 })
+    const light = await chartBackground(page)
+    expect(light).toBe(await tokenColour(page, '--lb-sheet'))
+
+    await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark theme' }).click()
+    await expect(page.locator('html')).toHaveClass(/\bdark\b/)
+    const dark = await tokenColour(page, '--lb-sheet')
+    expect(dark).not.toBe(light)
+    await expect.poll(() => chartBackground(page)).toBe(dark)
+  })
+
+  test('draws the chart again at the new width when the window narrows, without a sideways scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await openBoard(page)
+    await page.getByRole('radio', { name: /Revenue by product/ }).check()
+    await page.getByTestId('start-sample').click()
+    await expect(page.getByTestId('chart-canvas')).toHaveAttribute('data-status', 'ready', { timeout: 30_000 })
+    const wide = await page.locator('[data-testid="chart-canvas"] canvas').evaluate((canvas: HTMLCanvasElement) => canvas.getBoundingClientRect().width)
+
+    await page.setViewportSize({ width: 420, height: 900 })
+    await expect.poll(async () => page.locator('[data-testid="chart-canvas"] canvas').evaluate((canvas: HTMLCanvasElement) => canvas.getBoundingClientRect().width)).toBeLessThan(wide - 100)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
   })
 
   test('draws a time axis the same in every time zone, so a day is never shown on the evening before', async ({ browser }) => {
