@@ -54,7 +54,9 @@ describe('the typed clients', () => {
 })
 
 describe('the generated files', () => {
-  it('match the committed OpenAPI documents (the drift check `pnpm check` runs)', () => {
+  // The check starts the generator in a second process, which takes several seconds when other test
+  // suites are running at the same time, so it gets a longer limit than the default five seconds.
+  it('match the committed OpenAPI documents (the drift check `pnpm check` runs)', { timeout: 60_000 }, () => {
     const output = execFileSync('node', ['scripts/generate.ts', '--check'], { cwd: new URL('..', import.meta.url), encoding: 'utf8' })
 
     expect(output).toContain('up to date')
