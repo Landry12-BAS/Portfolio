@@ -41,6 +41,7 @@ from lb03.synthetic.handwriting import draw_handwritten
 from lb03.synthetic.layout import LAYOUTS, Page
 from lb03.synthetic.pdf import PdfMeasurer, render_pdf
 from lb03.synthetic.photo import Points, encode, photograph
+from lb03.synthetic.words import words_of_run
 
 FONT_FILE = SEED_DIRECTORY / "fonts" / "ReenieBeanie.ttf"
 GOLDEN_HEADER = (
@@ -58,8 +59,21 @@ type Quad = tuple[float, float, float, float, float, float, float, float]
 
 
 @dataclass(frozen=True)
+class GroundWord:
+    """One printed word and where it is: the page, the text, and four corners from 0 to 1 of the page.
+
+    The words are not committed. They are drawn again, from the same layouts, when OCR is measured
+    (`just ocr-lb03`), and the seed check already proves the committed documents are what those layouts draw.
+    """
+
+    page: int
+    text: str
+    quad: Quad
+
+
+@dataclass(frozen=True)
 class Rendered:
-    """One drawn document: its bytes, what they are, how big the first page is, and where its fields are."""
+    """One drawn document: its bytes, what they are, how big the first page is, and where its fields and words are."""
 
     content: bytes
     mime: str
@@ -67,6 +81,7 @@ class Rendered:
     width: int
     height: int
     fields: list[FieldBox]
+    words: list[GroundWord]
 
 
 def quad_of(box: tuple[float, float, float, float], width: float, height: float) -> Quad:
@@ -101,6 +116,18 @@ def pdf_boxes(pages: list[Page]) -> list[FieldBox]:
     return boxes
 
 
+def pdf_words(pages: list[Page]) -> list[GroundWord]:
+    """List every printed word of a laid-out document with its box, page by page."""
+    measurer = PdfMeasurer()
+    words = []
+    for number, page in enumerate(pages, start=1):
+        for run in page.runs:
+            for word in words_of_run(run, measurer):
+                box = (word.left, word.top, word.width, word.height)
+                words.append(GroundWord(number, word.text, quad_of(box, page.width, page.height)))
+    return words
+
+
 def normalised(quads: list[tuple[str, Points]], width: int, height: int) -> list[FieldBox]:
     """Turn the corners of photographed fields, in pixels, into boxes from 0 to 1 of the picture."""
     boxes = []
@@ -119,43 +146,59 @@ def render_page_pixels(pdf_bytes: bytes) -> NDArray[Any]:
         document.close()
 
 
+def corners(left: float, top: float, width: float, height: float, scale: float) -> Points:
+    """Return the four corners of a box, each multiplied by a scale, as the photograph step takes them."""
+    return (
+        np.array(
+            [[left, top], [left + width, top], [left + width, top + height], [left, top + height]],
+            dtype=np.float32,
+        )
+        * scale
+    )
+
+
 def render_photo(case: GoldenCase) -> Rendered:
     """Draw a document and photograph it: a printed page, a handwritten receipt, or a blank sheet."""
     effects = case.render.photo
     if effects is None or (case.printed is None and case.render.medium != "blank"):
         raise ValueError(f"{case.id} is a photograph with nothing to photograph.")
     labelled: list[tuple[str, Points]] = []
+    spoken: list[tuple[str, Points]] = []
     if case.render.medium == "blank":
         flat = np.full((1200, 900, 3), (250, 250, 248), dtype=np.uint8)
     elif case.render.medium == "handwritten" and case.printed is not None:
-        flat, boxes = draw_handwritten(case.printed, case.render, FONT_FILE)
+        flat, boxes, word_boxes = draw_handwritten(case.printed, case.render, FONT_FILE)
         labelled = [(path, quad) for path, quad in boxes]
+        spoken = [(text, quad) for text, quad in word_boxes]
     elif case.printed is not None:
         pages = LAYOUTS[case.render.style](case.printed, case.render, PdfMeasurer())
         flat = render_page_pixels(render_pdf(pages[:1]))
+        measurer = PdfMeasurer()
         labelled = [
-            (
-                run.field,
-                np.array(
-                    [
-                        [run.x, run.y],
-                        [run.x + run.width, run.y],
-                        [run.x + run.width, run.y + run.height],
-                        [run.x, run.y + run.height],
-                    ],
-                    dtype=np.float32,
-                )
-                * PHOTO_RENDER_SCALE,
-            )
+            (run.field, corners(run.x, run.y, run.width, run.height, PHOTO_RENDER_SCALE))
             for run in pages[0].runs
             if run.field is not None
         ]
+        spoken = [
+            (word.text, corners(word.left, word.top, word.width, word.height, PHOTO_RENDER_SCALE))
+            for run in pages[0].runs
+            for word in words_of_run(run, measurer)
+        ]
     else:
         raise ValueError(f"{case.id} has nothing to draw.")
-    pixels, moved = photograph(flat, [quad for _, quad in labelled], effects, case.render.seed)
+    pixels, moved = photograph(flat, [quad for _, quad in labelled + spoken], effects, case.render.seed)
     height, width = pixels.shape[:2]
-    fields = normalised([(path, quad) for (path, _), quad in zip(labelled, moved, strict=True)], width, height)
-    return Rendered(encode(pixels, effects), MIME_BY_FORMAT[effects.format], 1, width, height, fields)
+    moved_fields, moved_words = moved[: len(labelled)], moved[len(labelled) :]
+    fields = normalised([(path, quad) for (path, _), quad in zip(labelled, moved_fields, strict=True)], width, height)
+    words = [
+        GroundWord(1, text, box.quad)
+        for (text, _), box in zip(
+            spoken,
+            normalised([(text, quad) for (text, _), quad in zip(spoken, moved_words, strict=True)], width, height),
+            strict=True,
+        )
+    ]
+    return Rendered(encode(pixels, effects), MIME_BY_FORMAT[effects.format], 1, width, height, fields, words)
 
 
 def render_case(case: GoldenCase, done: dict[str, Rendered]) -> Rendered:
@@ -174,6 +217,7 @@ def render_case(case: GoldenCase, done: dict[str, Rendered]) -> Rendered:
         round(pages[0].width),
         round(pages[0].height),
         pdf_boxes(pages),
+        pdf_words(pages),
     )
 
 

@@ -43,6 +43,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
     "integration: needs a real Postgres, and Redis for some tests",
+    "ocr: starts the real OCR worker, a few seconds a document (deselect with -m 'not ocr')",
 ]
 xfail_strict = true
 filterwarnings = ["error"]

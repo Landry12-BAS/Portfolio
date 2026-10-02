@@ -22,6 +22,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from lb03.golden import Printed, Render
 from lb03.synthetic.layout import Page, receipt
+from lb03.synthetic.words import words_of_run
 
 PIXELS_PER_POINT = 2.6
 # Reenie Beanie is small on its em square: the type is scaled up so a line reads as the size of a receipt's.
@@ -116,14 +117,19 @@ def pen_line(draw: ImageDraw.ImageDraw, x0: float, y0: float, x1: float, y1: flo
 
 def draw_handwritten(
     printed: Printed, render: Render, font_path: Path
-) -> tuple[NDArray[Any], list[tuple[str, NDArray[Any]]]]:
-    """Write the receipt by hand; return the flat page as pixels and the box of each printed field in pixels."""
+) -> tuple[NDArray[Any], list[tuple[str, NDArray[Any]]], list[tuple[str, NDArray[Any]]]]:
+    """Write the receipt by hand; return the flat page as pixels, each printed field's box and each word's box.
+
+    Boxes are four corners in pixels, from where the letters really landed.
+    """
     rng = np.random.default_rng(np.random.PCG64(render.seed))
-    page: Page = receipt(printed, render, HandMeasurer(font_path), font="hand", bold="hand", scale=1.0)[0]
+    measurer = HandMeasurer(font_path)
+    page: Page = receipt(printed, render, measurer, font="hand", bold="hand", scale=1.0)[0]
     width, height = round(page.width * PIXELS_PER_POINT), round(page.height * PIXELS_PER_POINT)
     canvas = paper(width, height, rng)
     draw = ImageDraw.Draw(canvas)
-    boxes: list[tuple[str, NDArray[Any]]] = []
+    fields: list[tuple[str, NDArray[Any]]] = []
+    words: list[tuple[str, NDArray[Any]]] = []
     for rule in page.rules:
         pen_line(
             draw,
@@ -138,7 +144,10 @@ def draw_handwritten(
             canvas, run.text, run.x * PIXELS_PER_POINT, run.y * PIXELS_PER_POINT, run.size, str(font_path), rng
         )
         if run.field is not None:
-            boxes.append(
+            fields.append(
                 (run.field, np.array([[left, top], [right, top], [right, bottom], [left, bottom]], dtype=np.float32))
             )
-    return np.asarray(canvas, dtype=np.uint8), boxes
+        for word in words_of_run(run, measurer, ink=(left / PIXELS_PER_POINT, right / PIXELS_PER_POINT)):
+            x0, x1 = word.left * PIXELS_PER_POINT, (word.left + word.width) * PIXELS_PER_POINT
+            words.append((word.text, np.array([[x0, top], [x1, top], [x1, bottom], [x0, bottom]], dtype=np.float32)))
+    return np.asarray(canvas, dtype=np.uint8), fields, words
