@@ -1,20 +1,28 @@
 // Makes `shared/data/samples/lb01.ts`, the curated tickets LB-01's demo opens on, from the golden
 // set's cases marked `sample: true` (evals/lb01/golden.yaml). One source means the demo shows exactly
 // what the evals check, and a sample cannot be added to the demo without being graded.
+// It also makes `shared/data/samples/lb05.ts`: LB-05's curated questions (the golden set's cases marked
+// `sample: true`) and the attacks its safety demo offers (chosen by ID from the adversarial set).
 //
-//   node scripts/samples.ts            write the file (`pnpm --filter @lb/web samples`)
-//   node scripts/samples.ts --check    fail when the file is stale (`pnpm check`, which CI runs)
+//   node scripts/samples.ts            write the files (`pnpm --filter @lb/web samples`)
+//   node scripts/samples.ts --check    fail when a file is stale (`pnpm check`, which CI runs)
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { parse } from 'yaml'
 import { z } from 'zod'
 
+import { SQL_LAYERS, SQL_RULES } from '../shared/data/sql-safety.ts'
+
 /** Resolves a path relative to this script's folder. */
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
 const GOLDEN_FILE = here('../../../evals/lb01/golden.yaml')
 const OUTPUT_FILE = here('../shared/data/samples/lb01.ts')
+
+const LB05_GOLDEN_FILE = here('../../../evals/lb05/golden.yaml')
+const LB05_ADVERSARIAL_FILE = here('../../../evals/lb05/adversarial.yaml')
+const LB05_OUTPUT_FILE = here('../shared/data/samples/lb05.ts')
 
 // The part of a golden case the demo needs. Other fields (the references the grader checks) are ignored.
 const goldenSchema = z.object({
@@ -95,17 +103,168 @@ function renderFile(samples: readonly Sample[]): string {
   ].join('\n')
 }
 
-const expected = renderFile(readSamples())
+// The attacks LB-05's safety demo offers, by the ID they have in evals/lb05/adversarial.yaml. The
+// choice is editorial: one attack for each way of being stopped that a visitor can see (the parse
+// check, the allowlist, the plan check and the row cap), the most instructive first. Everything about an
+// attack (its words, its layer, its rule) is read from the adversarial set; an ID that is not in it
+// stops this script, so a renamed attack cannot be left behind.
+const LB05_ATTACK_IDS = [
+  'drop-orders-table',
+  'stacked-drop',
+  'inject-ignore-instructions',
+  'read-csv-passwd',
+  'information-schema-tables',
+  'hidden-email',
+  'cross-join-keyword',
+  'cte-join-on-constant',
+  'dump-all-orders',
+  'missing-salary',
+] as const
+
+// The part of a golden case LB-05's demo needs.
+const lb05GoldenSchema = z.object({
+  cases: z.array(z.object({
+    id: z.string().regex(/^[a-z0-9-]{1,60}$/),
+    question: z.string().min(5).max(300),
+    topic: z.string().regex(/^[a-z]{1,20}$/),
+    difficulty: z.enum(['easy', 'medium', 'hard']),
+    sample: z.boolean().optional(),
+  })).min(1),
+})
+
+// The part of an adversarial attempt LB-05's demo needs.
+const lb05AdversarialSchema = z.object({
+  attempts: z.array(z.object({
+    id: z.string().regex(/^[a-z0-9-]{1,60}$/),
+    category: z.string().regex(/^[a-z_]{1,30}$/),
+    question: z.string().min(5).max(300),
+    stopped_by: z.enum(SQL_LAYERS),
+    rule: z.enum(SQL_RULES),
+    must_refuse: z.boolean().optional(),
+  })).min(1),
+})
+
+/** One curated LB-05 question as the demo holds it. */
+interface Lb05Question {
+  id: string
+  question: string
+  topic: string
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
+/** One LB-05 attack as the demo holds it. */
+interface Lb05Attack {
+  id: string
+  category: string
+  question: string
+  stoppedBy: string
+  rule: string
+  mustRefuse: boolean
+}
+
+/** Reads LB-05's golden set and returns its curated questions, in file order. */
+function readLb05Questions(): Lb05Question[] {
+  const golden = lb05GoldenSchema.parse(parse(readFileSync(LB05_GOLDEN_FILE, 'utf8')))
+  return golden.cases
+    .filter(item => item.sample === true)
+    .map(item => ({ id: item.id, question: item.question.replace(/\s+/g, ' ').trim(), topic: item.topic, difficulty: item.difficulty }))
+}
+
+/** Reads LB-05's adversarial set and returns the attacks the demo offers, in the order of `LB05_ATTACK_IDS`. */
+function readLb05Attacks(): Lb05Attack[] {
+  const adversarial = lb05AdversarialSchema.parse(parse(readFileSync(LB05_ADVERSARIAL_FILE, 'utf8')))
+  return LB05_ATTACK_IDS.map((id) => {
+    const found = adversarial.attempts.find(attempt => attempt.id === id)
+    if (!found) throw new Error(`LB-05's safety demo offers the attack "${id}", but evals/lb05/adversarial.yaml has no attempt with that ID.`)
+    return { id, category: found.category, question: found.question.replace(/\s+/g, ' ').trim(), stoppedBy: found.stopped_by, rule: found.rule, mustRefuse: found.must_refuse !== false }
+  })
+}
+
+/** Writes one LB-05 question as an object literal, one field to a line. */
+function renderLb05Question(sample: Lb05Question): string {
+  return [
+    '  {',
+    `    id: ${quote(sample.id)},`,
+    `    question: ${quote(sample.question)},`,
+    `    topic: ${quote(sample.topic)},`,
+    `    difficulty: ${quote(sample.difficulty)},`,
+    '  },',
+  ].join('\n')
+}
+
+/** Writes one LB-05 attack as an object literal, one field to a line. */
+function renderLb05Attack(attack: Lb05Attack): string {
+  return [
+    '  {',
+    `    id: ${quote(attack.id)},`,
+    `    category: ${quote(attack.category)},`,
+    `    question: ${quote(attack.question)},`,
+    `    stoppedBy: ${quote(attack.stoppedBy)},`,
+    `    rule: ${quote(attack.rule)},`,
+    `    mustRefuse: ${attack.mustRefuse},`,
+    '  },',
+  ].join('\n')
+}
+
+/** Writes LB-05's whole file: its header, the curated questions, the attacks and the types of their IDs. */
+function renderLb05File(questions: readonly Lb05Question[], attacks: readonly Lb05Attack[]): string {
+  const ids = new Set([...questions.map(item => item.id), ...attacks.map(item => item.id)])
+  if (ids.size !== questions.length + attacks.length) throw new Error('A curated LB-05 question and an attack share an ID, but a recording is named by it.')
+  return [
+    '// GENERATED by scripts/samples.ts from the cases marked `sample: true` in evals/lb05/golden.yaml and the',
+    '// attacks it lists by ID from evals/lb05/adversarial.yaml.',
+    '// Do not edit it by hand: change the evals or the script and run `pnpm --filter @lb/web samples`.',
+    '// `pnpm check` fails when this file is out of date.',
+    'import type { AttackSample, QuestionSample } from \'./types\'',
+    '',
+    '/** The curated questions LB-05\'s demo opens on, in the golden set\'s order. */',
+    'export const LB05_SAMPLES = [',
+    ...questions.map(renderLb05Question),
+    '] as const satisfies readonly QuestionSample[]',
+    '',
+    '/** The ID of one of LB-05\'s curated questions, such as `revenue-last-quarter`. */',
+    'export type Lb05SampleId = (typeof LB05_SAMPLES)[number][\'id\']',
+    '',
+    '/** The attacks LB-05\'s safety demo offers, in the order it shows them. */',
+    'export const LB05_ATTACKS = [',
+    ...attacks.map(renderLb05Attack),
+    '] as const satisfies readonly AttackSample[]',
+    '',
+    '/** The ID of one of LB-05\'s attacks, such as `drop-orders-table`. */',
+    'export type Lb05AttackId = (typeof LB05_ATTACKS)[number][\'id\']',
+    '',
+  ].join('\n')
+}
+
+/** One file this script makes: what to call it in a message, where it goes, what it should hold and what it comes from. */
+interface Output {
+  name: string
+  file: string
+  expected: string
+  source: string
+}
+
+const outputs: Output[] = [
+  { name: 'LB-01', file: OUTPUT_FILE, expected: renderFile(readSamples()), source: 'evals/lb01/golden.yaml' },
+  { name: 'LB-05', file: LB05_OUTPUT_FILE, expected: renderLb05File(readLb05Questions(), readLb05Attacks()), source: 'evals/lb05/golden.yaml and adversarial.yaml' },
+]
 
 if (process.argv.includes('--check')) {
-  const current = existsSync(OUTPUT_FILE) ? readFileSync(OUTPUT_FILE, 'utf8') : ''
-  if (current !== expected) {
-    console.error('apps/web/shared/data/samples/lb01.ts is out of date with evals/lb01/golden.yaml. Run `pnpm --filter @lb/web samples` and commit the result.')
-    process.exit(1)
+  let stale = false
+  for (const output of outputs) {
+    const current = existsSync(output.file) ? readFileSync(output.file, 'utf8') : ''
+    if (current === output.expected) {
+      console.log(`${output.name}'s samples are up to date.`)
+      continue
+    }
+    console.error(`apps/web/shared/data/samples/${output.name.toLowerCase().replace('-', '')}.ts is out of date with ${output.source}. Run \`pnpm --filter @lb/web samples\` and commit the result.`)
+    stale = true
   }
-  console.log('LB-01\'s samples are up to date.')
+  if (stale) process.exit(1)
 }
 else {
-  writeFileSync(OUTPUT_FILE, expected)
-  console.log(`Wrote ${OUTPUT_FILE}.`)
+  for (const output of outputs) {
+    writeFileSync(output.file, output.expected)
+    console.log(`Wrote ${output.file}.`)
+  }
 }
