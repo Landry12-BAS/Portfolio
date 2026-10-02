@@ -155,9 +155,12 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    session.ensureVerified()`. Follow a live run with `scope.follow(runId, { notFoundGraceMs })` as soon
    as an answer names the run (`scope.wait()` until then) and tell the Scope the run is over with
    `scope.settle()`. Never take the run ID from the answer to filing alone: see the paragraph above.
-   A system whose runs write no root span (LB-08's step spans have none, so the gateway never calls
-   their trace `finished`) tells the Scope with `scope.closeWhenQuiet()` once its own log says the run
-   is over, and the Scope then closes the trace at the first read that brings nothing new.
+   A system whose runs write no root span (a conversation writes none, so the gateway never calls its
+   trace `finished`) tells the Scope with `scope.closeWhenQuiet()` once its own log says the run is
+   over, and the Scope then closes the trace at the first read that brings nothing new. Prefer a
+   system that writes a root span when its run ends, as LB-08's workflow runs do: `scope.settle()`
+   then waits for it, where `closeWhenQuiet()` could close the trace in the moment between the run
+   ending and its root being written.
 6. **Samples.** If the system has curated samples from a golden set, extend `scripts/samples.ts` to
    generate them (`pnpm check` fails when the file is stale) and type the locale titles by the sample's
    ID, as LB-01's are.
@@ -168,8 +171,9 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    list it in `RUNNERS` in `scripts/record/record.ts`. Then `just record-sample lb-0n <sample>` on the
    live back end writes the recording; commit it with the system. A runner that makes a call with a
    query uses `backend.call(system, method, path, body, query)`, and keeps the path without it (a
-   recording's paths have no query string). A runner whose system writes no root span returns
-   `traceEnds: 'quiet'`, so the trace is read until it stops growing instead of until it is `finished`.
+   recording's paths have no query string). A runner whose system writes no root span (LB-02's
+   conversation) returns `traceEnds: 'quiet'`, so the trace is read until it stops growing instead of
+   until it is `finished`.
 9. **Tests.** The store against `FakeSite` (`test/support/fake-site.ts`: add the system's routes), the
    components with `mountWithSite`, and a Playwright spec like `e2e/lb01.spec.ts` and
    `e2e/board-a11y.spec.ts` (replay, a live run, each failure, both languages, the keyboard, axe in
@@ -304,9 +308,9 @@ For a Node system (LB-08) the same steps are shorter: a scratch database and a R
 your own, `node src/cli/migrate.ts` and `seed.ts` in `services/node-systems`, then its API
 (`src/main.ts`) and its worker (`src/worker.ts`) as two processes, behind the real gateway
 (`buildGateway` from `services/gateway`, in your own process) in front of a scripted provider. Take the
-routing table from `services/node-systems/test/support/routing.lb08.yaml` and add the block that lets
-the site's server read the system's traces (`traceReaders: web: systems: [lb-08]`), or every read of
-the Scope is a 502. Then drive the board in a browser: every state of a run, a step made to fail three
+routing table from `services/node-systems/test/support/routing.lb08.yaml`, which already lets the
+site's server read the system's traces (`traceReaders: web: systems: [lb-08]`); a table without that
+block makes every read of the Scope a 502. Then drive the board in a browser: every state of a run, a step made to fail three
 times, the dead letter and its replay, the approval, a described process and a refused one, and the
 eleventh run, which two tabs of one visitor can reach.
 

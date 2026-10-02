@@ -163,9 +163,11 @@ export const useScopeStore = defineStore('scope', () => {
   }
 
   /**
-   * Tells the Scope that the system's own log says the run is over, for a system whose runs write no root span
-   * (LB-08's step spans have none): the trace is then complete as soon as a read brings nothing new, instead
-   * of being called stalled when the wait for a root span runs out. A Scope still waiting for a run's name says there is none.
+   * Tells the Scope that the system's own log says the run is over, for a system whose runs write no root span:
+   * the trace is then complete as soon as a read brings nothing new, instead of being called stalled when the
+   * wait for a root span runs out. A system that writes a root span when its run ends (LB-08's workflow runs
+   * do) uses `settle` instead, which cannot close the trace in the moment between the run ending and its root
+   * being written. A Scope still waiting for a run's name says there is none.
    */
   function closeWhenQuiet(): void {
     if (phase.value === 'waiting') {

@@ -3,7 +3,7 @@
   "system": "lb-08",
   "sample": "wholesale-order",
   "origin": "mock",
-  "recordedAt": "2026-10-02T05:18:08.459Z",
+  "recordedAt": "2026-10-02T08:50:23.849Z",
   "language": "en",
   "exchanges": [
     {
@@ -18,12 +18,12 @@
       "response": {
         "status": 201,
         "body": {
-          "id": "2b61d555-b94c-4c53-acb8-7fb9972c2d02",
+          "id": "9cf75257-6e88-4901-8570-a127e43928ff",
           "name": "Wholesale order over €500",
           "version": 1,
-          "createdAt": "2026-10-02T05:18:01.959Z",
-          "updatedAt": "2026-10-02T05:18:01.959Z",
-          "expiresAt": "2026-10-03T05:18:01.959Z",
+          "createdAt": "2026-10-02T08:50:18.849Z",
+          "updatedAt": "2026-10-02T08:50:18.849Z",
+          "expiresAt": "2026-10-03T08:50:18.849Z",
           "description": null,
           "graph": {
             "name": "Wholesale order over €500",
@@ -98,7 +98,7 @@
             {
               "version": 1,
               "origin": "sample",
-              "createdAt": "2026-10-02T05:18:01.959Z",
+              "createdAt": "2026-10-02T08:50:18.849Z",
               "modelCalls": 0,
               "traceRunId": null
             }
@@ -109,7 +109,7 @@
     {
       "request": {
         "method": "POST",
-        "path": "/api/lb08/workflows/2b61d555-b94c-4c53-acb8-7fb9972c2d02/runs",
+        "path": "/api/lb08/workflows/9cf75257-6e88-4901-8570-a127e43928ff/runs",
         "body": {
           "input": {
             "orderId": "WO-2041",
@@ -130,14 +130,14 @@
       "response": {
         "status": 202,
         "body": {
-          "id": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
-          "workflowId": "2b61d555-b94c-4c53-acb8-7fb9972c2d02",
+          "id": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "workflowId": "9cf75257-6e88-4901-8570-a127e43928ff",
           "workflowName": "Wholesale order over €500",
           "version": 1,
-          "rootRunId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+          "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
           "replayOf": null,
           "status": "queued",
-          "createdAt": "2026-10-02T05:18:01.959Z",
+          "createdAt": "2026-10-02T08:50:18.849Z",
           "finishedAt": null,
           "input": {
             "orderId": "WO-2041",
@@ -162,8 +162,8 @@
                 "quantityKg": 20
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:01.959Z",
-              "finishedAt": "2026-10-02T05:18:01.959Z"
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
             },
             {
               "nodeId": "big_order",
@@ -174,8 +174,8 @@
                 "branch": "true"
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:01.959Z",
-              "finishedAt": "2026-10-02T05:18:01.959Z"
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
             },
             {
               "nodeId": "check_stock",
@@ -211,8 +211,8 @@
               "version": 1,
               "replayOf": null,
               "seq": 1,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -227,8 +227,8 @@
                 "quantityKg": 20
               },
               "seq": 2,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -239,8 +239,8 @@
                 "branch": "true"
               },
               "seq": 3,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             }
           ]
         }
@@ -249,7 +249,7 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb08/runs/6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0/events"
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff/events"
       },
       "response": {
         "status": 200,
@@ -259,16 +259,16 @@
             {
               "type": "run.started",
               "seq": 4,
-              "at": "2026-10-02T05:18:02.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "check_stock",
               "attempt": 1,
               "seq": 5,
-              "at": "2026-10-02T05:18:02.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -281,24 +281,24 @@
                 "productName": "Basalt Blend 1 kg"
               },
               "seq": 6,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "alert_roastery",
               "attempt": 1,
               "seq": 7,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "email_cafe",
               "attempt": 1,
               "seq": 8,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.failed",
@@ -309,28 +309,28 @@
               "message": "The connector is unavailable.",
               "retryInMs": 1000,
               "seq": 9,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "effect.sent",
               "nodeId": "email_cafe",
               "connector": "email",
-              "messageId": "msg-4d6eb9c2",
+              "messageId": "msg-336d6f96",
               "seq": 10,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
               "nodeId": "email_cafe",
               "attempt": 1,
               "output": {
-                "messageId": "msg-4d6eb9c2"
+                "messageId": "msg-336d6f96"
               },
               "seq": 11,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             }
           ]
         }
@@ -339,7 +339,7 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb08/runs/6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0/events"
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff/events"
       },
       "response": {
         "status": 200,
@@ -351,34 +351,34 @@
               "nodeId": "alert_roastery",
               "attempt": 2,
               "seq": 12,
-              "at": "2026-10-02T05:18:05.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:22.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "effect.sent",
               "nodeId": "alert_roastery",
               "connector": "slack_alert",
-              "messageId": "msg-93319d27",
+              "messageId": "msg-1954d5db",
               "seq": 13,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
               "nodeId": "alert_roastery",
               "attempt": 2,
               "output": {
-                "messageId": "msg-93319d27"
+                "messageId": "msg-1954d5db"
               },
               "seq": 14,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "run.succeeded",
               "seq": 15,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             }
           ]
         }
@@ -387,20 +387,20 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb08/runs/6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
-          "workflowId": "2b61d555-b94c-4c53-acb8-7fb9972c2d02",
+          "id": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "workflowId": "9cf75257-6e88-4901-8570-a127e43928ff",
           "workflowName": "Wholesale order over €500",
           "version": 1,
-          "rootRunId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+          "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
           "replayOf": null,
           "status": "succeeded",
-          "createdAt": "2026-10-02T05:18:01.959Z",
-          "finishedAt": "2026-10-02T05:18:06.959Z",
+          "createdAt": "2026-10-02T08:50:18.849Z",
+          "finishedAt": "2026-10-02T08:50:23.849Z",
           "input": {
             "orderId": "WO-2041",
             "cafe": "Café Lumen",
@@ -424,8 +424,8 @@
                 "quantityKg": 20
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:01.959Z",
-              "finishedAt": "2026-10-02T05:18:01.959Z"
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
             },
             {
               "nodeId": "big_order",
@@ -436,8 +436,8 @@
                 "branch": "true"
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:01.959Z",
-              "finishedAt": "2026-10-02T05:18:01.959Z"
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
             },
             {
               "nodeId": "check_stock",
@@ -450,30 +450,30 @@
                 "productName": "Basalt Blend 1 kg"
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:02.959Z",
-              "finishedAt": "2026-10-02T05:18:03.959Z"
+              "startedAt": "2026-10-02T08:50:19.849Z",
+              "finishedAt": "2026-10-02T08:50:20.849Z"
             },
             {
               "nodeId": "alert_roastery",
               "status": "succeeded",
               "attempts": 2,
               "output": {
-                "messageId": "msg-93319d27"
+                "messageId": "msg-1954d5db"
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:03.959Z",
-              "finishedAt": "2026-10-02T05:18:06.959Z"
+              "startedAt": "2026-10-02T08:50:20.849Z",
+              "finishedAt": "2026-10-02T08:50:23.849Z"
             },
             {
               "nodeId": "email_cafe",
               "status": "succeeded",
               "attempts": 1,
               "output": {
-                "messageId": "msg-4d6eb9c2"
+                "messageId": "msg-336d6f96"
               },
               "error": null,
-              "startedAt": "2026-10-02T05:18:03.959Z",
-              "finishedAt": "2026-10-02T05:18:04.959Z"
+              "startedAt": "2026-10-02T08:50:20.849Z",
+              "finishedAt": "2026-10-02T08:50:21.849Z"
             }
           ],
           "events": [
@@ -482,8 +482,8 @@
               "version": 1,
               "replayOf": null,
               "seq": 1,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -498,8 +498,8 @@
                 "quantityKg": 20
               },
               "seq": 2,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -510,22 +510,22 @@
                 "branch": "true"
               },
               "seq": 3,
-              "at": "2026-10-02T05:18:01.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "run.started",
               "seq": 4,
-              "at": "2026-10-02T05:18:02.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "check_stock",
               "attempt": 1,
               "seq": 5,
-              "at": "2026-10-02T05:18:02.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
@@ -538,24 +538,24 @@
                 "productName": "Basalt Blend 1 kg"
               },
               "seq": 6,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "alert_roastery",
               "attempt": 1,
               "seq": 7,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "email_cafe",
               "attempt": 1,
               "seq": 8,
-              "at": "2026-10-02T05:18:03.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.failed",
@@ -566,62 +566,62 @@
               "message": "The connector is unavailable.",
               "retryInMs": 1000,
               "seq": 9,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "effect.sent",
               "nodeId": "email_cafe",
               "connector": "email",
-              "messageId": "msg-4d6eb9c2",
+              "messageId": "msg-336d6f96",
               "seq": 10,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
               "nodeId": "email_cafe",
               "attempt": 1,
               "output": {
-                "messageId": "msg-4d6eb9c2"
+                "messageId": "msg-336d6f96"
               },
               "seq": 11,
-              "at": "2026-10-02T05:18:04.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.started",
               "nodeId": "alert_roastery",
               "attempt": 2,
               "seq": 12,
-              "at": "2026-10-02T05:18:05.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:22.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "effect.sent",
               "nodeId": "alert_roastery",
               "connector": "slack_alert",
-              "messageId": "msg-93319d27",
+              "messageId": "msg-1954d5db",
               "seq": 13,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "step.succeeded",
               "nodeId": "alert_roastery",
               "attempt": 2,
               "output": {
-                "messageId": "msg-93319d27"
+                "messageId": "msg-1954d5db"
               },
               "seq": 14,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             },
             {
               "type": "run.succeeded",
               "seq": 15,
-              "at": "2026-10-02T05:18:06.959Z",
-              "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0"
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
             }
           ]
         }
@@ -636,27 +636,27 @@
         "status": 200,
         "body": [
           {
-            "id": "93319d27-3bee-4634-be46-8c7df726fa16",
+            "id": "1954d5db-3004-44a4-8043-80f7bed73ffd",
             "connector": "slack_alert",
             "nodeId": "alert_roastery",
-            "rootRunId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+            "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
             "payload": {
               "channel": "#roastery",
               "message": "Wholesale order WO-2041 from Café Lumen: 20 kg of Basalt Blend 1 kg (€640)."
             },
-            "sentAt": "2026-10-02T05:18:06.959Z"
+            "sentAt": "2026-10-02T08:50:23.849Z"
           },
           {
-            "id": "4d6eb9c2-61ce-468b-90ba-9dab8ea196e7",
+            "id": "336d6f96-8ee5-445f-b721-6b9b0bb723d8",
             "connector": "email",
             "nodeId": "email_cafe",
-            "rootRunId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+            "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
             "payload": {
               "to": "orders@lumen.test",
               "subject": "Your order WO-2041",
               "body": "Thank you for your order. Based on our stock, it should reach you in 2 days."
             },
-            "sentAt": "2026-10-02T05:18:04.959Z"
+            "sentAt": "2026-10-02T08:50:21.849Z"
           }
         ]
       }
@@ -673,18 +673,19 @@
     }
   ],
   "trace": {
-    "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+    "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
     "spans": [
       {
         "v": 1,
-        "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
         "system": "lb-08",
-        "spanId": "bbf452bf0be985cd",
+        "spanId": "7a0474a6323c40d0",
+        "parentId": "ccda89fafba00ae3",
         "kind": "system.step",
         "name": "step.check_stock",
         "status": "ok",
-        "startMs": 1790918281959,
-        "endMs": 1790918281984,
+        "startMs": 1790931018849,
+        "endMs": 1790931018874,
         "attrs": {
           "connector": "stock_check",
           "attempt": 1,
@@ -693,14 +694,15 @@
       },
       {
         "v": 1,
-        "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
         "system": "lb-08",
-        "spanId": "87105c0cdbcd51e3",
+        "spanId": "7eab7cc44645d4cd",
+        "parentId": "ccda89fafba00ae3",
         "kind": "system.step",
         "name": "step.alert_roastery",
         "status": "error",
-        "startMs": 1790918281999,
-        "endMs": 1790918282024,
+        "startMs": 1790931018889,
+        "endMs": 1790931018914,
         "attrs": {
           "connector": "slack_alert",
           "attempt": 1
@@ -708,14 +710,15 @@
       },
       {
         "v": 1,
-        "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
         "system": "lb-08",
-        "spanId": "d100b89513e40230",
+        "spanId": "6c95b8a3d1614775",
+        "parentId": "ccda89fafba00ae3",
         "kind": "system.step",
         "name": "step.email_cafe",
         "status": "ok",
-        "startMs": 1790918282039,
-        "endMs": 1790918282064,
+        "startMs": 1790931018929,
+        "endMs": 1790931018954,
         "attrs": {
           "connector": "email",
           "attempt": 1,
@@ -724,18 +727,36 @@
       },
       {
         "v": 1,
-        "runId": "6c3d4f1b-f8dd-4fdd-8188-0ab0f879e8c0",
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
         "system": "lb-08",
-        "spanId": "62e79ee2fc2d8149",
+        "spanId": "00754f39b18f81e9",
+        "parentId": "ccda89fafba00ae3",
         "kind": "system.step",
         "name": "step.alert_roastery",
         "status": "ok",
-        "startMs": 1790918282079,
-        "endMs": 1790918282104,
+        "startMs": 1790931018969,
+        "endMs": 1790931018994,
         "attrs": {
           "connector": "slack_alert",
           "attempt": 2,
           "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "ccda89fafba00ae3",
+        "kind": "system.run",
+        "name": "workflow run",
+        "status": "ok",
+        "startMs": 1790931018849,
+        "endMs": 1790931023849,
+        "attrs": {
+          "outcome": "succeeded",
+          "steps": 5,
+          "attempts": 4,
+          "replay": false
         }
       }
     ]
@@ -743,6 +764,6 @@
   "stats": {
     "modelCalls": 0,
     "steps": 4,
-    "durationMs": 145
+    "durationMs": 5000
   }
 }

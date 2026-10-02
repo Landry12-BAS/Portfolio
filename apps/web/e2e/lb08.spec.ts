@@ -297,7 +297,10 @@ test.describe('running a workflow', () => {
     await expect(page.getByTestId('sent-summary')).toContainText('Each thing was sent once.')
     await expect(page.getByTestId('sent-row')).toHaveCount(2)
     await expect(page.locator('[data-testid="log-event"][data-type="run.succeeded"]')).toHaveCount(1)
-    await expect(page.getByTestId('scope-row').first()).toBeVisible()
+    // The trace ends with the run's own root span, which heads the tree: that is how the Scope knows the run is over.
+    await expect(page.locator('[data-testid="scope"] .state')).toContainText('The run is complete')
+    await expect(page.getByTestId('scope-row').first()).toContainText('workflow run')
+    await expect(page.getByTestId('scope-row')).toHaveCount(4)
     await expect(page.getByTestId('run-announce')).toContainText('The run succeeded.')
     // The canvas shows what each step did.
     await expect(page.getByTestId('canvas-badge').first()).toBeVisible()

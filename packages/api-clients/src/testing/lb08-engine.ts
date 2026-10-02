@@ -156,6 +156,8 @@ export class Lb08Run {
   readonly steps = new Map<string, StepState>()
   readonly events: RunEvent[] = []
   readonly spans: Lb08Span[] = []
+  // The ID of the run's root span: made from the run's ID, so the step spans can name it as their parent before it is written, as the engine does.
+  readonly rootSpanId: string
   status: RunStatus = 'queued'
   finishedAt: number | null = null
   readonly #env: EngineEnvironment
@@ -165,6 +167,7 @@ export class Lb08Run {
   /** Creates the run: its trigger done with the payload as its output, and the steps after it settled. */
   constructor(env: EngineEnvironment, setup: RunSetup) {
     this.#env = env
+    this.rootSpanId = spanIdOf(this.id, 'run')
     this.workflowId = setup.workflowId
     this.workflowName = setup.workflowName
     this.version = setup.version
@@ -266,6 +269,7 @@ export class Lb08Run {
       runId: this.id,
       system: 'lb-08',
       spanId: spanIdOf(this.id, `${node.id}.${attempt}`),
+      parentId: this.rootSpanId,
       kind: 'system.step',
       name: `step.${node.id}`,
       status,
@@ -554,7 +558,32 @@ export class Lb08Run {
     if (status === 'awaiting_approval') this.#emit({ type: 'run.awaiting_approval', nodeId: this.#firstWith('awaiting_approval') })
     if (status === 'succeeded') this.#emit({ type: 'run.succeeded' })
     if (status === 'failed') this.#emit({ type: 'run.failed', nodeId: this.#firstWith('failed') })
-    if (status === 'succeeded' || status === 'failed') this.finishedAt = this.#env.now()
+    if (status === 'succeeded' || status === 'failed') {
+      this.finishedAt = this.#env.now()
+      this.#endTrace()
+    }
+  }
+
+  /**
+   * Writes the run's root span, last, when the run ends, as the engine does: one `system.run` span from the
+   * moment the run was made to its end, with no parent, which is what makes the gateway call the trace finished.
+   * Its counts are the engine's: the steps the run has and the attempts they took.
+   */
+  #endTrace(): void {
+    const attempts = [...this.steps.values()].reduce((total, step) => total + step.attempts, 0)
+    const endMs = Math.max(this.finishedAt ?? this.createdAt, ...this.spans.map(span => span.endMs))
+    this.spans.push({
+      v: 1,
+      runId: this.id,
+      system: 'lb-08',
+      spanId: this.rootSpanId,
+      kind: 'system.run',
+      name: 'workflow run',
+      status: this.status === 'succeeded' ? 'ok' : 'error',
+      startMs: this.createdAt,
+      endMs,
+      attrs: { outcome: this.status, steps: this.steps.size, attempts, replay: this.replayOf !== null },
+    })
   }
 
   /** Returns the id of the first step, in the graph's order, that is in the given state. */

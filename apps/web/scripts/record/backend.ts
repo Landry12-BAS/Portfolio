@@ -153,9 +153,9 @@ export class Backend {
 
   /**
    * Reads a run's whole trace: every page, until the run's root span has arrived. A trace with no
-   * root span (a workflow run's steps are spans of their own, with no span around them) is read
-   * until it has been quiet for a few reads in a row instead. Gives up after `patienceMs` of
-   * waiting, since a trace that never finishes is not one to record.
+   * root span (a conversation writes none) is read until it has been quiet for a few reads in a
+   * row instead. Gives up after `patienceMs` of waiting, since a trace that never finishes is
+   * not one to record.
    */
   async readTrace(runId: string, patienceMs: number, ends: TraceEnd = 'root'): Promise<Span[]> {
     const { clock } = this.#target

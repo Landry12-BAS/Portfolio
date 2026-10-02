@@ -548,7 +548,8 @@ export const useLb08Store = defineStore('lb08', () => {
     const reading = generation
     const known = chain.value.find(run => run.id === runId)
     if (!known) return
-    scope.closeWhenQuiet()
+    // The run writes a root span when it ends, a moment after its log says so: keep reading for it, a few seconds at most.
+    scope.settle()
     await Promise.all([readRun(runId), loadLimits()])
     try {
       const rows = await callApi(apiClients().node.GET('/api/lb08/sent', { params: { query: { rootRunId: known.rootRunId } } }), sentListSchema)

@@ -309,8 +309,38 @@ describe('LB-08\'s board', () => {
       expect(store.ledger).toMatchObject({ once: true, sentEvents: 2, suppressed: 0 })
       expect(store.limits?.runs).toEqual({ limit: 10, used: 1, remaining: 9 })
       expect(site.callsTo('/api/lb08/runs/').filter(call => call.path.includes('/events?after=')).length).toBeGreaterThan(2)
+      // The Scope follows the trace until the run's root span arrives, not until the trace goes quiet: the root heads the tree, the steps hang under it.
       await until(() => scope.phase === 'finished')
-      expect(scope.timeline.rows.map(row => row.span.name)).toEqual(['step.check_stock', 'step.alert_roastery', 'step.email_cafe'])
+      expect(scope.timeline.rows.map(row => [row.span.name, row.depth])).toEqual([['workflow run', 0], ['step.check_stock', 1], ['step.alert_roastery', 1], ['step.email_cafe', 1]])
+    })
+
+    it('keeps reading the trace after the log says the run is over, until its root arrives, and does not call it finished before', async () => {
+      const { site, store, session, scope } = start()
+      site.withholdRoots = true
+      await openSample(store, session, 'wholesale-order')
+      await store.startRun()
+
+      await until(() => store.runPhase === 'over')
+      // Several reads of the trace come back with every step and no root: a trace that has gone quiet is not a trace that is finished.
+      await wait(RUN_POLL_MS * 3)
+      expect(scope.spans.map(span => span.name)).toEqual(['step.check_stock', 'step.alert_roastery', 'step.email_cafe'])
+      expect(scope.phase).toBe('following')
+
+      site.withholdRoots = false
+      await until(() => scope.phase === 'finished')
+      expect(scope.timeline.rows[0]?.span).toMatchObject({ name: 'workflow run', kind: 'system.run' })
+    })
+
+    it('says the trace stalled, not finished, when the root never comes', async () => {
+      const { site, store, session, scope } = start()
+      site.withholdRoots = true
+      await openSample(store, session, 'wholesale-order')
+      await store.startRun()
+
+      await until(() => store.runPhase === 'over')
+      await until(() => scope.phase !== 'following', 1_000, 30)
+
+      expect(scope.phase).toBe('stalled')
     })
 
     it('saves an edit first and runs the version it saved', async () => {
