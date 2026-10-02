@@ -81,11 +81,11 @@ describe('errors', () => {
     expect(wrongType.json().error.code).toBe('unsupported_media_type')
   })
 
-  it('answer an error the service raised on purpose with its own code, and a Retry-After when it has one', async () => {
+  it('answer an error the service raised on purpose with its own code, a Retry-After and the time a limit ends when it has them', async () => {
     const response = await app.inject({ url: '/api/lb99/limit', headers: authorised })
 
     expect(response.statusCode).toBe(429)
-    expect(response.json()).toEqual({ error: { code: 'daily_limit', message: 'A visitor may do this 10 times a day.' } })
+    expect(response.json()).toEqual({ error: { code: 'daily_limit', message: 'A visitor may do this 10 times a day.', resets_at: '2026-10-03T00:00:00.000Z' } })
     expect(response.headers['retry-after']).toBe('90')
   })
 

@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto'
 
 import { GatewayCallError, Tracer } from '@lb/common'
 import { buildCatalogue, runEventSchema, workflowViewSchema } from '@lb/contracts'
+import type { LightMyRequestResponse } from 'fastify'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 
 import { SECURITY_HEADERS } from '../../src/core/security-headers.ts'
@@ -47,6 +48,19 @@ const wholesale = (() => {
   if (!found) throw new Error('missing sample')
   return found
 })()
+
+/**
+ * Checks that a daily-limit answer says when the allowance returns: `resets_at` is the next midnight
+ * in UTC, as a time and not a count of seconds, and `Retry-After` counts down to that same moment.
+ */
+function expectResetAtNextMidnight(response: LightMyRequestResponse): void {
+  const resetsAt = response.json().error.resets_at as string
+  expect(resetsAt).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/)
+  const secondsLeft = (Date.parse(resetsAt) - Date.now()) / 1000
+  expect(secondsLeft).toBeGreaterThan(0)
+  expect(secondsLeft).toBeLessThanOrEqual(24 * 3_600)
+  expect(Math.abs(Number(response.headers['retry-after']) - secondsLeft)).toBeLessThan(5)
+}
 
 /** Makes a workflow from a sample through the API, and returns its id. */
 async function fromSample(session: string, sampleId: string): Promise<string> {
@@ -217,7 +231,7 @@ describe('making a workflow', () => {
 
     expect(response.statusCode).toBe(429)
     expect(response.json().error.code).toBe('daily_limit')
-    expect(Number(response.headers['retry-after'])).toBeGreaterThan(0)
+    expectResetAtNextMidnight(response)
     expect(said).toHaveLength(1)
   })
 
@@ -385,7 +399,7 @@ describe('running a workflow', () => {
     expect(response.json().error.code).toBe('invalid_request')
   })
 
-  it('allows ten runs a day and answers the eleventh with 429 and Retry-After', async () => {
+  it('allows ten runs a day and answers the eleventh with 429, Retry-After and the time the allowance returns', async () => {
     const session = newSession()
     const workflowId = await fromSample(session, 'low-stock-reorder')
     for (let run = 0; run < 10; run += 1) await startRun(session, workflowId, 'low-stock-reorder')
@@ -394,7 +408,7 @@ describe('running a workflow', () => {
 
     expect(response.statusCode).toBe(429)
     expect(response.json().error.code).toBe('daily_limit')
-    expect(Number(response.headers['retry-after'])).toBeGreaterThan(0)
+    expectResetAtNextMidnight(response)
     await drive(api.engine)
   })
 

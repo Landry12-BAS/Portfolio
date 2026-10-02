@@ -97,8 +97,12 @@ session's data: asking for anyone else's answers exactly like asking for nothing
 
 Errors answer `{"error": {"code", "message"}}` and never echo what was sent; a malformed
 request names its fields (`"fields": "body.description"`), never their values, and a
-rejected graph lists its problems. Following a run is a poll with a cursor, not a held-open
-stream: one short request at a time, and nothing between them.
+rejected graph lists its problems. A daily limit (429 `daily_limit`) says when the day's
+allowance starts again in two ways: `Retry-After` in seconds, and `"resets_at"` as the time
+itself, the next midnight in UTC (`2026-10-03T00:00:00.000Z`). `resets_at` is the field in
+the platform's error shape (`platformErrorSchema`) that LB-05's limit fills and that the
+site's boards read to tell the visitor. Following a run is a poll with a cursor, not a
+held-open stream: one short request at a time, and nothing between them.
 
 ## Limits
 

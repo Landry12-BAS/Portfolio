@@ -30,13 +30,18 @@ import type { LoadedVersion } from './store.ts'
 import { nextReset, reserve } from './usage.ts'
 import type { UsageKind } from './usage.ts'
 
-/** Builds the error for a visitor who has used the day's allowance, with how long until it resets. */
+/**
+ * Builds the error for a visitor who has used the day's allowance, with when it starts again:
+ * as `Retry-After` in seconds, and as `resets_at`, the time itself, which is what LB-05's
+ * daily limit says too and what the site's board reads to tell the visitor.
+ */
 export function dailyLimit(kind: UsageKind, now: Date): AppError {
-  const seconds = Math.ceil((nextReset(now).getTime() - now.getTime()) / 1000)
+  const resetsAt = nextReset(now)
+  const seconds = Math.ceil((resetsAt.getTime() - now.getTime()) / 1000)
   const message = kind === 'run'
     ? `A visitor may start ${RUN_LIMITS.runsPerVisitorPerDay} workflow runs a day, and a replay counts as one.`
     : `A visitor may describe ${RUN_LIMITS.generationsPerVisitorPerDay} workflows a day.`
-  return new AppError(429, 'daily_limit', message, { retryAfterSeconds: seconds })
+  return new AppError(429, 'daily_limit', message, { retryAfterSeconds: seconds, resetsAt: resetsAt.toISOString() })
 }
 
 /** The error for a run that doesn't exist or isn't the visitor's: the same either way, so ids can't be probed. */

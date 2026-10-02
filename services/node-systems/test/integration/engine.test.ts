@@ -528,7 +528,7 @@ describe('what a visitor may do each day', () => {
     const { workflowId, input } = await workflowFromSample(harness, session, 'low-stock-reorder')
     for (let run = 0; run < 10; run += 1) await startRun(harness.deps, session, workflowId, { input })
 
-    await expect(startRun(harness.deps, session, workflowId, { input })).rejects.toMatchObject({ status: 429, code: 'daily_limit', details: { retryAfterSeconds: expect.any(Number) } })
+    await expect(startRun(harness.deps, session, workflowId, { input })).rejects.toMatchObject({ status: 429, code: 'daily_limit', details: { retryAfterSeconds: expect.any(Number), resetsAt: expect.stringMatching(/T00:00:00\.000Z$/) } })
 
     const limits = await limitsOf(harness.deps.db, session, harness.deps.now())
     expect(limits.runs).toEqual({ limit: 10, used: 10, remaining: 0 })

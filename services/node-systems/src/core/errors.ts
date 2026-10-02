@@ -13,6 +13,8 @@ export interface ErrorDetails {
   problems?: WorkflowIssue[]
   // For a limit: how long until it frees up, in seconds, sent as Retry-After.
   retryAfterSeconds?: number
+  // For a daily limit: when the day's allowance starts again, as an ISO 8601 time in UTC, sent as `resets_at`.
+  resetsAt?: string
 }
 
 /**
@@ -40,6 +42,7 @@ export function errorBody(code: string, message: string, details: ErrorDetails =
       code,
       message,
       ...(details.fields === undefined ? {} : { fields: details.fields }),
+      ...(details.resetsAt === undefined ? {} : { resets_at: details.resetsAt }),
       ...(details.problems === undefined ? {} : { problems: details.problems }),
     },
   }

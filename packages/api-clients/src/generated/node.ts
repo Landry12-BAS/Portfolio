@@ -1237,6 +1237,8 @@ export interface components {
                     message: string;
                     path: string;
                 }[];
+                /** Format: date-time */
+                resets_at?: string;
             };
         };
         ErrorBodyInput: {
@@ -1250,6 +1252,8 @@ export interface components {
                     message: string;
                     path: string;
                 }[];
+                /** Format: date-time */
+                resets_at?: string;
             };
         };
         LimitsView: {

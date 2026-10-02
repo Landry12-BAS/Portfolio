@@ -183,6 +183,8 @@ describe('workflows', () => {
     const refused = await call('POST', '/workflows', { from: 'description', description: 'Tell the roastery once more.' })
     expect(refused.status).toBe(429)
     expect(refused.json.error.code).toBe('daily_limit')
+    // It says when the day starts again, as the real service does: the next midnight in UTC.
+    expect(refused.json.error.resets_at).toBe(new Date(new Date(clock).setUTCHours(24, 0, 0, 0)).toISOString())
 
     clock += 24 * 3_600_000
     expect((await call('POST', '/workflows', { from: 'description', description: 'Tell the roastery once more.' })).status).toBe(201)
@@ -432,6 +434,7 @@ describe('a run', () => {
 
     const refused = await startRun(workflow.id, 'low-stock-reorder')
     expect(refused.status).toBe(429)
+    expect(refused.json.error.resets_at).toBe(new Date(new Date(clock).setUTCHours(24, 0, 0, 0)).toISOString())
     await follow(last.json.id)
     expect((await call('POST', `/runs/${last.json.id}/replay`)).status).toBe(429)
   })
