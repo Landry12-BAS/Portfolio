@@ -1,0 +1,31 @@
+# A staffing chat with a joke that sounds like an action.
+#
+# Peter jokes that he will roast a whole batch on a campfire by Friday. It has an owner and a
+# deadline and it is not a task: a good extractor leaves it out. Kevin's offer to cover the market
+# stall is the one real action. See monday-roasting-plan.yaml for how scripts work.
+key: weekend-staffing
+title: Weekend staffing
+language: en
+about: >-
+  Who covers the Saturday market stall, and a joke that nobody should write down as a task.
+speakers:
+  - id: hannah
+    name: Hannah
+    voice: slt
+  - id: kevin
+    name: Kevin
+    voice: kal16
+  - id: peter
+    name: Peter
+    voice: rms
+turns:
+  - speaker: hannah
+    text: "We need someone to cover the market stall on Saturday morning."
+  - speaker: kevin
+    text: "I'll cover it, no problem."
+  - speaker: peter
+    text: "And I will personally roast the whole batch on a campfire by Friday. Just kidding."
+  - speaker: hannah
+    text: "Please don't. The roaster works fine."
+  - speaker: kevin
+    text: "Don't worry, the stall will be ready."
