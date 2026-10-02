@@ -58,8 +58,11 @@ export class Backend {
     return this.#target.clock
   }
 
-  /** Calls the system's API as the visitor, with a fresh token for the system. */
-  async call(system: string, method: 'GET' | 'POST', path: string, body?: unknown): Promise<Answer> {
+  /**
+   * Calls the system's API as the visitor, with a fresh token for the system. A call waits 30 seconds
+   * unless its caller says it may take longer, as a question to LB-05's analyst may (up to 90 seconds).
+   */
+  async call(system: string, method: 'GET' | 'POST', path: string, body?: unknown, timeoutMs: number = CALL_TIMEOUT_MS): Promise<Answer> {
     const target = this.#target
     const token = mintVisitorToken(target.signingKey, { system, sessionKey: this.#sessionKey }, target.clock.now() / 1_000)
     const answer = await callService({
@@ -69,7 +72,7 @@ export class Backend {
       query: [],
       token,
       body: body === undefined ? undefined : JSON.stringify(body),
-      timeoutMs: CALL_TIMEOUT_MS,
+      timeoutMs,
       maxResponseBytes: MAX_ANSWER_BYTES,
       fetch: target.fetch,
     })

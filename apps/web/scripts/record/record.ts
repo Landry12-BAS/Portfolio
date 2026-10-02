@@ -12,6 +12,7 @@ import type { Exchange, Recording } from '@lb/contracts'
 
 import type { Backend } from './backend.ts'
 import { runLb01Sample } from './lb01.ts'
+import { runLb05Sample } from './lb05.ts'
 
 /** What a system's runner hands back: the language of the sample, what the board asked and was told, and the run's ID. */
 export interface RecordedRun {
@@ -26,6 +27,7 @@ export type SampleRunner = (backend: Backend, sample: string) => Promise<Recorde
 // One runner for each system that has a board. A system's board engineer adds theirs here (apps/web/README.md).
 const RUNNERS: Readonly<Record<string, SampleRunner>> = {
   'lb-01': runLb01Sample,
+  'lb-05': runLb05Sample,
 }
 
 // How long to wait for the gateway to have the whole trace once the run is over.

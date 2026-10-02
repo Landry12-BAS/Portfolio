@@ -5,7 +5,9 @@
 // one thing only half-checked here: its envelope is, and the spec itself is held to the strict
 // Vega-Lite subset in chart/spec.ts at the moment it is drawn, so a refused chart never costs the
 // visitor the rest of the answer. Each schema is also checked against the type generated from the
-// back end's OpenAPI document, so a field the back end adds or renames is a type error here.
+// back end's OpenAPI document, so a field the back end adds or renames is a type error here. (The
+// recorder, which `just record-sample` runs with Node outside the site's build, reads answers with
+// these schemas too; `#shared` resolves there through the `imports` field of package.json.)
 import type { FlaskComponents } from '@lb/api-clients'
 import { z } from 'zod'
 

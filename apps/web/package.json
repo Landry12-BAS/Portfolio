@@ -4,6 +4,9 @@
   "private": true,
   "description": "The portfolio site: the systems catalog, the datasheets and, as each system ships, its live demo.",
   "type": "module",
+  "imports": {
+    "#shared/*": "./shared/*.ts"
+  },
   "scripts": {
     "dev": "nuxt dev",
     "dev:mock": "node scripts/dev-with-mock.ts",

@@ -1,0 +1,385 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "revenue-by-product-last-quarter",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T04:47:34.600Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "What was the revenue of each product last quarter?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "run_id": "run-c67235633d23d3936e44",
+          "outcome": "answered",
+          "as_of": "2026-10-01",
+          "model_calls": 2,
+          "elapsed_ms": 2781,
+          "attempts": [
+            {
+              "sql": "SELECT products.name AS product, SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue FROM orders AS orders JOIN order_lines AS order_lines ON order_lines.order_id = orders.order_id JOIN products AS products ON products.product_id = order_lines.product_id WHERE orders.ordered_at BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE) GROUP BY products.name ORDER BY revenue DESC",
+              "stopped_by": null,
+              "rule": null,
+              "message": null
+            }
+          ],
+          "message": null,
+          "result": {
+            "sql": "SELECT products.name AS product, SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue FROM orders AS orders JOIN order_lines AS order_lines ON order_lines.order_id = orders.order_id JOIN products AS products ON products.product_id = order_lines.product_id WHERE orders.ordered_at BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE) GROUP BY products.name ORDER BY revenue DESC LIMIT 1000",
+            "columns": [
+              {
+                "name": "product",
+                "kind": "text"
+              },
+              {
+                "name": "revenue",
+                "kind": "integer"
+              }
+            ],
+            "rows": [
+              [
+                "Basalt Blend",
+                2210500
+              ],
+              [
+                "Ethiopia Guji",
+                1842300
+              ],
+              [
+                "Colombia Huila",
+                1508900
+              ],
+              [
+                "Kenya Nyeri",
+                1203400
+              ],
+              [
+                "Lava Decaf",
+                702100
+              ],
+              [
+                "Basalt Hand Grinder",
+                612300
+              ],
+              [
+                "Gooseneck Kettle",
+                372800
+              ]
+            ],
+            "row_count": 7,
+            "truncated": false,
+            "elapsed_ms": 38,
+            "tables": [
+              "order_lines",
+              "orders"
+            ],
+            "joins": 1
+          },
+          "chart": {
+            "kind": "bar",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "description": "A bar chart of revenue by product.",
+              "data": {
+                "values": [
+                  {
+                    "x": "Basalt Blend",
+                    "y": 2210500
+                  },
+                  {
+                    "x": "Ethiopia Guji",
+                    "y": 1842300
+                  },
+                  {
+                    "x": "Colombia Huila",
+                    "y": 1508900
+                  },
+                  {
+                    "x": "Kenya Nyeri",
+                    "y": 1203400
+                  },
+                  {
+                    "x": "Lava Decaf",
+                    "y": 702100
+                  },
+                  {
+                    "x": "Basalt Hand Grinder",
+                    "y": 612300
+                  },
+                  {
+                    "x": "Gooseneck Kettle",
+                    "y": 372800
+                  }
+                ]
+              },
+              "mark": {
+                "type": "bar",
+                "tooltip": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "type": "nominal",
+                  "title": "product",
+                  "sort": [
+                    "Basalt Blend",
+                    "Ethiopia Guji",
+                    "Colombia Huila",
+                    "Kenya Nyeri",
+                    "Lava Decaf",
+                    "Basalt Hand Grinder",
+                    "Gooseneck Kettle"
+                  ]
+                },
+                "y": {
+                  "field": "y",
+                  "type": "quantitative",
+                  "title": "revenue"
+                }
+              },
+              "width": "container",
+              "height": 280
+            }
+          },
+          "explanation": "Basalt Blend earned the most last quarter, 2,210,500 CZK, followed by Ethiopia Guji. The Gooseneck Kettle earned the least.",
+          "explanation_source": "model",
+          "remaining_questions": 24
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-c67235633d23d3936e44",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "bb3ceeda82bf034f",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1790916454579,
+        "endMs": 1790916454582,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "0329e150ed2c378f",
+        "parentId": "2e3c108f8eed8c5a",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790916454586,
+        "endMs": 1790916456378,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "2e3c108f8eed8c5a",
+        "parentId": "dbfd68ecb9241895",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1790916454584,
+        "endMs": 1790916456380,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "dbfd68ecb9241895",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1790916454582,
+        "endMs": 1790916456382,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 180
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "e06e50b42a946c4d",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1790916456382,
+        "endMs": 1790916456385,
+        "attrs": {
+          "tables": "orders,order_lines",
+          "joins": 1,
+          "row_limit": 1000,
+          "limit_applied": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "86cdd19a3d54994a",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1790916456385,
+        "endMs": 1790916456411,
+        "attrs": {
+          "operators": 6,
+          "estimated_rows": 1200
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "3f31a839806ad04a",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1790916456411,
+        "endMs": 1790916456452,
+        "attrs": {
+          "rows": 7,
+          "columns": 2,
+          "elapsed_ms": 38,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "a8f9a05023cb6837",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1790916456452,
+        "endMs": 1790916456455,
+        "attrs": {
+          "kind": "bar",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "30103162cce84e04",
+        "parentId": "fc2d93f2857fe077",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790916456459,
+        "endMs": 1790916457351,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 720,
+          "outputTokens": 90
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "fc2d93f2857fe077",
+        "parentId": "8835f0cc573e07e0",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790916456457,
+        "endMs": 1790916457353,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 720,
+          "outputTokens": 90,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "8835f0cc573e07e0",
+        "parentId": "2f8158d638614e46",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1790916456455,
+        "endMs": 1790916457355,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-c67235633d23d3936e44",
+        "system": "lb-05",
+        "spanId": "2f8158d638614e46",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1790916454579,
+        "endMs": 1790916457360,
+        "attrs": {
+          "outcome": "answered",
+          "queries": 1,
+          "rows": 7,
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 2781
+  }
+}

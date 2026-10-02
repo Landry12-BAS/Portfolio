@@ -1,0 +1,416 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "monthly-revenue-last-year",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T04:47:34.608Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Show revenue by month for last year."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "run_id": "run-1b7f97c0865eac512c1d",
+          "outcome": "answered",
+          "as_of": "2026-10-01",
+          "model_calls": 2,
+          "elapsed_ms": 2781,
+          "attempts": [
+            {
+              "sql": "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue FROM orders AS orders JOIN order_lines AS order_lines ON order_lines.order_id = orders.order_id WHERE orders.ordered_at BETWEEN CAST('2025-01-01' AS DATE) AND CAST('2025-12-31' AS DATE) GROUP BY DATE_TRUNC('month', orders.ordered_at) ORDER BY month",
+              "stopped_by": null,
+              "rule": null,
+              "message": null
+            }
+          ],
+          "message": null,
+          "result": {
+            "sql": "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) AS revenue FROM orders AS orders JOIN order_lines AS order_lines ON order_lines.order_id = orders.order_id WHERE orders.ordered_at BETWEEN CAST('2025-01-01' AS DATE) AND CAST('2025-12-31' AS DATE) GROUP BY DATE_TRUNC('month', orders.ordered_at) ORDER BY month LIMIT 1000",
+            "columns": [
+              {
+                "name": "month",
+                "kind": "date"
+              },
+              {
+                "name": "revenue",
+                "kind": "integer"
+              }
+            ],
+            "rows": [
+              [
+                "2025-01-01",
+                610200
+              ],
+              [
+                "2025-02-01",
+                598400
+              ],
+              [
+                "2025-03-01",
+                642900
+              ],
+              [
+                "2025-04-01",
+                655100
+              ],
+              [
+                "2025-05-01",
+                671800
+              ],
+              [
+                "2025-06-01",
+                640300
+              ],
+              [
+                "2025-07-01",
+                622700
+              ],
+              [
+                "2025-08-01",
+                659400
+              ],
+              [
+                "2025-09-01",
+                688100
+              ],
+              [
+                "2025-10-01",
+                702600
+              ],
+              [
+                "2025-11-01",
+                745300
+              ],
+              [
+                "2025-12-01",
+                812900
+              ]
+            ],
+            "row_count": 12,
+            "truncated": false,
+            "elapsed_ms": 38,
+            "tables": [
+              "order_lines",
+              "orders"
+            ],
+            "joins": 1
+          },
+          "chart": {
+            "kind": "line",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "description": "A line chart of revenue by month.",
+              "data": {
+                "values": [
+                  {
+                    "x": "2025-01-01",
+                    "y": 610200
+                  },
+                  {
+                    "x": "2025-02-01",
+                    "y": 598400
+                  },
+                  {
+                    "x": "2025-03-01",
+                    "y": 642900
+                  },
+                  {
+                    "x": "2025-04-01",
+                    "y": 655100
+                  },
+                  {
+                    "x": "2025-05-01",
+                    "y": 671800
+                  },
+                  {
+                    "x": "2025-06-01",
+                    "y": 640300
+                  },
+                  {
+                    "x": "2025-07-01",
+                    "y": 622700
+                  },
+                  {
+                    "x": "2025-08-01",
+                    "y": 659400
+                  },
+                  {
+                    "x": "2025-09-01",
+                    "y": 688100
+                  },
+                  {
+                    "x": "2025-10-01",
+                    "y": 702600
+                  },
+                  {
+                    "x": "2025-11-01",
+                    "y": 745300
+                  },
+                  {
+                    "x": "2025-12-01",
+                    "y": 812900
+                  }
+                ]
+              },
+              "mark": {
+                "type": "line",
+                "tooltip": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "type": "temporal",
+                  "title": "month"
+                },
+                "y": {
+                  "field": "y",
+                  "type": "quantitative",
+                  "title": "revenue"
+                }
+              },
+              "width": "container",
+              "height": 280
+            }
+          },
+          "explanation": "Revenue grew through 2025, from 610,200 CZK in January to 812,900 CZK in December, with a dip in February and the highest month at the end of the year.",
+          "explanation_source": "model",
+          "remaining_questions": 23
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-1b7f97c0865eac512c1d",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "5f1c8bc33218f76f",
+        "parentId": "94544fc368f64567",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1790916454604,
+        "endMs": 1790916454607,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "b0d930ab70cdef9a",
+        "parentId": "28b075fdc8539259",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790916454611,
+        "endMs": 1790916456403,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "28b075fdc8539259",
+        "parentId": "0384376a6e17da1a",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1790916454609,
+        "endMs": 1790916456405,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2900,
+          "outputTokens": 160,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "0384376a6e17da1a",
+        "parentId": "94544fc368f64567",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1790916454607,
+        "endMs": 1790916456407,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 180
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "511a8e0eda092cd3",
+        "parentId": "94544fc368f64567",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1790916456407,
+        "endMs": 1790916456410,
+        "attrs": {
+          "tables": "orders,order_lines",
+          "joins": 1,
+          "row_limit": 1000,
+          "limit_applied": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "71a4be05111f4305",
+        "parentId": "94544fc368f64567",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1790916456410,
+        "endMs": 1790916456436,
+        "attrs": {
+          "operators": 6,
+          "estimated_rows": 1200
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "7ad0214c58783b46",
+        "parentId": "94544fc368f64567",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1790916456436,
+        "endMs": 1790916456477,
+        "attrs": {
+          "rows": 12,
+          "columns": 2,
+          "elapsed_ms": 38,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "3c371733ba08c3db",
+        "parentId": "94544fc368f64567",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1790916456477,
+        "endMs": 1790916456480,
+        "attrs": {
+          "kind": "line",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "bc86d9ab3a964454",
+        "parentId": "f91c5494758778ad",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790916456484,
+        "endMs": 1790916457376,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 720,
+          "outputTokens": 90
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "f91c5494758778ad",
+        "parentId": "cf00c47b1be30b74",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790916456482,
+        "endMs": 1790916457378,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 720,
+          "outputTokens": 90,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "cf00c47b1be30b74",
+        "parentId": "94544fc368f64567",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1790916456480,
+        "endMs": 1790916457380,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-1b7f97c0865eac512c1d",
+        "system": "lb-05",
+        "spanId": "94544fc368f64567",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1790916454604,
+        "endMs": 1790916457385,
+        "attrs": {
+          "outcome": "answered",
+          "queries": 1,
+          "rows": 12,
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 2781
+  }
+}
