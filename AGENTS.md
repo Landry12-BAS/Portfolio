@@ -18,8 +18,8 @@ Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
 Czech: catalog, datasheets, themes, security headers; its Nitro server between the browser
 and the back ends, with the anonymous session, Turnstile and a proxy that forwards only the
 routes the back ends document; the evaluation-board kit with the Scope and the replay player;
-LB-01's board at `/systems/lb-01/board` and LB-08's at `/systems/lb-08/board`; see its
-[README](apps/web/README.md)),
+LB-01's board at `/systems/lb-01/board`, LB-08's at `/systems/lb-08/board` and LB-04's at
+`/systems/lb-04/board`; see its [README](apps/web/README.md)),
 `packages/api-clients` (typed clients generated from the back ends' OpenAPI documents, and
 the mock back end the site's tests run against), `services/gateway` (the LB-00 AI
 gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
@@ -27,7 +27,7 @@ prompt-injection guard; see its [README](services/gateway/README.md)),
 `python/lb-common` (the Python gateway client, service tokens, run context and tracer;
 see its [README](python/lb-common/README.md)) and `infra/` (the deployable platform:
 signed multi-arch images, the hardened Compose stack with the Django, Flask and Node
-systems (LB-01, LB-02, LB-03, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
+systems (LB-01, LB-02, LB-03, LB-04, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
 secrets and the deploy workflow; see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 In build: `services/django-systems`, the
 Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
@@ -70,7 +70,19 @@ exactly-once side effects, and the visitor API (see its
 [README](services/node-systems/README.md)); LB-08's board is on the site (a lazily loaded Vue
 Flow canvas and a keyboard outline over one validated state, the run with its retries, dead
 letters and replay, and what the sandbox sent); next come its recorded sample runs
-(`just record-sample lb-08 <sample>`, which needs the live back end).
+(`just record-sample lb-08 <sample>`, which needs the live back end). LB-04 Contract Radar's
+back end is in the same monolith: a PDF's text and where every word sits, read in a worker
+thread with a deadline and a memory limit; an injection screen; a cited analysis whose every
+quote the server checks against the contract's text (a quote that is not there is dropped, and
+counted); the playbook kept as data; proposed wordings with a server-computed diff; a BullMQ
+pipeline of two to five model calls (and one more for each of up to three redlines); and the
+visitor API with its three-contracts-a-day quota and one-hour retention (see the same README).
+LB-04's board is on the site at `/systems/lb-04/board`: a risk radar drawn as an accessible SVG
+with its table, the findings with their quotes as text, a PDF viewer that loads pdf.js on demand
+under a policy of its own and highlights exactly the characters a citation names, and redlines
+as insertions and deletions, in English and Czech (see the web README); next come its recorded
+sample runs (`just record-sample lb-04 <sample>`, which needs the live back end with a model
+behind it).
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -225,13 +237,14 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just node-seed` | Load the Node systems' synthetic data (LB-08's stock list) from `data/seed`, replacing what the files no longer hold |
 | `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
 | `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
+| `just eval-lb04 [--samples] [--case ID] [--no-redlines] [--pause SECONDS]` | Run LB-04's golden set (six seed contracts, two of them refused before any model) through the live pipeline and grade it by rules: quotes checked against the contract's own text, planted findings found (a recall gate), a hostile contract's instructions never obeyed (at most five gateway calls a contract and one for its redline, about 24 for the set, paced by `--pause`; run it when prompts or routes change; it exits 1 unless every case passes and recall reaches its gate) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
-| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set), LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) and LB-03's sample files and page pictures (`apps/web/public/lb03`, copied from `data/seed/lb03`) |
+| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set; LB-04's six come from its sample list, `data/seed/lb04/samples.yaml`, and its golden set), LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) and LB-03's sample files and page pictures (`apps/web/public/lb03`, copied from `data/seed/lb03`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
-| `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, LB-01's samples, the icon sprite, the visitor-token corpus) or `routing.yaml` is invalid (the CI drift check) |
+| `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, the boards' samples, the icon sprite, the visitor-token corpus) or `routing.yaml` is invalid (the CI drift check) |
 | `just icons` | Regenerate the icon sprite and registry after editing `packages/icons/svg` |
 | `just visitor-tokens` | Make the shared corpus of visitor tokens again (`packages/common/test/fixtures/visitor-tokens.json`), after a rule of the token check changes; the tests of `@lb/common`, `lb_common.visitors` and the Django, Flask and Node systems all run it, so every verifier accepts and refuses the same tokens |
 | `just stack-secrets [--again]` | Make throwaway secrets for the local stack in `infra/.dev` (git-ignored) |

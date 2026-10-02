@@ -82,7 +82,7 @@ export const systemsCs = {
     tryIt: 'Otevřete ukázkovou velkoobchodní dodavatelskou smlouvu, nebo nahrajte vlastní. Projděte si radar rizik: odpovědnost, ukončení, obnovení, platby a duševní vlastnictví. Kliknutím na zjištění přeskočíte na zvýrazněnou pasáž a pak si vygenerujete návrh změn.',
     proves: 'Analýza dlouhých dokumentů podložená zdroji, kontrola citací a přesné rozhraní pro práci s dokumentem.',
     tags: ['Citace', 'Strukturovaný výstup', 'Dlouhé dokumenty'],
-    chain: ['extrakce textu a pozic', 'rozdělení na ustanovení', 'analýza s citacemi', 'strukturovaná zpráva', 'ověření citátů', 'návrh změn'],
+    chain: ['extrakce textu a pozic', 'rozdělení na ustanovení', 'kontrola podvržených pokynů', 'analýza s citacemi', 'ověření citátů', 'strukturovaná zpráva', 'návrh změn'],
     stack: ['Node', 'TypeScript', 'Fastify', 'BullMQ', 'pdf.js na serveru i v prohlížeči', 'prohlížeč PDF ve Vue'],
     highlights: [
       'Na serveru i v prohlížeči běží stejná textová vrstva pdf.js, takže pozice citací sedí přesně na znaky.',
@@ -93,7 +93,7 @@ export const systemsCs = {
       { label: 'Smluv na návštěvníka za den', value: '3' },
       { label: 'Délka', value: '30 stran' },
       { label: 'Označení výstupu', value: 'Není právní rada' },
-      { label: 'Volání modelu na smlouvu (odhad)', value: '4–8' },
+      { label: 'Volání modelu na smlouvu (odhad)', value: '2–8' },
     ],
   },
   'lb-05': {

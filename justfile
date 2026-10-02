@@ -169,6 +169,11 @@ node-openapi:
 eval-lb08 *args:
     pnpm --filter @lb/node-systems eval:lb08 {{args}}
 
+# Needs the gateway with provider keys, and costs at most five calls a contract and one for its redline: four contracts are reviewed, so about 24 calls; `--samples` or `--case ID` run fewer, `--no-redlines` leaves the redlines out.
+# Run LB-04's golden set through the live pipeline and grade it by rules.
+eval-lb04 *args:
+    pnpm --filter @lb/node-systems eval:lb04 {{args}}
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

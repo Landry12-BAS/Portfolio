@@ -114,7 +114,7 @@ export const systems = [
     tryIt: 'Open the sample wholesale supply agreement or upload a contract. Read the risk radar across liability, termination, renewal, payment and IP. Click a finding to jump to the highlighted passage, then generate a redline.',
     proves: 'Grounded long-document analysis, citation checking, and precise document UI.',
     tags: ['Citations', 'Structured output', 'Long documents'],
-    chain: ['extract text + positions', 'split clauses', 'cited analysis', 'structured report', 'verify quotes', 'redline'],
+    chain: ['extract text + positions', 'split clauses', 'screen for injection', 'cited analysis', 'verify quotes', 'structured report', 'redline'],
     stack: ['Node', 'TypeScript', 'Fastify', 'BullMQ', 'pdf.js on server and client', 'Vue PDF viewer'],
     highlights: [
       'The same pdf.js text layer runs on the server and in the browser, so citation offsets land on the exact characters.',
@@ -125,7 +125,7 @@ export const systems = [
       { label: 'Contracts per visitor per day', value: '3' },
       { label: 'Length', value: '30 pages' },
       { label: 'Output label', value: 'Not legal advice' },
-      { label: 'Model calls per contract (est.)', value: '4–8' },
+      { label: 'Model calls per contract (est.)', value: '2–8' },
     ],
   },
   {

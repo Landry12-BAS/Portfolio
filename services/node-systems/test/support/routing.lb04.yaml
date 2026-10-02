@@ -1,0 +1,88 @@
+# Routing for the tests that run LB-04's review through the real gateway on a fake provider. It is the
+# real routing table in miniature: the four aliases have the real limits (lb-long 60,000 tokens in
+# and 4,096 out, lb-reason 4,000 and 3,072, lb-fast 3,000 and 1,024, lb-guard 800 tokens in, read in
+# overlapping segments), and the lb-04 entry the real quotas, so a prompt that is too long, or a review
+# that makes a ninth call, meets the gateway's own refusal here. test/unit/lb04-budget.test.ts compares
+# the real services/gateway/routing.yaml with this file, so the two copies of these numbers can't drift.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 1000
+  responseMs: 2000
+  idleMs: 1000
+  deadlineMs: 6000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      # Roomy, so the model's own budget never ends a test: the gateway's budget tests cover that, and what
+      # is checked here is the aliases' limits and the system's quotas.
+      small:
+        id: alpha/small-model
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 1000, tokens: 4000000 }
+          day: { requests: 10000, tokens: 40000000 }
+      # A classifier that reads 512 tokens at a time, as Prompt Guard does.
+      guard:
+        id: alpha/guard-model
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 1000, tokens: 400000 }
+          day: { requests: 10000, tokens: 4000000 }
+
+aliases:
+  lb-long:
+    description: Long documents
+    kind: chat
+    maxInputTokens: 60000
+    maxOutputTokens: 4096
+    chain: [alpha/small]
+  lb-reason:
+    description: SQL and planning
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 3072
+    chain: [alpha/small]
+  lb-fast:
+    description: Classification and short answers
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 1024
+    chain: [alpha/small]
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    maxInputTokens: 800
+    threshold: 0.9
+    chain: [alpha/guard]
+
+systems:
+  lb-04:
+    name: Contract Radar
+    service: node-systems
+    aliases: [lb-long, lb-reason, lb-fast, lb-guard]
+    maxCallsPerRun: 8
+    sessionDailyCalls: 24
+    dailyCalls: 160
+
+# The site's server reads a run's trace for the Scope, as `web`, and the real table lists it as a reader
+# of lb-04. Without this block the gateway refuses every read with 403, which the site turns into a 502,
+# so a harness that starts the real service on this table could never show a trace.
+traceReaders:
+  web:
+    name: The site's server (the Scope)
+    systems: [lb-04]

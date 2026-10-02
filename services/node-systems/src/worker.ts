@@ -1,13 +1,13 @@
 // The Node systems' worker process: runs every system's queue workers and its repeating
-// sweep. It serves no HTTP and makes no model call, so it needs no gateway: describing a
-// workflow happens in the API, and everything a worker does is the engine's own code and
-// the sandboxed connectors' tables.
+// sweeps. It serves no HTTP. LB-08's workers are the engine's own code and the sandboxed
+// connectors' tables, with no model call; LB-04's worker reviews contracts, which asks the
+// models, so the worker needs the gateway as the API does.
 //
 //   just node-worker       (development, with reload)
 //   node src/worker.ts     (production)
 //
 // Stop it with SIGTERM: workers finish the step they are on, then exit.
-import { createVisitorVerifier, RedisSpanWriter, Tracer } from '@lb/common'
+import { createVisitorVerifier, Gateway, RedisSpanWriter, Tracer } from '@lb/common'
 
 import { loadEnv } from './core/env.ts'
 import { createLogger } from './core/logging.ts'
@@ -18,12 +18,14 @@ const env = loadEnv(process.env, 'worker')
 const log = createLogger(env.LB_NODE_LOG_LEVEL)
 const redis = openRedis(env.LB_REDIS_URL, log)
 const tracer = new Tracer(new RedisSpanWriter(redis, env.LB_REDIS_PREFIX, log))
+// The service's own name, from the settings (which default it), not only from the process environment.
+const gateway = Gateway.fromEnv({ ...process.env, LB_SERVICE_NAME: env.LB_SERVICE_NAME })
 
 const running = await Promise.all(MODULES.map(module => module.open({
   env,
   log,
   tracer,
-  gateway: undefined,
+  gateway,
   visitorVerifier: createVisitorVerifier(module.part, undefined),
   now: () => new Date(),
 })))

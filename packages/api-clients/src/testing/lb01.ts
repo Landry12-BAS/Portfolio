@@ -74,10 +74,11 @@ interface Ticket {
   spans: MockSpan[]
 }
 
-/** What the handlers return: a status, and a body that can be written as JSON when there is one. */
+/** What the handlers return: a status, a body that can be written as JSON when there is one, and the headers an answer adds (a daily limit's `Retry-After`). */
 export interface Answer {
   status: number
   body?: unknown
+  headers?: Record<string, string>
 }
 
 /** Makes a platform error answer. */

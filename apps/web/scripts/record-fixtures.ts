@@ -47,6 +47,9 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // hostile invoice the injection check stops. The other three samples (the euro invoice, the crumpled photo
   // and the handwritten receipt) are left without a recording on purpose, so the tests can read them live.
   'lb-03': ['clean-pdf', 'planted-total', 'prompt-injection'],
+  // A report with a redline, a fair contract with nothing to report, and a scan the system must refuse.
+  // The other three samples have no recording on purpose, so the tests can run them live on the mock.
+  'lb-04': ['wholesale-supply', 'clean-supply', 'scanned-supply'],
 }
 
 // The moment LB-02's mock stands still at.

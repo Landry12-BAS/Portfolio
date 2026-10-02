@@ -42,7 +42,7 @@ app/
   components/board/                the evaluation-board kit (components)
   board-kit/                       the kit's logic: plain modules, no Nuxt, tested alone
   boards/registry.ts               which systems have a board
-  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...; LB-05 also chart/)
+  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...; LB-05 also chart/; LB-04 also pdf/)
   stores/                          Pinia: session, scope, replay (kit-wide), reading, catalog
   plugins/00.zod-jitless.ts        Zod without `new Function`, which the CSP forbids
 public/                            static files; LB-02's service worker is written by hand, its icon, manifests and offline pages are generated
@@ -65,7 +65,7 @@ only once the board is in `app/boards/registry.ts`.
 |---|---|
 | `GET /api/session` | Creates the anonymous session on first use and says whether this deployment has a back end, whether the Turnstile check has passed today and when the day turns over |
 | `POST /api/session/verify` | Checks a Turnstile token with Cloudflare; a pass marks the session verified for the day |
-| `/api/lb01/**`, `lb02`, `lb03`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `/api/lb01/**`, `lb02`, `lb03`, `lb04`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
 | `POST /api/tokens/lb-02` | The five-minute grant for LB-02's WebSocket |
 | `GET /api/runs/:runId/spans` | A run's trace from the gateway, for the Scope. Needs no session: the run's ID is the capability |
 | `GET /api/recordings/:system[/:sample]` | The recordings of the curated samples |
@@ -259,7 +259,10 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
 - **unit**: plain modules, stores, locale files, the server's building blocks (Node).
 - **components**: Vue components in a DOM (happy-dom) with the real messages; includes the whole
   LB-01 and LB-05 boards in both languages against `FakeSite` (`delayNext` holds a call back, `failNext`
-  makes one fail).
+  makes one fail), and LB-04's against `Lb04Site`, whose back end is the mock's LB-04 (the real PDF
+  extraction and review pipeline in a worker thread, with the golden set's reference reviewer for a model;
+  the first open of each sample is done before the fake timers start, because a worker thread does not
+  obey them).
 - **integration**: the site's server over HTTP against the mock back end, route by route; the recorder
   and the `record-sample` command.
 - **contract**: the site's server against the real gateway and a real Redis (Testcontainers, or
@@ -355,6 +358,22 @@ document stopped after the OCR had no page count, so the page of a stopped docum
 shown live; and a worker that gunicorn respawned swept nothing until the first upload, so the documents a killed worker
 had been reading stayed "being read" and files past their hour stayed on disk. All three are fixed, with tests that
 fail without the fix. It found nothing wrong with the mock's flow of states.
+LB-04 is a Node system too, and its recipe is the same with one more part, a provider that answers as
+the golden set's reference reviewer. Run the real API and worker as two processes on a scratch database
+and a Redis key prefix, the real gateway in your own process on the routing table of
+`services/node-systems/test/support/routing.lb04.yaml` (with its timeouts raised if a model is to take
+seconds, and with `web` among the service keys, since the site's server reads the Scope's traces as
+`web`), and in front of the gateway a small HTTP server that speaks OpenAI's chat format. It tells which
+model is asking by the first words of the system prompt (`You review a contract`, `You write the
+findings`, `You propose replacement wording`), tells the sample from the planted passages in the
+reading prompt, and answers with `referenceAnswers` from `golden/reference.ts`, so the service reviews
+real PDFs through the real gateway and its real checks. It can be made slow or down by environment
+variable. Put the test build of the site in front (`NUXT_LB_API_URL` and `NUXT_LB_GATEWAY_URL` pointing at
+them, the site key's public half in the service's `LB_WEB_TOKEN_KEY`), and run the journeys against it:
+Playwright reuses a server it finds on `E2E_PORT`, so `e2e/lb04.spec.ts` runs on the real service with one
+worker (the provider remembers which sample it is reading). The recorder (`just record-sample lb-04
+<sample> --out <a scratch folder>`) runs against it too. A recording made so is labelled `live` and was
+made with a fake model, so it is never kept.
 
 ## Decisions worth knowing
 
@@ -441,3 +460,47 @@ fail without the fix. It found nothing wrong with the mock's flow of states.
   Not run: a real model (so the extraction's accuracy and the injection classifier's hit rate are unmeasured), the real
   Turnstile, a recording made on a live back end (the three recordings in `e2e/fixtures` are the mock's and say so),
   R2, and the box's own two ARM cores (the timings are from this machine's four x86 cores).
+- **LB-04's citations** are `{ page, start, end }`: characters of one page's text, and that text is made
+  by one function (`extractPageText` in `@lb/contracts`) that both readers call. The server's pdf.js (the
+  legacy build, in a worker thread with a deadline and a memory limit) reads a page for the check of every
+  quote; the browser's (the modern build, in a module worker) reads it again for the viewer. Before the
+  viewer draws a single box it compares the two readings of each page, and where they differ it leaves the
+  highlight off, says which pages, and still shows the passage as text. `e2e/lb04.spec.ts` checks in a real
+  browser that they agree on every sample the system can review (11, 11, 6 and 30 pages), that a highlight
+  lies over the ink of the cited words and over nothing else, and that the same holds for a PDF the visitor
+  chose, which the board keeps in the browser when it sends the file, so the viewer never fetches it back.
+- **LB-04's viewer** is a separate chunk: pdf.js (435 KB, 129 KB gzipped) and its worker file (1.27 MB,
+  375 KB gzipped) are fetched when a visitor first asks for the contract's pages and from the site's own
+  origin, and the build leaves the chunk out of the page's prefetch hints (`nuxt.config.ts`), so a visitor
+  who only reads the report pays for neither. It needs the policy to change in two places, on the board's
+  two pages only: a Trusted Types policy, `lb-pdf-worker`, that makes the worker file's address and refuses
+  every other, and `worker-src 'self'` (`server/lib/lb04-csp.ts`, `docs/SECURITY.md`). pdf.js 6 evaluates
+  no code, so nothing else was needed, and the journeys fail on any violation. The page is drawn on a
+  canvas on `--lb-paper`, a token that is white in both themes because a PDF is drawn for white paper.
+  Drawings on one canvas are made one after another (`pdf/engine.ts`): pdf.js refuses a second render on a
+  canvas the first has not let go of, which the first run in a browser found as a viewer that read every
+  page and drew none.
+- **LB-04's radar** is made by code from the report's scores (`radar.ts`, no chart library): nine axes, a
+  ring for each severity, a polygon through the worst verified finding of each topic, and a title and
+  description for assistive technology. The table beside it is its text alternative and its keyboard
+  control (a topic's button narrows the findings to that topic), and severity is always a word and pips as
+  well as a shape, never colour alone. It sits beside its table only when its own section is wide enough
+  (a container query, since the board's column is narrower than the page).
+- **LB-04's progress is the service's state**, never a guess: the board polls the contract (quickly for the
+  first minute, then more slowly) and marks each step from the last answer. A review takes from a few
+  seconds to a minute, so the board counts the wait, offers to stop waiting (the service goes on, the
+  contract stays in the visitor's list for an hour) and does not move a step on by itself.
+- **LB-04's board ran against the real Node service**: its API and its BullMQ worker as processes on a
+  scratch Postgres database and a Redis prefix, the real gateway in front of a provider that answers as
+  the golden set's reference reviewer (see "Against the real services"), and the test build of the site.
+  The live journeys passed there, as did the whole matrix of PDFs, the real 429 at the fourth contract
+  (with `Retry-After` and `resets_at`), the tenth file and the eleventh's refusal, an encrypted, a
+  restricted, an XFA, an embedded-file, a page-attachment and a not-a-PDF file (each with its own words),
+  a model that was down (three attempts, then "the model could not be reached" and the place given back,
+  with the Scope showing the three failed attempts), and models slow enough to show every state. It found
+  nothing wrong in the board. It did show that the mock moves a review on one state for every read, which a
+  real review with instant models does not: the journey that follows each state needs models that take
+  seconds to pass there. The recorder ran against it too; its output, labelled `live` though a fake model
+  made it, was thrown away. Not run: a real model, a real Turnstile site key and challenge, a recording made
+  on a live back end, and the site on Vercel, where a function's request body is limited (4.5 MB, as
+  documented) above the proxy's 3 MiB for a PDF of 2 MB sent as base64.

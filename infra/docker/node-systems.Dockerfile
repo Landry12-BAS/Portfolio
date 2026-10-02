@@ -1,6 +1,6 @@
-# The Node systems image (services/node-systems): LB-08's API, its BullMQ worker, and the
-# one-shot migration and seed (infra/docker-compose.yml). One image, four commands, each a
-# script of the service. Build context: the repository root.
+# The Node systems image (services/node-systems): the API and the BullMQ worker of LB-08 and
+# LB-04, and the one-shot migration and seed (infra/docker-compose.yml). One image, four
+# commands, each a script of the service. Build context: the repository root.
 #
 # Node 24 runs the TypeScript directly (type stripping), so nothing is compiled. One stage
 # installs the production dependencies of the service and of the two workspace packages it
@@ -24,7 +24,7 @@ RUN pnpm install --frozen-lockfile --prod --filter "@lb/node-systems..."
 
 FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:9eeb7f5887d0e239e78264b06f7f11d2e14be534050481803a9e4728fcdd278e AS runtime
 LABEL org.opencontainers.image.title="lb-node-systems" \
-      org.opencontainers.image.description="The Node systems (LB-08 Automation Studio): API, BullMQ worker, migration and seed." \
+      org.opencontainers.image.description="The Node systems (LB-08 Automation Studio, LB-04 Contract Radar): API, BullMQ worker, migration and seed." \
       org.opencontainers.image.source="https://github.com/Landry12-BAS/Portfolio"
 # The repository's own layout, so pnpm's relative links from each package's node_modules
 # into the shared node_modules/.pnpm keep working, and so the two workspace packages are
@@ -42,6 +42,9 @@ COPY services/node-systems/package.json ./services/node-systems/
 COPY services/node-systems/src ./services/node-systems/src
 # LB-08's synthetic data: the samples the demo opens on and the stock list.
 COPY data/seed/lb08 ./data/seed/lb08
+# LB-04's: the playbook its reviews are read against and the sample contracts (PDFs) with the
+# list that says what each file must be. The generator that makes them (pdf-lib) stays out.
+COPY data/seed/lb04 ./data/seed/lb04
 COPY infra/docker/node-entrypoint.mjs /usr/local/lib/lb/entrypoint.mjs
 WORKDIR /app/services/node-systems
 ENV NODE_ENV=production

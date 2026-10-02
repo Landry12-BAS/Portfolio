@@ -389,6 +389,28 @@ systems:
     # The six samples are replayed from recordings and cost nothing. These are ceilings, to be rebalanced from
     # measured use once the systems run live (docs/STACK.md, Capacity).
     dailyCalls: 250
+  lb-04:
+    name: Contract Radar
+    service: node-systems
+    aliases: [lb-long, lb-reason, lb-fast, lb-guard]
+    # A contract costs an injection check on what it says to its reviewer (lb-guard), the
+    # cited analysis of the whole text (lb-long) and the rating of what the server verified
+    # (lb-reason): three calls, a fourth and a fifth when an answer fails its schema and gets
+    # its one repair, and none for the rating when there is nothing to rate. Each redline a
+    # visitor asks for is one lb-fast call with no repair (an answer that fails its schema is
+    # replaced by the playbook's own wording), at most three a contract: eight calls in all.
+    # The service holds itself to eight, so the cap is a second line, not the first.
+    maxCallsPerRun: 8
+    # 3 contracts per visitor per day (the LB-04 datasheet), at up to 8 calls each. The
+    # service counts the 3 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 24
+    # About 25 custom contracts a day at five calls each, and one full pass of the golden set
+    # (four contracts a pass, at most five calls and one redline each) when a prompt changes.
+    # The call count is not the limit that binds: a 30-page contract is about 50,000 input
+    # tokens, which on Workers AI (the only provider a visitor's upload may reach) is about
+    # 1,900 of its 10,000 daily Neurons, so five of them spend the pool and the route answers
+    # `budget_exhausted` (the demo then says so, and the samples go on working).
+    dailyCalls: 160
 
 # The services that read run traces and do nothing else: the site's server, for the Scope
 # (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
@@ -399,4 +421,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08, lb-03]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04]

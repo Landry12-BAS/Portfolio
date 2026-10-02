@@ -10,7 +10,7 @@ same rules, and the gateway it talks to is
 
 | Module | What it gives a system |
 |---|---|
-| `gateway` | `Gateway`: the AI SDK's OpenAI-compatible provider pointed at the gateway, with a fresh service token and the run's `x-lb-*` headers on every request; `gatewayErrorOf` and `GatewayCode` for failures |
+| `gateway` | `Gateway`: the AI SDK's OpenAI-compatible provider pointed at the gateway, with a fresh service token and the run's `x-lb-*` headers on every request; `Gateway.guard` for the injection check; `gatewayErrorOf` and `GatewayCode` for failures |
 | `run` | `createRun`, `runScope`, `currentRun`: the run a piece of work belongs to, kept in an `AsyncLocalStorage` |
 | `tracing` | `Tracer` and `RedisSpanWriter`: run spans in the gateway's format, written to the same Redis streams. `Tracer.record` and `spanIdFrom` write a span whose work no function wrapped, such as a whole run |
 | `tokens` | `ServiceTokens` and `loadServiceKey`: the short-lived Ed25519 service tokens the gateway checks |
@@ -50,6 +50,12 @@ await runScope(createRun({ system: 'lb-08', runId: newRunId(), session: sessionK
 - **Samples are synthetic.** A run over the site's curated samples uses
   `dataClass: 'synthetic'` and needs no session; a visitor's run needs their hashed
   session key, never the raw cookie.
+- **The injection guard.** `gateway.guard(text)` sends a text to the gateway's `lb-guard` alias
+  (`POST /v1/guard`) and returns `{ flagged, score, threshold, segments }`: the highest injection
+  probability over what the alias read, whether it reached the threshold, and how many pieces the
+  gateway read the text in. It carries the run's labels like any call, counts as one call of the run, and
+  reads at most the alias's input limit (800 tokens): a system that has more text than that
+  chooses what to send. A reply that does not fit the schema is an error, never a verdict.
 - **Structured output.** The client leaves the SDK's `response_format` out of every
   request, because the gateway's fallback chains cross providers whose JSON modes differ
   (the Django systems do the same). Describe the format in the prompt, call

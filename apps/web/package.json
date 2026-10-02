@@ -18,8 +18,8 @@
     "typecheck": "nuxt typecheck && tsc -p tsconfig.tools.json",
     "test": "vitest run",
     "e2e": "playwright test",
-    "samples": "node scripts/samples.ts && node scripts/generate-lb02.ts && node scripts/samples-lb08.ts && node scripts/samples-lb03.ts",
-    "check": "node scripts/samples.ts --check && node scripts/generate-lb02.ts --check && node scripts/samples-lb08.ts --check && node scripts/samples-lb03.ts --check",
+    "samples": "node scripts/samples.ts && node scripts/generate-lb02.ts && node scripts/samples-lb08.ts && node scripts/samples-lb03.ts && node scripts/samples-lb04.ts",
+    "check": "node scripts/samples.ts --check && node scripts/generate-lb02.ts --check && node scripts/samples-lb08.ts --check && node scripts/samples-lb03.ts --check && node scripts/samples-lb04.ts --check",
     "record-sample": "node scripts/record-sample.ts",
     "record:fixtures": "node scripts/record-fixtures.ts",
     "check:build": "node scripts/check-production-build.ts"
@@ -36,6 +36,7 @@
     "h3": "^1.15.11",
     "nuxt": "^4.5.2",
     "nuxt-security": "^2.6.0",
+    "pdfjs-dist": "^6.3.289",
     "pinia": "^4.0.3",
     "vega": "^6.4.0",
     "vega-interpreter": "^2.3.2",

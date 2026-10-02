@@ -16,5 +16,8 @@ RUN apk add --no-cache bash age postgresql17-client rclone \
  && addgroup -S -g 10002 lbbackup \
  && adduser -S -u 10002 -G lbbackup -H -h /nonexistent -s /sbin/nologin lbbackup
 COPY --chmod=0555 infra/backup/backup.sh /usr/local/bin/lb-backup
+# What the script sources and reads: the dump's arguments, and the tables whose rows it leaves out.
+COPY --chmod=0444 infra/backup/lib.sh infra/backup/excluded-data.txt /usr/local/share/lb-backup/
+ENV LB_BACKUP_SHARE=/usr/local/share/lb-backup
 USER 10002:10002
 ENTRYPOINT ["/usr/local/bin/lb-backup"]
