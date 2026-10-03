@@ -263,7 +263,11 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just secret-token [bytes]` | Print a random hex token, for a password or key you edit in by hand |
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
-point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs
+point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`, and make it the
+build the lockfile's Playwright expects (1.63 wants `chromium-1243`, such as
+`/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`, or leave the variable unset where
+`PLAYWRIGHT_BROWSERS_PATH` holds that build): an older build passes every journey but LB-04's
+viewer, whose page it cannot draw (Chromium 141 shows the text fallback instead). CI installs
 Playwright's own. Integration tests start Redis (gateway, Python, Flask and the Node systems) and
 Postgres with pgvector (Django, Flask and the Node systems) with Testcontainers; where Docker
 isn't available, or its Ryuk helper can't be pulled (set `TESTCONTAINERS_RYUK_DISABLED=true`), set
