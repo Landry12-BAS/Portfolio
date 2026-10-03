@@ -1,0 +1,34 @@
+# Made by services/node-systems/scripts/lb04-contracts.ts: do not edit by hand.
+# The synthetic contracts LB-04 offers as samples, with what each file must be: the service
+# reads the list, offers exactly these contracts and refuses a file whose bytes differ.
+contracts:
+  - id: wholesale-supply
+    title: "Wholesale supply agreement"
+    pages: 11
+    bytes: 42253
+    sha256: 309dec43d44591113ecee6880cec505d9aa55626b3326e605f15c24c86763e5c
+  - id: clean-supply
+    title: "Wholesale supply agreement, fair terms"
+    pages: 11
+    bytes: 43109
+    sha256: 251b0cf7db66a95a0a709e4a4046111907e2b250b1c565175676a4d302367c3f
+  - id: master-supply-30
+    title: "Master supply agreement, 30 pages"
+    pages: 30
+    bytes: 216742
+    sha256: b8d8773f69053cfa27508802a12da6dad4e4121b26c59828bceb2ae477d5adfd
+  - id: master-supply-31
+    title: "Master supply agreement, 31 pages"
+    pages: 31
+    bytes: 226362
+    sha256: 6356d0b3f949e4479873358134f3ccf17e0b91f0ecfd26f26e4d94cc25fcc00e
+  - id: scanned-supply
+    title: "Scanned agreement"
+    pages: 5
+    bytes: 10489
+    sha256: de71fff7d6ef86a76264e368c9b1d385b1f019904f4518d263ebc841c6ace5b5
+  - id: hostile-supply
+    title: "Supply agreement with instructions for an AI reviewer"
+    pages: 6
+    bytes: 22916
+    sha256: 31572b85e36eb0752625b67521deded6a397d3b92d5ed638cf3979ef162e090f

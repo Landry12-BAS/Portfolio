@@ -84,18 +84,18 @@ export const systems = [
     tryIt: 'Pick a sample, such as a clean PDF, a crumpled photo, a handwritten receipt or a euro invoice with VAT, or upload your own. Each field lights up on the document with its confidence. Fix a field, then export CSV or JSON.',
     proves: 'Vision models with typed output, and validation that keeps arithmetic away from the model.',
     tags: ['Vision', 'Structured output'],
-    chain: ['OCR words + boxes', 'extract to schema', 'validate', 'reconcile totals', 'repair once', 'map to boxes', 'export'],
-    stack: ['Flask async views', 'OpenAI-compatible client to the gateway', 'instructor + Pydantic v2', 'RapidOCR (ONNX)', 'Cloudflare R2', 'Vue viewer'],
+    chain: ['OCR words + boxes', 'screen for injection', 'extract to schema', 'validate and reconcile', 'repair once', 'map to boxes', 'check duplicates', 'journal entry', 'export'],
+    stack: ['Flask + an asyncio pipeline', 'OpenAI-compatible client to the gateway', 'Pydantic v2 structured output', 'RapidOCR (ONNX) in a locked-down process', 'Cloudflare R2', 'Vue viewer'],
     highlights: [
-      'Async Flask, because every step waits on I/O: the model, storage and the OCR worker.',
-      'Deterministic checks own the math. Line items must sum to the subtotal and VAT must match its rate, or the document goes back for one targeted repair.',
+      'The pipeline is async because every step waits on I/O: the model, storage and the OCR worker. Two documents in flight overlap, and a test proves it under the production server.',
+      'Deterministic checks own the math. Line items must sum to the subtotal and VAT must match its rate, or the document goes back for one targeted repair. A document that still fails is returned with its failing check, never fixed silently.',
       'Duplicate invoices are caught by vendor, number and content hash before export.',
     ],
     limits: [
       { label: 'Documents per visitor per day', value: '10' },
-      { label: 'File limit', value: '10 MB, 5 pages' },
+      { label: 'File limit', value: '4 MB, 5 pages' },
       { label: 'Files kept', value: '1 h' },
-      { label: 'Model calls per document (est.)', value: '1–2' },
+      { label: 'Model calls per document (est.)', value: '2–5' },
     ],
   },
   {
@@ -114,7 +114,7 @@ export const systems = [
     tryIt: 'Open the sample wholesale supply agreement or upload a contract. Read the risk radar across liability, termination, renewal, payment and IP. Click a finding to jump to the highlighted passage, then generate a redline.',
     proves: 'Grounded long-document analysis, citation checking, and precise document UI.',
     tags: ['Citations', 'Structured output', 'Long documents'],
-    chain: ['extract text + positions', 'split clauses', 'cited analysis', 'structured report', 'verify quotes', 'redline'],
+    chain: ['extract text + positions', 'split clauses', 'screen for injection', 'cited analysis', 'verify quotes', 'structured report', 'redline'],
     stack: ['Node', 'TypeScript', 'Fastify', 'BullMQ', 'pdf.js on server and client', 'Vue PDF viewer'],
     highlights: [
       'The same pdf.js text layer runs on the server and in the browser, so citation offsets land on the exact characters.',
@@ -125,7 +125,7 @@ export const systems = [
       { label: 'Contracts per visitor per day', value: '3' },
       { label: 'Length', value: '30 pages' },
       { label: 'Output label', value: 'Not legal advice' },
-      { label: 'Model calls per contract (est.)', value: '4–8' },
+      { label: 'Model calls per contract (est.)', value: '2–8' },
     ],
   },
   {

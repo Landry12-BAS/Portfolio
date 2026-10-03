@@ -9,13 +9,27 @@ export interface Reply {
   // The body as text, and as JSON when it is JSON (undefined when it is not).
   text: string
   json: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  // The body as the bytes it is: what to read for an answer that is a file.
+  bytes: Uint8Array
   headers: Headers
+}
+
+/** A file to send, as a browser's form sends one. */
+export interface UploadFile {
+  filename: string
+  bytes: Uint8Array
+  // The type the browser guesses from the name. The service never trusts it, so a test may make it lie.
+  type?: string
+  // The form field's name: `file`, which is the one the service reads, unless a test sends another.
+  field?: string
 }
 
 /** Options for one request. */
 export interface RequestOptions {
   // A JSON body.
   body?: unknown
+  // A file, sent as a multipart form: the boundary and the content type are made as a browser makes them.
+  upload?: UploadFile
   // A body sent exactly as given, with the content type given: for requests that are not valid JSON.
   raw?: { text: string, type?: string }
   // Headers to add, or to replace (a header set to undefined is left out).
@@ -43,10 +57,15 @@ export class Browser {
     if (jar !== '') headers.cookie = jar
     const origin = options.origin === undefined ? (method === 'GET' ? null : this.site.origin) : options.origin
     if (origin !== null) headers.origin = origin
-    let body: string | undefined
+    let body: string | FormData | undefined
     if (options.body !== undefined) {
       body = JSON.stringify(options.body)
       headers['content-type'] = 'application/json'
+    }
+    if (options.upload) {
+      // No content type is set: `fetch` writes `multipart/form-data` with the boundary it chose, as a browser does.
+      body = new FormData()
+      body.append(options.upload.field ?? 'file', new Blob([new Uint8Array(options.upload.bytes)], { type: options.upload.type ?? 'application/octet-stream' }), options.upload.filename)
     }
     if (options.raw) {
       body = options.raw.text
@@ -62,7 +81,8 @@ export class Browser {
       const separator = pair.indexOf('=')
       this.cookies.set(pair.slice(0, separator), pair.slice(separator + 1))
     }
-    const text = await response.text()
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    const text = new TextDecoder().decode(bytes)
     let json: unknown
     try {
       json = JSON.parse(text)
@@ -70,7 +90,7 @@ export class Browser {
     catch {
       json = undefined
     }
-    return { status: response.status, text, json, headers: response.headers }
+    return { status: response.status, text, json, bytes, headers: response.headers }
   }
 
   /** Reads the session cookie's value, or undefined when there is none. */

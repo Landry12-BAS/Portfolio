@@ -12,11 +12,13 @@ import { assertSameOrigin } from './origin.ts'
 import { servicesOf } from './services.ts'
 import type { SiteServices } from './services.ts'
 
-/** What a handler may return: a value to send as JSON, or an answer it has already written (a status and a body). */
+/** What a handler may return: a value to send as JSON, or an answer it has already written (a status and a body, or a file). */
 export interface RawAnswer {
   status: number
   body: string | undefined
   headers?: Record<string, string>
+  // A file to send in place of a body: its bytes and the Content-Type to send them under.
+  file?: { bytes: Uint8Array, contentType: string }
 }
 
 /** Options for one handler. */
@@ -57,6 +59,11 @@ export function defineApiHandler(handler: (event: H3Event, site: SiteServices) =
       if (!isRawAnswer(result)) return result
       for (const [name, value] of Object.entries(result.headers ?? {})) setResponseHeader(event, name, value)
       setResponseStatus(event, result.status)
+      if (result.file) {
+        // A file is never to be sniffed into anything else, and is never kept (the Cache-Control set above).
+        setResponseHeader(event, 'x-content-type-options', 'nosniff')
+        return send(event, Buffer.from(result.file.bytes), result.file.contentType)
+      }
       return result.body === undefined ? send(event, '') : send(event, result.body, 'application/json; charset=utf-8')
     }
     catch (error) {

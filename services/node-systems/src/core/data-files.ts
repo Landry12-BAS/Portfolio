@@ -6,7 +6,7 @@
 // with a message naming the file and the path of each bad field inside it, never the
 // value that was wrong.
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 
 import { parse } from 'yaml'
 import type { z } from 'zod'
@@ -19,8 +19,10 @@ export class DataFileError extends Error {
   }
 }
 
-// The repository root: this file is services/node-systems/src/core/data-files.ts.
-const REPOSITORY_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
+// The repository root: this file is services/node-systems/src/core/data-files.ts. The folder's own path is
+// used, not a URL made from `import.meta.url`: the site's component tests run this file under a DOM
+// stand-in whose `URL` is not Node's, and Node's `fileURLToPath` refuses it.
+const REPOSITORY_ROOT = `${resolve(import.meta.dirname, '../../../..')}/`
 
 /** Returns where the synthetic seed data lives: `LB_SEED_DIR` when set, otherwise the repository's data/seed. */
 export function seedDirectory(environment: Readonly<Record<string, string | undefined>> = process.env): string {

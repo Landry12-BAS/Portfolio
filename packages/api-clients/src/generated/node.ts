@@ -41,6 +41,685 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb04/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The visitor's contracts, newest first */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04ContractView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Review a sample contract, or a PDF the visitor sends
+         * @description A PDF is sent as base64 in JSON (at most 2 MB, 30 pages). The answer is the contract, queued: follow it with GET /contracts/{id}. A review takes two to five model calls (the guard, the reading and the rating, each of the last two repaired at most once) and each redline one more. The visitor may have 3 contracts reviewed a day and send 10 files; a contract that fails gives its place back, and a contract is deleted an hour after it is made.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Lb04CreateContractRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04ContractView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                415: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/contracts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One contract and the state of its review
+         * @description The state moves queued, extracting, analysing, verifying, done; `failed` can follow any of them, with a code that says why. Poll this route while the review runs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04ContractView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a contract now
+         * @description Removes the file, the text, the report and the redlines at once, instead of at the end of the hour. It does not give back the visitor's place for the day.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/contracts/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The PDF itself, for the viewer
+         * @description As base64 inside JSON, because the site's server forwards nothing else. 409 `review_failed` when the review failed, which deletes the file at once.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04FileView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/contracts/{id}/findings/{findingId}/redline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A proposed change to one finding's passage
+         * @description The model proposes wording and the server computes the difference word by word. It costs one model call and one of the contract's 3 redlines; asking again for the same finding shows the redline already made and costs nothing. Not legal advice.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    findingId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04Redline"];
+                    };
+                };
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04Redline"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/contracts/{id}/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The text of every page, as the server extracted it
+         * @description What every citation counts its characters in: a citation is a page and a range of this text. 409 `not_ready` while the review has not got as far as reading the file, and `review_failed` when it failed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04PagesView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/contracts/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The finished review
+         * @description Every risk finding quotes the contract, and the quote was checked against the contract's text by the server. A missing clause has no quote, and says what was searched for. Not legal advice. 409 `not_ready` while the review runs, and `review_failed` when it failed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04Report"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What is left of the visitor's day, and the limits of the system
+         * @description Contracts reviewed today against the daily limit (a sample counts, a file that is refused is given back), the page and size limits, how long a contract is kept, and when the day's allowance starts again.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04LimitsView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/playbook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The playbook the reviews are read against
+         * @description The rules, by topic, with what each accepts and what it flags. The playbook is data the owner edits, kept outside every prompt.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04PlaybookView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb04/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The curated sample contracts
+         * @description Synthetic contracts, one of them hostile to a reviewer, one over the page limit and one a scan, which show what a review does and what it refuses. Reviewing one live takes one of the visitor's places for the day.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb04SampleView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lb08/catalogue": {
         parameters: {
             query?: never;
@@ -1255,6 +1934,342 @@ export interface components {
                 /** Format: date-time */
                 resets_at?: string;
             };
+        };
+        Lb04ContractView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "pdf_unreadable" | "pdf_encrypted" | "pdf_xfa" | "pdf_embedded_files" | "too_many_pages" | "no_text_layer" | "too_much_text" | "extraction_timeout" | "extraction_failed" | "analysis_unavailable" | "analysis_invalid" | "internal";
+                message: string;
+            } | null;
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            /** @enum {string} */
+            origin: "upload" | "sample";
+            pages: number | null;
+            redlinesLeft: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            /** @enum {string} */
+            state: "queued" | "extracting" | "analysing" | "verifying" | "done" | "failed";
+            title: string;
+        };
+        Lb04ContractViewInput: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "pdf_unreadable" | "pdf_encrypted" | "pdf_xfa" | "pdf_embedded_files" | "too_many_pages" | "no_text_layer" | "too_much_text" | "extraction_timeout" | "extraction_failed" | "analysis_unavailable" | "analysis_invalid" | "internal";
+                message: string;
+            } | null;
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            /** @enum {string} */
+            origin: "upload" | "sample";
+            pages: number | null;
+            redlinesLeft: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            /** @enum {string} */
+            state: "queued" | "extracting" | "analysing" | "verifying" | "done" | "failed";
+            title: string;
+        };
+        Lb04CreateContractRequest: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            contentBase64: string;
+            filename: string;
+            /** @constant */
+            from: "upload";
+        };
+        Lb04CreateContractRequestInput: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            contentBase64: string;
+            filename: string;
+            /** @constant */
+            from: "upload";
+        };
+        Lb04FileView: {
+            base64: string;
+            /** @constant */
+            contentType: "application/pdf";
+            size: number;
+        };
+        Lb04FileViewInput: {
+            base64: string;
+            /** @constant */
+            contentType: "application/pdf";
+            size: number;
+        };
+        Lb04LimitsView: {
+            contracts: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            keptMinutes: number;
+            maxFileBytes: number;
+            maxPages: number;
+            redlinesPerContract: number;
+            /** Format: date-time */
+            resetsAt: string;
+        };
+        Lb04LimitsViewInput: {
+            contracts: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            keptMinutes: number;
+            maxFileBytes: number;
+            maxPages: number;
+            redlinesPerContract: number;
+            /** Format: date-time */
+            resetsAt: string;
+        };
+        Lb04PagesView: {
+            pages: {
+                page: number;
+                text: string;
+            }[];
+        };
+        Lb04PagesViewInput: {
+            pages: {
+                page: number;
+                text: string;
+            }[];
+        };
+        Lb04PlaybookView: {
+            topics: {
+                /** @enum {string} */
+                id: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+                rules: {
+                    acceptable: string;
+                    id: string;
+                    /** @enum {string} */
+                    kind: "risk" | "required";
+                    redFlag: string;
+                    /** @enum {string} */
+                    severity: "low" | "medium" | "high" | "critical";
+                    title: string;
+                }[];
+                summary: string;
+                title: string;
+            }[];
+            version: number;
+        };
+        Lb04PlaybookViewInput: {
+            topics: {
+                /** @enum {string} */
+                id: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+                rules: {
+                    acceptable: string;
+                    id: string;
+                    /** @enum {string} */
+                    kind: "risk" | "required";
+                    redFlag: string;
+                    /** @enum {string} */
+                    severity: "low" | "medium" | "high" | "critical";
+                    title: string;
+                }[];
+                summary: string;
+                title: string;
+            }[];
+            version: number;
+        };
+        Lb04Redline: {
+            diff: {
+                /** @enum {string} */
+                op: "equal" | "delete" | "insert";
+                text: string;
+            }[];
+            findingId: string;
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            original: string;
+            proposal: string;
+            /** @enum {string} */
+            source: "model" | "playbook";
+        };
+        Lb04RedlineInput: {
+            diff: {
+                /** @enum {string} */
+                op: "equal" | "delete" | "insert";
+                text: string;
+            }[];
+            findingId: string;
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            original: string;
+            proposal: string;
+            /** @enum {string} */
+            source: "model" | "playbook";
+        };
+        Lb04Report: {
+            calibrated: boolean;
+            calls: number;
+            /** Format: uuid */
+            contractId: string;
+            findings: ({
+                citation: {
+                    end: number;
+                    page: number;
+                    start: number;
+                };
+                clause: string | null;
+                id: string;
+                /** @constant */
+                kind: "risk";
+                quote: string;
+                rule: string;
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                /** @enum {string} */
+                source: "model" | "detector";
+                summary: string;
+                title: string;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            } | {
+                id: string;
+                /** @constant */
+                kind: "absent";
+                rule: string;
+                searched: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                /** @enum {string} */
+                source: "model" | "detector";
+                summary: string;
+                title: string;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            })[];
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            playbookVersion: number;
+            radar: {
+                findings: number;
+                score: number;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            }[];
+            redlines: components["schemas"]["Lb04Redline"][];
+            screen: {
+                guardScore: number | null;
+                passageCount: number;
+                passages: {
+                    end: number;
+                    page: number;
+                    start: number;
+                }[];
+                /** @enum {string} */
+                verdict: "clean" | "flagged" | "unchecked";
+            };
+            verification: {
+                checked: number;
+                dropped: number;
+                kept: number;
+                reasons: {
+                    [key: string]: number;
+                };
+            };
+        };
+        Lb04ReportInput: {
+            calibrated: boolean;
+            calls: number;
+            /** Format: uuid */
+            contractId: string;
+            findings: ({
+                citation: {
+                    end: number;
+                    page: number;
+                    start: number;
+                };
+                clause: string | null;
+                id: string;
+                /** @constant */
+                kind: "risk";
+                quote: string;
+                rule: string;
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                /** @enum {string} */
+                source: "model" | "detector";
+                summary: string;
+                title: string;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            } | {
+                id: string;
+                /** @constant */
+                kind: "absent";
+                rule: string;
+                searched: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                /** @enum {string} */
+                source: "model" | "detector";
+                summary: string;
+                title: string;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            })[];
+            /** @constant */
+            notLegalAdvice: "Not legal advice";
+            playbookVersion: number;
+            radar: {
+                findings: number;
+                score: number;
+                /** @enum {string} */
+                topic: "liability" | "indemnity" | "termination" | "renewal" | "payment" | "ip" | "confidentiality" | "governing_law" | "exclusivity";
+            }[];
+            redlines: components["schemas"]["Lb04RedlineInput"][];
+            screen: {
+                guardScore: number | null;
+                passageCount: number;
+                passages: {
+                    end: number;
+                    page: number;
+                    start: number;
+                }[];
+                /** @enum {string} */
+                verdict: "clean" | "flagged" | "unchecked";
+            };
+            verification: {
+                checked: number;
+                dropped: number;
+                kept: number;
+                reasons: {
+                    [key: string]: number;
+                };
+            };
+        };
+        Lb04SampleView: {
+            id: string;
+            pages: number;
+            title: string;
+        };
+        Lb04SampleViewInput: {
+            id: string;
+            pages: number;
+            title: string;
         };
         LimitsView: {
             generations: {

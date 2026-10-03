@@ -14,5 +14,7 @@
 # Until its password is set the role exists but cannot log in.
 lb01
 lb02
+lb03
 lb05
 lb08
+lb04

@@ -128,7 +128,7 @@ describe('recording a sample against the mock', () => {
     const backend = new Backend(targetFor(mock.url))
 
     await expect(recordSample(backend, 'lb-01', 'no-such-sample')).rejects.toThrow(/no sample called "no-such-sample".*torn-bag/)
-    await expect(recordSample(backend, 'lb-03', 'anything')).rejects.toThrow(/no recorder for lb-03 yet.*lb-01/)
+    await expect(recordSample(backend, 'lb-10', 'anything')).rejects.toThrow(/no recorder for lb-10 yet.*lb-01/)
   })
 
   it('does not record a run whose pipeline failed, or a ticket the back end refused', async () => {

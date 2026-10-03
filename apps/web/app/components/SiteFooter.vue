@@ -43,7 +43,13 @@ const datasheets = useDatasheets()
   gap: 6px 14px;
 }
 
+/* Each link is at least 24 by 24 CSS pixels (WCAG 2.2, 2.5.8): the part numbers are small, and where
+   the folder wraps onto a second line, as it does on a phone, the links are too close to count as apart. */
 .folder a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 24px;
   font-family: var(--lb-font-mono);
   font-size: 11px;
   font-weight: 700;

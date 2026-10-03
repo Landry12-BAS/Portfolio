@@ -9,6 +9,8 @@ import lb01 from './boards/lb-01.cs'
 import lb02 from './boards/lb-02.cs'
 import lb05 from './boards/lb-05.cs'
 import lb08 from './boards/lb-08.cs'
+import lb03 from './boards/lb-03.cs'
+import lb04 from './boards/lb-04.cs'
 import type { Messages } from './en'
 
 const cs = {
@@ -158,6 +160,8 @@ const cs = {
   lb02,
   lb05,
   lb08,
+  lb03,
+  lb04,
   error: {
     code: 'Chyba {code}',
     notFound: 'Díl nenalezen',

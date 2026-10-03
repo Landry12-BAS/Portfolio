@@ -60,18 +60,18 @@ export const systemsCs = {
     tryIt: 'Vyberte ukázku – čisté PDF, fotku zmačkaného dokladu, ručně psanou účtenku nebo fakturu v eurech s DPH – nebo nahrajte vlastní. Každé pole se na dokladu rozsvítí i s mírou jistoty. Opravte pole a vyexportujte CSV nebo JSON.',
     proves: 'Modely pro zpracování obrazu s typovaným výstupem a validace, která nenechá počítání na modelu.',
     tags: ['Zpracování obrazu', 'Strukturovaný výstup'],
-    chain: ['OCR slov a rámečků', 'extrakce podle schématu', 'validace', 'odsouhlasení součtů', 'jedna oprava', 'přiřazení k rámečkům', 'export'],
-    stack: ['asynchronní pohledy ve Flasku', 'klient kompatibilní s OpenAI napojený na bránu', 'instructor + Pydantic v2', 'RapidOCR (ONNX)', 'Cloudflare R2', 'prohlížeč ve Vue'],
+    chain: ['OCR slov a rámečků', 'kontrola podvržených pokynů', 'extrakce podle schématu', 'validace a odsouhlasení', 'jedna oprava', 'přiřazení k rámečkům', 'kontrola duplicit', 'účetní zápis', 'export'],
+    stack: ['Flask s asynchronním zpracováním', 'klient kompatibilní s OpenAI napojený na bránu', 'strukturovaný výstup v Pydantic v2', 'RapidOCR (ONNX) v uzamčeném procesu', 'Cloudflare R2', 'prohlížeč ve Vue'],
     highlights: [
-      'Asynchronní Flask, protože každý krok čeká na I/O: na model, úložiště i OCR worker.',
-      'Výpočty hlídají deterministické kontroly. Položky musí dát dohromady mezisoučet a DPH musí odpovídat sazbě, jinak se doklad vrací k jedné cílené opravě.',
+      'Zpracování je asynchronní, protože každý krok čeká na I/O: na model, úložiště i OCR worker. Dva doklady se čtou současně a dokazuje to test pod produkčním serverem.',
+      'Výpočty hlídají deterministické kontroly. Položky musí dát dohromady mezisoučet a DPH musí odpovídat sazbě, jinak se doklad vrací k jedné cílené opravě. Doklad, který přesto neprojde, se vrátí s neprošlou kontrolou a nikdy se potichu neupraví.',
       'Duplicitní faktury se před exportem zachytí podle dodavatele, čísla a otisku obsahu.',
     ],
     limits: [
       { label: 'Dokladů na návštěvníka za den', value: '10' },
-      { label: 'Limit souboru', value: '10 MB, 5 stran' },
+      { label: 'Limit souboru', value: '4 MB, 5 stran' },
       { label: 'Uchování souborů', value: '1 h' },
-      { label: 'Volání modelu na doklad (odhad)', value: '1–2' },
+      { label: 'Volání modelu na doklad (odhad)', value: '2–5' },
     ],
   },
   'lb-04': {
@@ -82,7 +82,7 @@ export const systemsCs = {
     tryIt: 'Otevřete ukázkovou velkoobchodní dodavatelskou smlouvu, nebo nahrajte vlastní. Projděte si radar rizik: odpovědnost, ukončení, obnovení, platby a duševní vlastnictví. Kliknutím na zjištění přeskočíte na zvýrazněnou pasáž a pak si vygenerujete návrh změn.',
     proves: 'Analýza dlouhých dokumentů podložená zdroji, kontrola citací a přesné rozhraní pro práci s dokumentem.',
     tags: ['Citace', 'Strukturovaný výstup', 'Dlouhé dokumenty'],
-    chain: ['extrakce textu a pozic', 'rozdělení na ustanovení', 'analýza s citacemi', 'strukturovaná zpráva', 'ověření citátů', 'návrh změn'],
+    chain: ['extrakce textu a pozic', 'rozdělení na ustanovení', 'kontrola podvržených pokynů', 'analýza s citacemi', 'ověření citátů', 'strukturovaná zpráva', 'návrh změn'],
     stack: ['Node', 'TypeScript', 'Fastify', 'BullMQ', 'pdf.js na serveru i v prohlížeči', 'prohlížeč PDF ve Vue'],
     highlights: [
       'Na serveru i v prohlížeči běží stejná textová vrstva pdf.js, takže pozice citací sedí přesně na znaky.',
@@ -93,7 +93,7 @@ export const systemsCs = {
       { label: 'Smluv na návštěvníka za den', value: '3' },
       { label: 'Délka', value: '30 stran' },
       { label: 'Označení výstupu', value: 'Není právní rada' },
-      { label: 'Volání modelu na smlouvu (odhad)', value: '4–8' },
+      { label: 'Volání modelu na smlouvu (odhad)', value: '2–8' },
     ],
   },
   'lb-05': {

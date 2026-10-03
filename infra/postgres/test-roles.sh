@@ -21,6 +21,9 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# The dump's arguments, which the nightly backup uses too (infra/backup/lib.sh).
+# shellcheck source=/dev/null
+source "$here/../backup/lib.sh"
 image="${LB_PG_IMAGE:-$("$here/../scripts/image-of.sh" postgres)}"
 prefix="${LB_TEST_PREFIX:-lb-pgtest}-$$"
 net="$prefix-net"
@@ -237,6 +240,31 @@ if docker exec -e PGPASSWORD="$lbbackup_password" "$client" \
     done
 else
     fail "lbbackup's pg_dump did not work"
+fi
+
+echo "The nightly backup leaves out what visitors upload (infra/backup/excluded-data.txt)"
+if has_system lb04; then
+    # LB-04's tables as the service has them, each with a row: a contract with the name of the visitor's file, its PDF, the report and a redline made of it, and a daily counter.
+    allowed "lb04 holds a visitor's contract, its file, its report and its redline, and a daily counter" lb04 "$(password_of lb04)" \
+        "CREATE TABLE lb04.contracts (id int PRIMARY KEY, title text); CREATE TABLE lb04.contract_files (contract_id int, content bytea); CREATE TABLE lb04.contract_pages (contract_id int, page_text text); CREATE TABLE lb04.reports (contract_id int, report jsonb); CREATE TABLE lb04.redlines (contract_id int, redline jsonb); CREATE TABLE lb04.usage_counters (session_key text, used int); INSERT INTO lb04.contracts VALUES (1, 'secret-name.pdf'); INSERT INTO lb04.contract_files VALUES (1, '\\x255044462d'); INSERT INTO lb04.contract_pages VALUES (1, 'secret words'); INSERT INTO lb04.reports VALUES (1, '{}'); INSERT INTO lb04.redlines VALUES (1, '{}'); INSERT INTO lb04.usage_counters VALUES ('s', 1)"
+    mapfile -t dump_arguments < <(backup_dump_arguments "$here/../backup/excluded-data.txt")
+    if docker exec -e PGPASSWORD="$lbbackup_password" "$client" \
+        pg_dump -h "$db" -U lbbackup -d lb "${dump_arguments[@]}" --file=/tmp/lb-nightly.dump 2>/dev/null; then
+        nightly_list="$(docker exec "$client" pg_restore --list /tmp/lb-nightly.dump)"
+        for table in contracts contract_files contract_pages reports redlines; do
+            if grep -q "TABLE lb04 $table " <<<"$nightly_list"; then pass "the backup keeps the shape of lb04.$table"; else fail "the backup lacks lb04.$table itself"; fi
+            if grep -q "TABLE DATA lb04 $table " <<<"$nightly_list"; then fail "the backup holds the rows of lb04.$table"; else pass "  and none of its rows"; fi
+        done
+        if grep -q "TABLE DATA lb04 usage_counters " <<<"$nightly_list"; then pass "it keeps the daily counters, which are only numbers"; else fail "the backup lacks the daily counters"; fi
+        for system in $systems; do
+            if grep -q "TABLE DATA $system notes " <<<"$nightly_list"; then pass "it keeps the rows of $system's other tables"; else fail "the backup lacks the rows of $system.notes"; fi
+        done
+        # The proof that the words are not in the file at all, whatever the list says.
+        docker exec "$client" pg_restore --file=/tmp/lb-nightly.sql /tmp/lb-nightly.dump
+        if docker exec "$client" grep -q 'secret-name.pdf\|secret words' /tmp/lb-nightly.sql; then fail "a visitor's file name or words are in the backup"; else pass "no word of a visitor's contract is in the backup"; fi
+    else
+        fail "the nightly pg_dump, with the tables' rows left out, did not work"
+    fi
 fi
 
 echo "Rotating a password takes effect on the next provisioning"

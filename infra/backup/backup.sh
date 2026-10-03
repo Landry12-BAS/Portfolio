@@ -10,12 +10,17 @@
 # recipients are age PUBLIC keys; the private key stays off the box, so nothing on the box
 # can read a backup, including this script.
 #
+# What a visitor sends is kept for an hour, and a backup is kept for weeks, so the dump has
+# the shape of the tables that hold it and none of their rows (excluded-data.txt).
+#
 # Settings, from the environment:
 #   PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD   the read-only `lbbackup` login
 #   LB_BACKUP_AGE_RECIPIENTS    age public keys (age1...), separated by commas or spaces
 #   LB_BACKUP_DESTINATION       an rclone destination folder: `r2:<bucket>/postgres` in
 #                               production (the remote is defined by RCLONE_CONFIG_R2_*
 #                               variables), a plain folder such as /backups in local runs
+#   LB_BACKUP_SHARE             the folder that holds lib.sh and excluded-data.txt: the
+#                               script's own folder unless the image says otherwise
 set -euo pipefail
 umask 077
 
@@ -23,6 +28,11 @@ umask 077
 : "${PGUSER:?PGUSER is not set}" "${PGPASSWORD:?PGPASSWORD is not set}"
 : "${LB_BACKUP_AGE_RECIPIENTS:?LB_BACKUP_AGE_RECIPIENTS is not set}"
 : "${LB_BACKUP_DESTINATION:?LB_BACKUP_DESTINATION is not set}"
+
+share="${LB_BACKUP_SHARE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
+# shellcheck source=/dev/null
+source "$share/lib.sh"
+mapfile -t dump_arguments < <(backup_dump_arguments "$share/excluded-data.txt")
 
 # rclone reads its remotes from RCLONE_CONFIG_* variables; an empty config file keeps it
 # from looking for (or trying to write) one in a read-only home.
@@ -46,7 +56,7 @@ trap 'rm -rf "$work"' EXIT
 name="lb-postgres-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
 
 # pipefail makes a failing pg_dump fail the whole line, not just the last command.
-pg_dump --format=custom --dbname="$PGDATABASE" | age "${age_arguments[@]}" > "$work/$name"
+pg_dump "${dump_arguments[@]}" --dbname="$PGDATABASE" | age "${age_arguments[@]}" > "$work/$name"
 
 # A real age file starts with this line; an empty or truncated one would not.
 if [ "$(head -c 21 "$work/$name")" != "age-encryption.org/v1" ]; then

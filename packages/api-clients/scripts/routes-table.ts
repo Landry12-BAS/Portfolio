@@ -3,10 +3,16 @@
 // the back ends' health checks and anything else a document describes are never forwardable.
 import type { ApiRoute } from '../src/route-types.ts'
 
+/** The parts of an OpenAPI response this table reads: the media types it can be written in. */
+interface ResponseObject {
+  content?: Record<string, unknown>
+}
+
 /** The parts of an OpenAPI operation this table reads. */
 interface OperationObject {
   parameters?: { name: string, in: string }[]
-  requestBody?: unknown
+  requestBody?: { content?: Record<string, unknown> }
+  responses?: Record<string, ResponseObject | undefined>
 }
 
 /** The part of an OpenAPI document this table reads: its paths, and the operations on each. */
@@ -21,9 +27,35 @@ const FORWARDED_METHODS = ['get', 'post', 'put', 'delete'] as const
 // A demo system's API path: `/api/lb01/...` belongs to LB-01.
 const SYSTEM_PATH = /^\/api\/lb(\d{2})\//
 
+// The media type of a file upload's body.
+const UPLOAD_MEDIA = 'multipart/form-data'
+
+/** Tells whether a route's body is a file upload: the document writes it as a multipart form and not as JSON. */
+function takesUpload(operation: OperationObject): boolean {
+  const media = Object.keys(operation.requestBody?.content ?? {})
+  return media.includes(UPLOAD_MEDIA) && !media.includes('application/json')
+}
+
+/**
+ * Lists the media types of the files a route may answer with in place of JSON, such as `image/jpeg`
+ * for a page's picture or `text/csv` for an export. Only a successful (2xx) answer counts, and the
+ * list is sorted so the table does not change with the order a document happens to write them in.
+ */
+function answeredFiles(operation: OperationObject): string[] {
+  const media = new Set<string>()
+  for (const [status, response] of Object.entries(operation.responses ?? {})) {
+    if (!/^2\d\d$/.test(status)) continue
+    for (const type of Object.keys(response?.content ?? {})) {
+      if (type !== 'application/json') media.add(type)
+    }
+  }
+  return [...media].sort()
+}
+
 /**
  * Lists the routes of one document that belong to a demo system, with the query parameters
- * each accepts and whether it takes a body. Throws on a path that is under `/api/lb..` but
+ * each accepts and whether it takes a body (and whether that body is a file upload), and the
+ * files it may answer with. Throws on a path that is under `/api/lb..` but
  * not shaped like the others, so a surprising document fails the generator instead of
  * widening what the site forwards.
  */
@@ -36,7 +68,18 @@ export function readOperations(document: OpenApiDocument, service: ApiRoute['ser
       const operation = operations[method]
       if (operation === undefined) continue
       const query = (operation.parameters ?? []).filter(parameter => parameter.in === 'query').map(parameter => parameter.name).sort()
-      routes.push({ system: `lb-${system}` as ApiRoute['system'], service, method: method.toUpperCase() as ApiRoute['method'], path, query, body: operation.requestBody !== undefined })
+      const files = answeredFiles(operation)
+      routes.push({
+        system: `lb-${system}` as ApiRoute['system'],
+        service,
+        method: method.toUpperCase() as ApiRoute['method'],
+        path,
+        query,
+        body: operation.requestBody !== undefined,
+        // Written only when it is so, so a route that is plain JSON both ways has the same row as ever.
+        ...(takesUpload(operation) ? { upload: true } : {}),
+        ...(files.length > 0 ? { files } : {}),
+      })
     }
   }
   return routes.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method))

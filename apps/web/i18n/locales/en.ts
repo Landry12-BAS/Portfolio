@@ -8,6 +8,8 @@ import lb01 from './boards/lb-01.en'
 import lb02 from './boards/lb-02.en'
 import lb05 from './boards/lb-05.en'
 import lb08 from './boards/lb-08.en'
+import lb03 from './boards/lb-03.en'
+import lb04 from './boards/lb-04.en'
 
 const en = {
   site: {
@@ -156,6 +158,8 @@ const en = {
   lb02,
   lb05,
   lb08,
+  lb03,
+  lb04,
   error: {
     code: 'Error {code}',
     notFound: 'Part not found',

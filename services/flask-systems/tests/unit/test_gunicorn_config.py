@@ -66,3 +66,15 @@ def test_the_environment_can_change_where_and_how_wide_it_serves(monkeypatch: py
     settings = runpy.run_path(str(CONFIG_FILE))
 
     assert (settings["bind"], settings["workers"], settings["threads"]) == ("0.0.0.0:9000", 2, 4)
+
+
+def test_a_worker_that_exits_lets_each_system_wind_down_first(settings: dict[str, Any]) -> None:
+    """Gunicorn's worker_exit hook runs what the systems registered, while the process can still use its threads."""
+    from core import shutdown
+
+    ran: list[str] = []
+    shutdown.register(lambda: ran.append("wound down"))
+
+    settings["worker_exit"](object(), object())
+
+    assert ran == ["wound down"]

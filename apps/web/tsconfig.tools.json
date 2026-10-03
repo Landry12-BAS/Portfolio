@@ -1,8 +1,8 @@
 {
   "//": "Strict type check of what `nuxt typecheck` does not cover: the scripts, the Vitest tests and the Playwright journeys. Single-file components are not read by tsc; they are checked by vue-tsc in `nuxt typecheck`, and the tests see them through test/env.d.ts. The contract tests start the gateway's own source, which has its own type check, so they are left to it.",
   "compilerOptions": {
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "target": "ES2024",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
