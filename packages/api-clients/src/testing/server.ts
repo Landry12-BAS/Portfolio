@@ -28,12 +28,17 @@ import type { MockOperation } from './openapi.ts'
 import { readSeed } from './seed.ts'
 import type { Language } from './seed.ts'
 import { Lb02Mock } from './lb02/index.ts'
+import { MAX_FRAME_BYTES as LB02_MAX_FRAME_BYTES } from './lb02/hub.ts'
 import { attachSockets } from './lb02/socket-server.ts'
+import { Lb09Mock, MAX_FRAME_BYTES as LB09_MAX_FRAME_BYTES } from './lb09.ts'
+import type { Lb09MockOptions, StartMeetingRequest } from './lb09.ts'
+import { readLb09Seed } from './lb09-seed.ts'
 import { Lb05Mock } from './lb05.ts'
 import { readLb05Seed } from './lb05-seed.ts'
 
-// Nothing the site sends is bigger than this; a bigger body is refused unread.
-const MAX_BODY_BYTES = 1_048_576
+// Nothing the site sends is bigger than this; a bigger body is refused unread. LB-09's recording, up to 3 MiB
+// of audio as base64 in a JSON body, is the one big body (infra/caddy/Caddyfile gives that route 5 MB too).
+const MAX_BODY_BYTES = 5 * 1_048_576
 
 /** What the mock was set up with. */
 export interface MockBackendOptions {
@@ -55,6 +60,8 @@ export interface MockBackendOptions {
   // LB-02's conversation: how long a connection has to say hello and may be silent, how many messages and
   // conversations are allowed, and how long the concierge "thinks". The real service's limits by default.
   lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
+  // LB-09's meetings: how long each stage of the worker takes, how long a connection has to say hello, and how long it lingers after the end.
+  lb09?: Pick<Lb09MockOptions, 'stageMs' | 'helloTimeoutMs' | 'lingerMs'>
 }
 
 /** Something the mock should do instead of answering normally, once or several times. */
@@ -103,6 +110,8 @@ export interface MockBackend {
   lb05: Lb05Mock
   // LB-08's state: its workflows, runs and sandbox.
   lb08: Lb08Mock
+  // LB-09's state: its meetings and the connections that follow them, and the control that makes the next one fail.
+  lb09: Lb09Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -150,6 +159,7 @@ class MockSite {
   readonly lb02: Lb02Mock
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
+  readonly lb09: Lb09Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -165,7 +175,8 @@ class MockSite {
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId))
+    this.lb09 = new Lb09Mock(readLb09Seed(), { ...options.lb09, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-09')?.sessionKey })
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb09.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -182,6 +193,7 @@ class MockSite {
     this.lb02.reset()
     this.lb05.reset()
     this.lb08.reset()
+    this.lb09.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -251,6 +263,7 @@ class MockSite {
       return this.#send(response, answer.status, answer.body)
     }
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
+    if (url.pathname.startsWith('/__mock/lb09/')) return this.#controlLb09(url.pathname.slice('/__mock/lb09/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
     const answer = this.#answer(found.operation, found.params, url, request.headers.authorization, body)
@@ -296,6 +309,14 @@ class MockSite {
       case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
       case 'GET /api/lb05/quota': return this.lb05.quota(session)
       case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
+      case 'GET /api/lb09/samples': return this.lb09.samples()
+      case 'GET /api/lb09/limits': return this.lb09.limits(session)
+      case 'POST /api/lb09/meetings': return this.lb09.start(session, json as StartMeetingRequest)
+      case 'GET /api/lb09/meetings': return this.lb09.list(session)
+      case 'GET /api/lb09/meetings/{meeting_id}': return this.lb09.get(session, params.meeting_id ?? '')
+      case 'GET /api/lb09/meetings/{meeting_id}/transcript': return this.lb09.transcript(session, params.meeting_id ?? '')
+      case 'GET /api/lb09/meetings/{meeting_id}/items': return this.lb09.items(session, params.meeting_id ?? '')
+      case 'GET /api/lb09/meetings/{meeting_id}/export': return this.lb09.export(session, params.meeting_id ?? '', search.get('format'))
       default: return this.#lb08Handler(operation, params, session, json, search)
     }
   }
@@ -323,6 +344,37 @@ class MockSite {
       case 'POST /api/lb08/dead-letters/{id}/replay': return this.lb08.replayDeadLetter(session, id)
       default: return undefined
     }
+  }
+
+  /**
+   * The controls of a test for LB-09, at `/__mock/lb09/<action>`: `fail` makes the next meeting fail with a
+   * reason (`{"reason": "too_long"}`), `drop` closes every open connection, `state` says how many are open.
+   * They take JSON with POST, as LB-02's do, and the mock listens on the loopback address only.
+   */
+  #controlLb09(action: string, method: string, contentType: string | undefined, text: string, response: ServerResponse): void {
+    if (method === 'GET' && action === 'state') return this.#send(response, 200, { openConnections: this.lb09.openConnections })
+    if (method !== 'POST' || !contentType?.startsWith('application/json')) return this.#send(response, 415, errorAnswer(415, 'unsupported', 'Send JSON with POST.').body)
+    let body: Record<string, unknown>
+    try {
+      body = text === '' ? {} : JSON.parse(text) as Record<string, unknown>
+    }
+    catch {
+      return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'The body is not JSON.').body)
+    }
+    if (action === 'fail') {
+      try {
+        this.lb09.failNext(String(body.reason))
+      }
+      catch {
+        return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'That is not a failure a meeting can have.').body)
+      }
+      return this.#send(response, 200, { ok: true })
+    }
+    if (action === 'drop') {
+      this.lb09.dropAll(1006)
+      return this.#send(response, 200, { ok: true })
+    }
+    return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is no such control.').body)
   }
 
   /**
@@ -404,7 +456,10 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
       response.end(JSON.stringify({ error: { code: 'mock_failure', message: 'The mock back end failed.' } }))
     })
   })
-  const detachSockets = attachSockets(server, site.lb02.hub)
+  const detachSockets = attachSockets(server, [
+    { path: '/ws/lb02/', hub: site.lb02.hub, maxFrameBytes: LB02_MAX_FRAME_BYTES },
+    { path: '/ws/lb09/', hub: site.lb09, maxFrameBytes: LB09_MAX_FRAME_BYTES },
+  ])
   await new Promise<void>((resolve) => {
     server.listen(options.port ?? 0, '127.0.0.1', resolve)
   })
@@ -417,6 +472,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb02: site.lb02,
     lb05: site.lb05,
     lb08: site.lb08,
+    lb09: site.lb09,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {
