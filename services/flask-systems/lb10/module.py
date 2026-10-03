@@ -6,6 +6,7 @@ from core.platform import Platform
 from core.registry import SystemModule, SystemRuntime
 from lb10.api import SYSTEM_KEY, build_blueprint
 from lb10.commands import sweep_lb10
+from lb10.evals import advise_lb10, gate_lb10, judge_lb10, nightly_lb10
 from lb10.service import build_service
 
 # LB-10's Alembic migrations.
@@ -26,6 +27,12 @@ LB10 = SystemModule(
     key=SYSTEM_KEY,
     schema="lb10",
     build=build_runtime,
-    commands={"sweep_lb10": sweep_lb10},
+    commands={
+        "sweep_lb10": sweep_lb10,
+        "nightly_lb10": nightly_lb10,
+        "judge_lb10": judge_lb10,
+        "gate_lb10": gate_lb10,
+        "advise_lb10": advise_lb10,
+    },
     migrations=MIGRATIONS,
 )
