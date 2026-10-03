@@ -38,6 +38,9 @@ import { Lb02Mock } from './lb02/index.ts'
 import { attachSockets } from './lb02/socket-server.ts'
 import { Lb05Mock } from './lb05.ts'
 import { readLb05Seed } from './lb05-seed.ts'
+import { Lb10Mock } from './lb10.ts'
+import type { Lb10MockOptions } from './lb10.ts'
+import { readLb10Seed } from './lb10-seed.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread. Two routes take more: LB-03's upload
 // is a file, so its route may take what the real service takes (10 MB and the few bytes of a multipart form around
@@ -70,6 +73,7 @@ export interface MockBackendOptions {
   lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
   // LB-03: how many polls a new document waits for a reader, and how many documents are said to be ahead of it.
   lb03?: Lb03MockOptions
+  lb10?: Lb10MockOptions
   // LB-04's review: how many times a contract is polled before it moves on to its next state.
   lb04?: Lb04MockOptions
 }
@@ -125,6 +129,7 @@ export interface MockBackend {
   lb08: Lb08Mock
   // LB-03's state: its documents, the visitors' counts of them and the traces they leave.
   lb03: Lb03Mock
+  lb10: Lb10Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -184,6 +189,7 @@ class MockSite {
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
   readonly lb03: Lb03Mock
+  readonly lb10: Lb10Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -201,7 +207,8 @@ class MockSite {
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
     this.lb03 = new Lb03Mock(readLb03Seed(), this.#now, options.lb03)
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId))
+    this.lb10 = new Lb10Mock(readLb10Seed(), this.#now, options.lb10)
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb10.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -220,6 +227,7 @@ class MockSite {
     this.lb05.reset()
     this.lb08.reset()
     this.lb03.reset()
+    this.lb10.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -356,6 +364,13 @@ class MockSite {
       case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
       case 'GET /api/lb05/quota': return this.lb05.quota(session)
       case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
+      case 'GET /api/lb10/targets': return this.lb10.targets()
+      case 'POST /api/lb10/runs': return this.lb10.start(session, json as { target: string, prompt: string, providers: string[] })
+      case 'GET /api/lb10/runs/{run_id}': return this.lb10.run(session, params.run_id ?? '')
+      case 'GET /api/lb10/runs': return this.lb10.runsToday(session)
+      case 'GET /api/lb10/quota': return this.lb10.quota(session)
+      case 'GET /api/lb10/baselines': return this.lb10.baselines()
+      case 'GET /api/lb10/nightly': return this.lb10.nightly()
       default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search)
     }
   }
@@ -513,6 +528,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb05: site.lb05,
     lb08: site.lb08,
     lb03: site.lb03,
+    lb10: site.lb10,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {

@@ -5,15 +5,15 @@ from typing import Any
 
 import pytest
 import yaml
-from lb10.pack_writer import render_pack
-from lb10.packs import MIN_CASES, EvalPack, pack_version, read_pack, read_packs
-from lb10.sampling import MIN_HARD, SAMPLE_SIZE, sample_cases
-from lb10.templates import render
 from pydantic import ValidationError
 
 from core.data_files import DataFileError
 from core.platform import REPOSITORY_ROOT
 from lb05.pack import MADE_BY, PACK_FILE, SOURCE, export_pack
+from lb10.pack_writer import render_pack
+from lb10.packs import MIN_CASES, EvalPack, pack_version, read_pack, read_packs
+from lb10.sampling import MIN_HARD, SAMPLE_SIZE, sample_cases
+from lb10.templates import render
 
 SEED_DIRECTORY = REPOSITORY_ROOT / "data" / "seed"
 
@@ -73,7 +73,7 @@ def test_every_case_fills_both_templates_and_nothing_more() -> None:
     """An input the templates don't use, or a placeholder no input fills, names the case."""
     pack = small_pack()
     pack["cases"][3]["inputs"] = {"ticket": "t"}
-    with pytest.raises(ValidationError, match="case 'case-3'.*missing \\['language'\\]"):
+    with pytest.raises(ValidationError, match=r"case 'case-3'.*missing \['language'\]"):
         EvalPack.model_validate(pack)
     pack = small_pack()
     pack["cases"][5]["inputs"]["extra"] = "x"

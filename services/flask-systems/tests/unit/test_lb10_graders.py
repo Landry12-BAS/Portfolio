@@ -1,8 +1,9 @@
 """Tests for the closed set of graders: each is a pure function of the output and its pack's fixed values."""
 
 import pytest
-from lb10.graders import GRADER_KINDS, Grader, PathError, grade, grade_all, passed_all, walk
 from pydantic import TypeAdapter, ValidationError
+
+from lb10.graders import GRADER_KINDS, Grader, PathError, grade, grade_all, passed_all, walk
 
 GRADER: TypeAdapter[Grader] = TypeAdapter(Grader)
 

@@ -1,6 +1,7 @@
 """Tests for the pack templates: placeholders, rendering, and the translation from Python format strings."""
 
 import pytest
+
 from lb10.templates import TemplateError, from_format_string, placeholders, render
 
 

@@ -18,9 +18,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from lb10.packs import PACKS_DIRECTORY, EvalPack
-from lb10.templates import from_format_string, render
-
 from core.structured import ChatMessage
 from lb05.golden import EVALS_DIRECTORY, GoldenCase, read_golden_set, reference_sql
 from lb05.prompts import (
@@ -36,6 +33,8 @@ from lb05.prompts import (
 from lb05.resolve import resolve
 from lb05.semantic_check import load_semantic_layer
 from lb05.semantic_layer import SemanticLayer
+from lb10.packs import PACKS_DIRECTORY, EvalPack
+from lb10.templates import from_format_string, render
 
 # The day the pack's questions are asked on: every relative date in a case resolves against it. Fixed, so
 # the pack (and so the lab's cached baselines) change only when the prompt or the golden set does.
