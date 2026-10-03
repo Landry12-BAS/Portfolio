@@ -288,7 +288,7 @@ block ends. A higher number only makes the rule harder to trip by accident; a vi
 wants to trip it can still do so deliberately, from the site's address. The box's real limits
 are per session and per system, and they see the visitor: each system's quotas (LB-01's 20
 tickets a day, LB-02's 10 conversations, LB-05's 25 questions, LB-08's runs, LB-04's 3
-contracts), the gateway's
+contracts, LB-06's incident), the gateway's
 per-session calls and its per-system and per-provider budgets, the Turnstile check before a
 live run, and the gateway's limit on how often one run's trace is read.
 
@@ -374,7 +374,7 @@ base64url string. The private half stays in the file. Where each goes:
 |---|---|---|
 | `django-systems`: the Django systems calling the gateway | An entry of `LB_SERVICE_KEYS` in the gateway's secrets | `LB_SERVICE_KEY_JWK_B64` in the Django secrets: the file, as one line of base64 |
 | `flask-systems`: the Flask systems (LB-05) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Flask secrets |
-| `node-systems`: the Node systems (LB-08, LB-04) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API (describing a workflow, writing a redline) and the worker (LB-04's reviews): both start only with it |
+| `node-systems`: the Node systems (LB-08, LB-04, LB-06) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API (describing a workflow, writing a redline, LB-06's injection screen) and the worker (LB-04's reviews, LB-06's agents): both start only with it |
 | `web`: the site's server calling the gateway (the run-spans route) | An entry of `LB_SERVICE_KEYS` | Vercel: `NUXT_LB_GATEWAY_SERVICE_KEY` |
 | `site`: the site signing its visitors' tokens | `LB_WEB_TOKEN_KEY` in the compose settings: the public key alone, which all three back ends verify visitor tokens against | Vercel: `NUXT_LB_WEB_SIGNING_KEY` |
 
@@ -613,7 +613,7 @@ From a machine **outside** the tailnet:
       `server: cloudflare`).
 - [ ] `curl -si https://api.example.com/api/lb01/customers` is `401`: LB-01's API is
       reached, and asks for a visitor token. So are `/api/lb02/offerings` (LB-02),
-      `/api/lb03/quota` (LB-03), `/api/lb05/quota` (LB-05), `/api/lb08/limits` (LB-08) and `/api/lb04/limits` (LB-04).
+      `/api/lb03/quota` (LB-03), `/api/lb05/quota` (LB-05), `/api/lb08/limits` (LB-08), `/api/lb04/limits` (LB-04) and `/api/lb06/limits` (LB-06).
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' https://api.example.com/api/healthz` is `404`,
       and so are `/api/openapi.json` and `/v1/models`: only the routes in the Caddyfile
       exist.
@@ -691,9 +691,9 @@ through it; every Compose service passes the security rules and the memory budge
 Postgres roles cannot reach each other's schemas, for every pair of the five systems
 (`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
 consumer, the Flask systems' integration (LB-03's and LB-05's) and the Node systems' whole
-test suites (LB-08's and LB-04's) and a Celery worker's, with an empty ACL log
+test suites (LB-08's, LB-04's and LB-06's) and a Celery worker's, with an empty ACL log
 (`infra/redis/test-acl.sh`); Caddy's routes, headers, streaming, timeouts, the upload limits
-of LB-03 and LB-04, a quiet WebSocket and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
+of LB-03 and LB-04, a quiet WebSocket (LB-02's and LB-06's) and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
 restores into a scratch database and over the live one, and a wrong key cannot open it; the
 secrets tooling with the real `sops` and `age` (`infra/scripts/test-secrets.sh`); the deploy
 script's order, signature check, rollback and clean-up with stand-ins for Docker and cosign
@@ -837,8 +837,9 @@ A systemd timer runs the `backup` job at 02:30 UTC: `pg_dump` is piped straight 
 `age`, so the dump never exists unencrypted, and only the encrypted file is uploaded to
 `r2:lb-backups/postgres`. A failed dump uploads nothing. The dump leaves out the rows of
 the tables that hold what visitors upload (`infra/backup/excluded-data.txt`: LB-04's
-contracts, their files, their text, their reports and their redlines), because a visitor's
-file is kept for an hour and a backup for weeks. A restore makes those tables empty, which
+contracts, their files, their text, their reports and their redlines; LB-06's incidents, their
+logs and the scenario cache), because a visitor's
+file is kept for an hour, an incident for a day, and a backup for weeks. A restore makes those tables empty, which
 is what they are an hour after any restore. `infra/postgres/test-roles.sh` proves it: no
 word of a contract is in the dump. Look at the last run:
 

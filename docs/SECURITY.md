@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...`, `/api/lb06/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -320,19 +320,22 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues (LB-08's and LB-04's, each under its
-  own pattern), and for every service its own run
+  channel layer, the Node systems' BullMQ queues (LB-08's, LB-04's and LB-06's, each under its
+  own pattern) and LB-06's feeds (a stream per incident), and for every service its own run
   spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's, the Node systems' (LB-08's and LB-04's), and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's, LB-04's and LB-06's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
   read-only: a compromised API cannot change the data it answers from. The volume holds
   nothing but synthetic data, is not backed up, and is made again when it is missing.
-- **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
-  to the rest), the visitor token travels in the first frame and never in the address, and
-  uvicorn refuses a frame over 8192 bytes before the service reads it.
+- **WebSockets** (LB-02's at `/ws/lb02/`, LB-06's at `/ws/lb06/`): only the site's origin may
+  open one (Caddy checks it, and answers `403` to the rest), the visitor token travels in the
+  first frame and never in the address, uvicorn refuses a frame over 8192 bytes before LB-02
+  reads it and Fastify one over 4096 before LB-06 does, and LB-06 holds a visitor to four
+  connections and a process to 256, pings every half minute and closes after fifteen minutes
+  of silence (`services/node-systems/src/modules/lb06/engine/socket.ts`).
 - **R2:** one scoped token per bucket. LB-03's uploads bucket is private (nothing sets an ACL
   or makes a public address), its token may read, write and delete there and nowhere else,
   and its one-day lifecycle rule is a backstop behind the service's own hourly sweep.
@@ -352,6 +355,14 @@ attempts. Every prompt change must pass it.
   never sees a passage that talks to it. Its limits and what is not covered are in
   [`services/node-systems/README.md`](../services/node-systems/README.md), "Threat model of
   LB-04".
+- **LB-06's incidents:** the visitor's two strings (a version label, a flag's name, 40
+  characters each from a pattern with no `<` or `>`) go to the injection screen first and then
+  into a delimited data slot of the agents' prompts, never into a system prompt; the agents
+  can only cite evidence the server holds and propose an action from a closed list, and nothing
+  changes the simulated shop without the visitor's click, which is a server-side transition
+  checked against the pending proposal's id. An incident, its log and the scenario cache live in
+  the `lb06` schema under their own role for a day, are left out of the backup, and are deleted
+  by a sweep. The rest is in the same README, "LB-06 threat model".
 
 ## 6. Containers and host
 

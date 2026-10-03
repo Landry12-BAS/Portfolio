@@ -12,6 +12,7 @@
 !services/node-systems/src/**
 !data/seed/lb08/**
 !data/seed/lb04/**
+!evals/lb06/**
 !infra/docker/node-entrypoint.mjs
 
 **/node_modules
