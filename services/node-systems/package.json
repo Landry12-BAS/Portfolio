@@ -20,7 +20,9 @@
     "contracts:lb04": "node scripts/lb04-contracts.ts",
     "check": "node src/cli/check.ts && node scripts/lb04-contracts.ts --check",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --project unit --project integration",
+    "test:browser": "vitest run --project browser",
+    "sandbox": "node --env-file-if-exists=.env src/sandbox.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

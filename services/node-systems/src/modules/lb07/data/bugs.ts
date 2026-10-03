@@ -59,8 +59,11 @@ export function bugViews(catalogue: BugCatalogue): Lb07BugView[] {
   })
 }
 
+/** The parts of a finding a truth looks at: the runner's findings have them before they get an id. */
+export type TruthSubject = Pick<Lb07Finding, 'kind' | 'engine' | 'path' | 'rule' | 'detail'>
+
 /** Tells whether a finding is what a bug's truth describes. */
-export function matchesTruth(truth: Truth, finding: Lb07Finding): boolean {
+export function matchesTruth(truth: Truth, finding: TruthSubject): boolean {
   if (finding.kind !== truth.kind) return false
   if (truth.engine !== undefined && finding.engine !== truth.engine) return false
   if (truth.path !== undefined && finding.path !== truth.path) return false

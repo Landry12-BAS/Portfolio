@@ -1,8 +1,8 @@
 // The staging shop's HTTP server: a plain node:http server with a handful of routes, a cart in a
-// cookie, and the bugs switched on by a signed token (token.ts). It is one small process of its own
-// (src/shop.ts), in a container of its own on the sandbox network, so the browser the agent drives can
-// reach it and nothing else; it holds no database, no queue and no model, and the one secret it has is
-// the key that verifies bug tokens. The `checkout-engine` bug lives here: when it is on, the checkout
+// cookie, and the bugs switched on by a signed token (token.ts). It is one small server of its own,
+// started by the sandbox process (src/sandbox.ts) on the loopback interface of the sandbox container, so
+// the browser the agent drives can reach it and nothing else; it holds no database, no queue and no
+// model, and the one secret it has is the key that verifies bug tokens. The `checkout-engine` bug lives here: when it is on, the checkout
 // fails for a browser that is not Chromium, told apart by its user agent, since the sandbox installs
 // only Chromium and a second engine is simulated by its user agent (README, "What is simulated").
 import { createHash } from 'node:crypto'
