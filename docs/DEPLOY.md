@@ -702,6 +702,13 @@ config`, hadolint, shellcheck and actionlint.
   and offer the live run. Not checked either: whether the Vercel plan lets a function wait the
   95 seconds the proxy allows LB-05 and LB-08.
 - Real provider traffic: no provider key was available.
+- LB-09's image with the Whisper weights: the build fetches them from Hugging Face
+  (`infra/docker/django-systems.Dockerfile`), which this environment could not reach, so the
+  step has not run, no image with them has been built, and private mode has never transcribed
+  a real recording. Fast mode's route exists in the gateway and is tested with fake providers;
+  it has never been called with a provider key either. The shared `lb09-audio` volume and the
+  5 MB upload route through Caddy are checked by the Compose rules and `infra/caddy/test.sh`,
+  not by a deployed stack.
 
 ## 13. Day to day
 
@@ -888,6 +895,29 @@ and needs only steps 3 to 6; a new runtime needs all of them. The order that wor
    (`just secrets-edit compose`) and put the service on `egress-systems`.
 9. Update the table of what runs where, if the service changes it, and run
    `just infra-check` and `just infra-test` before the pull request.
+
+### LB-09's audio and model
+
+LB-09 (the Django systems) needs two things no other system does, both in the files above:
+
+- **A place for recordings between the API and the worker.** `django-api` writes a visitor's
+  recording to the `lb09-audio` volume, a tmpfs of 64 MiB mounted at `/var/lib/lb/audio` in
+  `django-api` and `django-worker` only (`LB09_AUDIO_DIR`), and the worker deletes it once it is
+  transcribed, on success and on failure. Nothing reaches the disk; a restart empties it, which
+  only fails the meetings in flight (their rows say `stale` after the worker's sweep). Caddy lets
+  the one upload route, `POST /api/lb09/meetings`, carry 5 MB; everything else keeps the 1 MB cap.
+- **The private transcriber's weights.** `infra/docker/django-systems.Dockerfile` downloads
+  Whisper's base model, converted for CTranslate2, from Hugging Face at build time into
+  `/app/whisper/base`, which `LB09_WHISPER_DIR` names, and the service loads it with local files
+  only: a running container never downloads anything. The build host must reach
+  `huggingface.co` (GitHub's runners do; a sandbox without a route fails the build, on purpose).
+  To change the model, change the name in the Dockerfile and the folder in `docker-compose.yml`
+  together; the worker's 1 GiB limit fits the base model in int8 with room for the decoder.
+- **Its role and secrets.** `lb09` is in `infra/postgres/systems.txt`, so the provision job makes
+  the role; `LB_PG_PASSWORD_LB09` is new in `postgres-roles.example.env`, so `just secrets-edit
+  postgres-roles` must be given a value with `just secret-token` before the next deploy, or the
+  secrets check refuses the release. `routing.yaml` ties `lb-09` to the `django-systems` service
+  key that already exists; nothing new is needed at the gateway, and the Redis role is unchanged.
 
 ### Upgrading images and tools
 

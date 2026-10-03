@@ -39,7 +39,17 @@ the database-enforced no-double-booking constraint, its synthetic calendar
 [README](services/django-systems/README.md)); LB-02's demo is on the site at
 `/systems/lb-02/board` (a phone-frame chat beside the live calendar, installable as an
 app; see the web README); next come the recorded sample runs of LB-01 and LB-02
-(`just record-sample`, which needs the live back end with a model behind it). Also in build:
+(`just record-sample`, which needs the live back end with a model behind it). LB-09
+Meeting Recorder's back end is built in the same project: the gateway's `lb-stt` route
+with audio-second budgets, six scripted meetings spoken by an offline text-to-speech
+(`data/seed/lb09`) with a golden set (`evals/lb09`), audio taken in safely (magic bytes, a
+bounded decoder, the length measured from the samples, the file deleted once transcribed),
+fast mode through the gateway and private mode with faster-whisper on the box, speaker
+labels inferred from the words, decisions and actions with verified evidence and seconds
+derived in code, progress over a WebSocket with a polling fallback, the visitor API with
+exports, and the infrastructure (its role, the shared audio volume, the upload route, the
+weights in the image); next come its board at `/systems/lb-09/board` and its live eval and
+word-error-rate runs (`just eval-lb09`, `just wer-lb09`, which need a model). Also in build:
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
@@ -189,9 +199,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just typecheck` | Strict type-check with `vue-tsc` and `tsc` (the site's scripts, tests and journeys included), and mypy for Python |
 | `just test` | Every Vitest and pytest suite, unit, integration and the gateway contract tests |
 | `just django` | Run the Django systems' API and WebSockets with reload on http://127.0.0.1:8001 (settings in `services/django-systems/.env`, from `.env.example`; frames over 8 KB are refused) |
-| `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweeps, the nightly reseed, and LB-02's minute-by-minute hold sweep and nightly calendar reset |
+| `just worker` | Run the Celery worker with its scheduler: the ticket pipeline, the 24-hour sweeps, the nightly reseed, LB-02's minute-by-minute hold sweep and nightly calendar reset, and LB-09's meeting pipeline and five-minute sweep |
 | `just openapi` | Regenerate `services/django-systems/openapi.json` after an API change (a test fails while it is stale) |
-| `just migrate` | Create or update each Django system's schema (settings in `services/django-systems/.env`, from `.env.example`) |
+| `just migrate` | Create or update each Django system's schema, LB-01, LB-02 and LB-09 (settings in `services/django-systems/.env`, from `.env.example`) |
 | `just seed [--today YYYY-MM-DD]` | Load the synthetic Basalt & Bean data from `data/seed` into LB-01 and LB-02; `--today` pins the day that relative order dates and LB-02's calendar count from |
 | `just embed [--again]` | Record the vectors LB-01's search needs through the gateway (only for text that changed); commit the two files it writes |
 | `just eval-search` | Measure LB-01's search recall on the golden set against its gate in `evals/lb01/search-baseline.yaml` |
@@ -232,6 +242,8 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just secrets-test` | Test the secrets tooling with the real `sops` and `age`, in a throwaway copy with throwaway keys |
 | `just secret-token [bytes]` | Print a random hex token, for a password or key you edit in by hand |
 | `just tts-lb09 [--meeting KEY] [--check]` | Speak LB-09's scripted meetings (`data/seed/lb09`) with Flite, an offline text-to-speech, into `data/seed/lb09/audio` with a manifest of each turn's timing; `--check` only compares the committed audio with its manifest and the scripts |
+| `just eval-lb09 [--samples] [--case ID]` | Run LB-09's golden set through the live labelling and extraction (each scripted meeting as a transcript, timed by the committed audio) and grade it by rules against its gate (two chat calls a case, plus a repair each; run it when prompts or routes change) |
+| `just wer-lb09 [--mode fast\|private] [--meeting KEY]` | Transcribe LB-09's committed meetings for real and report the transcriber's word error rate against the scripts (fast mode spends `lb-stt` seconds; private mode needs the faster-whisper weights in `LB09_WHISPER_DIR`) |
 
 End-to-end tests run against the production build. Where a Chromium is preinstalled,
 point Playwright at it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`; CI installs

@@ -251,7 +251,9 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   correctness. LB-01 stores embeddings in pgvector and combines them with Postgres
   full-text search for hybrid retrieval.
 - **Speech (LB-09).** Groq Whisper in fast mode, faster-whisper on the box in private
-  mode.
+  mode. The recording is decoded by PyAV (FFmpeg in a wheel) in a child process the kernel
+  bounds, to the 16 kHz mono WAV the gateway measures; the private model is Whisper's base
+  model in int8 on the CPU, with weights baked into the image at build time.
 
 ### Flask systems (LB-03 Invoice Reader, LB-05 Data Analyst, LB-10 Eval Lab)
 

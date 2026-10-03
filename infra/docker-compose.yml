@@ -89,6 +89,12 @@ x-django: &django
     LB_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01:?LB_PG_PASSWORD_LB01 is not set}@postgres:5432/lb
     LB01_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01}@postgres:5432/lb
     LB02_DATABASE_URL: postgres://lb02:${LB_PG_PASSWORD_LB02:?LB_PG_PASSWORD_LB02 is not set}@postgres:5432/lb
+    LB09_DATABASE_URL: postgres://lb09:${LB_PG_PASSWORD_LB09:?LB_PG_PASSWORD_LB09 is not set}@postgres:5432/lb
+    # LB-09: where a recording waits between the API and the worker (the memory-backed volume
+    # below, shared by the two and nobody else), and the private transcriber's weights, baked
+    # into the image (infra/docker/django-systems.Dockerfile).
+    LB09_AUDIO_DIR: /var/lib/lb/audio
+    LB09_WHISPER_DIR: /app/whisper/base
     # The site's public key: every visitor token is checked against it.
     LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
     LB_REDIS_URL: redis://django-systems:${LB_REDIS_PASSWORD_DJANGO_SYSTEMS:?LB_REDIS_PASSWORD_DJANGO_SYSTEMS is not set}@redis:6379/0
@@ -279,6 +285,7 @@ services:
       - >-
         python manage.py migrate --database lb01 --noinput
         && python manage.py migrate --database lb02 --noinput
+        && python manage.py migrate --database lb09 --noinput
         && python manage.py seed_lb01
         && python manage.py seed_lb02
     depends_on:
@@ -303,14 +310,19 @@ services:
       timeout: 6s
       retries: 4
       start_period: 30s
+    # LB-09's recordings, written here by the API and deleted by the worker once transcribed.
+    volumes:
+      - lb09-audio:/var/lib/lb/audio
     mem_limit: 512m
     memswap_limit: 512m
     cpus: 1.0
     cpu_shares: 1536
     pids_limit: 128
 
-  # Celery's worker with its scheduler: the ticket pipeline, the 24-hour sweep, the nightly
-  # reseed. Two processes at most, and each is recycled before it grows large.
+  # Celery's worker with its scheduler: the ticket pipeline, LB-09's meeting pipeline, the
+  # 24-hour sweeps, the nightly reseed. Two processes at most, and each is recycled before it
+  # grows large. LB-09's private transcriber (faster-whisper, the base model in int8) runs here,
+  # which is what the memory is for.
   django-worker:
     <<: *django
     command:
@@ -340,10 +352,14 @@ services:
       timeout: 20s
       retries: 3
       start_period: 60s
-    # Warm shutdown: a task in flight may take up to its deadline to finish.
-    stop_grace_period: 60s
-    mem_limit: 768m
-    memswap_limit: 768m
+    # LB-09's recordings: the worker reads a recording the API wrote here and deletes it.
+    volumes:
+      - lb09-audio:/var/lib/lb/audio
+    # Warm shutdown: a task in flight may take up to its deadline to finish. A private
+    # transcription may take most of LB-09's 150-second task limit (lb09/limits.py).
+    stop_grace_period: 180s
+    mem_limit: 1024m
+    memswap_limit: 1024m
     cpus: 1.0
     pids_limit: 128
 
@@ -733,3 +749,12 @@ volumes:
   redis-data:
   # LB-05's generated warehouse: written by flask-seed, read-only in flask-api.
   lb05-warehouse:
+  # LB-09's recordings, in memory and never on disk: written by django-api, read and deleted by
+  # django-worker. 64 MiB holds the day's five 3 MiB uploads of a dozen visitors at once; a file
+  # older than an hour is removed by the worker's sweep, and a restart empties it.
+  lb09-audio:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=64m,uid=10001,gid=10001,mode=0700"

@@ -75,6 +75,7 @@ openapi:
 migrate:
     uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb01
     uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb02
+    uv run --directory services/django-systems --env-file .env python manage.py migrate --database lb09
 
 # `--today YYYY-MM-DD` pins the day that order dates and LB-02's calendar are counted from.
 # Load the synthetic Basalt & Bean data into every system, replacing what the files no longer hold.
@@ -262,3 +263,14 @@ secret-token *bytes:
 # with a manifest of each turn's timing; `--check` only checks the committed audio against its manifest (CI runs it).
 tts-lb09 *args:
     uv run --directory services/django-systems --env-file .env python manage.py synth_lb09 {{args}}
+
+# Run LB-09's golden set through the live labelling and extraction (each scripted meeting as the transcript a
+# transcriber gives, timed by the committed audio's manifest) and grade it by rules against the gate in
+# evals/lb09/golden.yaml. Two chat calls a case, plus a repair each; `--samples` or `--case ID` run fewer.
+eval-lb09 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py eval_lb09 {{args}}
+
+# Transcribe LB-09's committed meetings for real, in fast mode (through the gateway) or `--mode private`
+# (faster-whisper on this machine, with LB09_WHISPER_DIR set), and report the word error rate against the scripts.
+wer-lb09 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py wer_lb09 {{args}}

@@ -81,8 +81,21 @@
 
 	@other_host not host {$LB_API_HOST}
 
-	# The Django systems: LB-01 and LB-02's APIs, and LB-02's WebSocket.
-	@django path /api/lb01/* /api/lb02/* /ws/lb02/*
+	# The Django systems: LB-01, LB-02 and LB-09's APIs, and LB-02's and LB-09's WebSockets.
+	@django path /api/lb01/* /api/lb02/* /ws/lb02/* /api/lb09/* /ws/lb09/*
+
+	# LB-09's one upload: a recording of up to 3 MiB as base64 in a JSON body, which is the only
+	# body on the API bigger than a ticket (services/django-systems/README.md, LB-09).
+	@lb09_upload {
+		method POST
+		path /api/lb09/meetings
+	}
+	@not_lb09_upload {
+		not {
+			method POST
+			path /api/lb09/meetings
+		}
+	}
 
 	# The Flask systems (LB-05) and the Node systems (LB-08): one API prefix each.
 	@flask path /api/lb05/*
@@ -119,9 +132,12 @@
 	route {
 		respond @other_host `{"error":{"code":"not_found","message":"There is nothing at this address."}}` 404
 
-		# No body bigger than a ticket's text and a little more. An upload route would raise
-		# this for itself, in its own route.
-		request_body {
+		# No body bigger than a ticket's text and a little more, except LB-09's upload, which
+		# gets what its 3 MiB of audio takes as base64 in JSON, and a little more.
+		request_body @lb09_upload {
+			max_size 5MB
+		}
+		request_body @not_lb09_upload {
 			max_size 1MB
 		}
 
