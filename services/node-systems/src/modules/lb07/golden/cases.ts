@@ -53,7 +53,7 @@ export interface GoldenCase {
     verdict: z.infer<typeof expectationSchema>['verdict']
     blocked: number
     maxReplans: number
-    failure: z.infer<typeof expectationSchema>['failure']
+    failure?: z.infer<typeof expectationSchema>['failure']
   }
 }
 
