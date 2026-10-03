@@ -5,7 +5,7 @@ from pathlib import Path
 from core.platform import Platform
 from core.registry import SystemModule, SystemRuntime
 from lb05.api import SYSTEM_KEY, build_blueprint
-from lb05.commands import eval_lb05, seed_lb05, sweep_lb05
+from lb05.commands import eval_lb05, export_pack_lb05, seed_lb05, sweep_lb05
 from lb05.service import build_service
 
 # LB-05's Alembic migrations.
@@ -25,6 +25,11 @@ LB05 = SystemModule(
     key=SYSTEM_KEY,
     schema="lb05",
     build=build_runtime,
-    commands={"seed_lb05": seed_lb05, "eval_lb05": eval_lb05, "sweep_lb05": sweep_lb05},
+    commands={
+        "seed_lb05": seed_lb05,
+        "eval_lb05": eval_lb05,
+        "sweep_lb05": sweep_lb05,
+        "export_pack_lb05": export_pack_lb05,
+    },
     migrations=MIGRATIONS,
 )
