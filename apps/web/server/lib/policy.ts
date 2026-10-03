@@ -43,6 +43,8 @@ export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-08': { maxBodyBytes: 64 * KIB, timeoutMs: 95_000, maxResponseBytes: MIB },
   'lb-03': { maxBodyBytes: 4 * KIB, maxUploadBytes: LB03_SITE_UPLOAD_BYTES, timeoutMs: 25_000, maxResponseBytes: 2 * MIB },
   'lb-04': { maxBodyBytes: 3 * MIB, timeoutMs: 60_000, maxResponseBytes: 4 * MIB },
+  // LB-10: a prompt of 4,000 characters in a small JSON body; a run is started with 202 and polled, so no call waits long.
+  'lb-10': { maxBodyBytes: 8 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
 }
 
 /** The most a trace page from the gateway may weigh: the gateway cuts its pages at 256 KB, and this leaves room for the envelope. */

@@ -81,7 +81,7 @@ ignore-variadic-names = true
 "**/migrations/**" = ["D", "E501", "RUF012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lb_common", "config", "core", "lb01", "lb02", "lb05", "lb03"]
+known-first-party = ["lb_common", "config", "core", "lb01", "lb02", "lb05", "lb03", "lb10"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

@@ -50,6 +50,8 @@ VARIABLES = {
     "LB03_OCR_WORKERS": "lb03_ocr_workers",
     "LB03_SCRATCH_DIR": "lb03_scratch_dir",
     "LB03_REQUIRE_LANDLOCK": "lb03_require_landlock",
+    "LB10_DATABASE_URL": "lb10_database_url",
+    "LB_EVALS_DIR": "evals_dir",
 }
 # The three variables that together say how to call the AI gateway.
 GATEWAY_FIELDS = ("gateway_url", "service_name", "service_key_file")
@@ -109,8 +111,12 @@ class Environment(BaseModel):
     lb03_ocr_workers: int = Field(default=1, ge=1, le=4)
     lb03_scratch_dir: str | None = None
     lb03_require_landlock: bool = False
+    # LB-10: its own role's login, as LB-05's is, and where the eval packs and baselines live (the repository's
+    # evals folder by default; the image copies evals/packs and evals/baselines there).
+    lb10_database_url: str | None = None
+    evals_dir: str | None = None
 
-    @field_validator("database_url", "lb05_database_url", "lb03_database_url")
+    @field_validator("database_url", "lb05_database_url", "lb03_database_url", "lb10_database_url")
     @classmethod
     def _check_database_url(cls, url: str | None) -> str | None:
         """Accept only Postgres URLs."""
@@ -216,7 +222,11 @@ class Environment(BaseModel):
 
     def database_url_for(self, schema: str) -> str:
         """Return the URL a system's engine connects with: its own role's when it has one, else the shared one."""
-        own = {"lb05": self.lb05_database_url, "lb03": self.lb03_database_url}.get(schema)
+        own = {
+            "lb05": self.lb05_database_url,
+            "lb03": self.lb03_database_url,
+            "lb10": self.lb10_database_url,
+        }.get(schema)
         return own or self.database_url
 
     def gateway_is_configured(self) -> bool:
