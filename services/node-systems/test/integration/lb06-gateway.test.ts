@@ -2,6 +2,7 @@
 // by the gateway's own checks (the aliases, the input limits, the run labels), an incident with the
 // screen and its nine calls fits the run's cap, a sixteenth call is refused by the gateway itself, and
 // the trace is one tree the site's server reads as finished.
+import { RedisSpanWriter } from '@lb/common'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 
 import type { ContractGateway } from '../../../../packages/common/test/support/contract-gateway.ts'
@@ -19,7 +20,7 @@ let h: Lb06Harness
 beforeAll(async () => {
   gw = await startLb06Gateway(inject('redisUrl'))
   const services = agentServices(gw.client)
-  h = await createLb06Harness(inject('databaseUrl'), { models: services.models, guard: services.guard })
+  h = await createLb06Harness(inject('databaseUrl'), { models: services.models, guard: services.guard, spanWriter: new RedisSpanWriter(gw.redis, gw.prefix) })
 })
 afterAll(async () => {
   await h.close()

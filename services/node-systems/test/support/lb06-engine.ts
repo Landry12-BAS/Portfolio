@@ -3,6 +3,7 @@
 // connection), a recorder for the spans, and the reference agents (or scripts) for the models. The
 // clock ticks fast (a few milliseconds a simulated minute), so a whole incident runs in a second.
 import { Tracer } from '@lb/common'
+import type { SpanWriter } from '@lb/common'
 import type { Lb06Event } from '@lb/contracts'
 import { pino } from 'pino'
 
@@ -129,6 +130,8 @@ export interface HarnessOptions {
   // `false` for a process that has no gateway.
   withAgents?: boolean
   feed?: FeedWriter
+  // Where the spans go: the recorder by default, or a writer of the test's own (the gateway's Redis, for a trace the site can read).
+  spanWriter?: SpanWriter
 }
 
 /** Builds the engine on a database of its own. */
@@ -145,7 +148,7 @@ export async function createLb06Harness(serverUrl: string, options: HarnessOptio
     config: { ...LB06_TEST_CONFIG, ...options.config },
     scheduler,
     feed: options.feed ?? feed,
-    tracer: new Tracer(spans),
+    tracer: new Tracer(options.spanWriter ?? spans),
     log: pino({ level: 'silent' }),
     now: clock.now,
     samples: readSampleCatalogue(),
