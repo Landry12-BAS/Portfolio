@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import { lb06ActionSchema } from './actions.ts'
 import { lb06HypothesisSchema, lb06PlanSchema, lb06PostmortemProseSchema, lb06SpecialistReportSchema } from './agents.ts'
-import { LB06_AGENTS, LB06_END_REASONS, LB06_FAULTS, LB06_LIMITS, LB06_PARAM_PATTERN, LB06_SERVICES } from './limits.ts'
+import { LB06_AGENTS, LB06_END_REASONS, LB06_FAULTS, LB06_LIMITS, LB06_METRICS, LB06_PARAM_PATTERN, LB06_SERVICES } from './limits.ts'
 
 const minute = z.int().min(0).max(LB06_LIMITS.maxSeriesMinutes)
 const label = z.string().min(1).max(LB06_LIMITS.maxParamLength).regex(LB06_PARAM_PATTERN)
@@ -31,6 +31,21 @@ export type Lb06Scenario = z.infer<typeof lb06ScenarioSchema>
 
 /** A proposal's id: `p1`, `p2`, `p3`. */
 export const lb06ProposalId = z.string().regex(/^p[1-3]$/)
+
+/** The SLO as code measured it at one minute: the share of bad requests, the burn over each window pair, and whether the minute is healthy. */
+export const lb06SloSchema = z.strictObject({
+  badFraction: z.number().min(0).max(1),
+  burns: z.array(z.lazy(() => lb06BurnSchema)).min(1).max(4),
+  healthy: z.boolean(),
+  alerting: z.boolean(),
+})
+/** The SLO at one minute. */
+export type Lb06Slo = z.infer<typeof lb06SloSchema>
+
+/** The metrics of every service at one minute, as a tick carries them so the dashboards need no second read. */
+export const lb06MinuteMetricsSchema = z.record(z.enum(LB06_SERVICES), z.record(z.enum(LB06_METRICS), z.number().min(0).max(1_000_000)))
+/** The metrics of one minute. */
+export type Lb06MinuteMetrics = z.infer<typeof lb06MinuteMetricsSchema>
 
 /** The burn rates the alert fired on, by window. */
 export const lb06BurnSchema = z.strictObject({
@@ -58,7 +73,8 @@ const toolCall = z.strictObject({
 /** One event of the log: its number, its kind, the simulated minute it happened at, the wall-clock moment, and its data. */
 export const lb06EventSchema = z.discriminatedUnion('kind', [
   event('incident.started', lb06ScenarioSchema),
-  event('tick', z.strictObject({})),
+  // A tick carries the minute's metrics and SLO: derived from the seed and the log, and repeated here so a reader draws the shop from the feed alone.
+  event('tick', z.strictObject({ metrics: lb06MinuteMetricsSchema, slo: lb06SloSchema })),
   event('fault.injected', z.strictObject({ fault: z.enum(LB06_FAULTS), service: z.enum(LB06_SERVICES) })),
   event('alert.fired', z.strictObject({ burn: lb06BurnSchema })),
   event('investigation.started', z.strictObject({ snapshotMinute: minute })),

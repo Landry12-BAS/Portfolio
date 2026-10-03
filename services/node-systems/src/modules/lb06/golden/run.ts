@@ -14,6 +14,7 @@ import { contextOf, investigate, proposeAgain, writePostmortem } from '../agents
 import type { Budget } from '../agents/orchestrator.ts'
 import { invalidReferences, timelineOf } from '../agents/postmortem.ts'
 import { firstAlertMinute, recoveryMinute, sloAt } from '../detect/slo.ts'
+import { tickData } from '../detect/tick.ts'
 import { evidenceIndex } from '../detect/summary.ts'
 import { faultService } from '../sim/deploys.ts'
 import type { Remediation } from '../sim/faults.ts'
@@ -77,7 +78,8 @@ export async function runCase(deps: RunDeps, entry: GoldenCase): Promise<{ outco
   }
   const orchestrator = { models: deps.models, tracer: deps.tracer, emit }
   log.append({ kind: 'incident.started', minute: 0, data: scenario })
-  for (let minute = 0; minute < scenario.baselineMinutes; minute += 1) log.append({ kind: 'tick', minute, data: {} })
+  const baselineWorld = buildWorld(scenario, [], scenario.baselineMinutes)
+  for (let minute = 0; minute < scenario.baselineMinutes; minute += 1) log.append({ kind: 'tick', minute, data: tickData(baselineWorld, minute) })
   log.append({ kind: 'fault.injected', minute: scenario.baselineMinutes, data: { fault: scenario.fault, service: faultService(scenario.fault) } })
 
   const proposals: Lb06Action[] = []
@@ -92,12 +94,12 @@ export async function runCase(deps: RunDeps, entry: GoldenCase): Promise<{ outco
     // Tick until the alert, then a couple of minutes more, so the summary has something to show.
     const calm = buildWorld(scenario, [], LB06_LIMITS.maxSimulatedMinutes)
     const alert = firstAlertMinute(calm, scenario.baselineMinutes) ?? scenario.baselineMinutes + 5
-    for (let minute = scenario.baselineMinutes; minute <= alert; minute += 1) log.append({ kind: 'tick', minute, data: {} })
+    for (let minute = scenario.baselineMinutes; minute <= alert; minute += 1) log.append({ kind: 'tick', minute, data: tickData(calm, minute) })
     log.append({ kind: 'alert.fired', minute: alert, data: { burn: sloAt(calm, alert).burns[0] as NonNullable<ReturnType<typeof sloAt>['burns'][0]> } })
     let minute = alert
     for (let extra = 0; extra < MINUTES_BEFORE_INVESTIGATION; extra += 1) {
       minute += 1
-      log.append({ kind: 'tick', minute, data: {} })
+      log.append({ kind: 'tick', minute, data: tickData(calm, minute) })
     }
     log.append({ kind: 'investigation.started', minute, data: { snapshotMinute: minute } })
     let world = buildWorld(scenario, remediations, minute + 1)
@@ -112,14 +114,14 @@ export async function runCase(deps: RunDeps, entry: GoldenCase): Promise<{ outco
       proposals.push(proposal.action)
       log.append({ kind: 'proposal.made', minute, data: { proposalId: id, hypothesisId: proposal.hypothesisId, action: proposal.action, rationale: proposal.rationale } })
       minute += MINUTES_AFTER_PROPOSAL
-      log.append({ kind: 'tick', minute, data: {} })
+      log.append({ kind: 'tick', minute, data: tickData(buildWorld(scenario, remediations, minute + 1), minute) })
       log.append({ kind: 'proposal.approved', minute, data: { proposalId: id } })
       remediations.push({ minute, action: proposal.action })
       log.append({ kind: 'remediation.applied', minute, data: { proposalId: id, action: proposal.action } })
       const after = buildWorld(scenario, remediations, minute + MINUTES_TO_RECOVER + 1)
       const recoveredAt = recoveryMinute(after, minute, LB06_LIMITS.recoveryMinutes)
       const until = recoveredAt ?? minute + MINUTES_TO_RECOVER
-      for (let tick = minute + 1; tick <= until; tick += 1) log.append({ kind: 'tick', minute: tick, data: {} })
+      for (let tick = minute + 1; tick <= until; tick += 1) log.append({ kind: 'tick', minute: tick, data: tickData(after, tick) })
       minute = until
       if (recoveredAt !== undefined) {
         recovered = true

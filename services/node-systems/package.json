@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.1",
+    "@fastify/websocket": "^11.3.1",
     "@lb/common": "workspace:*",
     "@lb/contracts": "workspace:*",
     "ai": "^7.0.126",
