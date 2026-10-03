@@ -144,6 +144,26 @@ ocr-lb03 *args:
 sweep-lb03:
     uv run --directory services/flask-systems --env-file .env python manage.py sweep_lb03
 
+# `--check` only says whether the committed pack is current (`just check` runs it). The export refuses a pack that renders differently from production.
+# Write the eval pack Eval Lab (LB-10) runs LB-05's SQL writer on (evals/packs/lb05-sql-writer.yaml): the production prompt and golden set, materialised.
+export-pack-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py export_pack_lb05 {{args}}
+
+# `--check` only says whether the committed packs are current (`just check` runs it).
+# Write the eval packs Eval Lab (LB-10) runs LB-01's classifier and drafter on (evals/packs/lb01-*.yaml), from the production prompts, golden set and seed.
+export-packs-lb01 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py export_packs_lb01 {{args}}
+
+# `--check` only says whether the committed pack is current (`just check` runs it).
+# Write the eval pack Eval Lab (LB-10) runs LB-02's planner on (evals/packs/lb02-planner.yaml): the first turn of every graded conversation, with the tools.
+export-pack-lb02 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py export_pack_lb02 {{args}}
+
+# `--check` only says whether the committed pack is current (`pnpm check` runs it).
+# Write the eval pack Eval Lab (LB-10) runs LB-08's workflow generator on (evals/packs/lb08-generator.yaml), from the production prompt and golden set.
+export-pack-lb08 *args:
+    pnpm --filter @lb/node-systems pack:lb08 {{args}}
+
 # Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in services/node-systems/.env).
 node-api:
     pnpm --filter @lb/node-systems dev
@@ -205,9 +225,13 @@ record-sample system sample:
 check-build:
     pnpm --filter @lb/web check:build
 
-# Fail if any generated file is stale (the CI drift check).
+# The Python pack checks need no .env: they read prompts, golden sets and seed files only.
+# Fail if any generated file is stale (the CI drift check), the eval packs included.
 check:
     pnpm check
+    cd services/django-systems && DJANGO_SETTINGS_MODULE=config.test_settings uv run python manage.py export_packs_lb01 --check
+    cd services/django-systems && DJANGO_SETTINGS_MODULE=config.test_settings uv run python manage.py export_pack_lb02 --check
+    cd services/flask-systems && FLASK_ALLOWED_HOSTS=localhost LB_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb LB_REDIS_URL=redis://127.0.0.1:6379/0 uv run python manage.py export_pack_lb05 --check
 
 # Regenerate the icon sprite and registry after editing packages/icons/svg.
 icons:

@@ -18,7 +18,8 @@
     "eval:lb08": "node --env-file-if-exists=.env src/cli/eval-lb08.ts",
     "eval:lb04": "node --env-file-if-exists=.env src/cli/eval-lb04.ts",
     "contracts:lb04": "node scripts/lb04-contracts.ts",
-    "check": "node src/cli/check.ts && node scripts/lb04-contracts.ts --check",
+    "pack:lb08": "node scripts/lb08-pack.ts",
+    "check": "node src/cli/check.ts && node scripts/lb04-contracts.ts --check && node scripts/lb08-pack.ts --check",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
