@@ -11,7 +11,7 @@ import { lb07StepSchema } from './plan.ts'
 
 const bugId = z.enum(LB07_BUG_IDS)
 const sampleId = z.string().regex(/^[a-z0-9-]{1,60}$/)
-// Text the service wrote, or a model wrote and the service checked: bounded, and without control characters.
+/** Text the service wrote, or a model wrote and the service checked: bounded, and without control characters. */
 const sentence = (max: number) => z.string().trim().min(1).max(max).regex(/^[^\p{Cc}\p{Cf}]+$/u, 'plain text')
 /** A goal in the visitor's own words: bounded, and plain. The service also runs it through its own checks. */
 export const lb07GoalSchema = z.string().trim().min(3).max(LB07_LIMITS.maxGoalLength).regex(/^[^\p{Cc}\p{Cf}]+$/u, 'plain text without control characters')
