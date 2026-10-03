@@ -221,6 +221,8 @@ export async function createIncident(deps: Lb06Deps, input: NewIncident): Promis
       minute: faultMinute,
       nextTickAt: new Date(moment.getTime() + deps.config.tickMs),
       modelCalls: input.modelCalls,
+      createdAt: moment,
+      updatedAt: moment,
       deadlineAt: new Date(moment.getTime() + deps.config.maxWallMs),
       expiresAt: new Date(moment.getTime() + deps.config.keptMs),
     }).returning({ id: incidents.id })

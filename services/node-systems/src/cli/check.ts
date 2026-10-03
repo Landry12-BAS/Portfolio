@@ -7,7 +7,7 @@
 //     playbook, its sample contracts (each checked against the hash in its manifest) and its
 //     golden set.
 //   - The committed OpenAPI document matches what the routes' schemas generate.
-//   - LB-08's and LB-04's committed migrations match their schema files.
+//   - LB-08's, LB-04's and LB-06's committed migrations match their schema files.
 import { readFileSync } from 'node:fs'
 
 import { evalsDirectory, seedDirectory } from '../core/data-files.ts'
@@ -20,6 +20,8 @@ import { readGoldenSet as readLb04GoldenSet } from '../modules/lb04/golden/cases
 import { readPlaybook } from '../modules/lb04/playbook/playbook.ts'
 import { pendingSchemaChanges } from '../modules/lb08/db/drift.ts'
 import { readGoldenSet } from '../modules/lb08/golden/cases.ts'
+import { pendingSchemaChanges as pendingLb06SchemaChanges } from '../modules/lb06/db/drift.ts'
+import { readGoldenSet as readLb06GoldenSet } from '../modules/lb06/golden/cases.ts'
 import { MODULES } from '../modules/registry.ts'
 
 /** Reads the data files and the golden set strictly, and says what was found. */
@@ -49,6 +51,28 @@ function lb04DataFailures(): string[] {
   catch (error) {
     return [error instanceof Error ? error.message : 'LB-04 data could not be read']
   }
+}
+
+/** Reads LB-06's golden set strictly (which checks it against the simulator), and says what was found. */
+function lb06DataFailures(): string[] {
+  try {
+    const golden = readLb06GoldenSet(`${evalsDirectory()}/lb06/golden.yaml`)
+    console.log(`LB-06 data is valid: ${golden.length} golden cases, ${golden.filter(entry => entry.sample).length} samples`)
+    return []
+  }
+  catch (error) {
+    return [error instanceof Error ? error.message : 'LB-06 data could not be read']
+  }
+}
+
+/** Asks drizzle-kit whether LB-06's schema file has changes no migration holds. */
+async function lb06MigrationFailures(): Promise<string[]> {
+  const pending = await pendingLb06SchemaChanges()
+  if (pending.length === 0) {
+    console.log('LB-06 migrations match its schema')
+    return []
+  }
+  return [`LB-06's schema has changes no migration holds: run \`pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb06.config.ts\` and commit the migration. It would run:\n${pending.join('\n')}`]
 }
 
 /** Compares the committed OpenAPI document with the one the routes generate. */
@@ -81,7 +105,7 @@ async function lb04MigrationFailures(): Promise<string[]> {
   return [`LB-04's schema has changes no migration holds: run \`pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb04.config.ts\` and commit the migration. It would run:\n${pending.join('\n')}`]
 }
 
-const problems = [...dataFailures(), ...lb04DataFailures(), ...await openApiFailures(), ...await migrationFailures(), ...await lb04MigrationFailures()]
+const problems = [...dataFailures(), ...lb04DataFailures(), ...lb06DataFailures(), ...await openApiFailures(), ...await migrationFailures(), ...await lb04MigrationFailures(), ...await lb06MigrationFailures()]
 if (problems.length > 0) {
   console.error(problems.join('\n'))
   process.exitCode = 1

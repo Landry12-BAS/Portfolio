@@ -35,6 +35,8 @@ export interface RunningModule {
   readonly apiPrefix: string
   // Adds the module's routes to an encapsulated Fastify scope mounted at `apiPrefix`.
   registerRoutes: (scope: FastifyInstance) => void | Promise<void>
+  // Adds routes outside the API prefix, such as a WebSocket at `/ws/<system>/` (LB-06); most modules have none.
+  registerRootRoutes?: (app: FastifyInstance) => void | Promise<void>
   // Starts the module's queue workers and scheduled jobs (the worker process only).
   startWorkers: () => Promise<readonly WorkerHandle[]>
   // Tells whether the module can reach what it depends on, for the readiness check.

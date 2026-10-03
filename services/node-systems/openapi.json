@@ -2669,6 +2669,5170 @@
         ],
         "type": "object"
       },
+      "Lb06CatalogueView": {
+        "additionalProperties": false,
+        "properties": {
+          "baselineMinutes": {
+            "maximum": 60,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "faults": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "fault": {
+                  "enum": [
+                    "bad_deploy",
+                    "slow_payment",
+                    "memory_leak",
+                    "cache_stampede"
+                  ],
+                  "type": "string"
+                },
+                "sampleId": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "service": {
+                  "maxLength": 20,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "fault",
+                "service",
+                "sampleId"
+              ],
+              "type": "object"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "samples": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "fault": {
+                  "enum": [
+                    "bad_deploy",
+                    "slow_payment",
+                    "memory_leak",
+                    "cache_stampede"
+                  ],
+                  "type": "string"
+                },
+                "goldenCase": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "id": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "seed": {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "fault",
+                "seed",
+                "goldenCase"
+              ],
+              "type": "object"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "tickMs": {
+            "maximum": 60000,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "faults",
+          "samples",
+          "baselineMinutes",
+          "tickMs"
+        ],
+        "type": "object"
+      },
+      "Lb06CatalogueViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "baselineMinutes": {
+            "maximum": 60,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "faults": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "fault": {
+                  "enum": [
+                    "bad_deploy",
+                    "slow_payment",
+                    "memory_leak",
+                    "cache_stampede"
+                  ],
+                  "type": "string"
+                },
+                "sampleId": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "service": {
+                  "maxLength": 20,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "fault",
+                "service",
+                "sampleId"
+              ],
+              "type": "object"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "samples": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "fault": {
+                  "enum": [
+                    "bad_deploy",
+                    "slow_payment",
+                    "memory_leak",
+                    "cache_stampede"
+                  ],
+                  "type": "string"
+                },
+                "goldenCase": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "id": {
+                  "pattern": "^[a-z0-9-]{1,60}$",
+                  "type": "string"
+                },
+                "seed": {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "fault",
+                "seed",
+                "goldenCase"
+              ],
+              "type": "object"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "tickMs": {
+            "maximum": 60000,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "faults",
+          "samples",
+          "baselineMinutes",
+          "tickMs"
+        ],
+        "type": "object"
+      },
+      "Lb06DecisionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "approve",
+              "reject"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "type": "object"
+      },
+      "Lb06DecisionRequestInput": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "approve",
+              "reject"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "type": "object"
+      },
+      "Lb06Event": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "baselineMinutes": {
+                    "maximum": 60,
+                    "minimum": 5,
+                    "type": "integer"
+                  },
+                  "fault": {
+                    "enum": [
+                      "bad_deploy",
+                      "slow_payment",
+                      "memory_leak",
+                      "cache_stampede"
+                    ],
+                    "type": "string"
+                  },
+                  "params": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "flag": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                        "type": "string"
+                      },
+                      "version": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "seed": {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "seed",
+                  "fault",
+                  "params",
+                  "baselineMinutes"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.started",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "metrics": {
+                    "additionalProperties": {
+                      "additionalProperties": {
+                        "maximum": 1000000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "propertyNames": {
+                        "enum": [
+                          "request_rate",
+                          "error_rate",
+                          "latency_p50",
+                          "latency_p95",
+                          "latency_p99",
+                          "saturation",
+                          "memory_mb"
+                        ],
+                        "type": "string"
+                      },
+                      "required": [
+                        "request_rate",
+                        "error_rate",
+                        "latency_p50",
+                        "latency_p95",
+                        "latency_p99",
+                        "saturation",
+                        "memory_mb"
+                      ],
+                      "type": "object"
+                    },
+                    "propertyNames": {
+                      "enum": [
+                        "web",
+                        "cart",
+                        "payment",
+                        "inventory",
+                        "database",
+                        "cache"
+                      ],
+                      "type": "string"
+                    },
+                    "required": [
+                      "web",
+                      "cart",
+                      "payment",
+                      "inventory",
+                      "database",
+                      "cache"
+                    ],
+                    "type": "object"
+                  },
+                  "slo": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "alerting": {
+                        "type": "boolean"
+                      },
+                      "badFraction": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "burns": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "longBurn": {
+                              "maximum": 1000,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "longMinutes": {
+                              "maximum": 60,
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "shortBurn": {
+                              "maximum": 1000,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "shortMinutes": {
+                              "maximum": 60,
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "shortMinutes",
+                            "longMinutes",
+                            "shortBurn",
+                            "longBurn"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 4,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "healthy": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "badFraction",
+                      "burns",
+                      "healthy",
+                      "alerting"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "metrics",
+                  "slo"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "tick",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "fault": {
+                    "enum": [
+                      "bad_deploy",
+                      "slow_payment",
+                      "memory_leak",
+                      "cache_stampede"
+                    ],
+                    "type": "string"
+                  },
+                  "service": {
+                    "enum": [
+                      "web",
+                      "cart",
+                      "payment",
+                      "inventory",
+                      "database",
+                      "cache"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fault",
+                  "service"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "fault.injected",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "burn": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "longBurn": {
+                        "maximum": 1000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "longMinutes": {
+                        "maximum": 60,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "shortBurn": {
+                        "maximum": 1000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "shortMinutes": {
+                        "maximum": 60,
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "shortMinutes",
+                      "longMinutes",
+                      "shortBurn",
+                      "longBurn"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "burn"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "alert.fired",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "snapshotMinute": {
+                    "maximum": 240,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "snapshotMinute"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "investigation.started",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "agent": {
+                    "enum": [
+                      "commander",
+                      "logs",
+                      "metrics",
+                      "deploys"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "plan",
+                      "tool_call",
+                      "report",
+                      "ranking",
+                      "postmortem",
+                      "repair"
+                    ],
+                    "type": "string"
+                  },
+                  "modelCall": {
+                    "type": "boolean"
+                  },
+                  "plan": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "questions": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "agent": {
+                              "enum": [
+                                "logs",
+                                "metrics",
+                                "deploys"
+                              ],
+                              "type": "string"
+                            },
+                            "question": {
+                              "maxLength": 200,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "agent",
+                            "question"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 3,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "questions"
+                    ],
+                    "type": "object"
+                  },
+                  "report": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "agent": {
+                        "enum": [
+                          "logs",
+                          "metrics",
+                          "deploys"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "evidence": {
+                              "items": {
+                                "pattern": "^(?:metric|log|deploy|flag|event):[\\w.:-]{1,80}$",
+                                "type": "string"
+                              },
+                              "maxItems": 6,
+                              "type": "array"
+                            },
+                            "text": {
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "text",
+                            "evidence"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 5,
+                        "type": "array"
+                      },
+                      "toolCalls": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "args": {
+                              "additionalProperties": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              },
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "type": "object"
+                            },
+                            "rows": {
+                              "maximum": 12,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "tool": {
+                              "enum": [
+                                "query_logs",
+                                "query_metrics",
+                                "list_deploys"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "tool",
+                            "args",
+                            "rows"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 4,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "agent",
+                      "findings",
+                      "toolCalls"
+                    ],
+                    "type": "object"
+                  },
+                  "step": {
+                    "maximum": 15,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "toolCall": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "args": {
+                        "additionalProperties": {
+                          "type": [
+                            "string",
+                            "number",
+                            "boolean"
+                          ]
+                        },
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "type": "object"
+                      },
+                      "rows": {
+                        "maximum": 12,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "tool": {
+                        "enum": [
+                          "query_logs",
+                          "query_metrics",
+                          "list_deploys"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "tool",
+                      "args",
+                      "rows"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "step",
+                  "agent",
+                  "kind",
+                  "modelCall"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "agent.step",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "agent": {
+                    "enum": [
+                      "commander",
+                      "logs",
+                      "metrics",
+                      "deploys"
+                    ],
+                    "type": "string"
+                  },
+                  "count": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "agent",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "evidence.discarded",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "hypotheses": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "cause": {
+                          "enum": [
+                            "bad_deploy",
+                            "slow_provider",
+                            "memory_leak",
+                            "cache_stampede",
+                            "overload",
+                            "unknown"
+                          ],
+                          "type": "string"
+                        },
+                        "confidence": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "evidence": {
+                          "items": {
+                            "pattern": "^(?:metric|log|deploy|flag|event):[\\w.:-]{1,80}$",
+                            "type": "string"
+                          },
+                          "maxItems": 6,
+                          "type": "array"
+                        },
+                        "id": {
+                          "pattern": "^h[1-5]$",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        },
+                        "summary": {
+                          "maxLength": 240,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "service",
+                        "cause",
+                        "confidence",
+                        "summary",
+                        "evidence"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "hypotheses"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "hypotheses.ranked",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "hypothesisId": {
+                    "pattern": "^h[1-5]$",
+                    "type": "string"
+                  },
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId",
+                  "hypothesisId",
+                  "action",
+                  "rationale"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.made",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.approved",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.rejected",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId",
+                  "action"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "remediation.applied",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "healthyMinutes": {
+                    "maximum": 60,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "healthyMinutes"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "slo.recovered",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "modelCalls": {
+                    "maximum": 15,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "prose": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionItems": {
+                            "items": {
+                              "maxLength": 160,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "maxItems": 4,
+                            "minItems": 1,
+                            "type": "array"
+                          },
+                          "references": {
+                            "items": {
+                              "pattern": "^[a-z]+\\.[a-z_]+$",
+                              "type": "string"
+                            },
+                            "maxItems": 12,
+                            "minItems": 1,
+                            "type": "array"
+                          },
+                          "rootCause": {
+                            "maxLength": 400,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "summary": {
+                            "maxLength": 600,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "whatWentWell": {
+                            "maxLength": 400,
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "summary",
+                          "rootCause",
+                          "whatWentWell",
+                          "actionItems",
+                          "references"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "prose",
+                  "modelCalls"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "postmortem.written",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "modelCalls": {
+                    "maximum": 15,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "proposals": {
+                    "maximum": 3,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "modelCalls",
+                  "proposals"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.closed",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "visitor",
+                      "timed_out",
+                      "step_cap",
+                      "proposals_spent",
+                      "agents_unavailable",
+                      "lost"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.aborted",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "visitor",
+                      "timed_out",
+                      "step_cap",
+                      "proposals_spent",
+                      "agents_unavailable",
+                      "lost"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.failed",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb06EventInput": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "baselineMinutes": {
+                    "maximum": 60,
+                    "minimum": 5,
+                    "type": "integer"
+                  },
+                  "fault": {
+                    "enum": [
+                      "bad_deploy",
+                      "slow_payment",
+                      "memory_leak",
+                      "cache_stampede"
+                    ],
+                    "type": "string"
+                  },
+                  "params": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "flag": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                        "type": "string"
+                      },
+                      "version": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "seed": {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "seed",
+                  "fault",
+                  "params",
+                  "baselineMinutes"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.started",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "metrics": {
+                    "additionalProperties": {
+                      "additionalProperties": {
+                        "maximum": 1000000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "propertyNames": {
+                        "enum": [
+                          "request_rate",
+                          "error_rate",
+                          "latency_p50",
+                          "latency_p95",
+                          "latency_p99",
+                          "saturation",
+                          "memory_mb"
+                        ],
+                        "type": "string"
+                      },
+                      "required": [
+                        "request_rate",
+                        "error_rate",
+                        "latency_p50",
+                        "latency_p95",
+                        "latency_p99",
+                        "saturation",
+                        "memory_mb"
+                      ],
+                      "type": "object"
+                    },
+                    "propertyNames": {
+                      "enum": [
+                        "web",
+                        "cart",
+                        "payment",
+                        "inventory",
+                        "database",
+                        "cache"
+                      ],
+                      "type": "string"
+                    },
+                    "required": [
+                      "web",
+                      "cart",
+                      "payment",
+                      "inventory",
+                      "database",
+                      "cache"
+                    ],
+                    "type": "object"
+                  },
+                  "slo": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "alerting": {
+                        "type": "boolean"
+                      },
+                      "badFraction": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "burns": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "longBurn": {
+                              "maximum": 1000,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "longMinutes": {
+                              "maximum": 60,
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "shortBurn": {
+                              "maximum": 1000,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "shortMinutes": {
+                              "maximum": 60,
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "shortMinutes",
+                            "longMinutes",
+                            "shortBurn",
+                            "longBurn"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 4,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "healthy": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "badFraction",
+                      "burns",
+                      "healthy",
+                      "alerting"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "metrics",
+                  "slo"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "tick",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "fault": {
+                    "enum": [
+                      "bad_deploy",
+                      "slow_payment",
+                      "memory_leak",
+                      "cache_stampede"
+                    ],
+                    "type": "string"
+                  },
+                  "service": {
+                    "enum": [
+                      "web",
+                      "cart",
+                      "payment",
+                      "inventory",
+                      "database",
+                      "cache"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fault",
+                  "service"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "fault.injected",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "burn": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "longBurn": {
+                        "maximum": 1000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "longMinutes": {
+                        "maximum": 60,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "shortBurn": {
+                        "maximum": 1000,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "shortMinutes": {
+                        "maximum": 60,
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "shortMinutes",
+                      "longMinutes",
+                      "shortBurn",
+                      "longBurn"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "burn"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "alert.fired",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "snapshotMinute": {
+                    "maximum": 240,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "snapshotMinute"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "investigation.started",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "agent": {
+                    "enum": [
+                      "commander",
+                      "logs",
+                      "metrics",
+                      "deploys"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "plan",
+                      "tool_call",
+                      "report",
+                      "ranking",
+                      "postmortem",
+                      "repair"
+                    ],
+                    "type": "string"
+                  },
+                  "modelCall": {
+                    "type": "boolean"
+                  },
+                  "plan": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "questions": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "agent": {
+                              "enum": [
+                                "logs",
+                                "metrics",
+                                "deploys"
+                              ],
+                              "type": "string"
+                            },
+                            "question": {
+                              "maxLength": 200,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "agent",
+                            "question"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 3,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "questions"
+                    ],
+                    "type": "object"
+                  },
+                  "report": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "agent": {
+                        "enum": [
+                          "logs",
+                          "metrics",
+                          "deploys"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "evidence": {
+                              "items": {
+                                "pattern": "^(?:metric|log|deploy|flag|event):[\\w.:-]{1,80}$",
+                                "type": "string"
+                              },
+                              "maxItems": 6,
+                              "type": "array"
+                            },
+                            "text": {
+                              "maxLength": 240,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "text",
+                            "evidence"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 5,
+                        "type": "array"
+                      },
+                      "toolCalls": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "args": {
+                              "additionalProperties": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              },
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "type": "object"
+                            },
+                            "rows": {
+                              "maximum": 12,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "tool": {
+                              "enum": [
+                                "query_logs",
+                                "query_metrics",
+                                "list_deploys"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "tool",
+                            "args",
+                            "rows"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 4,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "agent",
+                      "findings",
+                      "toolCalls"
+                    ],
+                    "type": "object"
+                  },
+                  "step": {
+                    "maximum": 15,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "toolCall": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "args": {
+                        "additionalProperties": {
+                          "type": [
+                            "string",
+                            "number",
+                            "boolean"
+                          ]
+                        },
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "type": "object"
+                      },
+                      "rows": {
+                        "maximum": 12,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "tool": {
+                        "enum": [
+                          "query_logs",
+                          "query_metrics",
+                          "list_deploys"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "tool",
+                      "args",
+                      "rows"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "step",
+                  "agent",
+                  "kind",
+                  "modelCall"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "agent.step",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "agent": {
+                    "enum": [
+                      "commander",
+                      "logs",
+                      "metrics",
+                      "deploys"
+                    ],
+                    "type": "string"
+                  },
+                  "count": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "agent",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "evidence.discarded",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "hypotheses": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "cause": {
+                          "enum": [
+                            "bad_deploy",
+                            "slow_provider",
+                            "memory_leak",
+                            "cache_stampede",
+                            "overload",
+                            "unknown"
+                          ],
+                          "type": "string"
+                        },
+                        "confidence": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "evidence": {
+                          "items": {
+                            "pattern": "^(?:metric|log|deploy|flag|event):[\\w.:-]{1,80}$",
+                            "type": "string"
+                          },
+                          "maxItems": 6,
+                          "type": "array"
+                        },
+                        "id": {
+                          "pattern": "^h[1-5]$",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        },
+                        "summary": {
+                          "maxLength": 240,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "service",
+                        "cause",
+                        "confidence",
+                        "summary",
+                        "evidence"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "hypotheses"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "hypotheses.ranked",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "hypothesisId": {
+                    "pattern": "^h[1-5]$",
+                    "type": "string"
+                  },
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId",
+                  "hypothesisId",
+                  "action",
+                  "rationale"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.made",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.approved",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "proposal.rejected",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "proposalId": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "proposalId",
+                  "action"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "remediation.applied",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "healthyMinutes": {
+                    "maximum": 60,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "healthyMinutes"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "slo.recovered",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "modelCalls": {
+                    "maximum": 15,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "prose": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionItems": {
+                            "items": {
+                              "maxLength": 160,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "maxItems": 4,
+                            "minItems": 1,
+                            "type": "array"
+                          },
+                          "references": {
+                            "items": {
+                              "pattern": "^[a-z]+\\.[a-z_]+$",
+                              "type": "string"
+                            },
+                            "maxItems": 12,
+                            "minItems": 1,
+                            "type": "array"
+                          },
+                          "rootCause": {
+                            "maxLength": 400,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "summary": {
+                            "maxLength": 600,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "whatWentWell": {
+                            "maxLength": 400,
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "summary",
+                          "rootCause",
+                          "whatWentWell",
+                          "actionItems",
+                          "references"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "prose",
+                  "modelCalls"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "postmortem.written",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "modelCalls": {
+                    "maximum": 15,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "proposals": {
+                    "maximum": 3,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "modelCalls",
+                  "proposals"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.closed",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "visitor",
+                      "timed_out",
+                      "step_cap",
+                      "proposals_spent",
+                      "agents_unavailable",
+                      "lost"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.aborted",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              "data": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "visitor",
+                      "timed_out",
+                      "step_cap",
+                      "proposals_spent",
+                      "agents_unavailable",
+                      "lost"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "kind": {
+                "const": "incident.failed",
+                "type": "string"
+              },
+              "minute": {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "seq": {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seq",
+              "minute",
+              "at",
+              "kind",
+              "data"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb06EventsPage": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/Lb06Event"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "baseline",
+              "detecting",
+              "investigating",
+              "awaiting_approval",
+              "remediating",
+              "verifying",
+              "writing_postmortem",
+              "closed",
+              "aborted",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "events",
+          "cursor",
+          "more",
+          "state"
+        ],
+        "type": "object"
+      },
+      "Lb06EventsPageInput": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/Lb06EventInput"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "baseline",
+              "detecting",
+              "investigating",
+              "awaiting_approval",
+              "remediating",
+              "verifying",
+              "writing_postmortem",
+              "closed",
+              "aborted",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "events",
+          "cursor",
+          "more",
+          "state"
+        ],
+        "type": "object"
+      },
+      "Lb06IncidentView": {
+        "additionalProperties": false,
+        "properties": {
+          "alertMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "deadlineAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "endReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "visitor",
+                  "timed_out",
+                  "step_cap",
+                  "proposals_spent",
+                  "agents_unavailable",
+                  "lost"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "faultMinute": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "guard": {
+            "enum": [
+              "not_needed",
+              "clean",
+              "flagged",
+              "unchecked"
+            ],
+            "type": "string"
+          },
+          "healthyStreak": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "lastSeq": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minute": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "modelCalls": {
+            "maximum": 15,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "origin": {
+            "enum": [
+              "sample",
+              "custom"
+            ],
+            "type": "string"
+          },
+          "pendingProposal": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "hypothesisId": {
+                    "pattern": "^h[1-5]$",
+                    "type": "string"
+                  },
+                  "id": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "hypothesisId",
+                  "action",
+                  "rationale"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposalsMade": {
+            "maximum": 3,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "recoveredMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remediations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "rollback",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        },
+                        "toVersion": {
+                          "maxLength": 40,
+                          "minLength": 1,
+                          "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "toVersion"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "restart",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "scale",
+                          "type": "string"
+                        },
+                        "replicas": {
+                          "maximum": 6,
+                          "minimum": 2,
+                          "type": "integer"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "replicas"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "flush_cache",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "flag": {
+                          "maxLength": 40,
+                          "minLength": 1,
+                          "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "const": "flip_flag",
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "flag",
+                        "value"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "minute": {
+                  "maximum": 240,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "minute",
+                "action"
+              ],
+              "type": "object"
+            },
+            "maxItems": 3,
+            "type": "array"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "sampleId": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "additionalProperties": false,
+            "properties": {
+              "baselineMinutes": {
+                "maximum": 60,
+                "minimum": 5,
+                "type": "integer"
+              },
+              "fault": {
+                "enum": [
+                  "bad_deploy",
+                  "slow_payment",
+                  "memory_leak",
+                  "cache_stampede"
+                ],
+                "type": "string"
+              },
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "flag": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "seed": {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seed",
+              "fault",
+              "params",
+              "baselineMinutes"
+            ],
+            "type": "object"
+          },
+          "slo": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "alerting": {
+                    "type": "boolean"
+                  },
+                  "badFraction": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "burns": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "longBurn": {
+                          "maximum": 1000,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "longMinutes": {
+                          "maximum": 60,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "shortBurn": {
+                          "maximum": 1000,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "shortMinutes": {
+                          "maximum": 60,
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "shortMinutes",
+                        "longMinutes",
+                        "shortBurn",
+                        "longBurn"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "healthy": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "badFraction",
+                  "burns",
+                  "healthy",
+                  "alerting"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "enum": [
+              "baseline",
+              "detecting",
+              "investigating",
+              "awaiting_approval",
+              "remediating",
+              "verifying",
+              "writing_postmortem",
+              "closed",
+              "aborted",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "origin",
+          "sampleId",
+          "scenario",
+          "state",
+          "endReason",
+          "minute",
+          "faultMinute",
+          "guard",
+          "modelCalls",
+          "cached",
+          "proposalsMade",
+          "pendingProposal",
+          "remediations",
+          "slo",
+          "healthyStreak",
+          "alertMinute",
+          "recoveredMinute",
+          "lastSeq",
+          "createdAt",
+          "deadlineAt",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "Lb06IncidentViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "alertMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "deadlineAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "endReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "visitor",
+                  "timed_out",
+                  "step_cap",
+                  "proposals_spent",
+                  "agents_unavailable",
+                  "lost"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "faultMinute": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "guard": {
+            "enum": [
+              "not_needed",
+              "clean",
+              "flagged",
+              "unchecked"
+            ],
+            "type": "string"
+          },
+          "healthyStreak": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "lastSeq": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minute": {
+            "maximum": 240,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "modelCalls": {
+            "maximum": 15,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "origin": {
+            "enum": [
+              "sample",
+              "custom"
+            ],
+            "type": "string"
+          },
+          "pendingProposal": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "rollback",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          },
+                          "toVersion": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "toVersion"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "restart",
+                            "type": "string"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          "replicas": {
+                            "maximum": 6,
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "service": {
+                            "enum": [
+                              "web",
+                              "cart",
+                              "payment",
+                              "inventory",
+                              "database",
+                              "cache"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "service",
+                          "replicas"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "flush_cache",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "flag": {
+                            "maxLength": 40,
+                            "minLength": 1,
+                            "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "flip_flag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "flag",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "hypothesisId": {
+                    "pattern": "^h[1-5]$",
+                    "type": "string"
+                  },
+                  "id": {
+                    "pattern": "^p[1-3]$",
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "hypothesisId",
+                  "action",
+                  "rationale"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposalsMade": {
+            "maximum": 3,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "recoveredMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remediations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "rollback",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        },
+                        "toVersion": {
+                          "maxLength": 40,
+                          "minLength": 1,
+                          "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "toVersion"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "restart",
+                          "type": "string"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "scale",
+                          "type": "string"
+                        },
+                        "replicas": {
+                          "maximum": 6,
+                          "minimum": 2,
+                          "type": "integer"
+                        },
+                        "service": {
+                          "enum": [
+                            "web",
+                            "cart",
+                            "payment",
+                            "inventory",
+                            "database",
+                            "cache"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "service",
+                        "replicas"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "flush_cache",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "flag": {
+                          "maxLength": 40,
+                          "minLength": 1,
+                          "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                          "type": "string"
+                        },
+                        "kind": {
+                          "const": "flip_flag",
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "flag",
+                        "value"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "minute": {
+                  "maximum": 240,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "minute",
+                "action"
+              ],
+              "type": "object"
+            },
+            "maxItems": 3,
+            "type": "array"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "sampleId": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "additionalProperties": false,
+            "properties": {
+              "baselineMinutes": {
+                "maximum": 60,
+                "minimum": 5,
+                "type": "integer"
+              },
+              "fault": {
+                "enum": [
+                  "bad_deploy",
+                  "slow_payment",
+                  "memory_leak",
+                  "cache_stampede"
+                ],
+                "type": "string"
+              },
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "flag": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "seed": {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seed",
+              "fault",
+              "params",
+              "baselineMinutes"
+            ],
+            "type": "object"
+          },
+          "slo": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "alerting": {
+                    "type": "boolean"
+                  },
+                  "badFraction": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "burns": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "longBurn": {
+                          "maximum": 1000,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "longMinutes": {
+                          "maximum": 60,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "shortBurn": {
+                          "maximum": 1000,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "shortMinutes": {
+                          "maximum": 60,
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "shortMinutes",
+                        "longMinutes",
+                        "shortBurn",
+                        "longBurn"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "healthy": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "badFraction",
+                  "burns",
+                  "healthy",
+                  "alerting"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "enum": [
+              "baseline",
+              "detecting",
+              "investigating",
+              "awaiting_approval",
+              "remediating",
+              "verifying",
+              "writing_postmortem",
+              "closed",
+              "aborted",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "origin",
+          "sampleId",
+          "scenario",
+          "state",
+          "endReason",
+          "minute",
+          "faultMinute",
+          "guard",
+          "modelCalls",
+          "cached",
+          "proposalsMade",
+          "pendingProposal",
+          "remediations",
+          "slo",
+          "healthyStreak",
+          "alertMinute",
+          "recoveredMinute",
+          "lastSeq",
+          "createdAt",
+          "deadlineAt",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "Lb06LimitsView": {
+        "additionalProperties": false,
+        "properties": {
+          "incidents": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 9007199254740991,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "remaining": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "used": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "limit",
+              "used",
+              "remaining"
+            ],
+            "type": "object"
+          },
+          "keptHours": {
+            "const": 24,
+            "type": "number"
+          },
+          "maxConcurrentIncidents": {
+            "const": 8,
+            "type": "number"
+          },
+          "maxWallMinutes": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "running": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "stepCap": {
+            "const": 15,
+            "type": "number"
+          }
+        },
+        "required": [
+          "incidents",
+          "stepCap",
+          "maxConcurrentIncidents",
+          "maxWallMinutes",
+          "keptHours",
+          "running",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
+      "Lb06LimitsViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "incidents": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 9007199254740991,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "remaining": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "used": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "limit",
+              "used",
+              "remaining"
+            ],
+            "type": "object"
+          },
+          "keptHours": {
+            "const": 24,
+            "type": "number"
+          },
+          "maxConcurrentIncidents": {
+            "const": 8,
+            "type": "number"
+          },
+          "maxWallMinutes": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "running": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "stepCap": {
+            "const": 15,
+            "type": "number"
+          }
+        },
+        "required": [
+          "incidents",
+          "stepCap",
+          "maxConcurrentIncidents",
+          "maxWallMinutes",
+          "keptHours",
+          "running",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
+      "Lb06PostmortemView": {
+        "additionalProperties": false,
+        "properties": {
+          "incidentId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 15,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "proposals": {
+            "maximum": 3,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "prose": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "actionItems": {
+                    "items": {
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "references": {
+                    "items": {
+                      "pattern": "^[a-z]+\\.[a-z_]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 12,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "rootCause": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "summary": {
+                    "maxLength": 600,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "whatWentWell": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "summary",
+                  "rootCause",
+                  "whatWentWell",
+                  "actionItems",
+                  "references"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recoveredMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeline": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "detail": {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                "kind": {
+                  "pattern": "^[a-z]+\\.[a-z_]+$",
+                  "type": "string"
+                },
+                "minute": {
+                  "maximum": 240,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "seq": {
+                  "maximum": 600,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "seq",
+                "minute",
+                "kind",
+                "detail"
+              ],
+              "type": "object"
+            },
+            "maxItems": 60,
+            "type": "array"
+          }
+        },
+        "required": [
+          "incidentId",
+          "timeline",
+          "prose",
+          "modelCalls",
+          "proposals",
+          "recoveredMinute"
+        ],
+        "type": "object"
+      },
+      "Lb06PostmortemViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "incidentId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 15,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "proposals": {
+            "maximum": 3,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "prose": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "actionItems": {
+                    "items": {
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "references": {
+                    "items": {
+                      "pattern": "^[a-z]+\\.[a-z_]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 12,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "rootCause": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "summary": {
+                    "maxLength": 600,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "whatWentWell": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "summary",
+                  "rootCause",
+                  "whatWentWell",
+                  "actionItems",
+                  "references"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recoveredMinute": {
+            "anyOf": [
+              {
+                "maximum": 240,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeline": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "detail": {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                "kind": {
+                  "pattern": "^[a-z]+\\.[a-z_]+$",
+                  "type": "string"
+                },
+                "minute": {
+                  "maximum": 240,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "seq": {
+                  "maximum": 600,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "seq",
+                "minute",
+                "kind",
+                "detail"
+              ],
+              "type": "object"
+            },
+            "maxItems": 60,
+            "type": "array"
+          }
+        },
+        "required": [
+          "incidentId",
+          "timeline",
+          "prose",
+          "modelCalls",
+          "proposals",
+          "recoveredMinute"
+        ],
+        "type": "object"
+      },
+      "Lb06StartIncidentRequest": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "const": "sample",
+                "type": "string"
+              },
+              "sampleId": {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "sampleId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fault": {
+                "enum": [
+                  "bad_deploy",
+                  "slow_payment",
+                  "memory_leak",
+                  "cache_stampede"
+                ],
+                "type": "string"
+              },
+              "from": {
+                "const": "custom",
+                "type": "string"
+              },
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "flag": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "seed": {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "from",
+              "fault"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb06StartIncidentRequestInput": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "const": "sample",
+                "type": "string"
+              },
+              "sampleId": {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "sampleId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fault": {
+                "enum": [
+                  "bad_deploy",
+                  "slow_payment",
+                  "memory_leak",
+                  "cache_stampede"
+                ],
+                "type": "string"
+              },
+              "from": {
+                "const": "custom",
+                "type": "string"
+              },
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "flag": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "pattern": "^[\\w .,:;!?'\"()/-]{1,40}$",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "seed": {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "from",
+              "fault"
+            ],
+            "type": "object"
+          }
+        ]
+      },
       "LimitsView": {
         "additionalProperties": false,
         "properties": {
@@ -7402,6 +12566,515 @@
         "summary": "The curated sample contracts",
         "tags": [
           "LB-04 Contract Radar"
+        ]
+      }
+    },
+    "/api/lb06/catalogue": {
+      "get": {
+        "description": "The four faults (\"break the shop\"), each with the sample that shows it: a fault with a fixed seed from the golden set, whose incident replays the same way every time. Starting one takes the visitor's incident of the day.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06CatalogueView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The faults a visitor may inject, and the curated samples",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lb06IncidentView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The visitor's incidents, newest first",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      },
+      "post": {
+        "description": "A curated sample (`{from: \"sample\", sampleId}`) or a fault of the visitor's own with an optional seed and parameters (a version label for the bad deploy, a flag's name), which the injection screen reads first (one model call). The answer is the incident at its first minute; follow it over the WebSocket at /ws/lb06/ or by polling GET /incidents/{id}/events. The agents spend at most 15 model calls, and nothing changes the shop until a proposal is approved. One incident per visitor per day; 8 at once across every visitor.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Lb06StartIncidentRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06IncidentView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "Break the shop: start an incident",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents/{id}": {
+      "get": {
+        "description": "The state moves detecting, investigating, awaiting_approval, remediating, verifying, writing_postmortem, closed; `aborted` and `failed` can follow any of them, with a reason. The SLO is as code measures it at the incident's minute.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06IncidentView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "One incident and where it stands",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents/{id}/abort": {
+      "post": {
+        "description": "The incident ends as aborted and its log stays readable until it expires. It does not give the visitor's incident of the day back.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06IncidentView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "End the incident now",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents/{id}/events": {
+      "get": {
+        "description": "The polling fallback of the WebSocket: the events numbered after `after`, at most 200 a page, with the incident's state. A tick carries the minute's metrics and SLO, so the dashboards are drawn from the events alone.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 600,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06EventsPage"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The events after the last one seen",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents/{id}/postmortem": {
+      "get": {
+        "description": "The timeline the server built from the event log, and the prose a model wrote over it, which the server checked to reference only events the log holds (null when it could not be trusted). 409 `not_ready` until the incident has closed.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06PostmortemView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The postmortem",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/incidents/{id}/proposals/{proposalId}/decision": {
+      "post": {
+        "description": "The one thing that changes the shop. Approving applies the action at the incident's minute and the SLO is then watched by code; rejecting sends the agents back to rank again. A decision that does not name the pending proposal is refused with 409, so a replayed or forged approval does nothing.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "proposalId",
+            "required": true,
+            "schema": {
+              "pattern": "^p[1-3]$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Lb06DecisionRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06IncidentView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "Approve or reject the pending proposal",
+        "tags": [
+          "LB-06 Incident Commander"
+        ]
+      }
+    },
+    "/api/lb06/limits": {
+      "get": {
+        "description": "Incidents started today against the daily limit of one, the step cap, how many incidents the service runs at once and how many it runs now, how long an incident may live, and when the day's allowance starts again.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb06LimitsView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "What is left of the visitor's day, and the limits of the system",
+        "tags": [
+          "LB-06 Incident Commander"
         ]
       }
     },

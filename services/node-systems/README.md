@@ -1,7 +1,7 @@
-# Node systems · LB-08 Automation Studio and LB-04 Contract Radar
+# Node systems · LB-08 Automation Studio, LB-04 Contract Radar and LB-06 Incident Commander
 
-One Node monolith for the systems that suit Node best: LB-08 Automation Studio and LB-04
-Contract Radar today, then LB-06 and LB-07. Each system is a module with its own API prefix,
+One Node monolith for the systems that suit Node best: LB-08 Automation Studio, LB-04
+Contract Radar and LB-06 Incident Commander today, then LB-07. Each system is a module with its own API prefix,
 Postgres schema, queues and tests, so it can be split into a service of its own later. Models
 are called only through the AI gateway.
 
@@ -15,15 +15,20 @@ contract's own text by code, so a clause the model invented never reaches the pa
 built this way: [`docs/STACK.md`](../../docs/STACK.md), Node systems. Platform security:
 [`docs/SECURITY.md`](../../docs/SECURITY.md).
 
+LB-06 breaks a simulated shop on a visitor's click and has a team of agents find the cause and propose
+a fix the visitor approves: the simulator is seeded and event-sourced, the alert and the correlation are
+code, the agents read compact summaries and cite evidence the server checks, and nothing changes the
+shop without the approval. Its section is at the end of this file.
+
 ## At a glance
 
 | Parameter | Value |
 |---|---|
-| API | Fastify 5 with the Zod type provider, under `/api/`: LB-08 at `/api/lb08/` and LB-04 at `/api/lb04/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema and Redis). Schema: [`openapi.json`](openapi.json), served at `/api/openapi.json` |
+| API | Fastify 5 with the Zod type provider, under `/api/`: LB-08 at `/api/lb08/`, LB-04 at `/api/lb04/` and LB-06 at `/api/lb06/` (and its WebSocket at `/ws/lb06/`), plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema and Redis). Schema: [`openapi.json`](openapi.json), served at `/api/openapi.json` |
 | Callers | The site's server, with an Ed25519 visitor token scoped to one system and valid 5 minutes at most (`@lb/common`'s [visitor check](../../packages/common/src/visitors.ts)) |
-| Worker | A separate process (`src/worker.ts`): BullMQ on Redis, one job per workflow step (LB-08) and one per contract under review (LB-04), plus a repeating sweep for each |
-| Data | PostgreSQL 17: one schema per system (`lb08`, `lb04`), Drizzle ORM and drizzle-kit migrations |
-| Model calls | Through the gateway only. LB-08: alias `lb-tools`, at most 2 a description. LB-04: `lb-guard`, `lb-long`, `lb-reason` and `lb-fast`, 2 to 5 a review and one a redline (at most 8 in all), every call labelled with the one run that contract is |
+| Worker | A separate process (`src/worker.ts`): BullMQ on Redis, one job per workflow step (LB-08), one per contract under review (LB-04) and one per incident for its whole life (LB-06), plus a repeating sweep for each |
+| Data | PostgreSQL 17: one schema per system (`lb08`, `lb04`, `lb06`), Drizzle ORM and drizzle-kit migrations |
+| Model calls | Through the gateway only. LB-08: alias `lb-tools`, at most 2 a description. LB-04: `lb-guard`, `lb-long`, `lb-reason` and `lb-fast`, 2 to 5 a review and one a redline (at most 8 in all), every call labelled with the one run that contract is. LB-06: `lb-guard`, `lb-reason` and `lb-tools`, 9 or 10 an incident on a clean run and 15 at the step cap |
 | Runtime | Node 22.18 or later (CI runs 24) with type stripping: TypeScript runs as written, so only erasable syntax is allowed |
 | Shared code | [`@lb/contracts`](../../packages/contracts/README.md) (the schemas), [`@lb/common`](../../packages/common/README.md) (gateway client, tokens, tracer) |
 
@@ -279,7 +284,7 @@ model; LB-04's limits, samples and playbook do too.
 |---|---|
 | `LB_NODE_HOST`, `LB_NODE_PORT`, `LB_NODE_LOG_LEVEL` | Where the API listens (default `0.0.0.0:8002`) and how much it logs |
 | `LB_DATABASE_URL` | The shared Postgres. Each system uses a pool whose search path holds only its own schema |
-| `LB08_DATABASE_URL`, `LB04_DATABASE_URL` | In production, a role that owns only the `lb08` (or `lb04`) schema; the shared URL is then not used for that system. Migrations run as this role too |
+| `LB08_DATABASE_URL`, `LB04_DATABASE_URL`, `LB06_DATABASE_URL` | In production, a role that owns only the `lb08` (or `lb04`, or `lb06`) schema; the shared URL is then not used for that system. Migrations run as this role too |
 | `LB_REDIS_URL`, `LB_REDIS_PREFIX` | Redis, and the prefix of every key this service writes (default `lb:`) |
 | `LB_WEB_TOKEN_KEY` | The site's Ed25519 public key. Without it the API refuses every visitor |
 | `LB_GATEWAY_URL`, `LB_SERVICE_NAME`, `LB_SERVICE_KEY_FILE` | The gateway, and the service's own name and private key (a file nobody else can read). Required by the API and by the worker |
@@ -290,8 +295,10 @@ mistake names the variables, never their values.
 
 Redis keys this service writes, for the Redis ACL: `<prefix>bull:lb08-steps:*`,
 `<prefix>bull:lb08-dead-letters:*`, `<prefix>bull:lb08-maintenance:*`,
-`<prefix>bull:lb04-reviews:*`, `<prefix>bull:lb04-maintenance:*`, and the run spans the
-gateway reads, `<prefix>run:<run id>:spans` and `<prefix>spans`.
+`<prefix>bull:lb04-reviews:*`, `<prefix>bull:lb04-maintenance:*`, `<prefix>bull:lb06-incidents:*`,
+`<prefix>bull:lb06-maintenance:*`, the feed of each incident, `<prefix>lb06:feed:<incident id>` (a
+stream the worker appends to and the API reads), and the run spans the gateway reads,
+`<prefix>run:<run id>:spans` and `<prefix>spans`.
 
 ## Layout
 
@@ -304,9 +311,14 @@ src/modules/lb04/    the system: pdf/ (the file's checks and the extraction thre
                      (clauses, screen, prompts, verifier, report, redline, pipeline), playbook/,
                      data/, golden/, db/ (schema, migrations), engine/ (contracts, queue, sweep,
                      quotas, trace), routes/
+src/modules/lb06/    the system: sim/ (the seeded shop: faults, world, logs, deploys), detect/ (the SLO,
+                     the correlation, the summary, the tick), agents/ (the orchestrator, the prompts,
+                     the tools, the model wrapper, the postmortem), golden/ (the golden set, its grader,
+                     the reference agents, the runner), data/ (the samples), db/ (schema, migrations),
+                     engine/ (store, service, job, feed, socket, queue, sweep, cache, usage, trace), routes/
 src/modules/registry.ts   the list of systems the monolith hosts
 src/main.ts, src/worker.ts   the API process and the worker process
-src/cli/             migrate, seed, openapi, eval-lb08, eval-lb04 and the drift check
+src/cli/             migrate, seed, openapi, eval-lb08, eval-lb04, eval-lb06 and the drift check
 scripts/             the generator of LB-04's sample contracts
 ```
 
@@ -492,3 +504,164 @@ Known gaps, stated rather than hidden:
   taken for the moment and one is given back, so the cost is a call, never a place.
 - **No live eval score and no live prompt tuning.** The prompts were written from the golden
   set and checked against scripts, never against a model.
+
+## LB-06: from a click to a postmortem
+
+A visitor breaks a simulated shop (six services: web, cart, payment, inventory, database, cache) with
+one of four faults, and a team of agents finds the cause and proposes a fix the visitor approves. The
+simulator is the product: it is seeded and event-sourced, so an incident replays exactly from its seed
+and its log; the alert and the correlation are code; the agents see compact summaries and cite
+evidence the server checks; nothing changes the shop without the visitor's click; and the incident
+closes only when the SLO has recovered, measured by code.
+
+| Step | What it does | When it can't |
+|---|---|---|
+| Start | The visitor picks a curated sample (a fault with a fixed seed from the golden set) or a fault of their own with a seed and two optional strings (the bad deploy's version label, a flag's name). The strings go to the injection screen first (`lb-guard`, 1 call); a flagged one is replaced by a label. The incident is stored with the opening of its log: the start, 30 calm minutes, the fault, and the first minute of the fault, in one transaction with the visitor's place for the day and the global count | 429 after the day's incident, 503 when eight incidents run already or the queue refuses (the place is given back) |
+| Tick | The worker's job ticks the shop every two seconds of wall time: one simulated minute, its metrics and SLO appended as a `tick` event (Postgres first, then the incident's Redis Stream), so a dashboard draws the shop from the feed alone. The shop is a pure function of the seed, the fault and the remediations applied (`sim/world.ts`): every rebuild gives the same minute | The wall-clock cap (8 minutes) or 180 simulated minutes end the incident as timed out, whatever its state |
+| Detect | Code: the share of bad requests at the edge (errors, and requests over 600 ms), its burn rate against a 99.5% SLO, and two window pairs (2 and 6 minutes at 10x, 5 and 15 at 5x); both windows of a pair burning fires the alert. Code also says which service's series left its baseline first, which deploys and flag changes came in the half hour before, and which log signatures the calm baseline never showed (`detect/`) | |
+| Investigate | Two minutes after the alert the agents read a snapshot: the commander plans (`lb-reason`, 1 call), each specialist (logs, metrics, deploys; `lb-tools`) gets a turn that may call the read-only tools the server runs (`query_logs`, `query_metrics`, `list_deploys`, at most 12 rows each) and a last turn that must answer, the commander ranks the hypotheses and proposes one typed action from a closed list (1 call). Every answer gets one repair; every evidence id is checked against what the server holds and the rest dropped and counted; a rollback must name a version the history shows and a flag flip a flag the shop has. The clock keeps ticking meanwhile | The step cap (15, enforced by code, never asked of the model) ends the incident as aborted; an answer unusable twice or a gateway out of reach ends it as failed |
+| Approve | The proposal waits for the visitor. Approving is a transition checked against the pending proposal's id under the row's lock: the action is applied to the shop at that minute. Rejecting sends the commander back for one more ranking (1 call) with what was tried; three proposals at most | A decision that names anything but the pending proposal is 409 |
+| Verify | Code: five healthy minutes in a row (the short window under 1x) close the loop. A remediation that has not brought the SLO back in twelve minutes sends the commander back | The proposals spent end the incident as aborted |
+| Postmortem | Code builds the timeline from the log; the model writes prose over it (`lb-reason`, 1 call, 1 repair) that must reference only kinds of event the log holds, or no prose is shown. Then the incident closes and its root span is written | |
+
+A clean incident costs 9 calls (10 with the screen), the datasheet's 10 to 15 with repairs and a
+second ranking, and never more than 15. The agents' work for a scenario is cached by the scenario's
+key and the prompts' version (`engine/cache.ts`): a curated sample's second run replays its plan, tool
+calls, reports, ranking and postmortem at no model call, so the samples spend quota once. **No live
+score is recorded here: no provider key exists where this was built, so the live eval has never been
+run, and the datasheet's 10 to 15 stays a target.**
+
+### What a running incident costs
+
+A tick rebuilds the whole world from the seed: measured at about 15 to 20 ms for 240 minutes on this
+machine (`test/unit/lb06-sim.test.ts` holds it under 500 ms), once every two seconds, so one incident is
+under 1% of a core and the eight the service runs at once under 10%. The job holds the incident's log
+in Postgres and a few kilobytes in memory; a tick event is about 500 bytes, a whole log under 100 KB.
+A hub in the API reads one incident's stream for every socket of that incident, on one Redis
+connection each.
+
+### The LB-06 API
+
+All routes are under `/api/lb06/` and need a visitor token for `lb-06`; another visitor's incident is
+indistinguishable from one that doesn't exist.
+
+| Route | What it does |
+|---|---|
+| `GET /limits` | The visitor's day (one incident), the step cap, the concurrent cap and how many run now, the wall-clock cap, when the day resets |
+| `GET /catalogue` | The four faults with their sample, the samples (fault, seed, golden case), the baseline minutes and the tick pace |
+| `POST /incidents` | Start one: `{from: "sample", sampleId}` or `{from: "custom", fault, seed?, params?: {version?, flag?}}`. 201 the incident at its first minute; 404, 422, 429 (`daily_limit`, with `resets_at` and `Retry-After`), 503 (`too_many_incidents`, `queue_unavailable`, `agents_unavailable`) |
+| `GET /incidents`, `GET /incidents/{id}` | The visitor's incidents, and one with its state, its minute, its SLO as code measures it, the pending proposal, the remediations, the counts |
+| `GET /incidents/{id}/events?after=N` | The events after N, 200 a page: the polling fallback of the socket. A tick carries the minute's metrics and SLO |
+| `POST /incidents/{id}/proposals/{proposalId}/decision` | `{decision: "approve" | "reject"}`. 409 `proposal_settled` when the id is not the pending one |
+| `POST /incidents/{id}/abort` | End it now. 409 when it has ended |
+| `GET /incidents/{id}/postmortem` | The timeline and the prose. 409 `not_ready` until closed |
+
+### The LB-06 WebSocket
+
+`/ws/lb06/`, one JSON object a text frame, as LB-02's. The first frame, within ten seconds, is
+`{"type": "hello", "token": "<visitor token for lb-06>", "incident": "<id>", "after": N}`: the token
+travels in the frame and never in the address. The server answers `ready` (the incident, and the
+events after N), then `event` for every event the worker appends, read from the incident's stream by
+a hub shared by every socket of that incident. A second hello gets `error already_said_hello`; a
+visitor with four connections open gets `error too_many_connections` and 1013. The server pings every
+30 seconds and closes after 15 minutes of silence (4408), a frame over 4 KB (1009), a binary frame
+(1003), a frame that is not a hello (4400), a bad token (4401), somebody else's incident (4404). A page
+whose socket drops reconnects with the last number it holds and polls the events route meanwhile.
+
+### LB-06 limits
+
+| Limit | Value | Where it lives |
+|---|---|---|
+| Incidents per visitor per day | 1 | `usage_counters`, one atomic statement in the transaction that stores the incident |
+| Incidents running at once, across visitors | 8 | the same transaction; also the worker's concurrency |
+| Model calls per incident | 15, the orchestrator's cap; the gateway caps the run at 15 and the visitor at 15 a day | `agents/orchestrator.ts`, `routing.yaml` |
+| Proposals per incident | 3 | `engine/job.ts`, `engine/service.ts` |
+| Wall-clock life, simulated minutes | 8 min, 180 | `config.ts`, checked on every tick |
+| Visitor text | two strings of 40 characters, `[\w .,:;!?'"()/-]` only (no `<` or `>`, so the data slot's markers can't be closed) | `@lb/contracts`' `LB06_PARAM_PATTERN` |
+| Tool rows, hypotheses, evidence per hypothesis, events | 12, 5, 6, 600 | `@lb/contracts`' `LB06_LIMITS` |
+| Socket frame, hello, idle, connections a visitor, a process | 4 KB, 10 s, 15 min, 4, 256 | `engine/socket.ts`, `core/app.ts` |
+| How long anything is kept | 24 hours, then the sweep deletes the incident with its log | `engine/sweep.ts` |
+
+### LB-06 data and evals
+
+| What | Where | Command |
+|---|---|---|
+| Golden set: eight incidents, two a fault, two hostile, graded by rules (cause, first proposal, evidence, calls, recovery, postmortem, injection) | [`evals/lb06/golden.yaml`](../../evals/lb06/golden.yaml) | `just eval-lb06` runs the live agents; the reader checks the set against the simulator (`just check`) |
+| The curated samples: the golden cases marked `sample: true`, one a fault | the same file | `GET /api/lb06/catalogue` |
+| OpenAPI document | [`openapi.json`](openapi.json) | `just node-openapi` |
+| Migrations | [`src/modules/lb06/db/migrations`](src/modules/lb06/db/migrations) | `pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb06.config.ts` after editing `schema.ts` |
+
+The golden set was written before any prompt. The reference agents (`golden/reference.ts`) answer every
+prompt correctly from its data slots, and the offline test (`test/unit/lb06-golden-run.test.ts`) runs
+the whole set through the whole simulator, the detection, the orchestrator and the postmortem with
+them: every case passes every rule in 9 calls, so the rules can be met. Tests also show the hostile
+strings reach the agents only inside a data slot of a user message, invented evidence is dropped and
+counted, a tempting first proposal fails its rule while the run still recovers on the second round,
+and an obeyed injection fails its rule.
+
+### LB-06 tests
+
+- **Unit:** the simulator (determinism minute for minute, bounds, cost, no alert on a calm shop, the alert
+  within five minutes of every fault, the cure recovers and the temptation does not, the correlation,
+  the leak's timeline, the summary and the evidence index), the golden set's reader and grader, the
+  golden run with the reference agents, the orchestrator with scripted models (one repair, the step cap,
+  a proposal checked against the history and the flags, tool calls run by the server and bounded,
+  discarded evidence counted, a postmortem with bad references left out), and the routing contract (the
+  caps, the aliases, the trace reader, the largest ranking prompt within the alias's input limit, the
+  datasheet's numbers).
+- **Integration:** a whole incident on a real Postgres with a fast clock, the approval that a replay or
+  a forged id cannot repeat, the rejection and the second ranking, a remediation that does not recover
+  and the second proposal, the allowances and the global cap, the cache that spares a second run its
+  calls, the wall-clock cap, the step cap, unusable agents, the abort, the injection screen, the sweep;
+  the API through Fastify (every route, every refusal, another visitor's 404); the socket on a real
+  port over the real Redis feed (hello, ready, live events in order, a late page, every refusal, the
+  caps); the schema (its own schema only, a role that owns nothing else, the checks, the cascade).
+
+### LB-06 threat model
+
+- **Spoofing.** As LB-08's: tokens the site signed for `lb-06`, 5 minutes at most, the visitor known by
+  their session hash. The socket takes the token in its first frame and closes on any failure with
+  the same code. A decision is a server-side transition checked against the pending proposal's id
+  under the row's lock, so a replayed or forged approval matches nothing and does nothing.
+- **Tampering: the visitor's words.** Two strings of 40 characters from a pattern with no `<` or `>`,
+  read by the injection screen (flagged ones replaced), then placed in a delimited data slot the
+  prompts say is data; the reference tests show they never reach a system prompt. Whatever the model
+  makes of them, it can only cite evidence the server holds and propose an action from a closed list,
+  whose parameters are checked against the deploy history and the flags, and nothing is applied
+  without the visitor's click. The golden set's hostile cases grade that the action the injection asks
+  for is never proposed.
+- **Tampering: the model's output.** Every answer is checked by a strict schema with one repair; a
+  hypothesis's evidence is verified; a postmortem that references events the log lacks is not shown.
+  The agents never see raw logs or raw series: the tools return bounded rows and the summaries are
+  built by code.
+- **Bounds.** The step cap is the orchestrator's; the tools' rows, the hypotheses, the evidence, the
+  events and the simulated minutes are capped; the wall clock ends an incident at 8 minutes; eight
+  incidents run at once across every visitor; a visitor holds four sockets; a tick rebuild is
+  milliseconds.
+- **Data exposure.** Another visitor's incident is a 404 over HTTP and a 4404 over the socket. Spans
+  carry agents, steps, tools and counts, never the visitor's strings (a test checks the trace of a
+  hostile incident). Logs hold ids and error names. Everything is deleted after 24 hours; the feed's
+  stream expires with it. A custom incident's calls travel as visitor data.
+- **Denial of service.** The daily incident, the global cap, the wall-clock cap, the socket caps, the
+  gateway's caps per run, per visitor and per system (230 a day).
+- **Privilege escalation.** LB-06's connection searches only its own schema and, in production, logs in
+  as a role granted nothing else (a test migrates as such a role). The tools read a world built in
+  memory from the seed and can change nothing.
+
+Known gaps, stated rather than hidden:
+
+- **Allowances are per session.** As for the other systems: a script that mints sessions gets
+  incidents, and the global cap and the gateway's budgets are what stop it.
+- **A job that dies mid-investigation loses the count of the calls it spent.** The budget resumes from
+  the row's count, which is written when the proposal is made; a crash between two agent calls can
+  cost up to a few calls more than the cap counts, within the gateway's own cap of 15.
+- **The concurrent cap has a race of one.** The count is read in the transaction that stores the
+  incident, under the visitor's own counter row, so two visitors starting at the same instant can make
+  nine incidents where eight are allowed.
+- **The cache keys on the scenario, not on the minute.** The investigation's snapshot is taken two
+  minutes after the alert, which is the same minute every run of a scenario, so the cached work is
+  the work a live run would do; a change in `investigationDelayMinutes` must bump `PROMPT_VERSION`.
+- **No live eval score and no live prompt tuning.** The prompts were written from the golden set and
+  checked against the reference agents, never against a model.
+- **No browser-direct HTTP.** As LB-08: the site's server calls the API for the visitor; only the
+  socket is browser-direct, at the site's origin, as LB-02's.

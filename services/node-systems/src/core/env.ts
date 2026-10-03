@@ -19,6 +19,7 @@ export const envSchema = z.object({
   LB_DATABASE_URL: postgresUrl,
   LB08_DATABASE_URL: postgresUrl.optional(),
   LB04_DATABASE_URL: postgresUrl.optional(),
+  LB06_DATABASE_URL: postgresUrl.optional(),
   LB_REDIS_URL: z.string().regex(/^rediss?:\/\/.+/, 'a redis:// or rediss:// URL'),
   // Every key this service writes starts with this, the gateway's own rule.
   LB_REDIS_PREFIX: z.string().regex(/^[a-z0-9-]{1,24}:$/, 'lowercase letters, digits and hyphens, ending in a colon').default('lb:'),

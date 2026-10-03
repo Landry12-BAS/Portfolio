@@ -6,11 +6,9 @@
 //
 // The job ends when the incident does: closed after the postmortem, aborted by the visitor, by the
 // wall-clock cap, by the step cap or by spent proposals, or failed when the agents cannot be reached.
-import { runScope, spanScope } from '@lb/common'
+import { gatewayErrorOf, runScope, spanScope } from '@lb/common'
 import { LB06_LIMITS } from '@lb/contracts'
 import type { Lb06Event, Lb06EventInput, Lb06PendingProposal } from '@lb/contracts'
-
-import { gatewayErrorOf } from '@lb/common'
 
 import { contextOf, investigate, ModelOutputInvalid, proposeAgain, StepCapReached, writePostmortem } from '../agents/orchestrator.ts'
 import type { Budget, Investigation, Reranking } from '../agents/orchestrator.ts'
@@ -78,7 +76,6 @@ async function tick(deps: Lb06Deps, incidentId: string, working: boolean): Promi
     const inputs: Lb06EventInput[] = [{ kind: 'tick', minute, data: tickData(world, minute) }]
     const patch: Parameters<typeof patchIncident>[2] = { minute, nextTickAt: new Date(moment.getTime() + deps.config.tickMs) }
     let work: TickOutcome['work']
-    let ended = false
 
     if (row.state === 'detecting') {
       const slo = sloAt(world, minute)
@@ -133,7 +130,7 @@ async function tick(deps: Lb06Deps, incidentId: string, working: boolean): Promi
       alertMinute: patch.alertMinute ?? row.alertMinute,
       recoveredMinute: patch.recoveredMinute ?? row.recoveredMinute,
     }
-    return { events, row: after, ended, work }
+    return { events, row: after, ended: false, work }
   })
   if (outcome) await publish(deps, incidentId, outcome.events)
   return outcome

@@ -135,7 +135,7 @@ export const lb06CatalogueViewSchema = z.strictObject({
   faults: z.array(z.strictObject({ fault: z.enum(LB06_FAULTS), service: z.string().min(1).max(20), sampleId: sampleId })).length(LB06_FAULTS.length),
   samples: z.array(lb06SampleViewSchema).min(1).max(8),
   baselineMinutes: z.int().min(1).max(60),
-  tickMs: z.int().min(10).max(60_000),
+  tickMs: z.int().min(1).max(60_000),
 })
 /** A catalogue view. */
 export type Lb06CatalogueView = z.infer<typeof lb06CatalogueViewSchema>
