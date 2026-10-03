@@ -111,7 +111,13 @@ export const LB07_STEP_STATUSES = ['pending', 'running', 'passed', 'failed', 'fi
 /** One step status. `finding` is an expectation that did not hold, which is a result and not a mistake of the plan. */
 export type Lb07StepStatus = (typeof LB07_STEP_STATUSES)[number]
 
-/** The verdict of the red-then-green verification of a generated test. */
-export const LB07_VERDICTS = ['kept', 'discarded_not_red', 'discarded_not_green', 'not_verified'] as const
+/**
+ * The verdict of the red-then-green verification of a generated test. `kept`: red with the bugs on,
+ * green with them off. `passing`: no bug was on, so there is nothing to be red about, and the test
+ * passes on the clean shop. `discarded_not_red`: the test did not catch the bug. `discarded_not_green`:
+ * the test fails on the clean shop too, so it proves nothing. `not_verified`: the run ended before the
+ * verification could happen.
+ */
+export const LB07_VERDICTS = ['kept', 'passing', 'discarded_not_red', 'discarded_not_green', 'not_verified'] as const
 /** One verdict. */
 export type Lb07Verdict = (typeof LB07_VERDICTS)[number]
