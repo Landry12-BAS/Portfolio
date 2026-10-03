@@ -45,7 +45,11 @@ DATABASES: dict[str, dict[str, object]] = {
     "default": {},
     **system_databases(
         ENVIRONMENT.database_url,
-        {"lb01": ENVIRONMENT.lb01_database_url, "lb02": ENVIRONMENT.lb02_database_url},
+        {
+            "lb01": ENVIRONMENT.lb01_database_url,
+            "lb02": ENVIRONMENT.lb02_database_url,
+            "lb09": ENVIRONMENT.lb09_database_url,
+        },
     ),
 }
 DATABASE_ROUTERS = ["core.databases.SystemSchemaRouter"]
@@ -64,8 +68,9 @@ X_FRAME_OPTIONS = "DENY"
 # TLS ends at Cloudflare, and the proxy in front of the service passes the scheme on.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Tickets and chat messages are short; nothing the API accepts comes near this.
-DATA_UPLOAD_MAX_MEMORY_SIZE = 65_536
+# Tickets and chat messages are short. LB-09's recording is the one big body: up to 3 MiB of
+# audio as base64 in a JSON object (lb09/limits.py), which is what this leaves room for.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 4_400_000
 
 REDIS_URL = ENVIRONMENT.redis_url
 REDIS_PREFIX = ENVIRONMENT.redis_prefix
@@ -98,12 +103,19 @@ CELERY_BEAT_SCHEDULE = {
     "lb02-sweep-expired-conversations": {"task": "lb02.sweep_expired_conversations", "schedule": 15 * 60},
     # The demo calendar starts afresh every night, counted from the new day.
     "lb02-reset-calendar": {"task": "lb02.reset_calendar", "schedule": crontab(hour=3, minute=11)},
+    # Visitor data lives 24 hours (the LB-09 datasheet); a meeting the worker lost is given up on after
+    # ten minutes, and an audio file a crash left behind is removed after an hour.
+    "lb09-sweep": {"task": "lb09.sweep", "schedule": 5 * 60},
 }
 
 # The synthetic data the seed commands load: one folder per system, such as data/seed/lb01.
 SEED_DIR = Path(ENVIRONMENT.seed_dir) if ENVIRONMENT.seed_dir else BASE_DIR.parents[1] / "data" / "seed"
 # The site's Ed25519 public key, which visitor tokens must be signed with (core/visitors.py).
 WEB_TOKEN_KEY = ENVIRONMENT.web_token_key
+# LB-09: where recordings wait for the worker, and where the private transcriber's weights are (lb09/storage.py,
+# lb09/transcribers.py). Either may be unset: see config/environment.py.
+LB09_AUDIO_DIR = ENVIRONMENT.lb09_audio_dir
+LB09_WHISPER_DIR = ENVIRONMENT.lb09_whisper_dir
 
 # The golden sets the evals grade against, such as evals/lb01/golden.yaml. They are read
 # in development and CI only, never by the deployed service.

@@ -29,7 +29,8 @@ STALE_MEETING_AFTER: Final = timedelta(minutes=10)
 # a serverless function takes about 4.5 MB: 3 MiB of audio is 4 MiB of base64, inside both. A minute of
 # browser audio is about 1 MB, and a minute of 16 kHz WAV is 1.9 MB.
 MAX_UPLOAD_BYTES: Final = 3 * 1024 * 1024
-MAX_UPLOAD_BASE64_CHARS: Final = (MAX_UPLOAD_BYTES * 4 + 2) // 3 + 4
+# The JSON field may hold a little more than the cap, so an upload just over it is told it is too big, not malformed.
+MAX_UPLOAD_BASE64_CHARS: Final = (MAX_UPLOAD_BYTES * 4 + 2) // 3 + 4_096
 
 # Decoding a recording runs in a child process the operating system holds to these bounds, so that a file
 # built to blow up (a few kilobytes that decode to hours of silence) costs a bounded amount of time and memory.

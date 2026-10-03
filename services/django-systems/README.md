@@ -1,29 +1,32 @@
-# Django systems · LB-01 Support Desk Agent and LB-02 Booking Concierge
+# Django systems · LB-01 Support Desk Agent, LB-02 Booking Concierge and LB-09 Meeting Recorder
 
-One Django project for the systems that suit Django best: LB-01 Support Desk Agent and
-LB-02 Booking Concierge today, then LB-09 Meeting Recorder. Each system keeps its data in
-a Postgres schema of its own and calls models only through the AI gateway.
+One Django project for the systems that suit Django best: LB-01 Support Desk Agent, LB-02
+Booking Concierge and LB-09 Meeting Recorder. Each system keeps its data in a Postgres
+schema of its own and calls models only through the AI gateway.
 
 LB-01 triages a customer's ticket, drafts a reply in which every sentence cites a
 policy passage or an order record, and hands the draft to a person to approve, edit or
 escalate. LB-02 books tastings, cupping sessions and roasting workshops in a chat, in
 English, Czech or another language, on a real calendar, and cannot double-book it: the
-database refuses an overlapping reservation whatever the model does. This is its back
-end; the page that uses it, the phone-frame PWA, isn't built yet. Why it is built this
-way: [`docs/STACK.md`](../../docs/STACK.md), Django systems. Platform security:
+database refuses an overlapping reservation whatever the model does. LB-09 turns a
+recording of up to a minute into a transcript with speaker labels, and into decisions and
+action items with owners and deadlines, each tied to the second it was said; the audio is
+transcribed through the gateway (fast mode) or by a Whisper model on our own server
+(private mode), and is deleted either way the moment it has been transcribed. Why it is
+built this way: [`docs/STACK.md`](../../docs/STACK.md), Django systems. Platform security:
 [`docs/SECURITY.md`](../../docs/SECURITY.md).
 
 ## At a glance
 
 | Parameter | Value |
 |---|---|
-| API | Django Ninja under `/api/`: LB-01 at `/api/lb01/`, LB-02 at `/api/lb02/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema). Schema: [`openapi.json`](openapi.json) |
-| WebSocket | LB-02's conversation at `/ws/lb02/`, on Django Channels 4 with a Redis channel layer (keys under `lb:channels:`). The visitor token travels in the first frame, never in the address |
+| API | Django Ninja under `/api/`: LB-01 at `/api/lb01/`, LB-02 at `/api/lb02/`, LB-09 at `/api/lb09/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema). Schema: [`openapi.json`](openapi.json) |
+| WebSocket | LB-02's conversation at `/ws/lb02/` and LB-09's meeting progress at `/ws/lb09/`, on Django Channels 4 with a Redis channel layer (keys under `lb:channels:`). The visitor token travels in the first frame, never in the address |
 | Callers | The site's server, with an Ed25519 visitor token scoped to one system and valid 5 minutes at most ([`core/visitors.py`](core/visitors.py)) |
-| Worker | Celery on Redis: LB-01's ticket pipeline, sweep and nightly reseed; LB-02's hold sweep (every minute), 24-hour sweep (every 15 minutes) and nightly calendar reset (03:11 UTC) |
-| Data | PostgreSQL 17 with pgvector and btree_gist: one schema per system (`lb01`, `lb02`), extensions in `extensions` |
+| Worker | Celery on Redis: LB-01's ticket pipeline, sweep and nightly reseed; LB-02's hold sweep (every minute), 24-hour sweep (every 15 minutes) and nightly calendar reset (03:11 UTC); LB-09's meeting pipeline and its sweep (every 5 minutes) |
+| Data | PostgreSQL 17 with pgvector and btree_gist: one schema per system (`lb01`, `lb02`, `lb09`), extensions in `extensions`. LB-09's recordings wait in a folder the API and the worker share (`LB09_AUDIO_DIR`), never in the database |
 | Model calls | Through the gateway only, with [`lb-common`](../../python/lb-common/README.md), each labelled with its ticket's run |
-| Runtime | Python 3.13, Django 5.2 LTS, uvicorn with `--ws-max-size 8192` |
+| Runtime | Python 3.13, Django 5.2 LTS, uvicorn with `--ws-max-size 8192`; PyAV (a bundled FFmpeg) decodes LB-09's audio, and faster-whisper runs its private mode |
 
 ## LB-01: from a ticket to a cited draft
 
@@ -121,6 +124,44 @@ quotas in `routing.yaml` by a test:
 | Messages one connection has in hand | 2: the one being answered and one waiting behind it; a third is refused with `too_many_pending` |
 | Connections one visitor may hold | 4 at a time, in one server process (two tabs, the installed app and one still being torn down); the fifth is refused with `too_many_connections` and closed with 1013 |
 
+## LB-09: from a recording to decisions, owners and deadlines
+
+One meeting is one run of LB-09. The API stores the recording and queues it; the worker takes
+it through the steps below, records the stage it is on and announces it over the WebSocket,
+and each step is a span of the run's trace. A meeting costs the transcription (fast mode
+only) and two chat calls, the labeller on `lb-fast` and the extractor on `lb-tools`, plus one
+repair of each answer that doesn't fit its schema: at most four chat calls, which
+[`lb09/limits.py`](lb09/limits.py) and `routing.yaml` agree on (a test checks it).
+
+| Step | What it does | When it can't |
+|---|---|---|
+| Check the upload | The first bytes must be a WebM, Ogg, MP4, WAV or MP3 container and the body under 3 MiB, before anything reads it as audio ([`lb09/audio.py`](lb09/audio.py)) | 415 `unsupported_audio`, 413 `audio_too_big`: nothing is stored |
+| Decode | A child process the kernel holds to 10 CPU seconds, 1 GiB and a 15-second deadline turns it into 16 kHz mono PCM, stops once it has a minute and a little, and the length is measured from the samples, never a header ([`lb09/decode_child.py`](lb09/decode_child.py)) | `undecodable`, `too_long` (over 60 s), `too_short` (under 0.5 s), `decode_limit` (a decoder bomb) |
+| Transcribe | Fast mode sends the PCM as the WAV the gateway measures to `lb-stt` (Groq's Whisper, then Workers AI's). Private mode runs faster-whisper on this machine, CPU, int8, from weights baked into the image, and makes no network call ([`lb09/transcribers.py`](lb09/transcribers.py)). Whisper's doubted segments, loops and anything past the caps are dropped ([`lb09/transcript.py`](lb09/transcript.py)). The audio file is deleted here, on success and on failure | `transcriber`; `no_speech` when nothing is left |
+| Label speakers | `lb-fast` says which segments one voice said and the name a speaker gave themselves. The code keeps a name only when that speaker really introduces it ("this is Hannah"), numbers the rest "Speaker 1, 2, 3" in order of first word, and gives every segment one voice ([`lb09/labelling.py`](lb09/labelling.py)). Labels are inferred from the words, never matched to voices, and the API says so | Repairs once, then `model` |
+| Extract | `lb-tools` lists the decisions and the action items (text, owner, deadline), each with one sentence copied from the transcript as its evidence. The model never gives a time | Repairs once, then `model` |
+| Align | The code finds every quote in the transcript, takes the item's seconds from the segments it falls in, drops an item whose quote isn't there, repeats another, or is spoken to an assistant, and drops an owner the meeting never named ([`lb09/extraction.py`](lb09/extraction.py)). The count of dropped items is kept and shown | Never fails: rules only |
+| Save | The labelled segments and the items, in one transaction; the meeting is `done` | |
+
+Modes, and what each costs the visitor's privacy: in fast mode the audio goes to the gateway and
+on to a provider that does not train on inputs (`routing.yaml` marks them, and a visitor's run
+can only use those); in private mode it never leaves the box. The page says which mode ran, from
+`transcriber` (`lb-stt`, or `local/faster-whisper/<model>`).
+
+Limits, all in [`lb09/limits.py`](lb09/limits.py), and checked against `routing.yaml` by a test:
+
+| Limit | Value |
+|---|---|
+| Recording length | 60 s, measured from the decoded audio (datasheet); at least 0.5 s |
+| Recordings a visitor may start a day | 5 (datasheet), samples included, under the same per-visitor lock as LB-01's tickets |
+| Upload | 3 MiB of audio, as base64 in the JSON body (a minute of browser audio is about 1 MB) |
+| Audio kept | Until transcribed (datasheet): deleted in the transcription step, whatever happens there; a sweep removes any file older than an hour |
+| Transcript | 120 segments, 6,000 characters, before a model sees it |
+| Chat calls a meeting | 2, plus a repair each: 4 at most; the gateway's cap is 6 with the transcription |
+| A meeting's task | Dropped unrun after 5 minutes in the queue, stopped after 150 s of work; a meeting still not done 10 minutes after its last stage is marked `stale` by the sweep |
+| Visitor data | Deleted 24 hours after the meeting was made |
+| A WebSocket frame | 2 KB; a connection has 10 seconds to say hello, 5 minutes of silence, sends at most 8 frames after it, and a visitor may hold 4 connections in a process |
+
 ## The API
 
 ### LB-01
@@ -214,6 +255,46 @@ more is said), 4404 (no such conversation of theirs), 4408 (no hello in 10 secon
 minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4 KB), 1011
 (the service itself isn't set up) and 1013 (too many connections from this visitor).
 
+
+### LB-09
+
+Every route needs a visitor token for `lb-09`, and a visitor reaches only their own
+session's meetings.
+
+| Route | What it does |
+|---|---|
+| `GET /api/lb09/samples` | The curated sample meetings, each with its committed audio file and its length |
+| `GET /api/lb09/limits` | Meetings left today, when the day resets, and the limits every recording is held to |
+| `POST /api/lb09/meetings` | Start a meeting: `{"source": "upload", "mode": "fast"\|"private", "audio": "<base64>", "language": "en"\|"cs"}` or `{"source": "sample", "mode": ..., "sample": "monday-roasting-plan"}`. Answers 202 with the meeting and its run ID, and queues it; 413, 415, 429 (five a day) or 404 (no such sample) |
+| `GET /api/lb09/meetings` | The visitor's own meetings, newest first |
+| `GET /api/lb09/meetings/{id}` | Where a meeting stands: status, stage, failure code, run ID, measured length, transcriber, calls, dropped items. The polling fallback for the WebSocket |
+| `GET /api/lb09/meetings/{id}/transcript` | The segments with their seconds and inferred speaker labels (409 until the meeting is done) |
+| `GET /api/lb09/meetings/{id}/items` | The decisions and actions with owner, deadline, verbatim evidence and the seconds it was said (409 until done) |
+| `GET /api/lb09/meetings/{id}/export?format=json\|csv\|text` | JSON of everything, CSV of the items, or the plain-English follow-up a visitor pastes into Automation Studio (LB-08) |
+
+Failure codes a meeting can end with (`failure`): `undecodable`, `too_long`, `too_short`,
+`decode_limit`, `no_speech`, `transcriber`, `model`, `audio_gone`, `stale`,
+`pipeline_error`. Errors answer `{"error": {"code", "message"}}` and never echo what was sent.
+
+### LB-09 WebSocket
+
+`/ws/lb09/`, one JSON object to a text frame ([`lb09/events.py`](lb09/events.py)), strict both
+ways. The connection only listens. Its first and only frame is a hello, within 10 seconds:
+
+```json
+{"type": "hello", "token": "<visitor token for lb-09>", "meeting": "<meeting id>"}
+```
+
+The server answers with the meeting's `state` (the same fields as `GET /api/lb09/meetings/{id}`),
+sends a new `state` at each stage the worker reaches (`received`, `decoding`, `transcribing`,
+`labelling`, `extracting`, `aligning`, `done` or `failed`), and closes with 1000 five seconds after
+the last one. A second frame gets `error` `already_said_hello`; the ninth closes the connection.
+Closes: 4400 (not a hello first, or not JSON), 4401 (a bad token; nothing more is said), 4404
+(no such meeting of theirs, after `meeting_gone`), 4408 (no hello in 10 seconds, or 5 minutes of
+silence), 1003 (binary), 1009 (over 2 KB), 1011 (the service isn't set up), 1013 (too many
+connections, after `too_many_connections`). The worker writes the row before it tells the group,
+so a page that loses the socket and polls the meeting instead sees the same thing.
+
 ## Data and evals
 
 | What | Where | Command |
@@ -224,6 +305,8 @@ minutes of silence), 4429 (ten conversations today), 1003 (binary), 1009 (over 4
 | Search recall gate | [`evals/lb01/search-baseline.yaml`](../../evals/lb01/search-baseline.yaml) | `just eval-search`; CI fails below the gate |
 | LB-02's rooms, offerings and calendar (3 offerings in 2 rooms, 8 slots a day for 14 days) | [`data/seed/lb02`](../../data/seed/lb02) | `just seed` checks the file, then syncs the tables; dates are relative to the day it runs, and the nightly reset does the same |
 | LB-02's golden set: 30 conversations in English, Czech, German and Slovak, written before any prompt | [`evals/lb02/golden.yaml`](../../evals/lb02/golden.yaml) | `just eval-lb02` plays them live as synthetic data and grades them by rules; it fails unless every case passes |
+| LB-09's six scripted meetings (speakers and turns, with planted decisions and actions; one with no actions, one with a joke, one with a line spoken to the assistant, one with overlapping talk) and their audio, spoken by Flite with a manifest of each turn's timing | [`data/seed/lb09`](../../data/seed/lb09) | `just tts-lb09` speaks them (`--check` compares the committed audio with the manifest; CI runs it) |
+| LB-09's golden set: the expected decisions and actions with owners, deadlines and the turns each is said in, written before any prompt | [`evals/lb09/golden.yaml`](../../evals/lb09/golden.yaml) | `just eval-lb09` feeds each script to the live labelling and extraction as a transcript and grades it by rules (recall, precision, owner, deadline, span inside the turns, evidence found, labels) against its gate; `just wer-lb09 [--mode private]` transcribes the committed audio for real and reports the word error rate |
 
 The golden set's grading is tested offline with scripted models: a model that does what a
 careful concierge does passes 20 cases, covering every scenario, on the seeded calendar, and
@@ -231,6 +314,14 @@ models that get something wrong fail the check that names it. **The live eval ha
 run**, since no provider key was available, so no pass rate, and no measured number of calls
 per booking, is claimed anywhere; `just eval-lb02` prints both. No sample runs are recorded
 for replay yet either.
+
+LB-09's grading is tested the same way: a scripted model that answers what the golden set expects
+passes every check at 1.0 on every case through the real pipeline, timed by the committed audio's
+manifest, which proves the server's own alignment turns the model's quotes into the right seconds;
+models that paraphrase a quote, invent an item, obey the line spoken to the assistant or name a
+speaker who never introduced themselves are caught by the code. **The live eval and the word error
+rate have not been run**: no provider key was available, and the private model's weights are not
+here, so no score and no rate is claimed anywhere; the gate's numbers are targets.
 
 Search recall today, keyword search only: 1.000 at 4 when searching by the classifier's
 English query, 0.441 when searching by the customer's own words, and 0 of 14 Czech
@@ -247,9 +338,10 @@ just django     # the API and WebSockets on http://127.0.0.1:8001
 just worker     # the pipelines, the sweeps, the reseed and the calendar reset
 ```
 
-LB-02's channel layer needs the Redis from `LB_REDIS_URL`. The pipeline and the concierge
-need the gateway (`just gateway`) with provider keys, and the service key pair from
-`just gateway-token keygen django-systems <key-file>`.
+LB-02's and LB-09's channel layer needs the Redis from `LB_REDIS_URL`. The pipelines and the
+concierge need the gateway (`just gateway`) with provider keys, and the service key pair from
+`just gateway-token keygen django-systems <key-file>`. LB-09's private mode needs faster-whisper
+weights in `LB09_WHISPER_DIR` (docs/DEPLOY.md, LB-09); without them it reports `transcriber`.
 
 ## Tests
 
@@ -390,3 +482,63 @@ Known gaps, stated rather than hidden:
   reads a whole frame before the consumer can refuse it.
 - The site opens the WebSocket on the API domain, as a Vercel function can't hold one, and
   sends the visitor token as its first frame.
+
+## LB-09 threat model
+
+Short notes, as the playbook asks (step 8).
+
+- **Spoofing.** Visitors have no accounts. The API and the WebSocket trust only tokens the site
+  signed for `lb-09`, at most 5 minutes old, and know the visitor only by their session hash; the
+  socket reads the token from the first frame, never the address. A meeting's ID is 16 random
+  characters and needs the visitor's own session: anyone else's is indistinguishable from none.
+- **Tampering.** The recording is untrusted bytes: its container is told from its first bytes,
+  it is decoded in a child the kernel holds to a CPU, memory and time budget, and its length is
+  what came out, never what a header says. The transcript is untrusted text: it goes between
+  markers it cannot close, the prompts call it data, and an item is kept only when its quote is
+  really in the transcript, is not spoken to an assistant, and names an owner the meeting named.
+  Every model answer must fit its Pydantic schema, with one repair. The model never supplies a
+  time; the code does. The audio file's name is random and the store refuses any other.
+- **Data exposure.** Synthetic samples; a visitor's own recording goes, in fast mode, only to
+  providers that do not train on inputs, and in private mode nowhere. The file is deleted when
+  transcribed, on success and on failure, and the sweep removes anything older than an hour.
+  Audio never goes in the database, a log or a span: spans hold seconds, counts and model
+  names. The rows (words, labels, items) are deleted 24 hours after the meeting was made. A
+  failure reaches the page as a code, never an error's words.
+- **Denial of service.** 5 meetings a visitor a day, counted under a per-visitor lock so that
+  simultaneous uploads cannot pass it; 3 MiB an upload, a minute of audio, 15 seconds and 1 GiB to
+  decode it, 120 segments and 6,000 characters of transcript, 4 chat calls a meeting; the gateway
+  adds 6 calls a run, 30 a visitor a day and 240 a day, and 60 seconds of audio a call. The queue
+  drops a task unrun after 5 minutes and stops one after 150 seconds. A socket gets 2 KB frames,
+  10 seconds to say hello, 5 minutes of silence, 8 frames and 4 connections a visitor in a process.
+- **Privilege escalation.** No tool, no side effect: the export for LB-08 is text a visitor
+  pastes by hand. The service's connection searches only the `lb09` schema and, in production,
+  logs in as a role granted nothing else (`LB09_DATABASE_URL`); provider keys live only in the
+  gateway, and private mode holds no key at all.
+
+Known gaps, stated rather than hidden:
+
+- Speaker labels are inferred from the words. Two people who never say "I" or a name, or
+  overlapping talk, get a wrong or merged label; the golden case `tasting-notes-overlap` is not
+  graded on labels for that reason, and the API says the labels are inferred from the text.
+- The joke is the model's to spot: the code drops instructions to an assistant by pattern, but a
+  joke worded as a task only fails the golden set's `forbidden` rule, which the live eval measures.
+- An owner is accepted when it is a label or a capitalised word the meeting said, so a model that
+  assigns a job to the wrong person who was named in the meeting is not caught by the code.
+- The connection cap and the stage announcements are per process, as LB-02's are.
+- Not run live: the golden eval, the word error rate in either mode, and recorded samples. The
+  private model's weights are not in this image until the download step in docs/DEPLOY.md runs.
+
+## Operating notes for LB-09
+
+- The API and the worker share `LB09_AUDIO_DIR`, a memory-backed volume on the box; the API
+  writes a recording there and the worker deletes it. A worker that is down leaves files
+  behind until it is back, and then its sweep (every 5 minutes) removes anything older than
+  an hour and marks the meetings `stale`.
+- `DATA_UPLOAD_MAX_MEMORY_SIZE` is 4.4 MB for the one big body, LB-09's recording; the edge lets
+  that route through at 5 MB and keeps the 1 MB cap for everything else.
+- Private mode needs faster-whisper and the weights folder named by `LB09_WHISPER_DIR`, loaded
+  with `local_files_only` so nothing is ever downloaded at run time; the Dockerfile's build step
+  fetches them. The model runs on the CPU in int8; a minute of audio takes the small model a
+  good part of a minute on the box, which is why a meeting's task has 150 seconds.
+- The channel layer's group for a meeting is `lb09.meeting.<id>`, under the same Redis prefix
+  as LB-02's, so the Redis role needs nothing new.

@@ -24,12 +24,15 @@ const MIB = 1_024 * KIB
  * - LB-02's routes here only read: its conversation runs over the WebSocket.
  * - LB-05 answers a question synchronously within 90 seconds (the edge gives it 95), and a result may hold rows.
  * - LB-08 takes a workflow graph of at most 16 steps; its describe call may make two model calls (95 seconds at the edge).
+ * - LB-09 takes a recording of up to 3 MiB as base64 in a JSON body (4 MiB and a little; services/django-systems/lb09/limits.py),
+ *   which the edge lets through on that one route; its other calls are reads and polls.
  */
 export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-01': { maxBodyBytes: 8 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
   'lb-02': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
   'lb-05': { maxBodyBytes: 4 * KIB, timeoutMs: 95_000, maxResponseBytes: MIB },
   'lb-08': { maxBodyBytes: 64 * KIB, timeoutMs: 95_000, maxResponseBytes: MIB },
+  'lb-09': { maxBodyBytes: 4_300 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
 }
 
 /** The most a trace page from the gateway may weigh: the gateway cuts its pages at 256 KB, and this leaves room for the envelope. */

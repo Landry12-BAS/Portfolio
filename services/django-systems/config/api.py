@@ -6,6 +6,7 @@ served at /api/openapi.json for generating the site's typed client.
 
 from django.db import connections
 from django.http import HttpRequest, HttpResponse
+from lb09.api import router as lb09_router
 from ninja import NinjaAPI, Status
 from ninja.errors import AuthenticationError, ValidationError
 
@@ -23,6 +24,7 @@ api = NinjaAPI(
 )
 api.add_router("/lb01/", lb01_router)
 api.add_router("/lb02/", lb02_router)
+api.add_router("/lb09/", lb09_router)
 
 
 @api.exception_handler(AuthenticationError)

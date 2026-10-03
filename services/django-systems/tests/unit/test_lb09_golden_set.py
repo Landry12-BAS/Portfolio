@@ -17,10 +17,10 @@ from lb09.golden import (
     GoldenSet,
     check_against_scripts,
     expected_labels,
-    introduces_themselves,
     read_golden_set,
 )
 from lb09.scripts import Script, read_scripts
+from lb09.textnorm import introduces_themselves
 
 from core.data_files import DataFileError, read_data_file
 

@@ -28,7 +28,7 @@ from pydantic import Field, StringConstraints, field_validator, model_validator
 
 from core.data_files import Key, StrictEntry, read_data_file
 from lb09.scripts import Script
-from lb09.textnorm import fold, has_all_words
+from lb09.textnorm import fold, has_all_words, introduces_themselves
 
 # A word an extracted item's text must hold: one lowercase word, such as `colombian`.
 MatchWord = Annotated[str, StringConstraints(pattern=r"^[a-z0-9]+$", max_length=24)]
@@ -160,19 +160,6 @@ class GoldenSet(StrictEntry):
 def read_golden_set(path: Path | None = None) -> GoldenSet:
     """Read and check the golden set, by default evals/lb09/golden.yaml."""
     return read_data_file(path or settings.EVALS_DIR / "lb09" / "golden.yaml", GoldenSet)
-
-
-# How a speaker says their own name: the phrases a label may be inferred from. Used by the labelling step too.
-INTRODUCTIONS = ("this is", "i am", "i m", "my name is", "call me", "name s")
-
-
-def introduces_themselves(text: str, name: str) -> bool:
-    """Tell whether a turn is a speaker giving their own name: "this is Hannah", "I'm David", "Peter here"."""
-    folded, who = fold(text), fold(name)
-    spoken = f" {folded} "
-    if any(f" {phrase} {who} " in spoken for phrase in INTRODUCTIONS):
-        return True
-    return any(f" {who} {tail} " in spoken for tail in ("here", "speaking"))
 
 
 def expected_labels(case: GoldenCase, script: Script) -> dict[str, str]:

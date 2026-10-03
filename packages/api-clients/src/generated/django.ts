@@ -206,6 +206,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb09/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Limits
+         * @description Say how many meetings the visitor may still start today, and the limits every recording is held to.
+         */
+        get: operations["lb09_api_limits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Meetings
+         * @description List the visitor's own meetings, newest first.
+         */
+        get: operations["lb09_api_list_meetings"];
+        put?: never;
+        /**
+         * Start
+         * @description Start a meeting from the visitor's recording or a sample, and queue it for the worker.
+         */
+        post: operations["lb09_api_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/meetings/{meeting_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Meeting
+         * @description Show where one of the visitor's meetings stands: the polling fallback for the WebSocket.
+         */
+        get: operations["lb09_api_get_meeting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/meetings/{meeting_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export
+         * @description Export a finished meeting as JSON, CSV, or the plain-English follow-up for Automation Studio (LB-08).
+         */
+        get: operations["lb09_api_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/meetings/{meeting_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Items
+         * @description Show a finished meeting's decisions and action items, each with its evidence and its seconds.
+         */
+        get: operations["lb09_api_get_items"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/meetings/{meeting_id}/transcript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Transcript
+         * @description Show a finished meeting's transcript with its inferred speaker labels.
+         */
+        get: operations["lb09_api_get_transcript"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb09/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Samples
+         * @description List the curated sample meetings, with the audio file the page plays for each.
+         */
+        get: operations["lb09_api_list_samples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/readyz": {
         parameters: {
             query?: never;
@@ -458,6 +602,20 @@ export interface components {
             error: components["schemas"]["ErrorDetail"];
         };
         /**
+         * ExportOut
+         * @description An export: its format, a file name to save it as, and its content.
+         */
+        ExportOut: {
+            /** Content */
+            content: string;
+            /** Content Type */
+            content_type: string;
+            /** Filename */
+            filename: string;
+            /** Format */
+            format: string;
+        };
+        /**
          * HandoffOut
          * @description A conversation handed to a person: why, what was collected, and every line said.
          */
@@ -500,6 +658,65 @@ export interface components {
             starts_at: string;
         };
         /**
+         * ItemOut
+         * @description A decision or an action item, with its verbatim evidence and the seconds it was said in.
+         */
+        ItemOut: {
+            /** Deadline */
+            deadline: string | null;
+            /** End */
+            end: number;
+            /** Evidence */
+            evidence: string;
+            /** First Segment */
+            first_segment: number;
+            /** Kind */
+            kind: string;
+            /** Last Segment */
+            last_segment: number;
+            /** Owner */
+            owner: string | null;
+            /** Position */
+            position: number;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ItemsOut
+         * @description A finished meeting's items, and how many the checks dropped.
+         */
+        ItemsOut: {
+            /** Dropped */
+            dropped: number;
+            /** Items */
+            items: components["schemas"]["ItemOut"][];
+            /** Meeting */
+            meeting: string;
+        };
+        /**
+         * LimitsOut
+         * @description What is left of the visitor's day, and the datasheet's limits the service enforces.
+         */
+        LimitsOut: {
+            /** Left Today */
+            left_today: number;
+            /** Max Recording Seconds */
+            max_recording_seconds: number;
+            /** Max Upload Bytes */
+            max_upload_bytes: number;
+            /** Recordings Per Day */
+            recordings_per_day: number;
+            /**
+             * Resets At
+             * Format: date-time
+             */
+            resets_at: string;
+            /** Used Today */
+            used_today: number;
+        };
+        /**
          * LineOut
          * @description One line of a transcript.
          */
@@ -528,6 +745,79 @@ export interface components {
             cs: string;
             /** En */
             en: string;
+        };
+        /**
+         * MeetingIn
+         * @description A meeting to start: a visitor's own recording, or a curated sample, in fast or private mode.
+         */
+        MeetingIn: {
+            /** Audio */
+            audio?: string | null;
+            /** Language */
+            language?: ("en" | "cs") | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "fast" | "private";
+            /** Sample */
+            sample?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "upload" | "sample";
+        };
+        /**
+         * MeetingOut
+         * @description A meeting: where it stands, what was measured, which model ran, and the counters the page shows.
+         */
+        MeetingOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dropped Items */
+            dropped_items: number;
+            /** Duration Seconds */
+            duration_seconds: number;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Failure */
+            failure: string | null;
+            /** Heard Language */
+            heard_language: string;
+            /** Id */
+            id: string;
+            /** Labels Inferred From Text */
+            labels_inferred_from_text: boolean;
+            /** Language */
+            language: string | null;
+            /** Mode */
+            mode: string;
+            /** Model Calls */
+            model_calls: number;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string | null;
+            /** Source Bytes */
+            source_bytes: number;
+            /** Stage */
+            stage: string;
+            /** Status */
+            status: string;
+            /** Transcriber */
+            transcriber: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * OfferingOut
@@ -570,6 +860,42 @@ export interface components {
              * Format: date-time
              */
             starts_at: string;
+        };
+        /**
+         * SampleOut
+         * @description A curated sample meeting the demo opens on, and the committed audio file the page plays.
+         */
+        SampleOut: {
+            /** About */
+            about: string;
+            /** File */
+            file: string;
+            /** Key */
+            key: string;
+            /** Seconds */
+            seconds: number;
+            /** Speakers */
+            speakers: number;
+            /** Title */
+            title: string;
+        };
+        /**
+         * SegmentOut
+         * @description One stretch of speech, with the speaker the words suggest.
+         */
+        SegmentOut: {
+            /** End */
+            end: number;
+            /** Label */
+            label: string;
+            /** Position */
+            position: number;
+            /** Speaker */
+            speaker: number;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
         };
         /**
          * SentenceOut
@@ -717,6 +1043,18 @@ export interface components {
             language: string;
             /** Status */
             status: string;
+        };
+        /**
+         * TranscriptOut
+         * @description A finished meeting's transcript, segment by segment, and the note about its labels.
+         */
+        TranscriptOut: {
+            /** Labels Note */
+            labels_note: string;
+            /** Meeting */
+            meeting: string;
+            /** Segments */
+            segments: components["schemas"]["SegmentOut"][];
         };
     };
     responses: never;
@@ -1022,6 +1360,279 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OfferingOut"][];
+                };
+            };
+        };
+    };
+    lb09_api_limits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LimitsOut"];
+                };
+            };
+        };
+    };
+    lb09_api_list_meetings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"][];
+                };
+            };
+        };
+    };
+    lb09_api_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingIn"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb09_api_get_meeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb09_api_export: {
+        parameters: {
+            query: {
+                format: "json" | "csv" | "text";
+            };
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb09_api_get_items: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemsOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb09_api_get_transcript: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb09_api_list_samples: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SampleOut"][];
                 };
             };
         };

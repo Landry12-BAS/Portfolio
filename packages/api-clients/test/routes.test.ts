@@ -40,7 +40,7 @@ describe('the table of routes', () => {
       expect(route.path.startsWith(`/api/lb${route.system.slice(3)}/`), route.path).toBe(true)
       expect(['GET', 'POST', 'PUT', 'DELETE']).toContain(route.method)
     }
-    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-05', 'lb-08']))
+    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-09']))
   })
 
   it('has no route twice', () => {

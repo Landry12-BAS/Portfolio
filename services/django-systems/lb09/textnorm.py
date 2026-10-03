@@ -28,3 +28,17 @@ def has_all_words(text: str, words: list[str]) -> bool:
     """Tell whether a text holds every one of the words, read as parts of words so "order" is in "ordering"."""
     folded = fold(text)
     return all(fold(word) in folded for word in words)
+
+
+# How a speaker says their own name: the phrases a label may be inferred from. The labelling step and the golden
+# set's checks read the same list, so a name the pipeline may use is a name the grader accepts.
+INTRODUCTIONS = ("this is", "i am", "i m", "my name is", "call me", "name s")
+
+
+def introduces_themselves(text: str, name: str) -> bool:
+    """Tell whether a turn is a speaker giving their own name: "this is Hannah", "I'm David", "Peter here"."""
+    folded, who = fold(text), fold(name)
+    spoken = f" {folded} "
+    if any(f" {phrase} {who} " in spoken for phrase in INTRODUCTIONS):
+        return True
+    return any(f" {who} {tail} " in spoken for tail in ("here", "speaking"))
