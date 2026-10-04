@@ -24,8 +24,9 @@ export const SERVER_ROUTES: readonly ServerRoute[] = [
   // The visitor's anonymous session, and the Turnstile check that lifts it to one that may spend quota.
   { route: '/api/session', method: 'get', handler: 'handlers/session.ts' },
   { route: '/api/session/verify', method: 'post', handler: 'handlers/verify.ts' },
-  // The token for LB-02's WebSocket, the one thing the browser does directly.
+  // The tokens for LB-02's and LB-09's WebSockets, the one thing the browser does directly.
   { route: '/api/tokens/lb-02', method: 'post', handler: 'handlers/token.ts' },
+  { route: '/api/tokens/lb-09', method: 'post', handler: 'handlers/token.ts' },
   // The Scope: a run's trace, read from the gateway.
   { route: '/api/runs/:runId/spans', method: 'get', handler: 'handlers/spans.ts' },
   // The recordings the demos replay.

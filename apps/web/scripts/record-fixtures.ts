@@ -43,14 +43,18 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // to the dead-letter queue and is replayed, and one that waits for an approval. The Czech sample is
   // left without a recording on purpose, so the tests can see a sample that has none.
   'lb-08': ['wholesale-order', 'low-stock-reorder', 'refund-approval'],
+  // The roasting plan (four speakers, five items) and the staffing meeting (a joke that must not become
+  // a task). The newsletter draft is left without a recording on purpose, so the tests can see a sample
+  // that has none and run it live.
+  'lb-09': ['monday-roasting-plan', 'weekend-staffing'],
 }
 
 // The moment LB-02's mock stands still at.
 const LB02_NOW = Date.parse('2026-10-02T09:30:00.000Z')
 
-// The systems whose mock moves on with time (a retry waits for its backoff) need a clock that the
-// recorder moves by waiting; the others move on as they are read and never wait.
-const TIMED = new Set(['lb-08'])
+// The systems whose mock moves on with time (a retry waits for its backoff; a meeting's stages take
+// their time) need a clock that the recorder moves by waiting; the others move on as they are read and never wait.
+const TIMED = new Set(['lb-08', 'lb-09'])
 
 /** A clock that moves only when the recorder waits, shared by the recorder, its tokens and the mock. */
 function virtualClock(): Clock {

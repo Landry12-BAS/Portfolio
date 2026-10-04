@@ -491,3 +491,25 @@ describe('the token for LB-02\'s WebSocket', () => {
     expect((await browser.request('GET', '/api/tokens/lb-02')).status).toBe(404)
   })
 })
+
+describe('the token for LB-09\'s WebSocket', () => {
+  it('is made for a visitor who passed the check, for LB-09 only, and names the meeting progress socket', async () => {
+    const browser = await verified()
+
+    const reply = await browser.request('POST', '/api/tokens/lb-09')
+
+    expect(reply.status).toBe(200)
+    const grant = reply.json as { system: string, token: string, expiresAt: string, socketUrl: string }
+    expect(grant.system).toBe('lb-09')
+    expect(verifyVisitorToken(grant.token, 'lb-09', loadPublicKey(keys.sitePublic), () => site.clock.now / 1_000).system).toBe('lb-09')
+    expect(() => verifyVisitorToken(grant.token, 'lb-02', loadPublicKey(keys.sitePublic))).toThrow()
+    expect(grant.socketUrl).toBe(`${mock.url.replace('http:', 'ws:')}/ws/lb09/`)
+    expect(grant.socketUrl).not.toContain(grant.token)
+  })
+
+  it('is refused without the check', async () => {
+    const browser = new Browser(site)
+
+    expect((await browser.request('POST', '/api/tokens/lb-09')).status).toBe(403)
+  })
+})

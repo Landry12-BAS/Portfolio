@@ -69,7 +69,7 @@ export interface TestSiteOptions {
   // The clock to share with the mock back end, in Unix milliseconds: the back end must see the same moment the site stamps its tokens with.
   clock?: { now: number }
   // Limits to use instead of the real ones, by system: a test shortens a deadline to wait less.
-  policies?: Partial<Record<'lb-01' | 'lb-02' | 'lb-05' | 'lb-08', Partial<SystemPolicy>>>
+  policies?: Partial<Record<'lb-01' | 'lb-02' | 'lb-05' | 'lb-08' | 'lb-09', Partial<SystemPolicy>>>
 }
 
 /** A running test site. */

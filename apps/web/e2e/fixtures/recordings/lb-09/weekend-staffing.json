@@ -1,0 +1,506 @@
+{
+  "v": 1,
+  "system": "lb-09",
+  "sample": "weekend-staffing",
+  "origin": "mock",
+  "recordedAt": "2026-10-04T20:08:02.381Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb09/meetings",
+        "body": {
+          "source": "sample",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "language": "en"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "received",
+          "stage": "received",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "",
+          "transcriber": "",
+          "duration_seconds": 0,
+          "source_bytes": 79564,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:07:57.381Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "decoding",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "",
+          "transcriber": "",
+          "duration_seconds": 0,
+          "source_bytes": 79564,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:07:58.081Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "transcribing",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "",
+          "transcriber": "",
+          "duration_seconds": 19.891,
+          "source_bytes": 79564,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:07:58.781Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "extracting",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "en",
+          "transcriber": "lb-stt",
+          "duration_seconds": 19.891,
+          "source_bytes": 79564,
+          "model_calls": 1,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:08:00.181Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "aligning",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "en",
+          "transcriber": "lb-stt",
+          "duration_seconds": 19.891,
+          "source_bytes": 79564,
+          "model_calls": 1,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:08:00.881Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ZyjMqDjac34v8Qkh",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "done",
+          "stage": "done",
+          "failure": null,
+          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "language": "en",
+          "heard_language": "en",
+          "transcriber": "lb-stt",
+          "duration_seconds": 19.891,
+          "source_bytes": 79564,
+          "model_calls": 2,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-04T20:07:57.381Z",
+          "updated_at": "2026-10-04T20:08:01.581Z",
+          "expires_at": "2026-10-05T20:07:57.381Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh/transcript"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "meeting": "ZyjMqDjac34v8Qkh",
+          "labels_note": "Speaker labels are inferred from the words, not matched to voices.",
+          "segments": [
+            {
+              "position": 0,
+              "start": 0.3,
+              "end": 4.225,
+              "text": "We need someone to cover the market stall on Saturday morning.",
+              "speaker": 0,
+              "label": "Speaker 1"
+            },
+            {
+              "position": 1,
+              "start": 4.625,
+              "end": 6.837,
+              "text": "I'll cover it, no problem.",
+              "speaker": 1,
+              "label": "Speaker 2"
+            },
+            {
+              "position": 2,
+              "start": 7.237,
+              "end": 13.167,
+              "text": "And I will personally roast the whole batch on a campfire by Friday. Just kidding.",
+              "speaker": 2,
+              "label": "Speaker 3"
+            },
+            {
+              "position": 3,
+              "start": 13.567,
+              "end": 16.682,
+              "text": "Please don't. The roaster works fine.",
+              "speaker": 0,
+              "label": "Speaker 1"
+            },
+            {
+              "position": 4,
+              "start": 17.082,
+              "end": 19.591,
+              "text": "Don't worry, the stall will be ready.",
+              "speaker": 1,
+              "label": "Speaker 2"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh/items"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "meeting": "ZyjMqDjac34v8Qkh",
+          "dropped": 0,
+          "items": [
+            {
+              "position": 0,
+              "kind": "action",
+              "text": "Cover the market stall on Saturday morning",
+              "owner": "Speaker 2",
+              "deadline": "Saturday",
+              "evidence": "I'll cover it, no problem.",
+              "start": 0.3,
+              "end": 6.837,
+              "first_segment": 0,
+              "last_segment": 1
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "lb09-QS4Zts1YNK_I3CKd",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "8fd6064f35e79f0f",
+        "parentId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.step",
+        "name": "decode audio",
+        "status": "ok",
+        "startMs": 1791144477386,
+        "endMs": 1791144478081,
+        "attrs": {
+          "bytes": 318256,
+          "seconds": 19.891
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "6cd7977245597314",
+        "parentId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.step",
+        "name": "transcribe",
+        "status": "ok",
+        "startMs": 1791144478086,
+        "endMs": 1791144478781,
+        "attrs": {
+          "mode": "fast",
+          "seconds": 19.891,
+          "segments": 5,
+          "model": "lb-stt"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "03e8c7c57557d8be",
+        "parentId": "6cd7977245597314",
+        "kind": "gateway.call",
+        "name": "lb-stt",
+        "status": "ok",
+        "startMs": 1791144478091,
+        "endMs": 1791144478776,
+        "attrs": {
+          "alias": "lb-stt",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/whisper-large-v3-turbo",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "47d180bf8eb1b2d4",
+        "parentId": "03e8c7c57557d8be",
+        "kind": "gateway.attempt",
+        "name": "groq/whisper-large-v3-turbo",
+        "status": "ok",
+        "startMs": 1791144478093,
+        "endMs": 1791144478774,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/whisper-large-v3-turbo",
+          "inputTokens": 0,
+          "outputTokens": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "c317e33e7a7a5e29",
+        "parentId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.step",
+        "name": "label speakers",
+        "status": "ok",
+        "startMs": 1791144478786,
+        "endMs": 1791144479481,
+        "attrs": {
+          "speakers": 3,
+          "named": 0,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "c77056d2fa47d250",
+        "parentId": "c317e33e7a7a5e29",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791144478791,
+        "endMs": 1791144479476,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1000,
+          "outputTokens": 167,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "9690f9a4e755cc46",
+        "parentId": "c77056d2fa47d250",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791144478793,
+        "endMs": 1791144479474,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1000,
+          "outputTokens": 167
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "e6f2376bb2ef32d9",
+        "parentId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.step",
+        "name": "extract items",
+        "status": "ok",
+        "startMs": 1791144479486,
+        "endMs": 1791144480181,
+        "attrs": {
+          "decisions": 0,
+          "actions": 1,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "1538d4acc27ec8fe",
+        "parentId": "e6f2376bb2ef32d9",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791144479491,
+        "endMs": 1791144480176,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1520,
+          "outputTokens": 253,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "c1bca38ea0f34c8f",
+        "parentId": "1538d4acc27ec8fe",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791144479493,
+        "endMs": 1791144480174,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1520,
+          "outputTokens": 253
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "abf8622c849d6e25",
+        "parentId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.step",
+        "name": "align evidence",
+        "status": "ok",
+        "startMs": 1791144480186,
+        "endMs": 1791144480881,
+        "attrs": {
+          "kept": 1,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "system": "lb-09",
+        "spanId": "d7a0aa6f6ff7f6a4",
+        "kind": "system.run",
+        "name": "meeting recording",
+        "status": "ok",
+        "startMs": 1791144477381,
+        "endMs": 1791144481581,
+        "attrs": {
+          "mode": "fast",
+          "status": "done",
+          "items": 1,
+          "dropped": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 3,
+    "steps": 5,
+    "durationMs": 4200
+  }
+}

@@ -76,3 +76,40 @@ test.describe('the policy of LB-02\'s board pages (docs/SECURITY.md, section 3)'
     expect(await answer.text()).toContain('lb02-shell-v1')
   })
 })
+
+test.describe('the policy of LB-09\'s board pages (docs/SECURITY.md, section 3)', () => {
+  // The WebSocket origin the end-to-end server's API listens on, which the site names in the policy of these pages only.
+  const socket = `ws://127.0.0.1:${process.env.E2E_MOCK_PORT ?? 8121}`
+
+  for (const path of ['/systems/lb-09/board', '/cs/systems/lb-09/board']) {
+    test(`${path} adds the API's WebSocket, the browser's recordings as media and the microphone, and nothing wide`, async ({ request }) => {
+      const headers = (await request.get(path)).headers()
+      const csp = headers['content-security-policy'] ?? ''
+      expect(csp).toContain(`connect-src 'self' ${socket}`)
+      expect(csp).toContain('media-src \'self\' blob:')
+      expect(csp).toContain('trusted-types vue lb-turnstile')
+      expect(csp).not.toContain('lb-service-worker')
+      expect(csp).not.toContain('worker-src')
+      expect(csp).toContain('require-trusted-types-for \'script\'')
+      expect(csp).toMatch(/script-src 'self' 'strict-dynamic' 'nonce-[\w+/=-]{16,}'/)
+      expect(csp).not.toContain('*')
+      expect(csp).not.toMatch(/unsafe-eval|allow-duplicates/)
+      // blob: is a media source only: no other directive names it.
+      expect(csp.split(';').filter(part => part.includes('blob:')).map(part => part.trim().split(' ')[0])).toEqual(['media-src'])
+      const permissions = headers['permissions-policy'] ?? ''
+      expect(permissions).toContain('microphone=(self)')
+      expect(permissions).toContain('camera=()')
+      expect(permissions).toContain('geolocation=()')
+      expect(permissions).not.toContain('microphone=()')
+    })
+  }
+
+  for (const path of ['/', '/cs', '/systems/lb-09', '/cs/systems/lb-09', '/systems/lb-02/board', '/systems/lb-05/board', '/cs/systems/lb-08/board']) {
+    test(`${path} keeps the microphone denied and plays no blob: media`, async ({ request }) => {
+      const headers = (await request.get(path)).headers()
+      expect(headers['permissions-policy']).toContain('microphone=()')
+      expect(headers['content-security-policy'] ?? '').not.toContain('media-src')
+      expect(headers['content-security-policy'] ?? '').not.toContain('blob:')
+    })
+  }
+})

@@ -366,6 +366,19 @@ eleventh run, which two tabs of one visitor can reach.
   tracer's spans and the test build of the site. Not run there: a real model (every description was
   answered by a script), the real Turnstile, and a recording made on a live back end (the recorder ran
   against the real service once and its output was thrown away).
+- **LB-09's board** records with the microphone and plays the audio from the browser. The recorder
+  (`app/boards/lb-09/recorder.ts`) asks for the microphone only when the visitor presses record, after
+  the panel has said what will happen; it counts down the minute and stops itself; it reads the sound
+  level only while recording and not for a visitor who prefers reduced motion; and the audio stays in
+  the page (an object URL) until the visitor sends it, so the player plays the visitor's own recording
+  and a sample's file from the site, never anything from the back end, which deletes the audio once
+  transcribed. Its two board pages alone widen the policy, each addition the smallest that works:
+  `connect-src` gains the API's WebSocket origin (the grant from `POST /api/tokens/lb-09`, as LB-02's),
+  `media-src` is `'self' blob:`, and the `Permissions-Policy` allows `microphone=(self)`
+  (`server/lib/lb09-policy.ts`, tested in `e2e/security.spec.ts`; `docs/SECURITY.md`, section 3). The
+  board follows a meeting over the socket and, when the socket cannot be opened or drops, reads the
+  meeting every second or two and says so. The exports are made in the browser from what the page
+  holds (`export.ts` mirrors the service's), so a replay exports the same thing a live run does.
 - **LB-08's canvas** (Vue Flow) is a separate chunk, fetched when the canvas view is first shown, which
   a wide screen with a pointer does at once and a phone does not (it starts on the outline). It costs
   about 52 KB gzipped of script and 1.6 KB of style, and nothing else on the page pays for it. It

@@ -48,8 +48,13 @@ fast mode through the gateway and private mode with faster-whisper on the box, s
 labels inferred from the words, decisions and actions with verified evidence and seconds
 derived in code, progress over a WebSocket with a polling fallback, the visitor API with
 exports, and the infrastructure (its role, the shared audio volume, the upload route, the
-weights in the image); next come its board at `/systems/lb-09/board` and its live eval and
-word-error-rate runs (`just eval-lb09`, `just wer-lb09`, which need a model). Also in build:
+weights in the image), and its board at `/systems/lb-09/board` (a sample meeting or the visitor's
+own minute from the microphone, fast or private mode, the stages over the WebSocket with a polling
+fallback, the transcript with labels inferred from the words, the items that jump the player to
+their evidence, and the exports, with the two board pages alone allowing the microphone and
+`blob:` media; see the web README); next come its recorded sample runs (`just record-sample lb-09
+<sample>`) and its live eval and word-error-rate runs (`just eval-lb09`, `just wer-lb09`, which
+need a model). Also in build:
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
