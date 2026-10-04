@@ -76,6 +76,7 @@ expect_status "another Host is refused" 404 "evil.invalid" /api/lb01/customers
 expect_status "LB-01's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb01/customers
 expect_status "LB-02's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb02/offerings
 expect_status "LB-05's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb05/quota
+expect_status "LB-10's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb10/quota
 expect_status "LB-08's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb08/limits
 expect_status "LB-04's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb04/limits
 

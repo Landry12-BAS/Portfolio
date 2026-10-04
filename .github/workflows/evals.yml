@@ -150,7 +150,7 @@ jobs:
         run: uv run --directory services/flask-systems python manage.py nightly_lb10 --out "$GITHUB_WORKSPACE/evals-out"
       - name: Judge the answers, after calibrating the judge
         run: |
-          results="$(ls "$GITHUB_WORKSPACE"/evals-out/nightly-*.json | head -n 1)"
+          results="$(find "$GITHUB_WORKSPACE/evals-out" -name 'nightly-*.json' | sort | head -n 1)"
           uv run --directory services/flask-systems python manage.py judge_lb10 --results "$results" --out "$GITHUB_WORKSPACE/evals-out"
           uv run --directory services/flask-systems python manage.py advise_lb10 --results "$results" | tee "$GITHUB_WORKSPACE/evals-out/advice.txt"
       - name: Stop the gateway

@@ -124,13 +124,14 @@ for path in /v1/models /v1/usage /v1/embeddings /v1/rerank /v1/guard /v1/runs; d
     call GET "$path"; check "the gateway's $path stays internal" caddy_404
 done
 call POST /v1/chat/completions -d '{}'; check "POST /v1/chat/completions stays internal" caddy_404
-for path in /api/lb06/x /api/lb07/x /api/lb09/x /api/lb10/x; do
+for path in /api/lb06/x /api/lb07/x /api/lb09/x; do
     call GET "$path"; check "$path has no route until its service exists" caddy_404
 done
 for path in /ws/lb04/x /ws/lb05/x /ws/lb08/x; do
     call GET "$path" -H "Origin: $site_origin"; check "$path has no route: only LB-02 has a WebSocket" caddy_404
 done
 call GET /api/lb05; check "the bare /api/lb05 is not a route" caddy_404
+call GET /api/lb10; check "the bare /api/lb10 is not a route" caddy_404
 call GET /api/lb03; check "the bare /api/lb03 is not a route" caddy_404
 call GET /api/lb08; check "the bare /api/lb08 is not a route" caddy_404
 call GET /api/lb04; check "the bare /api/lb04 is not a route" caddy_404
@@ -145,6 +146,8 @@ check "POST /api/lb01/tickets reaches the Django systems with its body" grep -q 
 call GET /api/lb02/rooms; check "/api/lb02/* reaches the Django systems" reached django
 call GET /api/lb05/semantic-layer -H "Authorization: Bearer test-token"
 check "GET /api/lb05/semantic-layer reaches the Flask systems" reached flask
+call GET /api/lb10/targets -H "Authorization: Bearer test-token"
+check "GET /api/lb10/targets reaches the Flask systems" reached flask
 check "  with the path unchanged and the API's own Host" grep -q "\"host\": \"$api_host\"" <<<"$body"
 check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
 payload='{"question":"which coffee sold most last quarter?"}'
@@ -197,7 +200,7 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
         received="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["path"])' "$body")"
         resolved="$(python3 -c 'import posixpath,sys,urllib.parse; print(posixpath.normpath(urllib.parse.unquote(sys.argv[1].split("?")[0])))' "$received")"
         case "$resolved" in
-            /api/lb01/* | /api/lb02/* | /api/lb03/* | /api/lb05/* | /api/lb08/* | /api/lb04/* | /ws/lb02/*) pass "forwarded as $received, which still resolves to $resolved" ;;
+            /api/lb01/* | /api/lb02/* | /api/lb03/* | /api/lb05/* | /api/lb08/* | /api/lb04/* | /api/lb10/* | /ws/lb02/*) pass "forwarded as $received, which still resolves to $resolved" ;;
             /v1/runs/*/spans) pass "forwarded as $received, which still resolves to $resolved" ;;
             *) fail "$path reached a service as $received, which resolves to $resolved" ;;
         esac

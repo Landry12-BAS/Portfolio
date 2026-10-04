@@ -84,8 +84,8 @@
 	# The Django systems: LB-01 and LB-02's APIs, and LB-02's WebSocket.
 	@django path /api/lb01/* /api/lb02/* /ws/lb02/*
 
-	# The Flask systems (LB-03 and LB-05) and the Node systems (LB-08 and LB-04): one API prefix each.
-	@flask path /api/lb03/* /api/lb05/*
+	# The Flask systems (LB-03, LB-05 and LB-10) and the Node systems (LB-08 and LB-04): one API prefix each.
+	@flask path /api/lb03/* /api/lb05/* /api/lb10/*
 	@node path /api/lb08/* /api/lb04/*
 
 	# One of the two routes that take a file: LB-04's contract upload, a PDF of up to 2 MB sent as
