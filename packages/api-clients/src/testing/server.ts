@@ -371,7 +371,8 @@ class MockSite {
       return this.#send(response, 200, { ok: true })
     }
     if (action === 'drop') {
-      this.lb09.dropAll(1006)
+      // 1012 (service restart) is what a real restart sends; 1006 is never sent on the wire, and the socket library refuses it.
+      this.lb09.dropAll(1012)
       return this.#send(response, 200, { ok: true })
     }
     return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is no such control.').body)
