@@ -162,6 +162,15 @@ how a Vercel preview runs.
   conversation, the calendar or a recording, and a WebSocket does not pass through a service
   worker at all. The page is fetched from the network first, so a visitor who is online always
   gets the current page. A test fails if the worker ever stores an API or WebSocket address.
+- **LB-06's board: the feed.** The incident's feed, like LB-02's conversation, connects from the
+  visitor's browser straight to the API: `POST /api/tokens/lb-06` gives the page a five-minute
+  grant and the socket's address, from the same setting the proxy uses, the token goes in the
+  first frame and never in an address, and the page refuses an address that is not `ws:` or `wss:`
+  or that carries credentials. Only LB-06's two board pages get a longer policy, and the one
+  addition is the smallest that works: `connect-src` gains the API's `ws(s)://host` (no wildcard).
+  Nothing else changes: no service worker, no Web Worker, no new Trusted Types policy
+  (`apps/web/server/lib/lb06-csp.ts`, tested in `test/unit/lb06-csp.test.ts` and against the headers
+  a browser gets in `e2e/security.spec.ts`). The page polls the events route when the socket drops.
 - **LB-04's board: the PDF viewer.** The viewer draws a contract's PDF with pdf.js
   (`pdfjs-dist`), loaded only when a visitor asks to see the pages (the build leaves it out of
   the page's prefetch hints), and only from the site's own origin. pdf.js works in a Web Worker,

@@ -24,7 +24,7 @@ export const verifyRequestSchema = z.strictObject({
 
 /** A short-lived token for the one thing the browser does directly: LB-02's WebSocket. */
 export const socketGrantSchema = z.strictObject({
-  system: z.literal('lb-02'),
+  system: z.enum(['lb-02', 'lb-06']),
   // Goes in the connection's first frame, never in the address.
   token: z.string().min(1).max(1_024),
   expiresAt: z.iso.datetime(),

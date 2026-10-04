@@ -126,6 +126,7 @@ describe('who the back end thinks is calling', () => {
     await browser.request('GET', '/api/lb08/limits')
     await browser.request('GET', '/api/lb03/quota')
     await browser.request('GET', '/api/lb04/limits')
+    await browser.request('GET', '/api/lb06/limits')
 
     const publicKey = loadPublicKey(keys.sitePublic)
     const seen = mock.requests.map((sent) => {
@@ -134,7 +135,7 @@ describe('who the back end thinks is calling', () => {
       return verifyVisitorToken(token, `lb-${system}`, publicKey, () => site.clock.now / 1_000)
     })
 
-    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04'])
+    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04', 'lb-06'])
     expect(new Set(seen.map(visitor => visitor.sessionKey)).size).toBe(1)
   })
 
@@ -495,6 +496,11 @@ describe('the token for LB-02\'s WebSocket', () => {
       expect((await browser.request('POST', `/api/tokens/${system}`)).status, system).toBe(404)
     }
     expect((await browser.request('GET', '/api/tokens/lb-02')).status).toBe(404)
+    // LB-06's grant is made the same way, for its own system and its own socket path.
+    const grant = await browser.request('POST', '/api/tokens/lb-06')
+    expect(grant.status).toBe(200)
+    expect(grant.json).toMatchObject({ system: 'lb-06', socketUrl: expect.stringMatching(/^ws:\/\/.*\/ws\/lb06\/$/) })
+    expect(verifyVisitorToken((grant.json as { token: string }).token, 'lb-06', loadPublicKey(keys.sitePublic), () => site.clock.now / 1_000).system).toBe('lb-06')
   })
 })
 

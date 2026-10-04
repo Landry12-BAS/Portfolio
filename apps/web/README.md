@@ -65,8 +65,8 @@ only once the board is in `app/boards/registry.ts`.
 |---|---|
 | `GET /api/session` | Creates the anonymous session on first use and says whether this deployment has a back end, whether the Turnstile check has passed today and when the day turns over |
 | `POST /api/session/verify` | Checks a Turnstile token with Cloudflare; a pass marks the session verified for the day |
-| `/api/lb01/**`, `lb02`, `lb03`, `lb04`, `lb05`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
-| `POST /api/tokens/lb-02` | The five-minute grant for LB-02's WebSocket |
+| `/api/lb01/**`, `lb02`, `lb03`, `lb04`, `lb05`, `lb06`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `POST /api/tokens/lb-02`, `POST /api/tokens/lb-06` | The five-minute grants for LB-02's and LB-06's WebSockets |
 | `GET /api/runs/:runId/spans` | A run's trace from the gateway, for the Scope. Needs no session: the run's ID is the capability |
 | `GET /api/recordings/:system[/:sample]` | The recordings of the curated samples |
 
