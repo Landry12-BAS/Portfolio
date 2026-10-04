@@ -164,6 +164,31 @@ export-pack-lb02 *args:
 export-pack-lb08 *args:
     pnpm --filter @lb/node-systems pack:lb08 {{args}}
 
+# Needs the gateway with provider keys; about 150 calls a night, most of them cached. `--out DIR` writes the results file the gate, the judge and the advisor read.
+# Run every eval pack's production prompt on every provider (OpenRouter included, synthetic cases) and store the results for Eval Lab's API.
+nightly-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py nightly_lb10 {{args}}
+
+# Needs the gateway (`lb-judge`): about a dozen calls to calibrate, then one a case. Its scores count only once it agrees with the labelled set.
+# Grade a results file's answers with the LLM judge, after calibrating it on evals/judge/calibration.yaml.
+judge-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py judge_lb10 {{args}}
+
+# `--results FILE` grades a stored run instead of running (no gateway needed); `--write-baselines` records a measured run; `--strict` fails on a missing baseline.
+# Compare fresh eval scores (every pack on Groq and Workers AI, 20 cases each) with evals/baselines and exit 1 on a regression past the baseline's margin.
+gate-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py gate_lb10 {{args}}
+
+# Advice only: it changes nothing in services/gateway/routing.yaml.
+# Say which pinned fallback aliases pass a threshold on every pack of a route, from a nightly results file.
+advise-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py advise_lb10 {{args}}
+
+# Safe to run at any time, and twice. The service sweeps the counters itself on the first run of each day.
+# Delete LB-10's quota counters of days that are over and its runs older than a week.
+sweep-lb10:
+    uv run --directory services/flask-systems --env-file .env python manage.py sweep_lb10
+
 # Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in services/node-systems/.env).
 node-api:
     pnpm --filter @lb/node-systems dev
