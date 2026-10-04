@@ -82,6 +82,8 @@ LB_API_HOST=localhost
 LB_SITE_ORIGIN=http://localhost:3000
 LB_WEB_TOKEN_KEY=$site_public
 LB_EGRESS_SYSTEMS_ALLOW=
+LB_LB03_BUCKET=lb-uploads
+LB_R2_ENDPOINT=https://local-stack.r2.invalid
 EOF
 
 cat > "$secrets_dir/postgres.env" <<EOF
@@ -91,8 +93,10 @@ EOF
 cat > "$secrets_dir/postgres-roles.env" <<EOF
 LB_PG_PASSWORD_LB01=$(token)
 LB_PG_PASSWORD_LB02=$(token)
+LB_PG_PASSWORD_LB03=$(token)
 LB_PG_PASSWORD_LB05=$(token)
 LB_PG_PASSWORD_LB08=$(token)
+LB_PG_PASSWORD_LB04=$(token)
 LB_PG_PASSWORD_LB09=$(token)
 LB_PG_PASSWORD_LBBACKUP=$(token)
 EOF
@@ -118,8 +122,12 @@ DJANGO_SECRET_KEY=$(token)$(token)
 LB_SERVICE_KEY_JWK_B64=$django_jwk_b64
 EOF
 
+# The R2 token is never used here: the local stack keeps LB-03's files on a memory-backed
+# folder (docker-compose.dev.yml), and its networks reach no bucket.
 cat > "$secrets_dir/flask-systems.env" <<EOF
 LB_SERVICE_KEY_JWK_B64=$flask_jwk_b64
+LB03_S3_ACCESS_KEY_ID=local-stack-never-sent-anywhere
+LB03_S3_SECRET_ACCESS_KEY=local-stack-never-sent-anywhere
 EOF
 
 cat > "$secrets_dir/node-systems.env" <<EOF

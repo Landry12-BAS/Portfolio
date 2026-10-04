@@ -96,9 +96,11 @@ export default defineNuxtConfig({
     // LB-05's chart is drawn with Vega, whose code is large (about 270 kB gzipped) and is needed only once
     // an answer has a chart to draw. Nuxt would have every visitor of the board page fetch it while idle
     // (a `prefetch` link), so that one chunk is left out of the hints and loads when a chart is first drawn.
+    // LB-04's PDF viewer is the same: pdf.js is needed only when a visitor first looks at a contract's pages.
     'build:manifest': (manifest) => {
       for (const entry of Object.values(manifest)) {
-        if (entry.src?.endsWith('/chart/render.ts')) entry.prefetch = false
+        const source = entry.src ?? ''
+        if (source.endsWith('/chart/render.ts') || source.endsWith('/lb-04/pdf/engine.ts')) entry.prefetch = false
       }
     },
   },

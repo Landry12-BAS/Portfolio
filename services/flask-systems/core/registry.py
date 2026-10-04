@@ -18,10 +18,15 @@ type Command = Callable[[Sequence[str], Platform], int]
 
 @dataclass(frozen=True)
 class SystemRuntime:
-    """A system built and ready to serve: its API, and whether it can serve right now."""
+    """A system built and ready to serve: its API, whether it can serve right now, and how to start its own work.
+
+    `start` is for a system that works outside requests (LB-03 reads documents and sweeps on a loop of its own): the
+    worker calls it as it boots, so that work does not wait for the first request to begin.
+    """
 
     blueprint: APIBlueprint
     is_ready: Callable[[], bool]
+    start: Callable[[], None] | None = None
 
 
 @dataclass(frozen=True)

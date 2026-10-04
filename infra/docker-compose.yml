@@ -12,9 +12,10 @@
 #   app              caddy, the gateway and the systems' APIs. Internal.
 #   data             postgres, redis and the services that use them. Internal.
 #   egress-gateway   the gateway <-> its proxy. Internal.
-#   egress-systems   the Django systems and the backup <-> their proxy. Internal. (The Flask
-#                    and Node systems reach no outside host: their model calls go through
-#                    the gateway. LB-05's data job has no network at all.)
+#   egress-systems   the Django systems, the Flask API (LB-03's files go to R2) and the backup
+#                    <-> their proxy. Internal. (The Node systems reach no outside host:
+#                    their model calls go through the gateway, and so do the Flask API's.
+#                    LB-05's data job has no network at all.)
 #   outbound         the only network with a route to the internet: cloudflared (the
 #                    tunnel to Cloudflare) and the two egress proxies (Squid, each with its
 #                    own host allowlist). An internal network resolves no outside name and
@@ -25,21 +26,34 @@
 #   and they rarely peak together. Memory is capped without swap. compose-policy.jq holds the
 #   two budgets below and fails the checks (`just infra-check`) when a change breaks them.
 #
-#   Memory of what runs all the time, in MiB: postgres 2048, flask-api 1536, django-worker
-#   768, django-api 512, redis 512, gateway 384, node-api 384, node-worker 384, caddy 128,
-#   cloudflared 128, the two egress proxies 128 each = 7040 (6.9 GiB). The budget is 8192:
-#   of the 12 GiB the host keeps 1 and about 3 stay free for what is still to come (the
+#   Memory of what runs all the time, in MiB: postgres 2048, flask-api 2048, django-worker
+#   768, node-worker 768, django-api 512, redis 512, gateway 384, node-api 384, caddy 128,
+#   cloudflared 128, the two egress proxies 128 each = 7936 (7.75 GiB). The budget is 8192:
+#   of the 12 GiB the host keeps 1 and about 0.25 stays free for what is still to come (the
 #   Playwright sandbox, Whisper, the other systems).
 #   Memory of the jobs a deploy runs beside them, which wait for Postgres and for each other
-#   and so rarely overlap: flask-seed 1536, django-migrate 384, flask-migrate, node-migrate
-#   and node-seed 256 each, postgres-provision 128, and the nightly backup 768 = 3584. All
-#   that can run at once, 10624 (10.4 GiB), fits in the 11 GiB the box has to give.
+#   and so rarely overlap: flask-seed 1280, django-migrate 384, flask-migrate, node-migrate
+#   and node-seed 256 each, postgres-provision 128, and the nightly backup 768 = 3328. All
+#   that can run at once, 11264 (11 GiB), is exactly the 11 GiB the box has to give: the
+#   next system that needs memory needs a decision (a smaller limit elsewhere, or a job that
+#   waits for another), not a bigger number.
 #   Where the numbers come from: on a local stack the same services idle at about 0.7 GiB
 #   (without cloudflared and the proxies). LB-05's data job peaks at 923 MB when it makes the
 #   full dataset, and the service's warehouse code at 452 MB while it answers the 100
-#   reference questions on that dataset, with DuckDB's own limit of 1 GB. flask-api's 1536 is
-#   that limit and a margin for the Python process and for what DuckDB's limit does not cap. The Node services get 384, because V8 lets a heap
-#   grow to 259 MB whatever the container's size, and the process needs room beside it.
+#   reference questions on that dataset, with DuckDB's own limit of 1 GB. LB-03's OCR worker,
+#   a process inside flask-api's container, peaks at 692 MiB over the seed documents, 747 MiB
+#   on a PDF of five pages (the most it reads) and 837 MiB on the biggest image the reader
+#   accepts (measured, x86-64: services/flask-systems/README.md, "Measured, and not").
+#   flask-api's 2048 is DuckDB's 1 GB limit, a margin for the Python process and what the
+#   limit does not cap, and most of the worker's peak. Both at their peak at once would be
+#   more than that, so the worker makes itself the kernel's first victim (its OOM score), and
+#   a document then fails as ocr_failed, its place given back, and the service stays up.
+#   flask-seed's 1280 is DuckDB's 1 GB limit and a margin of 256 MiB over its measured peak
+#   of 923 MB. The Node API gets 384, because V8 lets a heap
+#   grow to 259 MB whatever the container's size, and the process needs room beside it. The
+#   Node worker gets 768: it opens LB-04's PDFs in threads of their own (two at a time, each
+#   limited to 192 MB of old and 32 MB of young heap), which measured 291 MB at the peak for two
+#   30-page contracts at once, and up to about 760 MB if hostile files took all the limits allow.
 #   CPU limits cap a service at that many cores. They add up to 10 for the services and 15
 #   with the jobs, on 2 cores, on purpose: services rarely use their cap together, and when
 #   they contend, cpu_shares decides: 1536 for the request path (the databases, the gateway,
@@ -110,8 +124,8 @@ x-django: &django
   networks: [app, data, egress-systems]
   stop_grace_period: 30s
 
-# The Flask systems (LB-05): one image, three jobs (the migration, the data, the API). Each
-# job names the environment it needs and nothing more: only the API gets a secret, and the
+# The Flask systems (LB-03 and LB-05): one image, three jobs (the migration, the data, the API).
+# Each job names the environment it needs and nothing more: only the API gets a secret, and the
 # jobs that need no Redis or database are given a URL that goes nowhere or no network at all.
 x-flask: &flask
   <<: *hardening
@@ -363,12 +377,13 @@ services:
     cpus: 1.0
     pids_limit: 128
 
-  # LB-05 (the Flask systems). Its only Postgres table holds the daily question counters;
-  # its data is a DuckDB file, which the service opens read-only.
+  # LB-03 and LB-05 (the Flask systems). LB-05's only Postgres table holds the daily question
+  # counters, and its data is a DuckDB file, which the service opens read-only. LB-03 keeps its
+  # documents in Postgres and their files in a private bucket on R2 for an hour.
   #
   # The settings insist on a Redis URL and a database URL even for a job that touches
-  # neither. The migration needs the database, and is given the lb05 login; whatever a job
-  # does not need is given a URL that goes nowhere.
+  # neither. The migration needs the database, and is given the lb03 and lb05 logins, one for
+  # each schema it creates; whatever a job does not need is given a URL that goes nowhere.
   flask-migrate:
     <<: *flask
     restart: "no"
@@ -377,6 +392,7 @@ services:
       FLASK_ALLOWED_HOSTS: localhost
       LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
       LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       postgres-provision:
@@ -408,8 +424,8 @@ services:
     network_mode: none
     # numpy builds the whole dataset in memory: 923 MB at its peak (measured), for about
     # fifteen seconds, once, when the volume is empty or the generator changed.
-    mem_limit: 1536m
-    memswap_limit: 1536m
+    mem_limit: 1280m
+    memswap_limit: 1280m
     cpus: 1.0
     pids_limit: 64
 
@@ -420,10 +436,12 @@ services:
     environment:
       # The API's own public name is the only host Flask answers to.
       FLASK_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
-      # LB-05 logs in as the lb05 role, which owns the lb05 schema and can reach nothing
-      # else. The shared URL is the same login, so a system that forgets its own fails closed.
+      # Each system logs in as its own role, which owns its schema and can reach nothing else.
+      # The shared URL is LB-05's login, so a system that forgets its own fails closed: LB-03
+      # would find no schema there.
       LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
       LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://flask-systems:${LB_REDIS_PASSWORD_FLASK_SYSTEMS:?LB_REDIS_PASSWORD_FLASK_SYSTEMS is not set}@redis:6379/0
       LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
       LB_GATEWAY_URL: http://gateway:8080
@@ -433,6 +451,23 @@ services:
       # container's memory limit is sized from, with the Python process and its threads on top.
       LB05_DUCKDB_MEMORY_LIMIT: 1GB
       LB05_DUCKDB_THREADS: "2"
+      # LB-03's files: a private bucket on R2, reached through the systems' egress proxy (the
+      # R2 endpoint's host is in LB_EGRESS_SYSTEMS_ALLOW), with the one token made for that
+      # bucket (flask-systems.env). The service deletes them at one hour itself; the bucket's
+      # lifecycle rule, in whole days, is the backstop (docs/DEPLOY.md, part 5).
+      LB03_STORAGE: s3
+      LB03_S3_BUCKET: ${LB_LB03_BUCKET:?LB_LB03_BUCKET is not set}
+      LB03_S3_ENDPOINT: ${LB_R2_ENDPOINT:?LB_R2_ENDPOINT is not set}
+      HTTPS_PROXY: http://egress-systems:3128
+      NO_PROXY: localhost,127.0.0.1,gateway,postgres,redis
+      # One OCR worker at a time, on the two cores the box has, in a folder of its own that
+      # nothing else uses (below). A kernel or a container with no Landlock leaves the OCR
+      # worker's cage one wall short: once a document's trace on the box shows `landlock_abi`
+      # above 0, set LB_LB03_REQUIRE_LANDLOCK=true in compose.env, and a box that loses it
+      # reads nothing instead of reading with less (docs/DEPLOY.md).
+      LB03_OCR_WORKERS: "1"
+      LB03_SCRATCH_DIR: /lb03-scratch
+      LB03_REQUIRE_LANDLOCK: ${LB_LB03_REQUIRE_LANDLOCK:-false}
       # gunicorn.conf.py binds the loopback unless told otherwise, and Caddy is another
       # container. Nothing here reads a client address or a forwarded header, so
       # GUNICORN_FORWARDED_ALLOW_IPS stays at its default: Caddy's X-Forwarded-* are ignored.
@@ -441,9 +476,12 @@ services:
       - /tmp:size=64m,uid=10001,gid=10001,mode=1777
       # Where the entrypoint writes the service's private key, readable by this user only.
       - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
+      # Where each OCR worker gets a folder of its own to leave its words and page pictures
+      # in: memory-backed, for one document at a time, and emptied the moment it is read.
+      - /lb03-scratch:size=48m,uid=10001,gid=10001,mode=0700
     volumes:
       - lb05-warehouse:/warehouse:ro
-    networks: [app, data]
+    networks: [app, data, egress-systems]
     depends_on:
       flask-migrate:
         condition: service_completed_successfully
@@ -458,14 +496,17 @@ services:
       timeout: 6s
       retries: 4
       start_period: 30s
-    mem_limit: 1536m
-    memswap_limit: 1536m
+    # DuckDB's limit, the OCR worker's peak and the Python process (the header, Resources).
+    mem_limit: 2048m
+    memswap_limit: 2048m
     cpus: 1.5
     cpu_shares: 1536
     pids_limit: 128
 
-  # LB-08 (the Node systems). Its migration and its seed are two jobs, because the image has
-  # no shell to chain them with. The Redis URL they must have goes nowhere.
+  # LB-08 and LB-04 (the Node systems). Their migrations and their seeds are two jobs, because
+  # the image has no shell to chain them with, and each system logs in as its own role, which
+  # owns its own schema (lb08, lb04) and can reach nothing else. The Redis URL they must have
+  # goes nowhere.
   node-migrate:
     <<: *node
     restart: "no"
@@ -473,6 +514,7 @@ services:
     environment:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08:?LB_PG_PASSWORD_LB08 is not set}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04:?LB_PG_PASSWORD_LB04 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       postgres-provision:
@@ -490,6 +532,7 @@ services:
     environment:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       node-migrate:
@@ -507,10 +550,12 @@ services:
     environment:
       LB_NODE_HOST: 0.0.0.0
       LB_NODE_PORT: "8002"
-      # LB-08 logs in as the lb08 role, which owns the lb08 schema and can reach nothing
-      # else. The shared URL is the same login, so a system that forgets its own fails closed.
+      # LB-08 logs in as the lb08 role and LB-04 as the lb04 role, each of which owns its own
+      # schema and can reach nothing else. The shared URL is LB-08's login, so a system that
+      # forgets its own fails closed.
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS:?LB_REDIS_PASSWORD_NODE_SYSTEMS is not set}@redis:6379/0
       LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
       LB_GATEWAY_URL: http://gateway:8080
@@ -543,18 +588,30 @@ services:
     cpu_shares: 1536
     pids_limit: 128
 
-  # BullMQ's workers with their sweep: one job per workflow step. It serves no HTTP, makes no
-  # model call and so has no gateway and no key. Its health check reads a heartbeat file that
-  # the entrypoint renews while the event loop turns.
+  # BullMQ's workers with their sweeps: one job per LB-08 workflow step, and one per LB-04
+  # contract under review. It serves no HTTP, but a review makes model calls (the guard, the
+  # reading and the rating), so it has the gateway and the service's key, as the API has, and
+  # starts with neither missing. Its health check reads a heartbeat file that the entrypoint
+  # renews while the event loop turns.
   node-worker:
     <<: *node
     command: ["src/worker.ts"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/node-systems.env
     environment:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS}@redis:6379/0
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: node-systems
       LB_HEARTBEAT_FILE: /tmp/lb-heartbeat
-    networks: [data]
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=65532,gid=65532,mode=0700
+    # The gateway is on the app network, and so is the way to it.
+    networks: [app, data]
     depends_on:
       node-seed:
         condition: service_completed_successfully
@@ -572,8 +629,16 @@ services:
       start_period: 30s
     # Workers finish the step they are on, then exit.
     stop_grace_period: 45s
-    mem_limit: 384m
-    memswap_limit: 384m
+    # A contract's PDF is opened in a thread of its own, limited to 192 MB of old and 32 MB of
+    # young heap and a 4 MB stack, and a worker reviews two contracts at once. Measured on a
+    # 30-page contract, two extractions at once raised the process from 99 MB to 291 MB; with
+    # the process's own working set that is about 400 MB, and the limits above allow up to
+    # about 760 MB if a hostile file takes everything a thread may have. Past the container's
+    # limit the process is killed and BullMQ gives its jobs to the next worker, a contract
+    # is started at most six times before it is ended as failed, and a thread that reaches its
+    # own limit fails only its file.
+    mem_limit: 768m
+    memswap_limit: 768m
     cpus: 1.0
     pids_limit: 128
 

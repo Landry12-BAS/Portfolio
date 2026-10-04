@@ -3,13 +3,15 @@
 # the repository's Caddyfile, in front of stand-ins for four services (test-upstream.py):
 #
 #   - only the routes the Caddyfile lists reach a service (LB-01 and LB-02 at the Django
-#     systems, LB-05 at the Flask systems, LB-08 at the Node systems, one path of the
-#     gateway); health checks, the OpenAPI schema and the rest of the gateway answer 404
+#     systems, LB-03 and LB-05 at the Flask systems, LB-08 and LB-04 at the Node systems, one path of
+#     the gateway); health checks, the OpenAPI schema and the rest of the gateway answer 404
 #     from Caddy itself;
 #   - paths built to slip past the allowlist (dot segments, escaped slashes) never reach
 #     a route they shouldn't;
 #   - only the API's own Host is served;
-#   - bodies over the limit are refused; CORS and WebSocket origins are limited to the site;
+#   - bodies over the limit are refused (a megabyte, except the two upload routes: LB-03's
+#     takes a file of 10 MB and the form around it, LB-04's contract upload 3 MB); CORS and
+#     WebSocket origins are limited to the site;
 #   - server-sent events arrive as they are written, and a WebSocket upgrade passes through;
 #   - a service has as long to answer as the Caddyfile says: LB-05 and LB-08 more than a
 #     minute (a question has 90 seconds), the others a minute;
@@ -122,7 +124,7 @@ for path in /v1/models /v1/usage /v1/embeddings /v1/rerank /v1/guard /v1/runs; d
     call GET "$path"; check "the gateway's $path stays internal" caddy_404
 done
 call POST /v1/chat/completions -d '{}'; check "POST /v1/chat/completions stays internal" caddy_404
-for path in /api/lb03/x /api/lb04/x /api/lb06/x /api/lb07/x /api/lb10/x; do
+for path in /api/lb06/x /api/lb07/x /api/lb10/x; do
     call GET "$path"; check "$path has no route until its service exists" caddy_404
 done
 for path in /ws/lb04/x /ws/lb05/x /ws/lb08/x; do
@@ -131,7 +133,9 @@ done
 call GET /ws/lb09/ -H "Origin: $site_origin"; check "/ws/lb09/ reaches the Django systems from the site's origin" reached django
 call GET /ws/lb09/ -H "Origin: https://elsewhere.example"; check "/ws/lb09/ from another origin is refused" test "$status" = 403
 call GET /api/lb05; check "the bare /api/lb05 is not a route" caddy_404
+call GET /api/lb03; check "the bare /api/lb03 is not a route" caddy_404
 call GET /api/lb08; check "the bare /api/lb08 is not a route" caddy_404
+call GET /api/lb04; check "the bare /api/lb04 is not a route" caddy_404
 call GET /api/lb01/customers -H "Authorization: Bearer test-token"
 check "GET /api/lb01/customers reaches the Django systems" reached django
 check "  with the path unchanged" grep -q '"path": "/api/lb01/customers"' <<<"$body"
@@ -151,12 +155,29 @@ check "  with the caller's Authorization header" grep -q '"authorization": "Bear
 payload='{"question":"which coffee sold most last quarter?"}'
 call POST /api/lb05/ask -H 'Content-Type: application/json' -d "$payload"
 check "POST /api/lb05/ask reaches the Flask systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call GET /api/lb03/quota -H "Authorization: Bearer test-token"
+check "GET /api/lb03/quota reaches the Flask systems" reached flask
+check "  with the path unchanged and the API's own Host" grep -q "\"host\": \"$api_host\"" <<<"$body"
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+call GET /api/lb03/documents/abc123def456ghi789jkl0/pages/1 -H "Authorization: Bearer test-token"
+check "a page's picture is served from the Flask systems too" reached flask
+payload='{"path":"total","value":"1040.60"}'
+call POST /api/lb03/documents/abc123def456ghi789jkl0/corrections -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb03/documents/<id>/corrections reaches the Flask systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
 call GET /api/lb08/samples -H "Authorization: Bearer test-token"
 check "GET /api/lb08/samples reaches the Node systems" reached node
 check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
 payload='{"description":"text me when a pallet arrives"}'
 call POST /api/lb08/workflows -H 'Content-Type: application/json' -d "$payload"
 check "POST /api/lb08/workflows reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call GET /api/lb04/samples -H "Authorization: Bearer test-token"
+check "GET /api/lb04/samples reaches the Node systems" reached node
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+payload='{"from":"sample","sampleId":"wholesale-supply"}'
+call POST /api/lb04/contracts -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb04/contracts reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call GET /api/lb04/contracts/11111111-1111-4111-8111-111111111111/report; check "a contract's report reaches the Node systems" reached node
+call POST /api/lb04/contracts/11111111-1111-4111-8111-111111111111/findings/f1/redline; check "a redline's route reaches the Node systems" reached node
 call GET /v1/runs/run12345-abcdef/spans; check "GET /v1/runs/<id>/spans reaches the gateway" reached gateway
 call POST /v1/runs/run12345-abcdef/spans -d '{}'; check "POST on that path stays internal" caddy_404
 call GET /v1/runs/short/spans; check "a run id under 8 characters is refused" caddy_404
@@ -168,7 +189,10 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
     //api/healthz /api/lb01//../healthz '/api/lb01/..;/healthz' /v1/runs/..%2f..%2fusage/spans \
     /v1/runs/abcdefgh/spans/..%2f..%2fmodels /v1/runs/..%2fabcdefgh/spans /api/./healthz /API/healthz \
     /api/lb05/../healthz /api/lb05/%2e%2e/readyz /api/lb05/..%2fhealthz /api/lb08/../openapi.json \
-    /api/lb08/%2e%2e/healthz '/api/lb08/..;/readyz' /api/lb05/../lb08/workflows; do
+    /api/lb08/%2e%2e/healthz '/api/lb08/..;/readyz' /api/lb05/../lb08/workflows \
+    /api/lb03/../healthz /api/lb03/%2e%2e/readyz /api/lb03/..%2fhealthz /api/lb03/documents/../../../healthz \
+    /api/lb03/../lb08/workflows \
+    /api/lb04/../openapi.json /api/lb04/%2e%2e/healthz '/api/lb04/..;/readyz' /api/lb04/..%2fhealthz /api/lb05/../lb04/contracts; do
     call GET "$path"
     if [ "$status" = 404 ] && grep -q 'There is nothing at this address' <<<"$body"; then
         pass "refused: $path"
@@ -178,7 +202,7 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
         received="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["path"])' "$body")"
         resolved="$(python3 -c 'import posixpath,sys,urllib.parse; print(posixpath.normpath(urllib.parse.unquote(sys.argv[1].split("?")[0])))' "$received")"
         case "$resolved" in
-            /api/lb01/* | /api/lb02/* | /api/lb05/* | /api/lb08/* | /api/lb09/* | /ws/lb02/* | /ws/lb09/*) pass "forwarded as $received, which still resolves to $resolved" ;;
+            /api/lb01/* | /api/lb02/* | /api/lb03/* | /api/lb05/* | /api/lb08/* | /api/lb04/* | /api/lb09/* | /ws/lb02/* | /ws/lb09/*) pass "forwarded as $received, which still resolves to $resolved" ;;
             /v1/runs/*/spans) pass "forwarded as $received, which still resolves to $resolved" ;;
             *) fail "$path reached a service as $received, which resolves to $resolved" ;;
         esac
@@ -198,6 +222,30 @@ call POST /api/lb01/tickets --data-binary "@$scratch/small.bin"; check "a 100 KB
 call POST /api/lb01/tickets --data-binary "@$scratch/large.bin"
 check "a 2 MB body is refused with 413" test "$status" = 413
 check "  in the platform's JSON error shape" grep -q '"error"' <<<"$body"
+# LB-03's upload takes a file: a megabyte is the limit of every other route, the upload's is 11 MB.
+head -c 5000000 /dev/zero | tr '\0' 'a' > "$scratch/upload.bin"
+head -c 12000000 /dev/zero | tr '\0' 'a' > "$scratch/too-big-upload.bin"
+call POST /api/lb03/documents -H 'Content-Type: multipart/form-data; boundary=zz' --data-binary "@$scratch/upload.bin"
+check "a 5 MB upload to LB-03 passes, whole" grep -q '"body_bytes": 5000000' <<<"$body"
+call POST /api/lb03/documents -H 'Content-Type: multipart/form-data; boundary=zz' --data-binary "@$scratch/too-big-upload.bin"
+check "a 12 MB upload to LB-03 is refused with 413" test "$status" = 413
+check "  in the platform's JSON error shape" grep -q '"error"' <<<"$body"
+call POST /api/lb03/documents/abc123def456ghi789jkl0/corrections -H 'Content-Type: application/json' --data-binary "@$scratch/large.bin"
+check "the room for a file is for the upload alone: 2 MB to LB-03's corrections is refused with 413" test "$status" = 413
+call PUT /api/lb03/documents --data-binary "@$scratch/large.bin"
+check "  and the same path with another method is no upload: 413" test "$status" = 413
+call GET /api/lb03/documents/abc123def456ghi789jkl0/export?format=csv
+check "a read of LB-03 passes with no body at all" reached flask
+# What a 2 MB PDF makes as base64 inside JSON, and a body bigger than any file could make.
+head -c 2800000 /dev/zero | tr '\0' 'a' > "$scratch/upload.bin"
+head -c 3200000 /dev/zero | tr '\0' 'a' > "$scratch/upload-too-large.bin"
+call POST /api/lb04/contracts -H 'Content-Type: application/json' --data-binary "@$scratch/upload.bin"
+check "LB-04's upload route takes a 2.8 MB body, which a contract's PDF makes" reached node
+call POST /api/lb04/contracts -H 'Content-Type: application/json' --data-binary "@$scratch/upload-too-large.bin"
+check "  and refuses a 3.2 MB body with 413" test "$status" = 413
+check "  in the platform's JSON error shape" grep -q '"error"' <<<"$body"
+call POST /api/lb04/contracts/11111111-1111-4111-8111-111111111111/findings/f1/redline --data-binary "@$scratch/large.bin"
+check "every other LB-04 route keeps the 1 MB limit: a 2 MB body is refused with 413" test "$status" = 413
 head -c 4400000 /dev/zero | tr '\0' 'a' > "$scratch/recording.bin"
 head -c 6000000 /dev/zero | tr '\0' 'a' > "$scratch/huge.bin"
 call POST /api/lb09/meetings --data-binary "@$scratch/recording.bin"
@@ -215,7 +263,7 @@ call OPTIONS /api/lb01/tickets -H "Origin: $site_origin" -H "Access-Control-Requ
 check "the site's preflight is answered 204 at the edge" test "$status" = 204
 check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"
 check "  and the Authorization header" grep -qi 'authorization' <<<"$(header_of access-control-allow-headers)"
-for path in /api/lb05/ask /api/lb08/workflows; do
+for path in /api/lb05/ask /api/lb08/workflows /api/lb04/contracts; do
     call OPTIONS "$path" -H "Origin: $site_origin" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization"
     check "the site's preflight for $path is answered 204 at the edge" test "$status" = 204
     check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"

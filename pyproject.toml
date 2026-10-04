@@ -5,6 +5,16 @@
 
 [tool.uv]
 required-version = ">=0.12.19"
+# The box is an Ampere (aarch64) machine and development is on x86_64: a dependency with no wheel for
+# either one fails `uv lock`, instead of failing a deploy.
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+# RapidOCR asks for `opencv-python`, the build with a window system, which needs libGL and the
+# desktop libraries a slim image doesn't have. This makes that requirement never apply, and
+# flask-systems depends on `opencv-python-headless`, the same `cv2` module without them.
+override-dependencies = ["opencv-python; python_version < '0'"]
 
 [tool.uv.workspace]
 members = ["python/*", "services/django-systems", "services/flask-systems"]
@@ -14,10 +24,13 @@ dev = [
     "celery-types>=0.26.0",
     "daphne>=4.2.3",
     "django-stubs[compatible-mypy]>=6.0.9,<6.1",
+    "flask-cors>=6.0.0",
+    "moto[s3]>=5.1.0",
     "mypy>=2.3.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-django>=4.14.0",
+    "reportlab>=4.4.0",
     "ruff>=0.16.9",
     "testcontainers[postgres,redis]>=4.15.0",
     "types-pyyaml>=6.0.12.20260906",
@@ -67,7 +80,7 @@ ignore-variadic-names = true
 "**/migrations/**" = ["D", "E501", "RUF012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lb_common", "config", "core", "lb01", "lb02", "lb05"]
+known-first-party = ["lb_common", "config", "core", "lb01", "lb02", "lb05", "lb03"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

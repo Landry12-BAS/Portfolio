@@ -95,3 +95,21 @@ export function getJson<T extends z.ZodType>(path: string, schema: T): Promise<z
 export function postJson<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.output<T>> {
   return sendJson('POST', path, body, schema)
 }
+
+/**
+ * Reads one of the site's own static files, such as a curated sample's invoice, as bytes. A file over
+ * `maxBytes` is refused, and a failure of any kind is a problem the board can show.
+ */
+export async function getBytes(path: string, maxBytes: number): Promise<ArrayBuffer> {
+  let response: Response
+  try {
+    response = await globalThis.fetch(path, { credentials: 'same-origin', cache: 'force-cache' })
+  }
+  catch {
+    throw networkProblem()
+  }
+  if (!response.ok) throw problemFromAnswer(response.status, undefined)
+  const bytes = await response.arrayBuffer()
+  if (bytes.byteLength > maxBytes) throw badAnswerProblem()
+  return bytes
+}

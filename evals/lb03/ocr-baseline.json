@@ -1,0 +1,60 @@
+{
+  "groups": {
+    "all": {
+      "field_box_hits": 0.8925,
+      "fields_located": 0.9603,
+      "word_recall": 0.8889
+    },
+    "clean_pdf": {
+      "field_box_hits": 0.9618,
+      "fields_located": 1.0,
+      "word_recall": 0.9347
+    },
+    "credit_note": {
+      "field_box_hits": 0.9333,
+      "fields_located": 1.0,
+      "word_recall": 0.9785
+    },
+    "duplicate": {
+      "field_box_hits": 0.8889,
+      "fields_located": 0.8889,
+      "word_recall": 0.8958
+    },
+    "euro_vat": {
+      "field_box_hits": 0.9248,
+      "fields_located": 0.9925,
+      "word_recall": 0.9013
+    },
+    "handwritten": {
+      "field_box_hits": 0.6933,
+      "fields_located": 0.7333,
+      "word_recall": 0.7006
+    },
+    "hostile": {
+      "field_box_hits": 0.95,
+      "fields_located": 1.0,
+      "word_recall": 0.9143
+    },
+    "multi_page_pdf": {
+      "field_box_hits": 0.9231,
+      "fields_located": 1.0,
+      "word_recall": 0.9668
+    },
+    "over_limit": {
+      "field_box_hits": 0.0,
+      "fields_located": 0.0,
+      "word_recall": 0.0
+    },
+    "photo": {
+      "field_box_hits": 0.784,
+      "fields_located": 0.9321,
+      "word_recall": 0.8296
+    },
+    "planted_error": {
+      "field_box_hits": 0.9727,
+      "fields_located": 1.0,
+      "word_recall": 0.8629
+    }
+  },
+  "margin": 0.03
+}

@@ -3,7 +3,7 @@
 // matcher and the site agree.
 
 /** A demo system the site calls on a visitor's behalf, named as a visitor token's audience. */
-export type SystemName = 'lb-01' | 'lb-02' | 'lb-05' | 'lb-08' | 'lb-09'
+export type SystemName = 'lb-01' | 'lb-02' | 'lb-05' | 'lb-08' | 'lb-03' | 'lb-04' | 'lb-09'
 
 /** The back end that serves a system: the OpenAPI document its route came from. */
 export type ServiceName = 'django' | 'flask' | 'node'
@@ -22,4 +22,9 @@ export interface ApiRoute {
   query: readonly string[]
   // Whether the route takes a request body.
   body: boolean
+  // Whether that body is a file upload (`multipart/form-data`) and not JSON. Absent for JSON.
+  upload?: boolean
+  // The media types of the files the route may answer with in place of JSON, sorted, such as
+  // `image/jpeg` for a page's picture. Absent for a route that only ever answers JSON.
+  files?: readonly string[]
 }

@@ -36,7 +36,8 @@ let workers: readonly WorkerHandle[]
 beforeAll(async () => {
   testDatabase = await createTestDatabase(inject('databaseUrl'))
   // The settings, as the process environment would give them: validated by the same schema the real entry points use.
-  env = loadEnv({ LB_DATABASE_URL: testDatabase.url, LB_REDIS_URL: inject('redisUrl'), LB_REDIS_PREFIX: prefix, LB_WEB_TOKEN_KEY: site.encodedPublicKey }, 'worker')
+  // The worker needs a way to reach the gateway (LB-04's reviews make model calls in it); this module is opened with no gateway, so the address is never used.
+  env = loadEnv({ LB_DATABASE_URL: testDatabase.url, LB_REDIS_URL: inject('redisUrl'), LB_REDIS_PREFIX: prefix, LB_WEB_TOKEN_KEY: site.encodedPublicKey, LB_GATEWAY_URL: 'http://127.0.0.1:9', LB_SERVICE_KEY_FILE: '/run/secrets/unused.jwk.json' }, 'worker')
   redis = new Redis(inject('redisUrl'), { maxRetriesPerRequest: null })
 })
 

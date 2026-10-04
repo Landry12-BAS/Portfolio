@@ -77,6 +77,7 @@ expect_status "LB-01's API is reached, and asks for a visitor token" 401 "$api_h
 expect_status "LB-02's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb02/offerings
 expect_status "LB-05's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb05/quota
 expect_status "LB-08's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb08/limits
+expect_status "LB-04's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb04/limits
 expect_status "LB-09's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb09/limits
 
 # LB-02's WebSocket, the way the site opens it: the upgrade must be accepted (101) through

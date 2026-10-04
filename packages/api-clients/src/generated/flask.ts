@@ -19,6 +19,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb03/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the visitor's documents of the hour, newest first, so the board can find them after a reload. */
+        get: operations["lb03_list_documents_documents_get"];
+        put?: never;
+        /**
+         * Upload an invoice, a credit note or a till receipt (PDF, PNG, JPEG or WebP, up to 10 MB and 5 pages).
+         * @description <br/>Answers 202 at once with the document in state `uploaded`; poll it to watch it being read. Counts against<br/>the visitor's 10 documents a day, which the service enforces itself, and two documents are read at a time.<br/>A document the service itself fails to read is not counted, for up to three such documents a day.
+         */
+        post: operations["lb03_upload_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb03/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one document: its state while it is being read, and when it is ready its fields, boxes and checks. */
+        get: operations["lb03_get_document_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a document that has ended, with its files. A document still being read can't be deleted yet. */
+        delete: operations["lb03_delete_document_documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb03/documents/{document_id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct one field of a read document: every check runs again, and the correction is recorded.
+         * @description <br/>A corrected field counts as confirmed by the visitor and loses its box. The duplicate check and the journal<br/>entry are made again from the corrected reading. Answers 200 with the whole document as it now stands.
+         */
+        post: operations["lb03_correct_field_documents__document_id__corrections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb03/documents/{document_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export a read document: its lines or its journal entry as CSV, or everything as JSON.
+         * @description <br/>The CSV exports are refused (409) while a failed check stops the export. The JSON always goes.
+         */
+        get: operations["lb03_export_document_documents__document_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb03/documents/{document_id}/pages/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the picture of one page of the visitor's document, for the viewer. Never served any other way. */
+        get: operations["lb03_get_page_documents__document_id__pages__int_number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb03/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read how many documents the visitor has left today, how many are being read, and the limits. */
+        get: operations["lb03_quota_quota_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lb05/ask": {
         parameters: {
             query?: never;
@@ -145,6 +258,27 @@ export interface components {
             sql: string;
             stopped_by: components["schemas"]["Layer"] | null;
         };
+        /** @enum {string} */
+        Band: "high" | "medium" | "low";
+        /**
+         * BoxOut
+         * @description Where a field is printed: its page (from 1), the four corners of the words, and how sure the service is.
+         *
+         *     Corners are `x, y` as a share of the page's width and height, clockwise from the top left. `confidence` is the
+         *     words' own certainty times how well they match the value, and `band` is that number in a word, so the board
+         *     never says it with colour alone.
+         */
+        BoxOut: {
+            band: components["schemas"]["Band"];
+            /** Confidence */
+            confidence: number;
+            /** Match */
+            match: number;
+            /** Page */
+            page: number;
+            /** Quad */
+            quad: number[];
+        };
         CellValue: string | number | boolean | null;
         /** @enum {string} */
         ChartKind: "bar" | "line" | "point";
@@ -160,6 +294,33 @@ export interface components {
             spec: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * CheckId
+         * @description The name of each check: what the API reports, what the board's words are keyed by, what a repair names.
+         * @enum {string}
+         */
+        CheckId: "required_fields" | "dates_valid" | "currency_known" | "signs_agree" | "line_math" | "line_items_sum" | "vat_math" | "vat_bases" | "total_reconciles" | "fields_on_page" | "not_duplicate";
+        /**
+         * CheckOut
+         * @description One check's verdict, with the numbers that disagree and the fields it is about.
+         */
+        CheckOut: {
+            /** Actual */
+            actual: string | null;
+            /** Expected */
+            expected: string | null;
+            /** Fields */
+            fields: string[];
+            id: components["schemas"]["CheckId"];
+            /** Message */
+            message: string;
+            severity: components["schemas"]["Severity"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "failed" | "skipped";
         };
         /**
          * ColumnDescriptionOut
@@ -189,6 +350,35 @@ export interface components {
             name: string;
         };
         /**
+         * CorrectionIn
+         * @description A correction: which field, and the text the visitor typed into it. Empty text empties the field.
+         *
+         *     The field's path is in the body and not in the address: a path such as `line_items.0.total` has dots in it, and
+         *     the site's server only forwards addresses whose parts are plain identifiers.
+         */
+        CorrectionIn: {
+            path: components["schemas"]["FieldPathText"];
+            /** Value */
+            value: string;
+        };
+        /**
+         * CorrectionOut
+         * @description One correction a visitor made: which field, what it was and what it became.
+         */
+        CorrectionOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Now */
+            now: string | null;
+            /** Path */
+            path: string;
+            /** Was */
+            was: string | null;
+        };
+        /**
          * DimensionOut
          * @description A way to slice a metric, with its exact definition.
          */
@@ -203,6 +393,174 @@ export interface components {
             needs: string[];
             /** Synonyms */
             synonyms: string[];
+        };
+        DocumentId: string;
+        /**
+         * DocumentLimitsOut
+         * @description The limits LB-03 enforces, which are the ones its datasheet promises.
+         *
+         *     The models of every system of the monolith share one OpenAPI document and are named in it by class name, and a
+         *     second class of the same name would silently replace the first: LB-05 has a `LimitsOut` and a `QuotaOut` too, so
+         *     these two are named for what they limit.
+         */
+        DocumentLimitsOut: {
+            /** Concurrent Documents */
+            concurrent_documents: number;
+            /** Document Deadline Seconds */
+            document_deadline_seconds: number;
+            /** Documents Per Day */
+            documents_per_day: number;
+            /** File Lifetime Seconds */
+            file_lifetime_seconds: number;
+            /** Max Model Calls Per Document */
+            max_model_calls_per_document: number;
+            /** Max Pages */
+            max_pages: number;
+            /** Max Upload Bytes */
+            max_upload_bytes: number;
+        };
+        /**
+         * DocumentListOut
+         * @description The visitor's documents of the hour, newest first.
+         */
+        DocumentListOut: {
+            /** Documents */
+            documents: components["schemas"]["DocumentSummaryOut"][];
+        };
+        /**
+         * DocumentOut
+         * @description A document as the API shows it: where it is, and once it is read, everything that was made of it.
+         */
+        DocumentOut: {
+            /** Byte Size */
+            byte_size: number;
+            /** Can Export */
+            can_export: boolean;
+            /** Checks */
+            checks: components["schemas"]["CheckOut"][] | null;
+            /** Corrections */
+            corrections: components["schemas"]["CorrectionOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            duplicate: components["schemas"]["DuplicateOut"] | null;
+            /** Elapsed Ms */
+            elapsed_ms: number | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            failure: components["schemas"]["FailureOut"] | null;
+            /** Fields */
+            fields: components["schemas"]["FieldOut"][] | null;
+            /** Id */
+            id: string;
+            journal: components["schemas"]["JournalOut"] | null;
+            journal_status: components["schemas"]["JournalStatus"] | null;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Model */
+            model: string | null;
+            /** Model Calls */
+            model_calls: number;
+            /** Ocr Ms */
+            ocr_ms: number | null;
+            /** Pages */
+            pages: number | null;
+            /** Prices Include Vat */
+            prices_include_vat: boolean | null;
+            /** Queued Ahead */
+            queued_ahead: number | null;
+            /** Run Id */
+            run_id: string | null;
+            state: components["schemas"]["DocumentState"];
+            /** Steps */
+            steps: components["schemas"]["StepOut"][];
+            /** Text Cut */
+            text_cut: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * DocumentQuotaOut
+         * @description A visitor's documents today, the limits, and whether the service can read documents at all right now.
+         */
+        DocumentQuotaOut: {
+            /** Active */
+            active: number;
+            /** Can Read */
+            can_read: boolean;
+            limits: components["schemas"]["DocumentLimitsOut"];
+            /** Remaining */
+            remaining: number;
+            /**
+             * Resets At
+             * Format: date-time
+             */
+            resets_at: string;
+            /** Used */
+            used: number;
+        };
+        /**
+         * DocumentState
+         * @description Where a document is in the pipeline.
+         * @enum {string}
+         */
+        DocumentState: "uploaded" | "ocr" | "extract" | "validate" | "repair" | "ready" | "failed";
+        /**
+         * DocumentSummaryOut
+         * @description A document in a list: enough to find it again and see how it stands.
+         */
+        DocumentSummaryOut: {
+            /** Byte Size */
+            byte_size: number;
+            /** Can Export */
+            can_export: boolean;
+            /** Checks Failed */
+            checks_failed: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            failure: components["schemas"]["FailureOut"] | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Pages */
+            pages: number | null;
+            state: components["schemas"]["DocumentState"];
+        };
+        /**
+         * DuplicateOut
+         * @description The document this one repeats: one of the visitor's own, or one of the samples, with the same content or not.
+         */
+        DuplicateOut: {
+            /** Of */
+            of: string;
+            /** Same Content */
+            same_content: boolean;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "document" | "sample";
         };
         /**
          * ErrorDetail
@@ -234,6 +592,40 @@ export interface components {
             error: components["schemas"]["ErrorDetail"];
         };
         /**
+         * FailureCode
+         * @description Why a document has no result.
+         * @enum {string}
+         */
+        FailureCode: "unsupported_file" | "too_large" | "too_many_pages" | "image_too_big" | "unreadable_file" | "unsafe_file" | "no_text" | "ocr_failed" | "injection_suspected" | "unchecked" | "model_failed" | "model_budget" | "model_output" | "time_limit" | "call_limit" | "interrupted";
+        /**
+         * FailureOut
+         * @description Why a document has no result: the code the board has words for, and a sentence for someone reading the API.
+         */
+        FailureOut: {
+            code: components["schemas"]["FailureCode"];
+            /** Message */
+            message: string;
+        };
+        /** @enum {string} */
+        FieldKind: "choice" | "text" | "date" | "currency" | "amount" | "quantity" | "rate";
+        /**
+         * FieldOut
+         * @description One field of the invoice: its value as text, its box when it was found on the page, and what the checks say.
+         */
+        FieldOut: {
+            box: components["schemas"]["BoxOut"] | null;
+            /** Checks */
+            checks: components["schemas"]["CheckId"][];
+            /** Edited */
+            edited: boolean;
+            kind: components["schemas"]["FieldKind"];
+            /** Path */
+            path: string;
+            /** Value */
+            value: string | null;
+        };
+        FieldPathText: string;
+        /**
          * HealthOut
          * @description The liveness answer.
          */
@@ -251,6 +643,42 @@ export interface components {
             /** Right */
             right: string;
         };
+        /**
+         * JournalLineOut
+         * @description One line of a journal entry: an account, and an amount on one side.
+         */
+        JournalLineOut: {
+            /** Account */
+            account: string;
+            /** Credit */
+            credit: string;
+            /** Debit */
+            debit: string;
+            /** Memo */
+            memo: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * JournalOut
+         * @description A balanced journal entry as the board shows it: amounts as decimal strings, with the two totals.
+         */
+        JournalOut: {
+            /** Currency */
+            currency: string;
+            /** Date */
+            date: string;
+            /** Lines */
+            lines: components["schemas"]["JournalLineOut"][];
+            /** Reference */
+            reference: string;
+            /** Total Credit */
+            total_credit: string;
+            /** Total Debit */
+            total_debit: string;
+        };
+        /** @enum {string} */
+        JournalStatus: "made" | "blocked_by_checks" | "does_not_balance";
         /**
          * Layer
          * @description The defences a query passes through, in order. Each can stop it.
@@ -398,6 +826,31 @@ export interface components {
             version: number;
         };
         /**
+         * Severity
+         * @description Whether a failed check stops the export (an error) or only asks for a look (a warning).
+         * @enum {string}
+         */
+        Severity: "error" | "warning";
+        /**
+         * StepOut
+         * @description One step of a document's run: what it was, how it ended, how long it took, and a few counts about it.
+         */
+        StepOut: {
+            /** Detail */
+            detail: {
+                [key: string]: string | number | boolean;
+            };
+            /** Ms */
+            ms: number;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "error" | "skipped";
+        };
+        /**
          * TableOut
          * @description A table of the semantic layer.
          */
@@ -408,6 +861,17 @@ export interface components {
             description: string;
             /** Name */
             name: string;
+        };
+        /**
+         * UploadIn
+         * @description The upload: exactly one part, `file`. Nothing else is accepted next to it.
+         */
+        UploadIn: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
         };
     };
     responses: never;
@@ -438,6 +902,501 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_list_documents_documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_upload_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["UploadIn"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_get_document_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["schemas"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_delete_document_documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["schemas"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_correct_field_documents__document_id__corrections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["schemas"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_export_document_documents__document_id__export_get: {
+        parameters: {
+            query?: {
+                format?: "csv" | "journal" | "json";
+            };
+            header?: never;
+            path: {
+                document_id: components["schemas"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export: a CSV file (UTF-8 with a byte order mark) or the JSON of the whole reading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                    "text/csv": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_get_page_documents__document_id__pages__int_number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["schemas"]["DocumentId"];
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The JPEG picture of one page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb03_quota_quota_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentQuotaOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

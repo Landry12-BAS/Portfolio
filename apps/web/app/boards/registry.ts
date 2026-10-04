@@ -15,6 +15,8 @@ const BOARDS: Readonly<Record<string, BoardLoader>> = {
   'lb-02': async () => (await import('./lb-02/Lb02Board.vue')).default,
   'lb-05': async () => (await import('./lb-05/Lb05Board.vue')).default,
   'lb-08': async () => (await import('./lb-08/Lb08Board.vue')).default,
+  'lb-03': async () => (await import('./lb-03/Lb03Board.vue')).default,
+  'lb-04': async () => (await import('./lb-04/Lb04Board.vue')).default,
   'lb-09': async () => (await import('./lb-09/Lb09Board.vue')).default,
 }
 

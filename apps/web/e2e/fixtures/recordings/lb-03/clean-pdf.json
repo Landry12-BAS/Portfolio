@@ -1,0 +1,1137 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "clean-pdf",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T21:08:18.634Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "bohemia-packaging-2026-0412.pdf"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "H_A6Czz5BN3bbKnYOWGgkA",
+          "state": "uploaded",
+          "failure": null,
+          "label": "bohemia-packaging-2026-0412.pdf",
+          "kind": "pdf",
+          "byte_size": 5109,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.549Z",
+          "updated_at": "2026-10-02T21:08:18.554Z",
+          "expires_at": "2026-10-02T22:08:18.549Z",
+          "queued_ahead": 0,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/H_A6Czz5BN3bbKnYOWGgkA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "H_A6Czz5BN3bbKnYOWGgkA",
+          "state": "ocr",
+          "failure": null,
+          "label": "bohemia-packaging-2026-0412.pdf",
+          "kind": "pdf",
+          "byte_size": 5109,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.549Z",
+          "updated_at": "2026-10-02T21:08:18.593Z",
+          "expires_at": "2026-10-02T22:08:18.549Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/H_A6Czz5BN3bbKnYOWGgkA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "H_A6Czz5BN3bbKnYOWGgkA",
+          "state": "extract",
+          "failure": null,
+          "label": "bohemia-packaging-2026-0412.pdf",
+          "kind": "pdf",
+          "byte_size": 5109,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.549Z",
+          "updated_at": "2026-10-02T21:08:18.609Z",
+          "expires_at": "2026-10-02T22:08:18.549Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/H_A6Czz5BN3bbKnYOWGgkA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "H_A6Czz5BN3bbKnYOWGgkA",
+          "state": "validate",
+          "failure": null,
+          "label": "bohemia-packaging-2026-0412.pdf",
+          "kind": "pdf",
+          "byte_size": 5109,
+          "pages": null,
+          "created_at": "2026-10-02T21:08:18.549Z",
+          "updated_at": "2026-10-02T21:08:18.614Z",
+          "expires_at": "2026-10-02T22:08:18.549Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": null,
+          "model_calls": 0,
+          "run_id": null,
+          "ocr_ms": null,
+          "elapsed_ms": null,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "ok",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": false,
+                "score": 0.01
+              }
+            },
+            {
+              "name": "extract",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 1,
+                "text_chars": 900,
+                "text_cut": false,
+                "picture": false
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": null,
+          "checks": null,
+          "duplicate": null,
+          "journal": null,
+          "journal_status": null,
+          "corrections": [],
+          "can_export": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/H_A6Czz5BN3bbKnYOWGgkA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "H_A6Czz5BN3bbKnYOWGgkA",
+          "state": "ready",
+          "failure": null,
+          "label": "bohemia-packaging-2026-0412.pdf",
+          "kind": "pdf",
+          "byte_size": 5109,
+          "pages": 1,
+          "created_at": "2026-10-02T21:08:18.549Z",
+          "updated_at": "2026-10-02T21:08:18.617Z",
+          "expires_at": "2026-10-02T22:08:18.549Z",
+          "queued_ahead": null,
+          "text_cut": false,
+          "model": "groq/gpt-oss-20b",
+          "model_calls": 2,
+          "run_id": "run-3de13d0387ed2735cce8",
+          "ocr_ms": 3200,
+          "elapsed_ms": 5403,
+          "steps": [
+            {
+              "name": "queue",
+              "status": "ok",
+              "ms": 40,
+              "detail": {
+                "waited_ms": 40
+              }
+            },
+            {
+              "name": "ocr",
+              "status": "ok",
+              "ms": 3200,
+              "detail": {
+                "pages": 1,
+                "words": 120,
+                "worker_ms": 2900,
+                "seccomp": true,
+                "landlock_abi": 3
+              }
+            },
+            {
+              "name": "injection check",
+              "status": "ok",
+              "ms": 190,
+              "detail": {
+                "segments": 1,
+                "flagged": false,
+                "score": 0.01
+              }
+            },
+            {
+              "name": "extract",
+              "status": "ok",
+              "ms": 1900,
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 1,
+                "text_chars": 900,
+                "text_cut": false,
+                "picture": false
+              }
+            },
+            {
+              "name": "validate",
+              "status": "ok",
+              "ms": 2,
+              "detail": {
+                "failed": 0,
+                "ran": 9
+              }
+            },
+            {
+              "name": "place fields",
+              "status": "ok",
+              "ms": 6,
+              "detail": {
+                "found": 18,
+                "expected": 18
+              }
+            },
+            {
+              "name": "check duplicates",
+              "status": "ok",
+              "ms": 3,
+              "detail": {
+                "compared": 6,
+                "duplicate": false
+              }
+            },
+            {
+              "name": "journal entry",
+              "status": "ok",
+              "ms": 2,
+              "detail": {
+                "lines": 3
+              }
+            }
+          ],
+          "prices_include_vat": null,
+          "fields": [
+            {
+              "path": "document_type",
+              "kind": "choice",
+              "value": "invoice",
+              "box": null,
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vendor",
+              "kind": "text",
+              "value": "Bohemia Packaging s.r.o.",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.04751,
+                  0.37406,
+                  0.04751,
+                  0.37406,
+                  0.06532,
+                  0.06723,
+                  0.06532
+                ],
+                "confidence": 0.9648,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "invoice_number",
+              "kind": "text",
+              "value": "2026-0412",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84438,
+                  0.08789,
+                  0.93277,
+                  0.08789,
+                  0.93277,
+                  0.10095,
+                  0.84438,
+                  0.10095
+                ],
+                "confidence": 0.9888,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "issue_date",
+              "kind": "date",
+              "value": "2026-09-14",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84867,
+                  0.12233,
+                  0.93277,
+                  0.12233,
+                  0.93277,
+                  0.1342,
+                  0.84867,
+                  0.1342
+                ],
+                "confidence": 0.9808,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "due_date",
+              "kind": "date",
+              "value": "2026-10-14",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84867,
+                  0.14014,
+                  0.93277,
+                  0.14014,
+                  0.93277,
+                  0.15202,
+                  0.84867,
+                  0.15202
+                ],
+                "confidence": 0.9752,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "currency",
+              "kind": "currency",
+              "value": "CZK",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.89916,
+                  0.15796,
+                  0.93277,
+                  0.15796,
+                  0.93277,
+                  0.16983,
+                  0.89916,
+                  0.16983
+                ],
+                "confidence": 0.9927,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.description",
+              "kind": "text",
+              "value": "Kraft coffee bag 250 g, box of 500",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.34442,
+                  0.32044,
+                  0.34442,
+                  0.32044,
+                  0.35629,
+                  0.06723,
+                  0.35629
+                ],
+                "confidence": 0.9637,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.quantity",
+              "kind": "quantity",
+              "value": "4",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.56208,
+                  0.34442,
+                  0.57143,
+                  0.34442,
+                  0.57143,
+                  0.35629,
+                  0.56208,
+                  0.35629
+                ],
+                "confidence": 0.9714,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.unit_price",
+              "kind": "amount",
+              "value": "1850.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.67408,
+                  0.34442,
+                  0.7395,
+                  0.34442,
+                  0.7395,
+                  0.35629,
+                  0.67408,
+                  0.35629
+                ],
+                "confidence": 0.9832,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.0.total",
+              "kind": "amount",
+              "value": "7400.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.86736,
+                  0.34442,
+                  0.93277,
+                  0.34442,
+                  0.93277,
+                  0.35629,
+                  0.86736,
+                  0.35629
+                ],
+                "confidence": 0.9903,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.description",
+              "kind": "text",
+              "value": "Valve sticker roll, 1000 pcs",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.36817,
+                  0.26711,
+                  0.36817,
+                  0.26711,
+                  0.38005,
+                  0.06723,
+                  0.38005
+                ],
+                "confidence": 0.9936,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.quantity",
+              "kind": "quantity",
+              "value": "10",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.55274,
+                  0.36817,
+                  0.57143,
+                  0.36817,
+                  0.57143,
+                  0.38005,
+                  0.55274,
+                  0.38005
+                ],
+                "confidence": 0.9892,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.unit_price",
+              "kind": "amount",
+              "value": "120.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.6881,
+                  0.36817,
+                  0.7395,
+                  0.36817,
+                  0.7395,
+                  0.38005,
+                  0.6881,
+                  0.38005
+                ],
+                "confidence": 0.9602,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "line_items.1.total",
+              "kind": "amount",
+              "value": "1200.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.86736,
+                  0.36817,
+                  0.93277,
+                  0.36817,
+                  0.93277,
+                  0.38005,
+                  0.86736,
+                  0.38005
+                ],
+                "confidence": 0.988,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "subtotal",
+              "kind": "amount",
+              "value": "8600.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.86736,
+                  0.40855,
+                  0.93277,
+                  0.40855,
+                  0.93277,
+                  0.42043,
+                  0.86736,
+                  0.42043
+                ],
+                "confidence": 0.9908,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.rate",
+              "kind": "rate",
+              "value": "21",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.06723,
+                  0.42399,
+                  0.1017,
+                  0.42399,
+                  0.1017,
+                  0.43468,
+                  0.06723,
+                  0.43468
+                ],
+                "confidence": 0.9639,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.base",
+              "kind": "amount",
+              "value": "8600.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.19323,
+                  0.42399,
+                  0.2521,
+                  0.42399,
+                  0.2521,
+                  0.43468,
+                  0.19323,
+                  0.43468
+                ],
+                "confidence": 0.9618,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "vat.0.amount",
+              "kind": "amount",
+              "value": "1806.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.34449,
+                  0.42399,
+                  0.40336,
+                  0.42399,
+                  0.40336,
+                  0.43468,
+                  0.34449,
+                  0.43468
+                ],
+                "confidence": 0.9773,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            },
+            {
+              "path": "total",
+              "kind": "amount",
+              "value": "10406.00",
+              "box": {
+                "page": 1,
+                "quad": [
+                  0.84307,
+                  0.43943,
+                  0.93277,
+                  0.43943,
+                  0.93277,
+                  0.45368,
+                  0.84307,
+                  0.45368
+                ],
+                "confidence": 0.985,
+                "match": 1,
+                "band": "high"
+              },
+              "edited": false,
+              "checks": []
+            }
+          ],
+          "checks": [
+            {
+              "id": "required_fields",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "dates_valid",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "issue_date",
+                "due_date"
+              ],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "currency_known",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "currency"
+              ],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "signs_agree",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "line_math",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "line_items_sum",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "vat_math",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "vat_bases",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "total_reconciles",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "fields_on_page",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [],
+              "expected": null,
+              "actual": null
+            },
+            {
+              "id": "not_duplicate",
+              "status": "passed",
+              "severity": "error",
+              "message": "",
+              "fields": [
+                "vendor",
+                "invoice_number"
+              ],
+              "expected": null,
+              "actual": null
+            }
+          ],
+          "duplicate": null,
+          "journal": {
+            "date": "2026-09-14",
+            "reference": "Bohemia Packaging s.r.o. 2026-0412",
+            "currency": "CZK",
+            "lines": [
+              {
+                "account": "5020",
+                "name": "Packaging materials",
+                "debit": "8600.00",
+                "credit": "0.00",
+                "memo": "Bohemia Packaging s.r.o. 2026-0412"
+              },
+              {
+                "account": "1400",
+                "name": "Input VAT receivable",
+                "debit": "1806.00",
+                "credit": "0.00",
+                "memo": "Bohemia Packaging s.r.o. 2026-0412"
+              },
+              {
+                "account": "2100",
+                "name": "Accounts payable, suppliers",
+                "debit": "0.00",
+                "credit": "10406.00",
+                "memo": "Bohemia Packaging s.r.o. 2026-0412"
+              }
+            ],
+            "total_debit": "10406.00",
+            "total_credit": "10406.00"
+          },
+          "journal_status": "made",
+          "corrections": [],
+          "can_export": true
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-3de13d0387ed2735cce8",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "3ddb067b14574883",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1790975298553,
+        "endMs": 1790975301753,
+        "attrs": {
+          "pages": 1,
+          "words": 120,
+          "worker_ms": 2900,
+          "wall_ms": 3150,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "7a33e218e04410ee",
+        "parentId": "1ffa627d3040b4a8",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1790975301757,
+        "endMs": 1790975301939,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "1ffa627d3040b4a8",
+        "parentId": "f164e433922190fe",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1790975301755,
+        "endMs": 1790975301941,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 640,
+          "outputTokens": 1,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "f164e433922190fe",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "ok",
+        "startMs": 1790975301753,
+        "endMs": 1790975301943,
+        "attrs": {
+          "segments": 1,
+          "flagged": false,
+          "score": 0.01
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "ced759cd3a70007b",
+        "parentId": "c0faf07968654b10",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790975301947,
+        "endMs": 1790975303839,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "c0faf07968654b10",
+        "parentId": "85fe154b40001d4c",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790975301945,
+        "endMs": 1790975303841,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 1150,
+          "outputTokens": 420,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "85fe154b40001d4c",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.step",
+        "name": "extract",
+        "status": "ok",
+        "startMs": 1790975301943,
+        "endMs": 1790975303843,
+        "attrs": {
+          "alias": "lb-fast",
+          "picture": false,
+          "attempts": 1,
+          "text_cut": false,
+          "text_chars": 900
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "eb2a2b0caa8c29ca",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.step",
+        "name": "validate",
+        "status": "ok",
+        "startMs": 1790975303843,
+        "endMs": 1790975303845,
+        "attrs": {
+          "failed": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "5266bd1bf4e18b6c",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.step",
+        "name": "place fields",
+        "status": "ok",
+        "startMs": 1790975303845,
+        "endMs": 1790975303851,
+        "attrs": {
+          "found": 18,
+          "expected": 18
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "b8e1326edb801c78",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.step",
+        "name": "check duplicates",
+        "status": "ok",
+        "startMs": 1790975303851,
+        "endMs": 1790975303854,
+        "attrs": {
+          "compared": 6,
+          "duplicate": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "44be7f5ccedf3aa4",
+        "parentId": "0d7979d85fe7b303",
+        "kind": "system.step",
+        "name": "journal entry",
+        "status": "ok",
+        "startMs": 1790975303854,
+        "endMs": 1790975303856,
+        "attrs": {
+          "lines": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-3de13d0387ed2735cce8",
+        "system": "lb-03",
+        "spanId": "0d7979d85fe7b303",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1790975298553,
+        "endMs": 1790975303861,
+        "attrs": {
+          "kind": "pdf",
+          "outcome": "ready",
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 5308
+  }
+}

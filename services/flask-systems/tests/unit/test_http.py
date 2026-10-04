@@ -110,6 +110,24 @@ def test_readiness_names_each_system_and_fails_when_one_cant_serve(site_key: Sit
     assert (broken.status_code, broken.get_json()) == (503, {"lb99": False})
 
 
+def test_a_system_with_background_work_is_started_only_when_the_app_is_asked_to(site_key: SiteKey) -> None:
+    """A booting worker starts each system's background work (its sweep); a test's or a command's app does not."""
+    started: list[str] = []
+
+    def build(platform: Platform) -> SystemRuntime:
+        """Make the stand-in's runtime, with a start that notes itself."""
+        runtime = stand_in_system(site_key).build(platform)
+        return SystemRuntime(runtime.blueprint, runtime.is_ready, start=lambda: started.append("lb-99"))
+
+    module = SystemModule(key="lb-99", schema="lb99", build=build)
+
+    create_app(make_platform(), [module])
+    assert started == []
+
+    create_app(make_platform(), [module], start_background=True)
+    assert started == ["lb-99"]
+
+
 @pytest.mark.parametrize("path", ["/api/healthz", "/api/openapi.json", "/nowhere", "/api/lb99/whoami"])
 def test_every_answer_carries_the_security_headers(client: FlaskClient, path: str) -> None:
     """Found or not, authorised or not, every answer is uncacheable, unframeable and allows no content."""

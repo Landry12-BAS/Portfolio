@@ -17,6 +17,9 @@
   --lb-silk: #f2f5ff;
   --lb-gold: #c9a43b;
   --lb-marker: #ffe45c;
+  /* The page of a document shown as a picture, such as a PDF: white in both themes, because a document is
+     drawn for white paper (its black text would vanish on the dark sheet). */
+  --lb-paper: #ffffff;
   /* Scope channels: model, tool, retrieval, guard. */
   --lb-ch1: #b08800;
   --lb-ch2: #0a8fb0;
@@ -41,6 +44,11 @@
   --lb-font-sans: "Archivo Variable", "Helvetica Neue", Arial, sans-serif;
   --lb-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --lb-gutter: 16px;
+  /* Marks drawn on the picture of a document: a line round a field, the outline and the highlighter of the
+     field in view. The picture is white paper in both themes, so these are the same in both. */
+  --lb-page-line: #045efe;
+  --lb-page-ink: #111214;
+  --lb-page-marker: #ffe45c;
   color-scheme: light;
 }
 
@@ -58,6 +66,7 @@ html.dark {
   --lb-board-tint: #0e1d45;
   --lb-silk: #e3eaff;
   --lb-marker: #5a4e12;
+  --lb-paper: #ffffff;
   --lb-ch1: #d6a915;
   --lb-ch2: #27b3d6;
   --lb-ch3: #db4fb0;
@@ -73,5 +82,8 @@ html.dark {
   --lb-series-8: #e66767;
   --lb-show-light: none;
   --lb-show-dark: inline;
+  --lb-page-line: #045efe;
+  --lb-page-ink: #111214;
+  --lb-page-marker: #ffe45c;
   color-scheme: dark;
 }

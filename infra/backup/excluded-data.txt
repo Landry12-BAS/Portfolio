@@ -1,0 +1,12 @@
+# The tables whose rows a backup never holds, one pattern for `pg_dump --exclude-table-data`
+# a line (blank lines and comments are ignored). The dump keeps each table's shape, so a
+# restore makes them empty, and leaves their rows out.
+#
+# What a visitor sends is kept for an hour and no longer (AGENTS.md, Architecture rules), and a
+# backup is kept for weeks, so no backup may hold it. LB-04's contracts are the case: the
+# contract itself (with the name of the file the visitor chose), the PDF's bytes, the text of
+# its pages, the report made of it and the redlines made for it. Its daily counters are only
+# numbers, and stay.
+lb04.contract*
+lb04.reports
+lb04.redlines

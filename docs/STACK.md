@@ -30,12 +30,12 @@ process is in [`PLAYBOOK.md`](PLAYBOOK.md). Session rules for coding agents are 
 | Motion and data viz | Motion for Vue · Unovis · Vega-Lite (LB-05) · Vue Flow (LB-08) · pdf.js (LB-04) | Full control for the Scope timeline; Vega-Lite specs are data, so model-written charts can't run code |
 | AI gateway | TypeScript · Fastify 5 · OpenAI-compatible API | One door for every model call: routing, fallback, token-aware budgets, data-class rules, cache, spans. Streaming proxies are I/O-bound, which suits Node |
 | Django systems | Python 3.13 · Django 5.2 LTS · Django Ninja · Channels 4 · Celery 5 | LB-01, LB-02, LB-09. Rich relational domains, admin, WebSockets and background jobs |
-| Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LB-03, LB-05, LB-10. Sync where work is CPU-bound, async views where one request fans out |
+| Flask systems | Flask 3.1 · flask-openapi3 · SQLAlchemy 2 · gunicorn (gthread) | LB-03, LB-05, LB-10. Plain views; where a request starts work that takes minutes (LB-03's documents) it hands the work to an asyncio loop of its own and answers 202 |
 | Node systems | Node 24 LTS · Fastify 5 · Drizzle ORM · BullMQ · Playwright | LB-04, LB-06, LB-07, LB-08. Event streams, workflows, browser automation, shared Zod types |
 | Model clients | AI SDK (TypeScript) · `openai` SDK (Python), with a small JSON-and-repair helper in the Django systems | Both point at the gateway; typed structured output with validation and one repair |
 | Database | PostgreSQL 17 + pgvector, one schema per system | One stateful store for relational data, vectors and job state; synthetic data rebuilt from seed |
 | Cache and queues | Redis 8 on the box | Celery, Channels and BullMQ poll constantly, which would exhaust a command-metered free tier |
-| Files | Cloudflare R2 with lifecycle rules | Visitor uploads expire by storage policy, not by a cron job; replay recordings live here too |
+| Files | Cloudflare R2, private, with a lifecycle rule as the backstop | Visitor uploads expire: LB-03's service deletes its files at one hour itself, because R2's lifecycle rules work in whole days, and the rule only catches what a stopped service missed; replay recordings live here too |
 | Analytics data | DuckDB over Parquet (LB-05) | Millions of synthetic orders queried in-process, read-only, with no database load |
 | Hosting | Vercel Hobby (front end) · one Oracle Cloud Always Free ARM64 VM (2 OCPUs, 12 GB) with Docker Compose, reachable only through a Cloudflare Tunnel | Always on at $0, no cold starts, zero inbound ports, identical in development and production |
 | Edge | Cloudflare DNS, WAF, Turnstile, Tunnel | Hides the origin and stops bots before they spend quota |
@@ -119,7 +119,7 @@ Mistral's free mode (trains on inputs unless you opt out).
 
 | Alias | Used by | Chain, in order |
 |---|---|---|
-| `lb-fast` | Classification, short JSON (LB-01, LB-05, LB-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
+| `lb-fast` | Classification, short JSON (LB-01, LB-03, LB-05, LB-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
 | `lb-tools` | Chat and tool calls (LB-01, LB-02, LB-06, LB-07, LB-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter qwen3.8-27b:free (synthetic only) |
 | `lb-reason` | SQL and planning (LB-05, LB-06) | Groq gpt-oss-120b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only) |
 | `lb-long` | Long documents (LB-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
@@ -262,14 +262,24 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
 - **Served by gunicorn with threaded workers.** LB-05 is synchronous on purpose: its
   queries are short and CPU-bound, threads cover the model wait, and the code stays
   simple.
-- **Async views where one request fans out.** LB-03 runs OCR and extraction
-  concurrently; LB-10 fans out evaluation calls with `asyncio.gather` under a
-  semaphore. Flask async views give concurrency inside a request, not more
-  concurrent requests. If a Flask system ever needs many long-lived connections, it
-  moves to Quart, the ASGI version of Flask.
-- **LB-03:** RapidOCR (ONNX, runs on CPU) for word boxes, a vision model through the
-  gateway for fields, instructor + Pydantic for typed extraction with validation
-  retries, and deterministic arithmetic checks.
+- **An event loop of its own where a request starts long work.** LB-03's document
+  takes up to a couple of minutes, nearly all of it waiting for OCR, a model or
+  storage, and a gunicorn thread can't hold it that long. Flask's async views would
+  not help: they give each request a loop that ends with the request. So each worker
+  process keeps one asyncio loop on a daemon thread, a request hands the document to
+  it and answers 202, and the visitor's page polls. Everything that blocks goes
+  through a thread pool with the run's context copied across, so two documents in
+  flight do not wait for each other (a test proves it under a real gunicorn). LB-10
+  fans out evaluation calls with `asyncio.gather` under a semaphore. If a Flask system
+  ever needs many long-lived connections, it moves to Quart, the ASGI version of Flask.
+- **LB-03:** RapidOCR (ONNX, runs on CPU) for word boxes, in a process of its own that
+  puts up a cage first (limits, no new privileges, a seccomp filter with no sockets,
+  Landlock), because it decodes a visitor's file. A vision model through the gateway
+  for photographs and a text model for the rest, both asked for a JSON object that
+  `core/structured.py` checks against a Pydantic schema, with one repair; deterministic
+  arithmetic checks in `Decimal` that the model never sees; a box rule that ties each
+  value to the words that print it; and a file store (disk or R2) whose files the
+  service deletes at one hour itself. Its README has the pipeline and the threat model.
 - **LB-05:** DuckDB over Parquet, sqlglot to parse and allowlist every query, a
   read-only connection, a forced row limit and a timeout. The service stacks six
   layers (parse, allowlist, plan check, a locked-down read-only connection, row cap,
@@ -306,8 +316,12 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   R2 still runs for visitor golden-set contributions.
 - **Redis 8** for Celery, Channels, BullMQ, gateway budgets, circuit breakers and the
   response cache.
-- **Cloudflare R2** for uploads (lifecycle rules delete them after 1 to 24 hours,
-  depending on the system) and for replay recordings.
+- **Cloudflare R2** for uploads and for replay recordings. Uploads are private and have
+  their own expiry: LB-03's service deletes a document's files at one hour (every minute
+  it sweeps what is past its time, and `just sweep-lb03` does it by hand). R2's lifecycle
+  rules work in whole days, so a rule alone could keep a file for a day or more; the rule
+  on the uploads bucket is the backstop for a service that was not running, not the
+  promise.
 - **DuckDB + Parquet** for LB-05's two million synthetic orders.
 
 ## Infrastructure and hosting
@@ -469,7 +483,7 @@ docs/                     STACK.md, PLAYBOOK.md, decision records
 | shadcn-vue instead of Reka UI | Rejected | shadcn's default look is the generic AI-site look this design avoids |
 | Biome instead of ESLint | Rejected | ESLint carries the Vue template rules this project relies on (`vue/no-v-html`, accessibility) and is Nuxt's official setup; with ESLint Stylistic it is still one tool |
 | Font Awesome or another icon library | Rejected | The owner wants icons in the logo's own pattern; `@lb/icons` ships the same way (sprite plus component) |
-| instructor in the Django systems | Replaced (Rev J) | `core/structured.py` does the one job needed in a few dozen lines: no `response_format`, which the fallback chains' providers treat differently, a Pydantic check, and one repair request quoting the errors |
+| instructor in the Django and Flask systems | Replaced (Rev J) | `core/structured.py` does the one job needed in a few dozen lines: no `response_format`, which the fallback chains' providers treat differently, a Pydantic check, and one repair request quoting the errors. LB-03 uses its Flask twin |
 | Tailwind CSS | Dropped at scaffold (Rev E) | The look is bespoke and component-shaped; tokens plus scoped styles are simpler and ship only the CSS each page uses |
 | Nuxt Content for the datasheets | Not now | Ten structured records are simpler and safer as typed data with a Zod check; revisit when prose pages arrive |
 

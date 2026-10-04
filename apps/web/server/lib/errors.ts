@@ -31,7 +31,7 @@ export const problems = {
   notFound: () => new ApiError(404, 'not_found', 'There is nothing at this address.'),
   forbiddenOrigin: () => new ApiError(403, 'forbidden_origin', 'This request did not come from this site.'),
   invalidRequest: (message = 'The request is not valid.') => new ApiError(400, 'invalid_request', message),
-  unsupportedMedia: () => new ApiError(415, 'unsupported_media_type', 'Send the request as application/json.'),
+  unsupportedMedia: (message = 'Send the request as application/json.') => new ApiError(415, 'unsupported_media_type', message),
   tooLarge: () => new ApiError(413, 'payload_too_large', 'The request is too big.', { headers: { connection: 'close' } }),
   verificationRequired: () => new ApiError(403, 'verification_required', 'Run the check that proves you are a person before using a demo with your own text.'),
   verificationFailed: () => new ApiError(403, 'verification_failed', 'The check could not tell that you are a person. Try again.'),

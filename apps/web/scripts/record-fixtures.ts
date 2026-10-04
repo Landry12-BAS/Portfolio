@@ -43,6 +43,13 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // to the dead-letter queue and is replayed, and one that waits for an approval. The Czech sample is
   // left without a recording on purpose, so the tests can see a sample that has none.
   'lb-08': ['wholesale-order', 'low-stock-reorder', 'refund-approval'],
+  // The clean PDF that passes every check, the planted total that fails one and is returned with it, and the
+  // hostile invoice the injection check stops. The other three samples (the euro invoice, the crumpled photo
+  // and the handwritten receipt) are left without a recording on purpose, so the tests can read them live.
+  'lb-03': ['clean-pdf', 'planted-total', 'prompt-injection'],
+  // A report with a redline, a fair contract with nothing to report, and a scan the system must refuse.
+  // The other three samples have no recording on purpose, so the tests can run them live on the mock.
+  'lb-04': ['wholesale-supply', 'clean-supply', 'scanned-supply'],
   // The roasting plan (four speakers, five items) and the staffing meeting (a joke that must not become
   // a task). The newsletter draft is left without a recording on purpose, so the tests can see a sample
   // that has none and run it live.

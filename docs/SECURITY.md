@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb05/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -162,6 +162,32 @@ how a Vercel preview runs.
   conversation, the calendar or a recording, and a WebSocket does not pass through a service
   worker at all. The page is fetched from the network first, so a visitor who is online always
   gets the current page. A test fails if the worker ever stores an API or WebSocket address.
+- **LB-04's board: the PDF viewer.** The viewer draws a contract's PDF with pdf.js
+  (`pdfjs-dist`), loaded only when a visitor asks to see the pages (the build leaves it out of
+  the page's prefetch hints), and only from the site's own origin. pdf.js works in a Web Worker,
+  and a worker's address is a script address, so under `require-trusted-types-for 'script'` the
+  page cannot start one from a string. Only LB-04's two board pages (English and Czech) get a
+  longer Content Security Policy, and each addition is the smallest that works: `trusted-types`
+  gains `lb-pdf-worker`, one policy whose rule throws for every address but the worker file's
+  own (there is never a `default` policy, and no `allow-duplicates`), and `worker-src 'self'`.
+  Nothing else changes: `script-src` keeps its nonce and `strict-dynamic`, and `connect-src`,
+  `font-src` and `img-src` stay as they are. pdf.js 6 evaluates no code, so there is no
+  `unsafe-eval` or `wasm-unsafe-eval`; it loads no script, font, image or style from anywhere
+  (the bytes are the ones the board already holds, and fonts that are not in the PDF are the
+  system's), and the viewer opens a PDF with XFA off. The additions are made when the server
+  starts (`apps/web/server/lib/lb04-csp.ts`), unit-tested for what they add and for what they
+  leave alone (`apps/web/test/unit/lb04-viewer-policy.test.ts`), and tested against the headers
+  and a real Chromium (`apps/web/e2e/lb04.spec.ts`): the worker is requested from the site's own
+  origin and only after the pages are asked for, the page can start no other worker and make no
+  policy of its own (the browser's own reports of each refusal are asserted), and no other page
+  carries either addition. A visitor's PDF is a stranger's file, and it is parsed twice without
+  trust in either: on the server in a worker thread with a deadline and a memory limit (section
+  5), and in the browser inside pdf.js's worker. The viewer draws a highlight only on a page where
+  the browser's pdf.js read exactly the text the server's did (both build the text with the same
+  function, `extractPageText` in `@lb/contracts`, and the viewer compares them page by page); on a
+  page where they differ it leaves the highlight off and says so, and the passage is still shown
+  as text. That the two agree is checked in a browser on every sample the system can review, not
+  assumed for a visitor's own file.
 
 ### Threat model of the proxy
 
@@ -224,9 +250,10 @@ how a Vercel preview runs.
   even if markup slips through. `nuxt-security` sets the headers and nonces. The only
   Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
   markup; the evaluation boards' pages alone add `lb-turnstile` (see "What the site's
-  server does") and Cloudflare's frame, and LB-02's two board pages add `lb-service-worker`,
-  `worker-src 'self'` and the API's WebSocket origin to `connect-src` (same section), LB-09's
-  two add the WebSocket origin and `media-src 'self' blob:` (same section), and
+  server does") and Cloudflare's frame, LB-02's two board pages add `lb-service-worker`,
+  `worker-src 'self'` and the API's WebSocket origin to `connect-src`, LB-04's two board
+  pages add `lb-pdf-worker` and `worker-src 'self'`, and LB-09's two add the WebSocket origin
+  and `media-src 'self' blob:` (all in the same section), and
   nothing else changes. Zod is told not to build
   its parsers with `new Function` (`apps/web/app/plugins/00.zod-jitless.ts`): the policy
   would report each probe as a violation.
@@ -241,9 +268,19 @@ how a Vercel preview runs.
 - **Input and output:** Zod or Pydantic at every boundary. Vue escapes everything a
   template renders, and `v-html` is banned by lint (`vue/no-v-html`), so no visitor or
   model text is ever parsed as markup.
-- **Uploads:** checked by magic bytes, size and page count; parsed in a worker with
-  CPU, memory and time limits; stored in R2 under random keys; deleted by lifecycle
-  rules.
+- **Uploads (LB-03):** the length must be declared and is checked before a byte is read;
+  the first bytes decide what a file is, never its name or the type the browser claims;
+  the web process never decodes it. A worker process does, after it has put up a cage
+  (CPU, memory, file and time limits, no new privileges, a seccomp filter with no sockets
+  and no programs to start, Landlock where the kernel has it) and proved it holds, and the
+  page count and pixel count are checked before a page is drawn. Files are stored privately
+  under random keys, in R2 or on disk, and are never served back: a visitor sees only the
+  page pictures the service drew from them. The service deletes them at their hour itself,
+  since R2's lifecycle rules work in whole days and are only the backstop. The threat model
+  is in `services/flask-systems/README.md`.
+  LB-04's contract upload keeps its PDF in Postgres for an hour instead (see section 5), and
+  Caddy gives that one route a larger body limit (3 MB, for a 2 MB PDF as base64 inside JSON)
+  while every other route but LB-03's upload keeps 1 MB.
 - **Target:** A+ on Mozilla Observatory, checked in CI.
 
 ## 4. AI-specific risks
@@ -252,8 +289,8 @@ Mapped to the OWASP Top 10 for LLM applications:
 
 | Risk | Control |
 |---|---|
-| Prompt injection | Prompt Guard 2 on visitor text, read in overlapping segments so nothing hides past its window, and failing closed without a verdict; untrusted content kept out of instruction slots; tools scoped per step |
-| Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code |
+| Prompt injection | Prompt Guard 2 on visitor text, read in overlapping segments so nothing hides past its window, and failing closed without a verdict; untrusted content kept out of instruction slots (a document's text sits in a data slot whose markers carry a code made for that document); tools scoped per step; and where a model reads a document, code checks what it said (LB-03's arithmetic) |
+| Insecure output handling | Structured output validated; model-written SQL parsed and allowlisted; charts are Vega-Lite data, never code; an exported spreadsheet cell that begins like a formula is written as text |
 | Excessive agency | No real side effects: sandboxed connectors, and a human click before any action |
 | Sensitive data disclosure | Synthetic data; visitor content routed only to providers that don't train on inputs |
 | Model denial of service | Per-run call caps, per-visitor and per-system quotas, token-aware provider budgets, replay mode |
@@ -288,7 +325,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01, LB-02, LB-05 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01, LB-02, LB-03, LB-05 and LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and
@@ -297,10 +334,11 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues, and for every service its own run
+  channel layer, the Node systems' BullMQ queues (LB-08's and LB-04's, each under its
+  own pattern), and for every service its own run
   spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's and LB-08's, and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's and LB-04's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
@@ -309,10 +347,25 @@ attempts. Every prompt change must pass it.
 - **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
   to the rest), the visitor token travels in the first frame and never in the address, and
   uvicorn refuses a frame over 8192 bytes before the service reads it.
-- **R2:** one scoped token per bucket.
+- **R2:** one scoped token per bucket. LB-03's uploads bucket is private (nothing sets an ACL
+  or makes a public address), its token may read, write and delete there and nowhere else,
+  and its one-day lifecycle rule is a backstop behind the service's own hourly sweep.
 - **Backups:** a nightly `pg_dump`, encrypted with age before it leaves the box, to
   public keys whose private halves stay off the box: a stolen box cannot read its own
-  backups.
+  backups. The dump has the shape of LB-04's contract tables and none of their rows (the
+  contract with the name of the file the visitor chose, the PDF, its text, the report and
+  the redlines): a visitor's file is kept for an hour, and a backup is kept for weeks, so
+  no backup may hold it. `infra/postgres/test-roles.sh` proves that no word of a contract
+  is in the dump.
+- **LB-04's contracts:** the PDF's bytes are stored in Postgres (the `lb04` schema, under
+  its own role) for an hour and no longer: every row that belongs to a contract references
+  it and cascades, a sweep deletes the expired every minute, a contract is not found once its hour
+  is up even before the sweep, a failed review deletes its file and text at once, and the
+  visitor can delete a contract early. The file is opened only in a worker thread with no
+  environment, no flags and its own heap limits, which a deadline ends, and the model
+  never sees a passage that talks to it. Its limits and what is not covered are in
+  [`services/node-systems/README.md`](../services/node-systems/README.md), "Threat model of
+  LB-04".
 
 ## 6. Containers and host
 

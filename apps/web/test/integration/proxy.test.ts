@@ -3,6 +3,7 @@
 // by a token this server made, nothing of the visitor's request but the JSON body goes along, and
 // nothing of the back end's answer but a status, a JSON body and Retry-After comes back. Each
 // test is a way a request, or a back end, could go wrong, answered in the platform's error shape.
+// (LB-03's upload and its files are the documented exceptions, and have their own tests: proxy-lb03.test.ts.)
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { API_ROUTES } from '@lb/api-clients/routes'
@@ -11,6 +12,7 @@ import type { MockBackend } from '@lb/api-clients/testing'
 import { verifyVisitorToken, loadPublicKey } from '@lb/common/visitors'
 
 import { Browser } from '../support/browser.ts'
+import { seedUpload } from '../support/lb03-files.ts'
 import { rawRequest } from '../support/raw.ts'
 import { makeTestKeys, startTestSite } from '../support/site-app.ts'
 import type { TestSite } from '../support/site-app.ts'
@@ -56,8 +58,10 @@ describe('what is forwarded', () => {
       mock.reset()
       const operation = documents.operations.find(candidate => candidate.method === route.method && candidate.template === route.path)!
       const path = route.path.replace(/\{\w+\}/g, 'abc12345')
-      const body = documents.exampleRequest(operation)
-      const reply = await browser.request(route.method, path, { body })
+      // The one route that takes a file is sent a file, as a form in a browser sends it, and not an example of JSON.
+      const reply = route.upload
+        ? await browser.request(route.method, path, { upload: seedUpload('clean-pdf') })
+        : await browser.request(route.method, path, { body: documents.exampleRequest(operation) })
 
       expect(Object.keys(operation.operation.responses ?? {}).map(Number), `${route.method} ${path} answered ${reply.status}`).toContain(reply.status)
       expect(mock.requests.map(sent => `${sent.method} ${sent.path}`), route.path).toEqual([`${route.method} ${path}`])
@@ -120,6 +124,8 @@ describe('who the back end thinks is calling', () => {
     await browser.request('GET', '/api/lb02/offerings')
     await browser.request('GET', '/api/lb05/quota')
     await browser.request('GET', '/api/lb08/limits')
+    await browser.request('GET', '/api/lb03/quota')
+    await browser.request('GET', '/api/lb04/limits')
 
     const publicKey = loadPublicKey(keys.sitePublic)
     const seen = mock.requests.map((sent) => {
@@ -128,7 +134,7 @@ describe('who the back end thinks is calling', () => {
       return verifyVisitorToken(token, `lb-${system}`, publicKey, () => site.clock.now / 1_000)
     })
 
-    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08'])
+    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04'])
     expect(new Set(seen.map(visitor => visitor.sessionKey)).size).toBe(1)
   })
 
@@ -485,13 +491,71 @@ describe('the token for LB-02\'s WebSocket', () => {
     expect((await browser.request('POST', '/api/tokens/lb-02')).status).toBe(403)
     await browser.verify()
     expect((await browser.request('POST', '/api/tokens/lb-02', { origin: 'https://evil.example' })).status).toBe(403)
-    for (const system of ['lb-01', 'lb-05', 'lb-08', 'lb-99', 'lb-02/extra']) {
+    for (const system of ['lb-01', 'lb-05', 'lb-08', 'lb-04', 'lb-99', 'lb-02/extra']) {
       expect((await browser.request('POST', `/api/tokens/${system}`)).status, system).toBe(404)
     }
     expect((await browser.request('GET', '/api/tokens/lb-02')).status).toBe(404)
   })
 })
 
+describe('LB-04\'s PDFs through the proxy', () => {
+  /** A PDF of exactly the size the limit allows, which is nothing a reader could open: the proxy and the service only check its size and its first bytes. */
+  function fullSizePdf(): Buffer {
+    const bytes = Buffer.alloc(2 * 1_024 * 1_024)
+    bytes.write('%PDF-1.7\n')
+    return bytes
+  }
+
+  it('forwards a PDF of 2 MiB, which is a JSON body of about 2.8 MB, and gives its file back whole', async () => {
+    const browser = await verified()
+    const pdf = fullSizePdf()
+
+    const made = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'upload', filename: 'big.pdf', contentBase64: pdf.toString('base64') } })
+    const file = await browser.request('GET', `/api/lb04/contracts/${made.json.id}/file`)
+
+    expect(made.status).toBe(201)
+    expect(mock.requests.find(sent => sent.method === 'POST')?.body.length).toBeGreaterThan(2_790_000)
+    expect(file.status).toBe(200)
+    expect(file.json.size).toBe(pdf.byteLength)
+    expect(Buffer.from(file.json.base64, 'base64').equals(pdf)).toBe(true)
+  })
+
+  it('refuses a body over 3 MiB at the door, before the back end sees anything of it', async () => {
+    const browser = await verified()
+    const tooBig = Buffer.alloc(3 * 1_024 * 1_024)
+
+    const reply = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'upload', filename: 'huge.pdf', contentBase64: tooBig.toString('base64') } })
+
+    expect(reply.status).toBe(413)
+    expect(reply.json.error.code).toBe('payload_too_large')
+    expect(mock.requests).toEqual([])
+  })
+
+  it('passes a spent day on as the back end says it: 429 with when it starts again, as a time and as a wait', async () => {
+    const browser = await verified()
+    for (let count = 0; count < 3; count += 1) expect((await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'clean-supply' } })).status).toBe(201)
+
+    const spent = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'clean-supply' } })
+
+    expect(spent.status).toBe(429)
+    expect(spent.json.error).toMatchObject({ code: 'daily_limit', resets_at: '2026-10-06T00:00:00.000Z' })
+    expect(spent.headers.get('retry-after')).toBe(String(15 * 3_600))
+  })
+
+  it('reviews a sample start to finish as the demo does: queued, polled to done, and a redline made', async () => {
+    const browser = await verified()
+    const made = await browser.request('POST', '/api/lb04/contracts', { body: { from: 'sample', sampleId: 'wholesale-supply' } })
+    let state = made.json.state
+    for (let poll = 0; poll < 6 && state !== 'done'; poll += 1) state = (await browser.request('GET', `/api/lb04/contracts/${made.json.id}`)).json.state
+    const report = await browser.request('GET', `/api/lb04/contracts/${made.json.id}/report`)
+    const redline = await browser.request('POST', `/api/lb04/contracts/${made.json.id}/findings/${report.json.findings[0].id}/redline`, { body: { smuggled: true } })
+
+    expect(made.status).toBe(201)
+    expect(state).toBe('done')
+    expect(report.json.findings.length).toBeGreaterThan(0)
+    expect(redline.status).toBe(201)
+    expect(mock.requests.at(-1)?.body).toBe('')
+    expect(mock.violations).toEqual([])
 describe('the token for LB-09\'s WebSocket', () => {
   it('is made for a visitor who passed the check, for LB-09 only, and names the meeting progress socket', async () => {
     const browser = await verified()

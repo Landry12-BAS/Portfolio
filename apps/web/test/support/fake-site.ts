@@ -2,10 +2,11 @@
 // components: the session and its Turnstile check, LB-01's routes played by the same in-memory
 // mock the integration tests use, the Scope's trace route, and the recordings. It is a `fetch`
 // replacement, so a test installs it with `vi.stubGlobal('fetch', site.fetch)`, and it keeps a log
-// of every call so a test can say what the board did and did not ask for. LB-05's routes are played by
-// its mock too, and a call can be held back (`delayNext`) to test a board that waits.
-import { Lb01Mock, Lb05Mock, readLb05Seed, readSeed } from '@lb/api-clients/testing'
-import type { Answer, MockSpan, RunIdDisclosure } from '@lb/api-clients/testing'
+// of every call so a test can say what the board did and did not ask for. LB-05's and LB-03's routes are
+// played by their mocks too (an upload is read out of its multipart form, and a page's picture or an export
+// is answered as the file it is), and a call can be held back (`delayNext`) to test a board that waits.
+import { Lb01Mock, Lb03Mock, Lb05Mock, readLb03Seed, readLb05Seed, readSeed } from '@lb/api-clients/testing'
+import type { Answer, Lb03FileAnswer, Lb03MockOptions, Lb03Upload, MockSpan, RunIdDisclosure } from '@lb/api-clients/testing'
 import type { Recording } from '@lb/contracts'
 
 import { TEST_TURNSTILE_STAND_IN } from '#shared/turnstile-stand-in'
@@ -25,6 +26,8 @@ export interface FakeSiteOptions {
   // When the API names a ticket's run: once the pipeline has finished (the default, as Django does
   // today) or in the answer to filing it.
   runId?: RunIdDisclosure
+  // How LB-03's documents are read: how many polls still say `uploaded`, and how many documents are ahead.
+  lb03?: Lb03MockOptions
 }
 
 /** One call the browser made. */
@@ -62,9 +65,17 @@ const SESSION = 'fake-session'
 const NOW = Date.parse('2026-10-02T09:30:00.000Z')
 
 /** Turns an answer into a `Response`. */
-function respond(answer: Answer): Response {
+function respond(answer: Answer | Lb03FileAnswer): Response {
+  if ('file' in answer) return new Response(new Uint8Array(answer.file.bytes), { status: answer.status, headers: { 'content-type': answer.file.contentType, ...answer.file.headers } })
   if (answer.body === undefined) return new Response(null, { status: answer.status })
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } })
+}
+
+/** Reads the one file part of an upload out of the multipart form the board sent. */
+async function readUpload(request: Request): Promise<Lb03Upload | undefined> {
+  const part = (await request.formData()).get('file')
+  if (!(part instanceof File)) return undefined
+  return { filename: part.name, data: Buffer.from(await part.arrayBuffer()) }
 }
 
 /** Makes a platform error answer. */
@@ -76,6 +87,7 @@ function failure(status: number, code: string, message: string): Answer {
 export class FakeSite {
   readonly mock: Lb01Mock
   readonly lb05: Lb05Mock
+  readonly lb03: Lb03Mock
   readonly calls: FakeCall[] = []
   verified: boolean
   available: boolean
@@ -88,6 +100,7 @@ export class FakeSite {
     this.#options = options
     this.mock = new Lb01Mock(readSeed(), () => NOW, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.lb05 = new Lb05Mock(readLb05Seed(), () => NOW)
+    this.lb03 = new Lb03Mock(readLb03Seed(), () => NOW, options.lb03)
     this.verified = options.verified ?? false
     this.available = options.available ?? true
   }
@@ -111,20 +124,21 @@ export class FakeSite {
   readonly fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = input instanceof Request ? input : new Request(new URL(String(input), 'http://site.test'), init)
     const url = new URL(request.url)
-    const text = request.method === 'GET' ? '' : await request.text()
+    const upload = request.headers.get('content-type')?.startsWith('multipart/form-data') === true ? await readUpload(request) : undefined
+    const text = request.method === 'GET' || upload !== undefined ? '' : await request.text()
     const body: unknown = text === '' ? undefined : JSON.parse(text)
     const path = `${url.pathname}${url.search}`
-    this.calls.push({ method: request.method, path, body })
+    this.calls.push({ method: request.method, path, body: upload === undefined ? body : { upload: { filename: upload.filename, bytes: upload.data.length } } })
     const key = `${request.method} ${path}`
     const held = this.#delayed.findIndex(item => key.startsWith(item.match))
     if (held >= 0) await wait(this.#delayed.splice(held, 1)[0]?.ms ?? 0, request.signal)
     const index = this.#scripted.findIndex(item => key.startsWith(item.match))
     if (index >= 0) return respond(this.#scripted.splice(index, 1)[0]?.answer ?? failure(500, 'internal_error', 'x'))
-    return respond(this.#answer(request.method, url, body))
+    return respond(this.#answer(request.method, url, body, upload))
   }
 
   /** Routes a call to what answers it. */
-  #answer(method: string, url: URL, body: unknown): Answer {
+  #answer(method: string, url: URL, body: unknown, upload: Lb03Upload | undefined): Answer | Lb03FileAnswer {
     const path = url.pathname
     if (path === '/api/session') return { status: 200, body: this.#state() }
     if (path === '/api/session/verify' && method === 'POST') return this.#verify(body)
@@ -140,6 +154,40 @@ export class FakeSite {
       if (method !== 'GET' && !this.verified) return failure(403, 'verification_required', 'Run the check that proves you are a person before using a demo with your own text.')
       return this.#lb05(method, path, body)
     }
+    if (path.startsWith('/lb03/')) return this.#lb03Static(path)
+    if (path.startsWith('/api/lb03/')) {
+      if (!this.available) return failure(503, 'unavailable', 'This part of the site is not available right now.')
+      if (method !== 'GET' && !this.verified) return failure(403, 'verification_required', 'Run the check that proves you are a person before using a demo with your own text.')
+      return this.#lb03(method, url, body, upload)
+    }
+    return failure(404, 'not_found', 'There is nothing at this address.')
+  }
+
+  /** Serves the static files LB-03's board reads from the site itself: the samples' files and the pictures of their pages. */
+  #lb03Static(path: string): Answer | Lb03FileAnswer {
+    const [, , folder, name] = path.split('/')
+    const seed = readLb03Seed()
+    if (folder === 'samples') {
+      const found = seed.cases.find(item => item.file === `documents/${name}`)
+      return found === undefined ? failure(404, 'not_found', 'There is nothing at this address.') : { status: 200, file: { bytes: seed.file(found.file), contentType: found.mime, headers: {} } }
+    }
+    const match = /^([a-z0-9-]+)-(\d)\.jpg$/.exec(name ?? '')
+    const picture = folder === 'pages' && match ? seed.picture(match[1] ?? '', Number(match[2])) : undefined
+    return picture === undefined ? failure(404, 'not_found', 'There is nothing at this address.') : { status: 200, file: { bytes: picture, contentType: 'image/jpeg', headers: {} } }
+  }
+
+  /** Answers LB-03's routes from its mock. */
+  #lb03(method: string, url: URL, body: unknown, upload: Lb03Upload | undefined): Answer | Lb03FileAnswer {
+    const parts = url.pathname.split('/').filter(Boolean)
+    const [, , resource, id, action, number] = parts
+    if (method === 'GET' && resource === 'quota') return this.lb03.quota(SESSION)
+    if (resource !== 'documents') return failure(404, 'not_found', 'There is nothing at this address.')
+    if (id === undefined) return method === 'POST' ? this.lb03.upload(SESSION, upload) : this.lb03.list(SESSION)
+    if (method === 'GET' && action === undefined) return this.lb03.get(SESSION, id)
+    if (method === 'DELETE' && action === undefined) return this.lb03.remove(SESSION, id)
+    if (method === 'POST' && action === 'corrections') return this.lb03.correct(SESSION, id, body as { path: string, value: string })
+    if (method === 'GET' && action === 'pages') return this.lb03.page(SESSION, id, Number(number))
+    if (method === 'GET' && action === 'export') return this.lb03.exportDocument(SESSION, id, url.searchParams.get('format') ?? 'csv')
     return failure(404, 'not_found', 'There is nothing at this address.')
   }
 
@@ -178,7 +226,7 @@ export class FakeSite {
 
   /** Answers a read of a run's trace with all the spans so far; the cursor is the count already seen. */
   #spans(runId: string, search: URLSearchParams): Answer {
-    const spans: MockSpan[] | undefined = this.mock.spansOf(runId) ?? this.lb05.spansOf(runId)
+    const spans: MockSpan[] | undefined = this.mock.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb03.spansOf(runId)
     if (!spans) return failure(404, 'run_not_found', 'There is no trace for that run: its ID is unknown, or its trace has expired.')
     const seen = Number(search.get('after')?.split('-')[0] ?? 0)
     const finished = spans.some(span => span.kind === 'system.run' && span.parentId === undefined)

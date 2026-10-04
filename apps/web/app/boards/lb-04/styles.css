@@ -1,0 +1,202 @@
+/* The look LB-04's board parts share: sections, panels, buttons, chips, severity marks, tables and the
+   difference of a redline. Every colour is a token of the design system with a light and a dark value, and
+   a state is never shown by colour alone: it always has words, an icon or a shape beside it (a severity
+   is a word and a row of filled and empty marks; an insertion is underlined and a deletion is struck
+   through). The class names start with lb4- so they cannot meet anything else on the page. */
+
+.lb4-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lb4-section > h2,
+.lb4-panel > h2,
+.lb4-panel > h3 {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+.lb4-panel {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--lb-sheet);
+  border: 1px solid var(--lb-rule);
+}
+
+.lb4-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font: 600 13px/1.2 var(--lb-font-sans);
+  color: var(--lb-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.lb4-button:hover:not(:disabled) {
+  background: var(--lb-shade);
+}
+
+.lb4-button--primary {
+  min-height: 36px;
+  padding: 9px 18px;
+  color: var(--lb-sheet);
+  background: var(--lb-ink);
+}
+
+.lb4-button--primary:hover:not(:disabled) {
+  background: var(--lb-ink-hover);
+}
+
+.lb4-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.lb4-button--quiet {
+  border-color: var(--lb-rule);
+}
+
+.lb4-button[aria-pressed="true"] {
+  color: var(--lb-sheet);
+  background: var(--lb-ink);
+}
+
+/* Hovering a pressed button must not give it the plain button's hover background, which the text colour would not read on. */
+.lb4-button[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--lb-ink-hover);
+}
+
+.lb4-hint {
+  font-size: 12.5px;
+  color: var(--lb-graphite);
+}
+
+.lb4-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lb-ink);
+  background: var(--lb-shade);
+  border: 1px solid var(--lb-rule);
+  border-radius: 999px;
+}
+
+.lb4-chip--board {
+  background: var(--lb-board-tint);
+  border-color: var(--lb-board);
+}
+
+.lb4-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lb4-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A severity: its word, and four marks of which as many are filled as the severity weighs. */
+.lb4-severity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--lb-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lb4-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.lb4-pip {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+}
+
+.lb4-pip--on {
+  background: var(--lb-ink);
+}
+
+.lb4-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lb4-table-wrap:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb4-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.lb4-table th,
+.lb4-table td {
+  padding: 6px 10px 6px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--lb-rule);
+}
+
+.lb4-table th {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+/* A row's heading is the topic or the rule it is about, in the page's own type, not a column heading. */
+.lb4-table tbody th {
+  font-family: var(--lb-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--lb-ink);
+  text-transform: none;
+}
+
+/* The words of a redline: what the contract says that would go is struck through, and what would come is underlined. */
+.lb4-del {
+  color: var(--lb-graphite);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  background: var(--lb-shade);
+}
+
+.lb4-ins {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  background: var(--lb-board-tint);
+}

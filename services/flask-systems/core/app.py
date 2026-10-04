@@ -59,8 +59,12 @@ def health_blueprint(checks: Mapping[str, Callable[[], bool]]) -> APIBlueprint:
     return blueprint
 
 
-def create_app(platform: Platform, systems: Sequence[SystemModule]) -> OpenAPI:
-    """Build the Flask app that serves `systems` on `platform`."""
+def create_app(platform: Platform, systems: Sequence[SystemModule], start_background: bool = False) -> OpenAPI:
+    """Build the Flask app that serves `systems` on `platform`.
+
+    With `start_background`, as a booting worker asks, each system that works outside requests starts that work now.
+    A test's app and the one a command builds to read the OpenAPI document leave it off and start no thread.
+    """
     app = OpenAPI(
         __name__,
         info=Info(title=API_TITLE, version=API_VERSION, description=API_DESCRIPTION),
@@ -79,6 +83,8 @@ def create_app(platform: Platform, systems: Sequence[SystemModule]) -> OpenAPI:
         runtime = module.build(platform)
         app.register_api(runtime.blueprint)
         checks[module.schema] = runtime.is_ready
+        if start_background and runtime.start is not None:
+            runtime.start()
     app.register_api(health_blueprint(checks))
 
     @app.get("/api/openapi.json", doc_ui=False)
