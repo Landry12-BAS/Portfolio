@@ -215,7 +215,7 @@ export const systems = [
       { label: 'Runs per visitor per day', value: '2' },
       { label: 'Run time', value: '3 min' },
       { label: 'Network', value: 'Staging shop only' },
-      { label: 'Model calls per run (est.)', value: '5–8' },
+      { label: 'Model calls per run (est.)', value: '2–8' },
     ],
   },
   {

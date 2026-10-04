@@ -720,6 +720,560 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb07/bugs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The bugs the staging shop can switch on
+         * @description Six synthetic bugs, each with where a correct run finds it. The visitor chooses which are on; they travel to the shop in a token the service signs, which the agent can neither read nor change.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07BugView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What is left of the visitor's day, and the limits of the system
+         * @description Runs started today against the daily limit (a sample counts; a run the system could not start is given back), the goal's length, the run time, how long a run is kept, and when the day's allowance starts again.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07LimitsView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The visitor's runs of the last hour, newest first */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Start a test run: a curated sample, or the visitor's own goal and bugs
+         * @description The run is queued and answered at once; follow it with GET /runs/{id}. A run plans the test in one model call, runs it step by step in a sandboxed browser that can reach only the staging shop, asks the model again only when a step fails (twice at most), writes the bug reports from the findings code made, generates the Playwright test and verifies it red on the buggy shop and green on the clean one: 2 to 7 model calls. 2 runs a visitor a day; a goal is at most 300 characters; at most 4 runs wait for the one browser, and the next is told the system is busy (503 `busy`).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Lb07CreateRunRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One run: its state, its place in the queue, and its steps as they happen
+         * @description The state moves queued, planning, running (with replanning when a step failed), cross_checking, reporting, verifying, done; `failed` can follow any of them, with a code that says why. Poll this route while the run goes.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a run now
+         * @description Removes the run with its steps, findings, evidence, report and test at once, instead of at the end of the hour. It does not give back the visitor's run for the day.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/evidence/{evidenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One piece of evidence: a screenshot (PNG as base64) or a trimmed accessibility snapshot */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    evidenceId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07EvidenceView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The finished report: the findings code made, the bug reports the model wrote from them, and the verification
+         * @description 409 `not_ready` while the run goes, `run_failed` when it failed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07Report"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The generated Playwright test, as text, with its verdict
+         * @description Written by a template from the validated plan; every string is a JSON literal. The verdict says whether the test was red with the bugs on and green with them off. This service never runs it.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07TestView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The curated samples
+         * @description Goals from the golden set with the bugs each switches on: a wrong total, an off-by-one count, missing alt text, a checkout that fails in one engine, every bug at once, a clean shop, a link out of the shop, a goal that talks to the agent. Running one live takes one of the visitor's runs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07SampleView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lb08/catalogue": {
         parameters: {
             query?: never;
@@ -2270,6 +2824,382 @@ export interface components {
             id: string;
             pages: number;
             title: string;
+        };
+        Lb07BugView: {
+            /** @enum {string} */
+            id: "coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error";
+            summary: string;
+            surfaces: ("expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation")[];
+            title: string;
+        };
+        Lb07BugViewInput: {
+            /** @enum {string} */
+            id: "coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error";
+            summary: string;
+            surfaces: ("expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation")[];
+            title: string;
+        };
+        Lb07CreateRunRequest: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** @constant */
+            from: "custom";
+            goal: string;
+        };
+        Lb07CreateRunRequestInput: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** @constant */
+            from: "custom";
+            goal: string;
+        };
+        Lb07EvidenceView: {
+            base64: string;
+            /** @constant */
+            contentType: "image/png";
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "screenshot";
+            stepIndex: number | null;
+        } | {
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "snapshot";
+            stepIndex: number | null;
+            text: string;
+        };
+        Lb07EvidenceViewInput: {
+            base64: string;
+            /** @constant */
+            contentType: "image/png";
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "screenshot";
+            stepIndex: number | null;
+        } | {
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "snapshot";
+            stepIndex: number | null;
+            text: string;
+        };
+        Lb07LimitsView: {
+            keptMinutes: number;
+            maxBugs: number;
+            maxGoalLength: number;
+            maxQueued: number;
+            /** Format: date-time */
+            resetsAt: string;
+            runs: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            runTimeSeconds: number;
+        };
+        Lb07LimitsViewInput: {
+            keptMinutes: number;
+            maxBugs: number;
+            maxGoalLength: number;
+            maxQueued: number;
+            /** Format: date-time */
+            resetsAt: string;
+            runs: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            runTimeSeconds: number;
+        };
+        Lb07Report: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            durationMs: number;
+            engines: ("chromium" | "firefox-ua")[];
+            findings: {
+                detail: string;
+                /** @enum {string} */
+                engine: "chromium" | "firefox-ua";
+                evidenceIds: string[];
+                id: string;
+                /** @enum {string} */
+                kind: "expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation";
+                path: string | null;
+                rule: string | null;
+                stepIndex: number | null;
+                title: string;
+            }[];
+            findingsDropped: number;
+            goal: string;
+            modelCalls: number;
+            reading: string | null;
+            replans: number;
+            reports: {
+                actual: string;
+                expected: string;
+                findingIds: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                steps: string[];
+                title: string;
+            }[];
+            reportsDropped: number;
+            /** Format: uuid */
+            runId: string;
+            verification: {
+                green: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                red: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                /** @enum {string} */
+                verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+            };
+        };
+        Lb07ReportInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            durationMs: number;
+            engines: ("chromium" | "firefox-ua")[];
+            findings: {
+                detail: string;
+                /** @enum {string} */
+                engine: "chromium" | "firefox-ua";
+                evidenceIds: string[];
+                id: string;
+                /** @enum {string} */
+                kind: "expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation";
+                path: string | null;
+                rule: string | null;
+                stepIndex: number | null;
+                title: string;
+            }[];
+            findingsDropped: number;
+            goal: string;
+            modelCalls: number;
+            reading: string | null;
+            replans: number;
+            reports: {
+                actual: string;
+                expected: string;
+                findingIds: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                steps: string[];
+                title: string;
+            }[];
+            reportsDropped: number;
+            /** Format: uuid */
+            runId: string;
+            verification: {
+                green: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                red: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                /** @enum {string} */
+                verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+            };
+        };
+        Lb07RunView: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** Format: date-time */
+            createdAt: string;
+            endedAt: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "planning_unavailable" | "plan_invalid" | "plan_refused" | "runner_unavailable" | "run_timeout" | "goal_refused" | "internal";
+                message: string;
+            } | null;
+            findings: number;
+            goal: string;
+            /** Format: uuid */
+            id: string;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            queuePosition: number | null;
+            reading: string | null;
+            replans: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            startedAt: string | null;
+            /** @enum {string} */
+            state: "queued" | "planning" | "running" | "replanning" | "cross_checking" | "reporting" | "verifying" | "done" | "failed";
+            steps: {
+                durationMs: number | null;
+                index: number;
+                outcome: ("ok" | "not_found" | "ambiguous" | "timeout" | "blocked" | "expectation" | "error") | null;
+                plan: number;
+                /** @enum {string} */
+                status: "pending" | "running" | "passed" | "failed" | "finding" | "blocked" | "skipped";
+                step: {
+                    /** @constant */
+                    action: "goto";
+                    path: string;
+                } | {
+                    /** @constant */
+                    action: "click";
+                    name: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem";
+                } | {
+                    /** @constant */
+                    action: "fill";
+                    label: string;
+                    value: string;
+                } | {
+                    /** @constant */
+                    action: "select";
+                    label: string;
+                    option: string;
+                } | {
+                    /** @constant */
+                    action: "expectText";
+                    text: string;
+                } | {
+                    /** @constant */
+                    action: "expectCount";
+                    count: number;
+                    name?: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem" | "listitem" | "row" | "img" | "heading" | "textbox";
+                };
+            }[];
+        };
+        Lb07RunViewInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** Format: date-time */
+            createdAt: string;
+            endedAt: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "planning_unavailable" | "plan_invalid" | "plan_refused" | "runner_unavailable" | "run_timeout" | "goal_refused" | "internal";
+                message: string;
+            } | null;
+            findings: number;
+            goal: string;
+            /** Format: uuid */
+            id: string;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            queuePosition: number | null;
+            reading: string | null;
+            replans: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            startedAt: string | null;
+            /** @enum {string} */
+            state: "queued" | "planning" | "running" | "replanning" | "cross_checking" | "reporting" | "verifying" | "done" | "failed";
+            steps: {
+                durationMs: number | null;
+                index: number;
+                outcome: ("ok" | "not_found" | "ambiguous" | "timeout" | "blocked" | "expectation" | "error") | null;
+                plan: number;
+                /** @enum {string} */
+                status: "pending" | "running" | "passed" | "failed" | "finding" | "blocked" | "skipped";
+                step: {
+                    /** @constant */
+                    action: "goto";
+                    path: string;
+                } | {
+                    /** @constant */
+                    action: "click";
+                    name: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem";
+                } | {
+                    /** @constant */
+                    action: "fill";
+                    label: string;
+                    value: string;
+                } | {
+                    /** @constant */
+                    action: "select";
+                    label: string;
+                    option: string;
+                } | {
+                    /** @constant */
+                    action: "expectText";
+                    text: string;
+                } | {
+                    /** @constant */
+                    action: "expectCount";
+                    count: number;
+                    name?: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem" | "listitem" | "row" | "img" | "heading" | "textbox";
+                };
+            }[];
+        };
+        Lb07SampleView: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            goal: string;
+            id: string;
+            title: string;
+        };
+        Lb07SampleViewInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            goal: string;
+            id: string;
+            title: string;
+        };
+        Lb07TestView: {
+            filename: string;
+            /** @constant */
+            language: "typescript";
+            source: string;
+            /** @enum {string} */
+            verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+        };
+        Lb07TestViewInput: {
+            filename: string;
+            /** @constant */
+            language: "typescript";
+            source: string;
+            /** @enum {string} */
+            verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
         };
         LimitsView: {
             generations: {

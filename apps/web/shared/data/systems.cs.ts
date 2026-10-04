@@ -159,7 +159,7 @@ export const systemsCs = {
       { label: 'Běhů na návštěvníka za den', value: '2' },
       { label: 'Doba běhu', value: '3 min' },
       { label: 'Síť', value: 'Jen testovací e-shop' },
-      { label: 'Volání modelu na běh (odhad)', value: '5–8' },
+      { label: 'Volání modelu na běh (odhad)', value: '2–8' },
     ],
   },
   'lb-08': {

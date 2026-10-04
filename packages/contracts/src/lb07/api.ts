@@ -142,10 +142,11 @@ export const lb07VerificationPassSchema = z.strictObject({
   durationMs: z.int().min(0),
 })
 
-/** The red-then-green verification of the generated test. */
+/** The red-then-green verification of the generated test: the run itself (red, bugs on), the same plan in the second engine (bugs on), and the plan on the clean shop (green). */
 export const lb07VerificationSchema = z.strictObject({
   verdict: z.enum(LB07_VERDICTS),
   red: lb07VerificationPassSchema.nullable(),
+  cross: lb07VerificationPassSchema.nullable(),
   green: lb07VerificationPassSchema.nullable(),
 })
 

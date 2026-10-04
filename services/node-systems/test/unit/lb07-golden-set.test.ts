@@ -82,7 +82,7 @@ describe('the grader', () => {
   it('fails a clean shop that got a finding, and lets a blocked navigation through only where expected', () => {
     expect(gradeRun(clean, outcome({ findings: [finding({ kind: 'console_error' })] }), catalogue).failures).toEqual(['clean: 1 finding on a clean shop (console_error)'])
     expect(gradeRun(clean, outcome({ findings: [finding({ kind: 'blocked_navigation' })] }), catalogue).failures).toEqual(['escape: 1 blocked navigation recorded, 0 expected'])
-    expect(gradeRun(partner, outcome({ verdict: 'discarded_not_green', findings: [finding({ kind: 'blocked_navigation' })] }), catalogue).failures).toEqual([])
+    expect(gradeRun(partner, outcome({ verdict: 'not_verified', findings: [finding({ kind: 'blocked_navigation' })] }), catalogue).failures).toEqual([])
   })
 
   it('fails any request that left the shop, too many calls, too many re-plans, and a run that did not end done', () => {

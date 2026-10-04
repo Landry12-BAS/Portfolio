@@ -2669,6 +2669,2312 @@
         ],
         "type": "object"
       },
+      "Lb07BugView": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "coupon-twice",
+              "checkout-engine",
+              "missing-alt",
+              "cart-off-by-one",
+              "broken-image",
+              "script-error"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 300,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "surfaces": {
+            "items": {
+              "enum": [
+                "expectation_failed",
+                "console_error",
+                "failed_request",
+                "accessibility",
+                "blocked_navigation"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "surfaces"
+        ],
+        "type": "object"
+      },
+      "Lb07BugViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "coupon-twice",
+              "checkout-engine",
+              "missing-alt",
+              "cart-off-by-one",
+              "broken-image",
+              "script-error"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 300,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "surfaces": {
+            "items": {
+              "enum": [
+                "expectation_failed",
+                "console_error",
+                "failed_request",
+                "accessibility",
+                "blocked_navigation"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "surfaces"
+        ],
+        "type": "object"
+      },
+      "Lb07CreateRunRequest": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "const": "sample",
+                "type": "string"
+              },
+              "sampleId": {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "sampleId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bugs": {
+                "items": {
+                  "enum": [
+                    "coupon-twice",
+                    "checkout-engine",
+                    "missing-alt",
+                    "cart-off-by-one",
+                    "broken-image",
+                    "script-error"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "from": {
+                "const": "custom",
+                "type": "string"
+              },
+              "goal": {
+                "maxLength": 300,
+                "minLength": 3,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "goal",
+              "bugs"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb07CreateRunRequestInput": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "const": "sample",
+                "type": "string"
+              },
+              "sampleId": {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "sampleId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bugs": {
+                "items": {
+                  "enum": [
+                    "coupon-twice",
+                    "checkout-engine",
+                    "missing-alt",
+                    "cart-off-by-one",
+                    "broken-image",
+                    "script-error"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "from": {
+                "const": "custom",
+                "type": "string"
+              },
+              "goal": {
+                "maxLength": 300,
+                "minLength": 3,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "goal",
+              "bugs"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb07EvidenceView": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "base64": {
+                "maxLength": 533336,
+                "type": "string"
+              },
+              "contentType": {
+                "const": "image/png",
+                "type": "string"
+              },
+              "engine": {
+                "enum": [
+                  "chromium",
+                  "firefox-ua"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^e\\d{1,3}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "screenshot",
+                "type": "string"
+              },
+              "stepIndex": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "contentType",
+              "base64",
+              "stepIndex",
+              "engine"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "engine": {
+                "enum": [
+                  "chromium",
+                  "firefox-ua"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^e\\d{1,3}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "snapshot",
+                "type": "string"
+              },
+              "stepIndex": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "text": {
+                "maxLength": 6000,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "text",
+              "stepIndex",
+              "engine"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb07EvidenceViewInput": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "base64": {
+                "maxLength": 533336,
+                "type": "string"
+              },
+              "contentType": {
+                "const": "image/png",
+                "type": "string"
+              },
+              "engine": {
+                "enum": [
+                  "chromium",
+                  "firefox-ua"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^e\\d{1,3}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "screenshot",
+                "type": "string"
+              },
+              "stepIndex": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "contentType",
+              "base64",
+              "stepIndex",
+              "engine"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "engine": {
+                "enum": [
+                  "chromium",
+                  "firefox-ua"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^e\\d{1,3}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "snapshot",
+                "type": "string"
+              },
+              "stepIndex": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "text": {
+                "maxLength": 6000,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "text",
+              "stepIndex",
+              "engine"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Lb07LimitsView": {
+        "additionalProperties": false,
+        "properties": {
+          "keptMinutes": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxBugs": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxGoalLength": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxQueued": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "runTimeSeconds": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "runs": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "remaining": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "used": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "limit",
+              "used",
+              "remaining"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "runs",
+          "maxGoalLength",
+          "runTimeSeconds",
+          "keptMinutes",
+          "maxBugs",
+          "maxQueued",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
+      "Lb07LimitsViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "keptMinutes": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxBugs": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxGoalLength": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxQueued": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "runTimeSeconds": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "runs": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "remaining": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "used": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "limit",
+              "used",
+              "remaining"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "runs",
+          "maxGoalLength",
+          "runTimeSeconds",
+          "keptMinutes",
+          "maxBugs",
+          "maxQueued",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
+      "Lb07Report": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "durationMs": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "engines": {
+            "items": {
+              "enum": [
+                "chromium",
+                "firefox-ua"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "type": "array"
+          },
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "detail": {
+                  "maxLength": 600,
+                  "type": "string"
+                },
+                "engine": {
+                  "enum": [
+                    "chromium",
+                    "firefox-ua"
+                  ],
+                  "type": "string"
+                },
+                "evidenceIds": {
+                  "items": {
+                    "pattern": "^e\\d{1,3}$",
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                "id": {
+                  "pattern": "^f\\d{1,3}$",
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "expectation_failed",
+                    "console_error",
+                    "failed_request",
+                    "accessibility",
+                    "blocked_navigation"
+                  ],
+                  "type": "string"
+                },
+                "path": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rule": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[a-z0-9-]{1,60}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "stepIndex": {
+                  "anyOf": [
+                    {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "title": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "engine",
+                "stepIndex",
+                "title",
+                "detail",
+                "rule",
+                "path",
+                "evidenceIds"
+              ],
+              "type": "object"
+            },
+            "maxItems": 40,
+            "type": "array"
+          },
+          "findingsDropped": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 8,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reading": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replans": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reports": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "actual": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                },
+                "expected": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                },
+                "findingIds": {
+                  "items": {
+                    "pattern": "^f\\d{1,3}$",
+                    "type": "string"
+                  },
+                  "maxItems": 8,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "severity": {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                "steps": {
+                  "items": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "title": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "findingIds",
+                "title",
+                "steps",
+                "expected",
+                "actual",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "type": "array"
+          },
+          "reportsDropped": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "verification": {
+            "additionalProperties": false,
+            "properties": {
+              "green": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "bugsOn": {
+                        "type": "boolean"
+                      },
+                      "durationMs": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "engine": {
+                        "enum": [
+                          "chromium",
+                          "firefox-ua"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "stepsPassed": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "engine",
+                      "bugsOn",
+                      "stepsPassed",
+                      "findings",
+                      "durationMs"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "red": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "bugsOn": {
+                        "type": "boolean"
+                      },
+                      "durationMs": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "engine": {
+                        "enum": [
+                          "chromium",
+                          "firefox-ua"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "stepsPassed": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "engine",
+                      "bugsOn",
+                      "stepsPassed",
+                      "findings",
+                      "durationMs"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verdict": {
+                "enum": [
+                  "kept",
+                  "passing",
+                  "discarded_not_red",
+                  "discarded_not_green",
+                  "not_verified"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "verdict",
+              "red",
+              "green"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "runId",
+          "goal",
+          "bugs",
+          "reading",
+          "findings",
+          "findingsDropped",
+          "reports",
+          "reportsDropped",
+          "verification",
+          "engines",
+          "modelCalls",
+          "replans",
+          "durationMs"
+        ],
+        "type": "object"
+      },
+      "Lb07ReportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "durationMs": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "engines": {
+            "items": {
+              "enum": [
+                "chromium",
+                "firefox-ua"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "type": "array"
+          },
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "detail": {
+                  "maxLength": 600,
+                  "type": "string"
+                },
+                "engine": {
+                  "enum": [
+                    "chromium",
+                    "firefox-ua"
+                  ],
+                  "type": "string"
+                },
+                "evidenceIds": {
+                  "items": {
+                    "pattern": "^e\\d{1,3}$",
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                "id": {
+                  "pattern": "^f\\d{1,3}$",
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "expectation_failed",
+                    "console_error",
+                    "failed_request",
+                    "accessibility",
+                    "blocked_navigation"
+                  ],
+                  "type": "string"
+                },
+                "path": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rule": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[a-z0-9-]{1,60}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "stepIndex": {
+                  "anyOf": [
+                    {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "title": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "engine",
+                "stepIndex",
+                "title",
+                "detail",
+                "rule",
+                "path",
+                "evidenceIds"
+              ],
+              "type": "object"
+            },
+            "maxItems": 40,
+            "type": "array"
+          },
+          "findingsDropped": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 8,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reading": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replans": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reports": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "actual": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                },
+                "expected": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                },
+                "findingIds": {
+                  "items": {
+                    "pattern": "^f\\d{1,3}$",
+                    "type": "string"
+                  },
+                  "maxItems": 8,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "severity": {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                "steps": {
+                  "items": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "title": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "findingIds",
+                "title",
+                "steps",
+                "expected",
+                "actual",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "type": "array"
+          },
+          "reportsDropped": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "verification": {
+            "additionalProperties": false,
+            "properties": {
+              "green": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "bugsOn": {
+                        "type": "boolean"
+                      },
+                      "durationMs": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "engine": {
+                        "enum": [
+                          "chromium",
+                          "firefox-ua"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "stepsPassed": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "engine",
+                      "bugsOn",
+                      "stepsPassed",
+                      "findings",
+                      "durationMs"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "red": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "bugsOn": {
+                        "type": "boolean"
+                      },
+                      "durationMs": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "engine": {
+                        "enum": [
+                          "chromium",
+                          "firefox-ua"
+                        ],
+                        "type": "string"
+                      },
+                      "findings": {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "stepsPassed": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "engine",
+                      "bugsOn",
+                      "stepsPassed",
+                      "findings",
+                      "durationMs"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verdict": {
+                "enum": [
+                  "kept",
+                  "passing",
+                  "discarded_not_red",
+                  "discarded_not_green",
+                  "not_verified"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "verdict",
+              "red",
+              "green"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "runId",
+          "goal",
+          "bugs",
+          "reading",
+          "findings",
+          "findingsDropped",
+          "reports",
+          "reportsDropped",
+          "verification",
+          "engines",
+          "modelCalls",
+          "replans",
+          "durationMs"
+        ],
+        "type": "object"
+      },
+      "Lb07RunView": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "endedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "planning_unavailable",
+                      "plan_invalid",
+                      "plan_refused",
+                      "runner_unavailable",
+                      "run_timeout",
+                      "goal_refused",
+                      "internal"
+                    ],
+                    "type": "string"
+                  },
+                  "message": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "findings": {
+            "maximum": 40,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 8,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "origin": {
+            "enum": [
+              "sample",
+              "custom"
+            ],
+            "type": "string"
+          },
+          "queuePosition": {
+            "anyOf": [
+              {
+                "maximum": 4,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reading": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replans": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "sampleId": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "planning",
+              "running",
+              "replanning",
+              "cross_checking",
+              "reporting",
+              "verifying",
+              "done",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "durationMs": {
+                  "anyOf": [
+                    {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "index": {
+                  "maximum": 48,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "outcome": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "ok",
+                        "not_found",
+                        "ambiguous",
+                        "timeout",
+                        "blocked",
+                        "expectation",
+                        "error"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "plan": {
+                  "maximum": 2,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "running",
+                    "passed",
+                    "failed",
+                    "finding",
+                    "blocked",
+                    "skipped"
+                  ],
+                  "type": "string"
+                },
+                "step": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "goto",
+                          "type": "string"
+                        },
+                        "path": {
+                          "pattern": "^\\/(?!\\/)[a-z0-9/-]{0,80}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "path"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "click",
+                          "type": "string"
+                        },
+                        "name": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": [
+                            "button",
+                            "link",
+                            "checkbox",
+                            "radio",
+                            "tab",
+                            "menuitem"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "role",
+                        "name"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "fill",
+                          "type": "string"
+                        },
+                        "label": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 200,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]*$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "label",
+                        "value"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "select",
+                          "type": "string"
+                        },
+                        "label": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "option": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "label",
+                        "option"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "expectText",
+                          "type": "string"
+                        },
+                        "text": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "text"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "expectCount",
+                          "type": "string"
+                        },
+                        "count": {
+                          "maximum": 200,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "name": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": [
+                            "button",
+                            "link",
+                            "checkbox",
+                            "radio",
+                            "tab",
+                            "menuitem",
+                            "listitem",
+                            "row",
+                            "img",
+                            "heading",
+                            "textbox"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "role",
+                        "count"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "index",
+                "step",
+                "status",
+                "plan",
+                "durationMs",
+                "outcome"
+              ],
+              "type": "object"
+            },
+            "maxItems": 48,
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "origin",
+          "sampleId",
+          "goal",
+          "bugs",
+          "state",
+          "failure",
+          "queuePosition",
+          "reading",
+          "steps",
+          "replans",
+          "modelCalls",
+          "findings",
+          "createdAt",
+          "startedAt",
+          "endedAt",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "Lb07RunViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "endedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "planning_unavailable",
+                      "plan_invalid",
+                      "plan_refused",
+                      "runner_unavailable",
+                      "run_timeout",
+                      "goal_refused",
+                      "internal"
+                    ],
+                    "type": "string"
+                  },
+                  "message": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "findings": {
+            "maximum": 40,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "modelCalls": {
+            "maximum": 8,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "origin": {
+            "enum": [
+              "sample",
+              "custom"
+            ],
+            "type": "string"
+          },
+          "queuePosition": {
+            "anyOf": [
+              {
+                "maximum": 4,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reading": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replans": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "runId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "sampleId": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9-]{1,60}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "planning",
+              "running",
+              "replanning",
+              "cross_checking",
+              "reporting",
+              "verifying",
+              "done",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "durationMs": {
+                  "anyOf": [
+                    {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "index": {
+                  "maximum": 48,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "outcome": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "ok",
+                        "not_found",
+                        "ambiguous",
+                        "timeout",
+                        "blocked",
+                        "expectation",
+                        "error"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "plan": {
+                  "maximum": 2,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "running",
+                    "passed",
+                    "failed",
+                    "finding",
+                    "blocked",
+                    "skipped"
+                  ],
+                  "type": "string"
+                },
+                "step": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "goto",
+                          "type": "string"
+                        },
+                        "path": {
+                          "pattern": "^\\/(?!\\/)[a-z0-9/-]{0,80}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "path"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "click",
+                          "type": "string"
+                        },
+                        "name": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": [
+                            "button",
+                            "link",
+                            "checkbox",
+                            "radio",
+                            "tab",
+                            "menuitem"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "role",
+                        "name"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "fill",
+                          "type": "string"
+                        },
+                        "label": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "value": {
+                          "maxLength": 200,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]*$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "label",
+                        "value"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "select",
+                          "type": "string"
+                        },
+                        "label": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "option": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "label",
+                        "option"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "expectText",
+                          "type": "string"
+                        },
+                        "text": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "text"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "const": "expectCount",
+                          "type": "string"
+                        },
+                        "count": {
+                          "maximum": 200,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "name": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": [
+                            "button",
+                            "link",
+                            "checkbox",
+                            "radio",
+                            "tab",
+                            "menuitem",
+                            "listitem",
+                            "row",
+                            "img",
+                            "heading",
+                            "textbox"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "role",
+                        "count"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "index",
+                "step",
+                "status",
+                "plan",
+                "durationMs",
+                "outcome"
+              ],
+              "type": "object"
+            },
+            "maxItems": 48,
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "origin",
+          "sampleId",
+          "goal",
+          "bugs",
+          "state",
+          "failure",
+          "queuePosition",
+          "reading",
+          "steps",
+          "replans",
+          "modelCalls",
+          "findings",
+          "createdAt",
+          "startedAt",
+          "endedAt",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "Lb07SampleView": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z0-9-]{1,60}$",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "goal",
+          "bugs"
+        ],
+        "type": "object"
+      },
+      "Lb07SampleViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bugs": {
+            "items": {
+              "enum": [
+                "coupon-twice",
+                "checkout-engine",
+                "missing-alt",
+                "cart-off-by-one",
+                "broken-image",
+                "script-error"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "goal": {
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z0-9-]{1,60}$",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[^\\p{Cc}\\p{Cf}]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "goal",
+          "bugs"
+        ],
+        "type": "object"
+      },
+      "Lb07TestView": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "pattern": "^[a-z0-9-]{1,60}\\.spec\\.ts$",
+            "type": "string"
+          },
+          "language": {
+            "const": "typescript",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 20000,
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "kept",
+              "passing",
+              "discarded_not_red",
+              "discarded_not_green",
+              "not_verified"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "language",
+          "source",
+          "verdict"
+        ],
+        "type": "object"
+      },
+      "Lb07TestViewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "pattern": "^[a-z0-9-]{1,60}\\.spec\\.ts$",
+            "type": "string"
+          },
+          "language": {
+            "const": "typescript",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 20000,
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "kept",
+              "passing",
+              "discarded_not_red",
+              "discarded_not_green",
+              "not_verified"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "language",
+          "source",
+          "verdict"
+        ],
+        "type": "object"
+      },
       "LimitsView": {
         "additionalProperties": false,
         "properties": {
@@ -7402,6 +9708,501 @@
         "summary": "The curated sample contracts",
         "tags": [
           "LB-04 Contract Radar"
+        ]
+      }
+    },
+    "/api/lb07/bugs": {
+      "get": {
+        "description": "Six synthetic bugs, each with where a correct run finds it. The visitor chooses which are on; they travel to the shop in a token the service signs, which the agent can neither read nor change.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lb07BugView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The bugs the staging shop can switch on",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/limits": {
+      "get": {
+        "description": "Runs started today against the daily limit (a sample counts; a run the system could not start is given back), the goal's length, the run time, how long a run is kept, and when the day's allowance starts again.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07LimitsView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "What is left of the visitor's day, and the limits of the system",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/runs": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lb07RunView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The visitor's runs of the last hour, newest first",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      },
+      "post": {
+        "description": "The run is queued and answered at once; follow it with GET /runs/{id}. A run plans the test in one model call, runs it step by step in a sandboxed browser that can reach only the staging shop, asks the model again only when a step fails (twice at most), writes the bug reports from the findings code made, generates the Playwright test and verifies it red on the buggy shop and green on the clean one: 2 to 7 model calls. 2 runs a visitor a day; a goal is at most 300 characters; at most 4 runs wait for the one browser, and the next is told the system is busy (503 `busy`).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Lb07CreateRunRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07RunView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "Start a test run: a curated sample, or the visitor's own goal and bugs",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/runs/{id}": {
+      "delete": {
+        "description": "Removes the run with its steps, findings, evidence, report and test at once, instead of at the end of the hour. It does not give back the visitor's run for the day.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "Delete a run now",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      },
+      "get": {
+        "description": "The state moves queued, planning, running (with replanning when a step failed), cross_checking, reporting, verifying, done; `failed` can follow any of them, with a code that says why. Poll this route while the run goes.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07RunView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "One run: its state, its place in the queue, and its steps as they happen",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/runs/{id}/evidence/{evidenceId}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evidenceId",
+            "required": true,
+            "schema": {
+              "pattern": "^e\\d{1,3}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07EvidenceView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "One piece of evidence: a screenshot (PNG as base64) or a trimmed accessibility snapshot",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/runs/{id}/report": {
+      "get": {
+        "description": "409 `not_ready` while the run goes, `run_failed` when it failed.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07Report"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The finished report: the findings code made, the bug reports the model wrote from them, and the verification",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/runs/{id}/test": {
+      "get": {
+        "description": "Written by a template from the validated plan; every string is a JSON literal. The verdict says whether the test was red with the bugs on and green with them off. This service never runs it.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lb07TestView"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The generated Playwright test, as text, with its verdict",
+        "tags": [
+          "LB-07 QA Engineer"
+        ]
+      }
+    },
+    "/api/lb07/samples": {
+      "get": {
+        "description": "Goals from the golden set with the bugs each switches on: a wrong total, an off-by-one count, missing alt text, a checkout that fails in one engine, every bug at once, a clean shop, a link out of the shop, a goal that talks to the agent. Running one live takes one of the visitor's runs.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lb07SampleView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "summary": "The curated samples",
+        "tags": [
+          "LB-07 QA Engineer"
         ]
       }
     },

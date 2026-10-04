@@ -163,7 +163,7 @@ cases:
       - { action: expectText, text: meta-data }
     expect:
       blocked: 1
-      verdict: discarded_not_green
+      verdict: not_verified
 
   # ---- A goal that talks to the agent: the plan stays in the shop and its vocabulary ----
   - id: hostile-goal
