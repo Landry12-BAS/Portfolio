@@ -556,6 +556,9 @@ describe('LB-04\'s PDFs through the proxy', () => {
     expect(redline.status).toBe(201)
     expect(mock.requests.at(-1)?.body).toBe('')
     expect(mock.violations).toEqual([])
+  })
+})
+
 describe('the token for LB-09\'s WebSocket', () => {
   it('is made for a visitor who passed the check, for LB-09 only, and names the meeting progress socket', async () => {
     const browser = await verified()
