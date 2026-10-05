@@ -50,6 +50,9 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // A report with a redline, a fair contract with nothing to report, and a scan the system must refuse.
   // The other three samples have no recording on purpose, so the tests can run them live on the mock.
   'lb-04': ['wholesale-supply', 'clean-supply', 'scanned-supply'],
+  // The bad deploy that a rollback cures and the slow payment provider that the agents trace to its flag. The other
+  // two samples (the memory leak and the cache stampede) have no recording on purpose, so the tests can run them live.
+  'lb-06': ['bad-deploy', 'slow-payment'],
 }
 
 // The moment LB-02's mock stands still at.
@@ -58,6 +61,8 @@ const LB02_NOW = Date.parse('2026-10-02T09:30:00.000Z')
 // The systems whose mock moves on with time (a retry waits for its backoff) need a clock that the
 // recorder moves by waiting; the others move on as they are read and never wait.
 const TIMED = new Set(['lb-08'])
+// The systems whose mock runs on a timer of its own (LB-06's shop ticks every few milliseconds) are read on the wall clock.
+const REAL_TIME = new Set(['lb-06'])
 
 /** A clock that moves only when the recorder waits, shared by the recorder, its tokens and the mock. */
 function virtualClock(): Clock {
@@ -69,6 +74,11 @@ function virtualClock(): Clock {
       return Promise.resolve()
     },
   }
+}
+
+/** A clock that is the wall clock: the mock moves on by itself, and the recorder waits for it. */
+function realClock(): Clock {
+  return { now: () => Date.now(), sleep: ms => new Promise(resolve => setTimeout(resolve, ms)) }
 }
 
 /** A clock that never waits: the mock's pipeline moves on as it is read. */
@@ -84,6 +94,7 @@ function stillClock(at: number): Clock {
 /** Picks the clock a system's recording runs on. */
 function clockFor(system: string): Clock {
   if (system === 'lb-02') return stillClock(LB02_NOW)
+  if (REAL_TIME.has(system)) return realClock()
   return TIMED.has(system) ? virtualClock() : instantClock()
 }
 
@@ -93,8 +104,8 @@ async function resetLb02(origin: string): Promise<void> {
   if (!answer.ok) throw new Error(`The mock would not reset LB-02 (status ${answer.status}).`)
 }
 
-/** Records a system's samples on a mock of its own and writes them under the folder. */
-async function recordSystem(system: string, samples: readonly string[], folder: string): Promise<void> {
+/** Records some of a system's samples on one mock and writes them under the folder. */
+async function recordOnOneMock(system: string, samples: readonly string[], folder: string): Promise<void> {
   const clock = clockFor(system)
   const siteKeys = generateKeyPairSync('ed25519')
   const webKeys = generateKeyPairSync('ed25519')
@@ -102,6 +113,8 @@ async function recordSystem(system: string, samples: readonly string[], folder: 
     siteKey: siteKeys.publicKey.export({ format: 'jwk' }).x ?? '',
     webKey: webKeys.publicKey.export({ format: 'jwk' }).x ?? '',
     now: clock.now,
+    // LB-06's shop ticks slowly enough that a recording shows the incident unfold in steps, and not as one jump.
+    lb06: { tickMs: 150 },
   })
   try {
     const backend = new Backend({
@@ -121,6 +134,18 @@ async function recordSystem(system: string, samples: readonly string[], folder: 
   finally {
     await mock.close()
   }
+}
+
+// The systems that let a visitor start one thing a day (LB-06's incident) get a fresh mock for each sample, as a fresh day.
+const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06'])
+
+/** Records a system's samples on a mock of its own, or on one mock for each when the system allows one a day, and writes them under the folder. */
+async function recordSystem(system: string, samples: readonly string[], folder: string): Promise<void> {
+  if (!FRESH_MOCK_PER_SAMPLE.has(system)) {
+    await recordOnOneMock(system, samples, folder)
+    return
+  }
+  for (const sample of samples) await recordOnOneMock(system, [sample], folder)
 }
 
 const asked = process.argv.slice(2)

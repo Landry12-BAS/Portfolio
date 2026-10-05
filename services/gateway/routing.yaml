@@ -412,6 +412,25 @@ systems:
     # `budget_exhausted` (the demo then says so, and the samples go on working).
     dailyCalls: 160
 
+  lb-06:
+    name: Incident Commander
+    service: node-systems
+    aliases: [lb-reason, lb-tools, lb-guard]
+    # An incident costs the injection screen on the visitor's own words, when there are any
+    # (lb-guard, 1), the commander's plan (lb-reason, 1), the three specialists' turns (lb-tools,
+    # at most 2 each: one that may call the read-only tools the server runs, and a last one that
+    # must answer), the ranking with its proposal (lb-reason, 1) and the postmortem's prose
+    # (lb-reason, 1): 9 or 10 calls on a clean run, plus one repair for any answer that fails its
+    # schema, and one more ranking for each proposal the visitor rejects or that does not bring
+    # the SLO back. The orchestrator stops asking at 15 (the datasheet's step cap) and never asks
+    # the model to count; the gateway's cap is the second line behind it.
+    maxCallsPerRun: 15
+    # 1 incident per visitor per day (the LB-06 datasheet), at up to 15 calls.
+    sessionDailyCalls: 15
+    # About 10 custom incidents a day at the cap, and one full pass of the golden set (eight
+    # incidents, about 72 calls) when a prompt changes. A curated sample's agents' work is cached
+    # by scenario after its first run, so the samples spend nothing after that.
+    dailyCalls: 230
   lb-07:
     name: QA Engineer
     service: node-systems
@@ -441,4 +460,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-07]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-06, lb-07]

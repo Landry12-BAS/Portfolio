@@ -174,6 +174,11 @@ eval-lb08 *args:
 eval-lb04 *args:
     pnpm --filter @lb/node-systems eval:lb04 {{args}}
 
+# Needs the gateway with provider keys, and costs 9 calls a case on a clean run and 15 at the cap: eight cases, about 72 calls; `--samples` or `--case ID` run fewer.
+# Run LB-06's golden set through the whole simulator and the live agents, and grade it by rules.
+eval-lb06 *args:
+    pnpm --filter @lb/node-systems eval:lb06 {{args}}
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high

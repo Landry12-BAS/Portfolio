@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...`, `/api/lb06/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -162,6 +162,15 @@ how a Vercel preview runs.
   conversation, the calendar or a recording, and a WebSocket does not pass through a service
   worker at all. The page is fetched from the network first, so a visitor who is online always
   gets the current page. A test fails if the worker ever stores an API or WebSocket address.
+- **LB-06's board: the feed.** The incident's feed, like LB-02's conversation, connects from the
+  visitor's browser straight to the API: `POST /api/tokens/lb-06` gives the page a five-minute
+  grant and the socket's address, from the same setting the proxy uses, the token goes in the
+  first frame and never in an address, and the page refuses an address that is not `ws:` or `wss:`
+  or that carries credentials. Only LB-06's two board pages get a longer policy, and the one
+  addition is the smallest that works: `connect-src` gains the API's `ws(s)://host` (no wildcard).
+  Nothing else changes: no service worker, no Web Worker, no new Trusted Types policy
+  (`apps/web/server/lib/lb06-csp.ts`, tested in `test/unit/lb06-csp.test.ts` and against the headers
+  a browser gets in `e2e/security.spec.ts`). The page polls the events route when the socket drops.
 - **LB-04's board: the PDF viewer.** The viewer draws a contract's PDF with pdf.js
   (`pdfjs-dist`), loaded only when a visitor asks to see the pages (the build leaves it out of
   the page's prefetch hints), and only from the site's own origin. pdf.js works in a Web Worker,
@@ -311,7 +320,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01, LB-02, LB-03, LB-05 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01 to LB-06 and LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and
@@ -320,19 +329,22 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues (LB-08's and LB-04's, each under its
-  own pattern), and for every service its own run
+  channel layer, the Node systems' BullMQ queues (LB-08's, LB-04's and LB-06's, each under its
+  own pattern) and LB-06's feeds (a stream per incident), and for every service its own run
   spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's, the Node systems' (LB-08's and LB-04's), and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's, LB-04's and LB-06's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
   read-only: a compromised API cannot change the data it answers from. The volume holds
   nothing but synthetic data, is not backed up, and is made again when it is missing.
-- **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
-  to the rest), the visitor token travels in the first frame and never in the address, and
-  uvicorn refuses a frame over 8192 bytes before the service reads it.
+- **WebSockets** (LB-02's at `/ws/lb02/`, LB-06's at `/ws/lb06/`): only the site's origin may
+  open one (Caddy checks it, and answers `403` to the rest), the visitor token travels in the
+  first frame and never in the address, uvicorn refuses a frame over 8192 bytes before LB-02
+  reads it and Fastify one over 4096 before LB-06 does, and LB-06 holds a visitor to four
+  connections and a process to 256, pings every half minute and closes after fifteen minutes
+  of silence (`services/node-systems/src/modules/lb06/engine/socket.ts`).
 - **R2:** one scoped token per bucket. LB-03's uploads bucket is private (nothing sets an ACL
   or makes a public address), its token may read, write and delete there and nowhere else,
   and its one-day lifecycle rule is a backstop behind the service's own hourly sweep.
@@ -352,6 +364,14 @@ attempts. Every prompt change must pass it.
   never sees a passage that talks to it. Its limits and what is not covered are in
   [`services/node-systems/README.md`](../services/node-systems/README.md), "Threat model of
   LB-04".
+- **LB-06's incidents:** the visitor's two strings (a version label, a flag's name, 40
+  characters each from a pattern with no `<` or `>`) go to the injection screen first and then
+  into a delimited data slot of the agents' prompts, never into a system prompt; the agents
+  can only cite evidence the server holds and propose an action from a closed list, and nothing
+  changes the simulated shop without the visitor's click, which is a server-side transition
+  checked against the pending proposal's id. An incident, its log and the scenario cache live in
+  the `lb06` schema under their own role for a day, are left out of the backup, and are deleted
+  by a sweep. The rest is in the same README, "LB-06 threat model".
 
 ## 6. Containers and host
 
@@ -388,8 +408,9 @@ attempts. Every prompt change must pass it.
   regexes open to catastrophic backtracking), and CI fails on any high or critical
   advisory from `pnpm audit`. An advisory with no fix may be ignored only with its reason
   written beside the entry in `pnpm-workspace.yaml`, and the entry goes when a fix ships;
-  today that is GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
-  certificate helper reaches and the production build does not contain.
+  today those are GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
+  certificate helper reaches and the production build does not contain, and
+  GHSA-vfj7-8cjw-p6xm (braces), which only the build's locale-file globbing reaches.
 - **Every pull request** runs CodeQL and Semgrep on the code, gitleaks for secrets,
   pip-audit and pnpm audit on dependencies, and an OWASP ZAP baseline scan against the
   full stack started in CI.

@@ -37,6 +37,9 @@ import type { Language } from './seed.ts'
 import { Lb02Mock } from './lb02/index.ts'
 import { attachSockets } from './lb02/socket-server.ts'
 import { Lb05Mock } from './lb05.ts'
+import { Lb06Mock } from './lb06.ts'
+import type { Lb06MockOptions } from './lb06.ts'
+import { Lb06Hub } from './lb06-socket.ts'
 import { readLb05Seed } from './lb05-seed.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread. Two routes take more: LB-03's upload
@@ -72,6 +75,8 @@ export interface MockBackendOptions {
   lb03?: Lb03MockOptions
   // LB-04's review: how many times a contract is polled before it moves on to its next state.
   lb04?: Lb04MockOptions
+  // LB-06's clock: how fast the simulated minutes pass, and how long an incident may live.
+  lb06?: Lb06MockOptions
 }
 
 /** Something the mock should do instead of answering normally, once or several times. */
@@ -119,6 +124,7 @@ export interface MockBackend {
   lb02: Lb02Mock
   // LB-04's state and controls: its contracts and the reviews of them, and the failure the next review ends with.
   lb04: Lb04Mock
+  lb06: Lb06Mock
   // LB-05's state, for tests that look inside.
   lb05: Lb05Mock
   // LB-08's state: its workflows, runs and sandbox.
@@ -181,6 +187,8 @@ class MockSite {
   readonly lb01: Lb01Mock
   readonly lb02: Lb02Mock
   readonly lb04: Lb04Mock
+  readonly lb06: Lb06Mock
+  readonly lb06Hub: Lb06Hub
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
   readonly lb03: Lb03Mock
@@ -198,10 +206,12 @@ class MockSite {
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
     this.lb04 = new Lb04Mock(readLb04Seed(), this.#now, options.lb04)
+    this.lb06 = new Lb06Mock(this.#now, options.lb06)
+    this.lb06Hub = new Lb06Hub(this.lb06, token => this.#visitor(`Bearer ${token}`, 'lb-06')?.sessionKey)
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
     this.lb03 = new Lb03Mock(readLb03Seed(), this.#now, options.lb03)
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId))
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb06.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -217,6 +227,7 @@ class MockSite {
     this.lb01.reset()
     this.lb02.reset()
     this.lb04.reset()
+    this.lb06.reset()
     this.lb05.reset()
     this.lb08.reset()
     this.lb03.reset()
@@ -356,7 +367,7 @@ class MockSite {
       case 'POST /api/lb05/ask': return this.lb05.ask(session, (json as { question: string }).question)
       case 'GET /api/lb05/quota': return this.lb05.quota(session)
       case 'GET /api/lb05/semantic-layer': return this.lb05.semanticLayer()
-      default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search)
+      default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search) ?? this.#lb06Handler(operation, params, session, json, search)
     }
   }
 
@@ -371,6 +382,23 @@ class MockSite {
       case 'POST /api/lb03/documents/{document_id}/corrections': return this.lb03.correct(session, id, json as { path: string, value: string })
       case 'GET /api/lb03/documents/{document_id}/pages/{number}': return this.lb03.page(session, id, Number(params.number))
       case 'GET /api/lb03/documents/{document_id}/export': return this.lb03.exportDocument(session, id, search.get('format') ?? 'json')
+      default: return undefined
+    }
+  }
+
+  /** Runs the handler written for one of LB-06's operations, if there is one. */
+  #lb06Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown, search: URLSearchParams): Answer | undefined {
+    const id = params.id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb06/limits': return this.lb06.limits(session)
+      case 'GET /api/lb06/catalogue': return this.lb06.catalogue()
+      case 'POST /api/lb06/incidents': return this.lb06.start(session, json)
+      case 'GET /api/lb06/incidents': return this.lb06.list(session)
+      case 'GET /api/lb06/incidents/{id}': return this.lb06.get(session, id)
+      case 'GET /api/lb06/incidents/{id}/events': return this.lb06.events(session, id, search)
+      case 'POST /api/lb06/incidents/{id}/proposals/{proposalId}/decision': return this.lb06.decide(session, id, params.proposalId ?? '', json)
+      case 'POST /api/lb06/incidents/{id}/abort': return this.lb06.abort(session, id)
+      case 'GET /api/lb06/incidents/{id}/postmortem': return this.lb06.postmortem(session, id)
       default: return undefined
     }
   }
@@ -498,7 +526,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
       response.end(JSON.stringify({ error: { code: 'mock_failure', message: 'The mock back end failed.' } }))
     })
   })
-  const detachSockets = attachSockets(server, site.lb02.hub)
+  const detachSockets = attachSockets(server, site.lb02.hub, site.lb06Hub)
   await new Promise<void>((resolve) => {
     server.listen(options.port ?? 0, '127.0.0.1', resolve)
   })
@@ -510,6 +538,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb01: site.lb01,
     lb02: site.lb02,
     lb04: site.lb04,
+    lb06: site.lb06,
     lb05: site.lb05,
     lb08: site.lb08,
     lb03: site.lb03,

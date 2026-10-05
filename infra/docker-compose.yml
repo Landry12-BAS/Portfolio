@@ -487,9 +487,9 @@ services:
     cpu_shares: 1536
     pids_limit: 128
 
-  # LB-08 and LB-04 (the Node systems). Their migrations and their seeds are two jobs, because
+  # LB-08, LB-04 and LB-06 (the Node systems). Their migrations and their seeds are two jobs, because
   # the image has no shell to chain them with, and each system logs in as its own role, which
-  # owns its own schema (lb08, lb04) and can reach nothing else. The Redis URL they must have
+  # owns its own schema (lb08, lb04, lb06) and can reach nothing else. The Redis URL they must have
   # goes nowhere.
   node-migrate:
     <<: *node
@@ -499,6 +499,7 @@ services:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08:?LB_PG_PASSWORD_LB08 is not set}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04:?LB_PG_PASSWORD_LB04 is not set}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06:?LB_PG_PASSWORD_LB06 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       postgres-provision:
@@ -517,6 +518,7 @@ services:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       node-migrate:
@@ -534,12 +536,13 @@ services:
     environment:
       LB_NODE_HOST: 0.0.0.0
       LB_NODE_PORT: "8002"
-      # LB-08 logs in as the lb08 role and LB-04 as the lb04 role, each of which owns its own
-      # schema and can reach nothing else. The shared URL is LB-08's login, so a system that
-      # forgets its own fails closed.
+      # LB-08 logs in as the lb08 role, LB-04 as the lb04 role and LB-06 as the lb06 role, each of
+      # which owns its own schema and can reach nothing else. The shared URL is LB-08's login, so a
+      # system that forgets its own fails closed.
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS:?LB_REDIS_PASSWORD_NODE_SYSTEMS is not set}@redis:6379/0
       LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
       LB_GATEWAY_URL: http://gateway:8080
@@ -572,9 +575,10 @@ services:
     cpu_shares: 1536
     pids_limit: 128
 
-  # BullMQ's workers with their sweeps: one job per LB-08 workflow step, and one per LB-04
-  # contract under review. It serves no HTTP, but a review makes model calls (the guard, the
-  # reading and the rating), so it has the gateway and the service's key, as the API has, and
+  # BullMQ's workers with their sweeps: one job per LB-08 workflow step, one per LB-04
+  # contract under review, and one per LB-06 incident for its whole life (a few minutes: the
+  # simulated clock ticks every two seconds, and the agents' calls run beside it). It serves no
+  # HTTP, but a review and an incident make model calls, so it has the gateway and the service's key, as the API has, and
   # starts with neither missing. Its health check reads a heartbeat file that the entrypoint
   # renews while the event loop turns.
   node-worker:
@@ -586,6 +590,7 @@ services:
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS}@redis:6379/0
       LB_GATEWAY_URL: http://gateway:8080
       LB_SERVICE_NAME: node-systems
@@ -620,7 +625,10 @@ services:
     # about 760 MB if a hostile file takes everything a thread may have. Past the container's
     # limit the process is killed and BullMQ gives its jobs to the next worker, a contract
     # is started at most six times before it is ended as failed, and a thread that reaches its
-    # own limit fails only its file.
+    # own limit fails only its file. LB-06 adds no container and no limit: an incident's tick
+    # rebuilds its shop from the seed in about 15 to 20 ms every two seconds (under 1% of a core
+    # each, eight at once at most) and keeps a few kilobytes beside its log in Postgres, so it
+    # lives inside this limit and the API's.
     mem_limit: 768m
     memswap_limit: 768m
     cpus: 1.0

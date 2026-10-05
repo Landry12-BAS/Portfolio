@@ -153,7 +153,7 @@ visitor runs a day before replay mode takes over. That is enough for a portfolio
 three heavy systems are designed to be frugal:
 
 - **LB-06** keeps detection and correlation in deterministic code, and its agents
-  reason over compact summaries: 10 to 15 calls per incident.
+  reason over compact summaries: 9 to 15 calls per incident.
 - **LB-07** plans the test once, runs it with Playwright, and asks the model again
   only when a step fails: 5 to 8 calls per run.
 - **LB-10** visitor runs use 10 cases and rule-based graders, about 20 calls. The LLM

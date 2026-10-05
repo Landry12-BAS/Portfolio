@@ -158,13 +158,16 @@ describe('the real queue', () => {
     expect(view.failure?.code).toBe('analysis_unavailable')
     const job = await waitFor('the job to complete', async () => {
       const found = await inspector.getJob(id)
-      return (await found?.getState()) === 'completed' ? found : undefined
+      if ((await found?.getState()) !== 'completed') return undefined
+      // Read it again: the job may have completed between the two reads above, and the first copy would say two attempts.
+      return inspector.getJob(id)
     })
     expect(job.attemptsMade).toBe(3)
     expect(long.conversations).toHaveLength(3)
     const counter = await harness.query(`SELECT used FROM lb04.usage_counters WHERE session_key = $1 AND kind = 'contract'`, [VISITOR_A])
     expect(counter[0]?.used).toBe(0)
-    expect(harness.spans.spans.filter(span => span.name === 'contract review')).toHaveLength(1)
+    // This contract's own root span: a span a previous test's job writes late is not this contract's.
+    expect(harness.spans.spans.filter(span => span.name === 'contract review' && span.runId === id)).toHaveLength(1)
   })
 
   it('does not retry a contract whose model has no quota left: one attempt, then failed as unavailable', async () => {

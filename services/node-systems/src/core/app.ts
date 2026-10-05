@@ -3,6 +3,7 @@
 // routes. `main.ts` starts it for real; the tests build it with fakes around it.
 import { randomUUID } from 'node:crypto'
 
+import fastifyWebsocket from '@fastify/websocket'
 import Fastify from 'fastify'
 import type { FastifyInstance, FastifyServerOptions } from 'fastify'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
@@ -17,6 +18,8 @@ import { registerTextGuard } from './text-guard.ts'
 
 // The largest request body any route accepts. A workflow graph is a few kilobytes.
 const BODY_LIMIT_BYTES = 262_144
+// The largest WebSocket frame a client may send: a hello with a token is a few hundred bytes.
+const SOCKET_FRAME_LIMIT_BYTES = 4_096
 
 /** What the server is built from: the systems it hosts, and how it logs. */
 export interface AppOptions {
@@ -47,11 +50,14 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   registerTextGuard(app)
   await registerOpenApi(app, options.schemaNames ?? {})
   registerHealth(app, options.modules)
+  // WebSockets, for the module that has one (LB-06's feed). A client frame is bounded here before any route sees it.
+  await app.register(fastifyWebsocket, { options: { maxPayload: SOCKET_FRAME_LIMIT_BYTES } })
 
   for (const module of options.modules) {
     await app.register(async (scope) => {
       await module.registerRoutes(scope)
     }, { prefix: module.apiPrefix })
+    if (module.registerRootRoutes) await module.registerRootRoutes(app)
   }
   return app
 }

@@ -129,7 +129,7 @@ export const systemsCs = {
     chain: ['upozornění na burn rate', 'plán velitele', 'agenti pro logy, metriky a nasazení', 'seřazení hypotéz', 'vaše schválení', 'ověření SLO', 'postmortem'],
     stack: ['Node', 'TypeScript', 'WebSockets', 'Redis Streams', 'simulátor s event sourcingem', 'dashboardy ve Vue'],
     highlights: [
-      'Detekce a korelace běží jako deterministický kód a agenti uvažují nad stručnými souhrny, takže incident stojí 10 až 15 volání modelu s pevným limitem kroků.',
+      'Detekce a korelace běží jako deterministický kód a agenti uvažují nad stručnými souhrny, takže incident stojí 9 až 15 volání modelu s pevným limitem kroků.',
       'Simulátor má pevné seedy a event sourcing, takže každý incident jde přesně přehrát – pro ladění i pro režim záznamu.',
       'Žádná náprava se nespustí bez kliknutí člověka a incident se uzavře, až když se SLO vrátí do normy.',
     ],
@@ -137,7 +137,7 @@ export const systemsCs = {
       { label: 'Incidentů na návštěvníka za den', value: '1' },
       { label: 'Limit kroků na incident', value: '15' },
       { label: 'Náprava', value: 'Po schválení člověkem' },
-      { label: 'Volání modelu na incident (odhad)', value: '10–15' },
+      { label: 'Volání modelu na incident (odhad)', value: '9–15' },
     ],
   },
   'lb-07': {

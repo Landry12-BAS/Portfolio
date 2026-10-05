@@ -19,6 +19,7 @@ export const envSchema = z.object({
   LB_DATABASE_URL: postgresUrl,
   LB08_DATABASE_URL: postgresUrl.optional(),
   LB04_DATABASE_URL: postgresUrl.optional(),
+  LB06_DATABASE_URL: postgresUrl.optional(),
   LB07_DATABASE_URL: postgresUrl.optional(),
   LB_REDIS_URL: z.string().regex(/^rediss?:\/\/.+/, 'a redis:// or rediss:// URL'),
   // Every key this service writes starts with this, the gateway's own rule.

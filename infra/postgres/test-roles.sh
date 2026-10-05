@@ -130,8 +130,11 @@ docker run -d --name "$db" --network "$net" --user postgres --read-only --cap-dr
     "$image" postgres -c config_file=/etc/postgresql/postgresql.conf >/dev/null
 docker run -d --name "$client" --network "$net" --user postgres --entrypoint sleep "$image" 600 >/dev/null
 ready=false
-for _ in $(seq 1 60); do
-    if docker exec "$db" pg_isready -h /var/run/postgresql -d lb -q; then ready=true; break; fi
+# The image starts a temporary server to run its init scripts, stops it, and starts the real one: the server
+# is the real one once it has said it is ready twice, and `pg_isready` alone answers for the temporary one.
+for _ in $(seq 1 90); do
+    if [ "$(docker logs "$db" 2>&1 | grep -c 'database system is ready to accept connections')" -ge 2 ] \
+        && docker exec "$db" pg_isready -h /var/run/postgresql -d lb -q; then ready=true; break; fi
     sleep 1
 done
 if [ "$ready" != true ]; then
@@ -256,6 +259,23 @@ if has_system lb04; then
             if grep -q "TABLE DATA lb04 $table " <<<"$nightly_list"; then fail "the backup holds the rows of lb04.$table"; else pass "  and none of its rows"; fi
         done
         if grep -q "TABLE DATA lb04 usage_counters " <<<"$nightly_list"; then pass "it keeps the daily counters, which are only numbers"; else fail "the backup lacks the daily counters"; fi
+        if has_system lb06; then
+            # LB-06's tables as the service has them: an incident with the visitor's version label, its log, the scenario cache, and a daily counter.
+            allowed "lb06 holds a visitor's incident, its log, the scenario cache and a daily counter" lb06 "$(password_of lb06)" \
+                "CREATE TABLE lb06.incidents (id int PRIMARY KEY, params jsonb); CREATE TABLE lb06.incident_events (incident_id int, data jsonb); CREATE TABLE lb06.scenario_cache (key text, payload jsonb); CREATE TABLE lb06.usage_counters (session_key text, used int); INSERT INTO lb06.incidents VALUES (1, '{\"version\": \"secret label\"}'); INSERT INTO lb06.incident_events VALUES (1, '{\"version\": \"secret label\"}'); INSERT INTO lb06.scenario_cache VALUES ('k', '{\"version\": \"secret label\"}'); INSERT INTO lb06.usage_counters VALUES ('s', 1)"
+            if docker exec -e PGPASSWORD="$lbbackup_password" "$client" \
+                pg_dump -h "$db" -U lbbackup -d lb "${dump_arguments[@]}" --file=/tmp/lb-nightly-lb06.dump 2>/dev/null; then
+                lb06_list="$(docker exec "$client" pg_restore --list /tmp/lb-nightly-lb06.dump)"
+                for table in incidents incident_events scenario_cache; do
+                    if grep -q "TABLE lb06 $table " <<<"$lb06_list"; then pass "the backup keeps the shape of lb06.$table"; else fail "the backup lacks lb06.$table itself"; fi
+                    if grep -q "TABLE DATA lb06 $table " <<<"$lb06_list"; then fail "the backup holds the rows of lb06.$table"; else pass "  and none of its rows"; fi
+                done
+                if grep -q "TABLE DATA lb06 usage_counters " <<<"$lb06_list"; then pass "it keeps LB-06's daily counters"; else fail "the backup lacks LB-06's daily counters"; fi
+                if docker exec "$client" sh -c 'pg_restore -f - /tmp/lb-nightly-lb06.dump | grep -q "secret label"'; then fail "the backup holds the visitor's label"; else pass "no word of the visitor's label is in the backup"; fi
+            else
+                fail "lbbackup's nightly pg_dump did not work with LB-06's tables"
+            fi
+        fi
         for system in $systems; do
             if grep -q "TABLE DATA $system notes " <<<"$nightly_list"; then pass "it keeps the rows of $system's other tables"; else fail "the backup lacks the rows of $system.notes"; fi
         done

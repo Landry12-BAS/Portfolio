@@ -10,3 +10,9 @@
 lb04.contract*
 lb04.reports
 lb04.redlines
+# LB-06's incidents hold the visitor's two strings (a version label, a flag's name) in the
+# scenario and in the agents' structured outputs, and the event log repeats them; the scenario
+# cache holds the agents' outputs for a scenario. All three are kept for a day and no longer.
+# Its daily counters stay.
+lb06.incident*
+lb06.scenario_cache

@@ -37,7 +37,7 @@ describe('message files', () => {
   })
 
   it('are actually translated where the words differ', () => {
-    const same = czech.filter(([key, text], i) => text === english[i]![1] && !/backends|techniqueNames\.rag|theme\.system|anatomy\.scope$|quickref\.ai$|board\.scope\.columns\.model$|lb01\.pipeline\.title$/.test(key))
+    const same = czech.filter(([key, text], i) => text === english[i]![1] && !/backends|techniqueNames\.rag|theme\.system|anatomy\.scope$|quickref\.ai$|board\.scope\.columns\.model$|lb01\.pipeline\.title$|lb06\.(?:services\.web|dashboard\.chart|dashboard\.markerLetters\.recovered|hypotheses\.where|postmortem\.title|value\.(?:mb|ms|percent))$/.test(key))
     expect(same.map(([key]) => key)).toEqual([])
   })
 })

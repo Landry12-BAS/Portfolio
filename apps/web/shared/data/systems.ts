@@ -177,7 +177,7 @@ export const systems = [
     chain: ['burn-rate alert', 'commander plans', 'logs, metrics + deploy agents', 'rank hypotheses', 'you approve', 'verify SLO', 'postmortem'],
     stack: ['Node', 'TypeScript', 'WebSockets', 'Redis Streams', 'event-sourced simulator', 'Vue dashboards'],
     highlights: [
-      'Detection and correlation run as deterministic code and the agents reason over compact summaries, so an incident takes 10 to 15 model calls under a hard step cap.',
+      'Detection and correlation run as deterministic code and the agents reason over compact summaries, so an incident takes 9 to 15 model calls under a hard step cap.',
       'The simulator is seeded and event-sourced, so any incident replays exactly, for debugging and for replay mode.',
       'No remediation runs without a human click, and the incident closes only after the SLO recovers.',
     ],
@@ -185,7 +185,7 @@ export const systems = [
       { label: 'Incidents per visitor per day', value: '1' },
       { label: 'Step cap per incident', value: '15' },
       { label: 'Remediation', value: 'Human approval' },
-      { label: 'Model calls per incident (est.)', value: '10–15' },
+      { label: 'Model calls per incident (est.)', value: '9–15' },
     ],
   },
   {

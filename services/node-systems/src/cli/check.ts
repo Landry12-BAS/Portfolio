@@ -7,7 +7,7 @@
 //     playbook, its sample contracts (each checked against the hash in its manifest) and its
 //     golden set.
 //   - The committed OpenAPI document matches what the routes' schemas generate.
-//   - LB-08's, LB-04's and LB-07's committed migrations match their schema files. LB-07's data files
+//   - LB-08's, LB-04's, LB-06's and LB-07's committed migrations match their schema files. LB-07's data files
 //     are its bug catalogue and its golden set.
 import { readFileSync } from 'node:fs'
 
@@ -24,6 +24,8 @@ import { pendingSchemaChanges as pendingLb07SchemaChanges } from '../modules/lb0
 import { readGoldenSet as readLb07GoldenSet, sampleCases } from '../modules/lb07/golden/cases.ts'
 import { pendingSchemaChanges } from '../modules/lb08/db/drift.ts'
 import { readGoldenSet } from '../modules/lb08/golden/cases.ts'
+import { pendingSchemaChanges as pendingLb06SchemaChanges } from '../modules/lb06/db/drift.ts'
+import { readGoldenSet as readLb06GoldenSet } from '../modules/lb06/golden/cases.ts'
 import { MODULES } from '../modules/registry.ts'
 
 /** Reads the data files and the golden set strictly, and says what was found. */
@@ -53,6 +55,28 @@ function lb04DataFailures(): string[] {
   catch (error) {
     return [error instanceof Error ? error.message : 'LB-04 data could not be read']
   }
+}
+
+/** Reads LB-06's golden set strictly (which checks it against the simulator), and says what was found. */
+function lb06DataFailures(): string[] {
+  try {
+    const golden = readLb06GoldenSet(`${evalsDirectory()}/lb06/golden.yaml`)
+    console.log(`LB-06 data is valid: ${golden.length} golden cases, ${golden.filter(entry => entry.sample).length} samples`)
+    return []
+  }
+  catch (error) {
+    return [error instanceof Error ? error.message : 'LB-06 data could not be read']
+  }
+}
+
+/** Asks drizzle-kit whether LB-06's schema file has changes no migration holds. */
+async function lb06MigrationFailures(): Promise<string[]> {
+  const pending = await pendingLb06SchemaChanges()
+  if (pending.length === 0) {
+    console.log('LB-06 migrations match its schema')
+    return []
+  }
+  return [`LB-06's schema has changes no migration holds: run \`pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb06.config.ts\` and commit the migration. It would run:\n${pending.join('\n')}`]
 }
 
 /** Reads LB-07's bug catalogue and golden set strictly, and says what was found. */
@@ -108,7 +132,7 @@ async function lb07MigrationFailures(): Promise<string[]> {
   return [`LB-07's schema has changes no migration holds: run \`pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb07.config.ts\` and commit the migration. It would run:\n${pending.join('\n')}`]
 }
 
-const problems = [...dataFailures(), ...lb04DataFailures(), ...lb07DataFailures(), ...await openApiFailures(), ...await migrationFailures(), ...await lb04MigrationFailures(), ...await lb07MigrationFailures()]
+const problems = [...dataFailures(), ...lb04DataFailures(), ...lb06DataFailures(), ...lb07DataFailures(), ...await openApiFailures(), ...await migrationFailures(), ...await lb04MigrationFailures(), ...await lb06MigrationFailures(), ...await lb07MigrationFailures()]
 if (problems.length > 0) {
   console.error(problems.join('\n'))
   process.exitCode = 1

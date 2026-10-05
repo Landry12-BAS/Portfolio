@@ -17,6 +17,7 @@ const BOARDS: Readonly<Record<string, BoardLoader>> = {
   'lb-08': async () => (await import('./lb-08/Lb08Board.vue')).default,
   'lb-03': async () => (await import('./lb-03/Lb03Board.vue')).default,
   'lb-04': async () => (await import('./lb-04/Lb04Board.vue')).default,
+  'lb-06': async () => (await import('./lb-06/Lb06Board.vue')).default,
 }
 
 // What a board adds to the head of its page, by the system's slug and the language: today the web app
