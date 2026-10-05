@@ -205,17 +205,17 @@ export const systems = [
     proves: 'Browser agents, test automation, and sandboxing done properly.',
     tags: ['Browser agent', 'Tool use', 'QA'],
     chain: ['plan from goal', 'run plan in Playwright', 're-plan on failure', 'catch errors + axe checks', 'bug report', 'generate test', 'run red, then green'],
-    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'one container per run'],
+    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'a locked-down sandbox container'],
     highlights: [
       'A generated test is kept only if it fails with the bug switched on and passes with it off.',
-      'The browser can reach only the staging shop, which closes the server-side request forgery hole that “test any URL” demos leave open.',
-      'It plans the whole test in one call and asks the model again only when a step fails, which keeps a run to 5 to 8 calls and makes it repeatable.',
+      'A container for every run would need the Docker socket, which the platform never exposes, so each run gets a fresh browser context in one locked-down sandbox container, closed at three minutes and restarted every few runs, where the browser can reach only the staging shop: that closes the server-side request forgery hole “test any URL” demos leave open.',
+      'It plans the whole test in one call and asks the model again only when a step fails, which keeps a run to seven calls at most and makes it repeatable.',
     ],
     limits: [
       { label: 'Runs per visitor per day', value: '2' },
       { label: 'Run time', value: '3 min' },
       { label: 'Network', value: 'Staging shop only' },
-      { label: 'Model calls per run (est.)', value: '2–8' },
+      { label: 'Model calls per run (est.)', value: '1–7' },
     ],
   },
   {

@@ -149,17 +149,17 @@ export const systemsCs = {
     proves: 'Agenty v prohlížeči, automatizaci testů a pořádně udělaný sandboxing.',
     tags: ['Agent v prohlížeči', 'Volání nástrojů', 'QA'],
     chain: ['plán podle cíle', 'provedení plánu v Playwrightu', 'nový plán při selhání', 'zachycení chyb a kontroly axe', 'hlášení o chybě', 'vygenerování testu', 'běh červeně, pak zeleně'],
-    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'jeden kontejner na běh'],
+    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'uzamčený kontejner sandboxu'],
     highlights: [
       'Vygenerovaný test se ponechá, jen když se zapnutou chybou selže a s vypnutou projde.',
-      'Prohlížeč dosáhne jen na testovací e-shop, což zavírá díru pro podvržené požadavky ze serveru (SSRF), kterou dema typu „otestuj libovolnou URL“ nechávají otevřenou.',
-      'Celý test naplánuje jedním voláním a model se znovu ptá, jen když některý krok selže. Běh tak zůstane na 5 až 8 voláních a je opakovatelný.',
+      'Kontejner pro každý běh by potřeboval socket Dockeru, který platforma nikdy nezpřístupňuje, a tak každý běh dostane nový kontext prohlížeče v jednom uzamčeném kontejneru sandboxu, který se po třech minutách zavře a po několika bězích restartuje a kde prohlížeč dosáhne jen na testovací e-shop: to zavírá díru pro podvržené požadavky ze serveru (SSRF), kterou dema typu „otestuj libovolnou URL“ nechávají otevřenou.',
+      'Celý test naplánuje jedním voláním a model se znovu ptá, jen když některý krok selže. Běh tak zůstane nejvýš na sedmi voláních a je opakovatelný.',
     ],
     limits: [
       { label: 'Běhů na návštěvníka za den', value: '2' },
       { label: 'Doba běhu', value: '3 min' },
       { label: 'Síť', value: 'Jen testovací e-shop' },
-      { label: 'Volání modelu na běh (odhad)', value: '2–8' },
+      { label: 'Volání modelu na běh (odhad)', value: '1–7' },
     ],
   },
   'lb-08': {
