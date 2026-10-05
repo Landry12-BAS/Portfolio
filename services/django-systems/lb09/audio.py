@@ -35,6 +35,11 @@ from lb_common.audio import BYTES_PER_SECOND
 logger = logging.getLogger(__name__)
 
 
+# Enough of a file's start to tell its container from (the WAV check reaches byte 12); reading a few spare
+# bytes costs nothing.
+HEAD_BYTES: Final = 64
+
+
 class Container(StrEnum):
     """The audio containers a recording may arrive in, told apart by their first bytes."""
 
@@ -119,6 +124,12 @@ def decode_recording(
     decode to hours costs a bounded amount, and the parent kills it when the wall-clock deadline passes.
     """
     most_seconds = MAX_RECORDING_SECONDS + DECODE_SLACK_SECONDS
+    # Sniff the container from the stored bytes again, and pin the decoder to that demuxer: the child never
+    # lets FFmpeg probe and choose one that opens another file or a URL (lb09/decode_child.py).
+    with recording.open("rb") as file:
+        container = sniff_container(file.read(HEAD_BYTES))
+    if container is None:
+        raise AudioRefusedError("undecodable")
     with tempfile.TemporaryDirectory(prefix="lb09-decode-") as folder:
         output = Path(folder) / "audio.pcm"
         command = [
@@ -130,6 +141,7 @@ def decode_recording(
             str(most_seconds),
             str(cpu_seconds),
             str(memory_bytes),
+            str(container),
         ]
         try:
             result = subprocess.run(command, capture_output=True, timeout=wall_seconds, check=False)  # noqa: S603 - our own module in our own interpreter, with paths of our own
