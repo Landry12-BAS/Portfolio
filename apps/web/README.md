@@ -14,9 +14,11 @@ drawn in the browser, and the safety demo), **LB-08's board** (the Workflow Auto
 outline, and a run with its retries and dead letters) and **LB-03's board** (the Invoice Reader: a file uploaded,
 the page of the document with the place of every field drawn over it, a table of fields that can be corrected,
 and the checks, the journal entry and the exports), **LB-04's board** (the Contract Radar: a PDF read in the browser
-beside a risk radar, findings with their quotes, and redlines) and **LB-06's board** (the Incident Commander: a shop
+beside a risk radar, findings with their quotes, and redlines), **LB-06's board** (the Incident Commander: a shop
 simulated minute by minute, dashboards that turn when a fault strikes, a team of agents at work, and a fix that
-waits for the visitor's click).
+waits for the visitor's click) and **LB-07's board** (the QA Engineer: a test run followed while it waits for the
+one sandboxed browser and while it runs step by step, the findings code made, the bug reports a model wrote, the
+red-then-green verdict, the generated Playwright test in a code view, and the screenshots the browser kept).
 
 ## Run it
 
@@ -28,7 +30,7 @@ All of it through the root `justfile` (see the Commands table in `AGENTS.md`):
 | `just dev` | The site alone. With no `NUXT_*` settings the demos say they are not connected |
 | `just build` / `just check-build` | The production build, and the proof that it holds no trace of the test build's Turnstile stand-in |
 | `just e2e` | The test build, then the Playwright journeys against it and the mock back end |
-| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's and LB-03's), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
+| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's, LB-03's and LB-07's), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
 | `just record-sample <system> <sample>` | Record a sample's run on a live back end (see "Replay and recordings") |
 
 The settings are the `NUXT_*` variables of [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 10;
@@ -68,7 +70,8 @@ only once the board is in `app/boards/registry.ts`.
 |---|---|
 | `GET /api/session` | Creates the anonymous session on first use and says whether this deployment has a back end, whether the Turnstile check has passed today and when the day turns over |
 | `POST /api/session/verify` | Checks a Turnstile token with Cloudflare; a pass marks the session verified for the day |
-| `/api/lb01/**`, `lb02`, `lb03`, `lb04`, `lb05`, `lb06`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `/api/lb01/**`, `lb02`, `lb03`, `lb04`, `lb05`, `lb06`, `lb07`, `lb08` | The proxy: only the routes the back ends' OpenAPI documents describe (`packages/api-clients`), with a visitor token the server signs. Anything that changes something needs the check |
+| `GET /api/lb07/runs/:runId/evidence/:evidenceId/image` | One of a run's screenshots as a picture: the evidence read through the same call the proxy makes, checked to be a PNG of at most 400 kB, and answered `image/png`, `nosniff`, `no-store` (LB-07) |
 | `POST /api/tokens/lb-02`, `POST /api/tokens/lb-06` | The five-minute grants for LB-02's and LB-06's WebSockets |
 | `GET /api/runs/:runId/spans` | A run's trace from the gateway, for the Scope. Needs no session: the run's ID is the capability |
 | `GET /api/recordings/:system[/:sample]` | The recordings of the curated samples |
@@ -266,14 +269,19 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
   extraction and review pipeline in a worker thread, with the golden set's reference reviewer for a model;
   the first open of each sample is done before the fake timers start, because a worker thread does not
   obey them), and LB-06's against `FakeLb06Site`, whose back end is the mock's LB-06 (the real simulator, the
-  real detection and the reference agents for a model) with a fake WebSocket bound to the mock's hub.
+  real detection and the reference agents for a model) with a fake WebSocket bound to the mock's hub, and LB-07's
+  against `FakeLb07Site`, whose back end is the mock's LB-07 (a whole run worked out when it starts and shown as
+  far as the clock has got, with the service's own finding ledger, verdict and test generator).
 - **integration**: the site's server over HTTP against the mock back end, route by route; the recorder
   and the `record-sample` command.
 - **contract**: the site's server against the real gateway and a real Redis (Testcontainers, or
   `LB_TEST_REDIS_URL`).
 - **production-flag**: the few tests that must see the build flag as a production build does.
 - **e2e**: Playwright in a real browser against the test build and the mock (`just e2e`). Every test also
-  fails on a Content-Security-Policy or Trusted Types violation, a page error or a console error.
+  fails on a Content-Security-Policy or Trusted Types violation, a page error or a console error. The
+  boards whose back end holds one state for everyone (LB-02's calendar, LB-07's one browser and its queue)
+  keep their journeys and their accessibility checks in one file that runs one test after another, each
+  from a mock reset by its control.
 
 `pnpm typecheck` also runs `tsc -p tsconfig.tools.json`, a strict check of the scripts, the tests and the
 journeys, which `nuxt typecheck` does not read. Where a Chromium is preinstalled, point Playwright at it
@@ -569,3 +577,30 @@ the oldest have ended (eight minutes at most). That is the service doing what it
   (so how often real agents find the cause, and what they propose after a rejection, are unmeasured: the reference
   agents propose the same fix again), a real Turnstile site key and challenge, a recording made on a live back end
   (the two in `e2e/fixtures` are the mock's and say so), and the box's two ARM cores.
+- **LB-07's screenshots come from a picture route of the site's own** (`server/handlers/lb07-evidence-image.ts`).
+  The service answers a screenshot as base64 in JSON; the route reads it with the same authenticated call the proxy
+  makes (the visitor's token, so a run of someone else's is a 404), checks the PNG signature and the size (at most
+  400 kB, the contract's), and answers the bytes as `image/png` with `nosniff` and `no-store`. A plain
+  `<img src>` to the site's own path is enough, so the page's policy is unchanged. A replay's screenshots are in
+  the recording and are shown as `data:` addresses, which the site's policy already allows (`img-src 'self'
+  data:`), once the browser has checked their PNG signature.
+- **A run's evidence has no list.** The API gives a piece by its id only (`e1`, `e2`, ... in the order the run
+  kept them), so the board shows the screenshots the findings name through the picture route without reading
+  them first, then reads the two ids after them (the screenshot at the end and the page's tree, the order the
+  service keeps them in) as JSON, and stops at the first that is not there.
+- **LB-07's board follows a run by polling**: one read at a time, the next after the answer (0.4 s, then 0.9 s
+  while the run moves, 2.5 s while other runs are ahead of it in the queue, 3 s after 120 reads), and none once
+  it has ended or the visitor has left. A read that comes back after a newer one is dropped, and an ended run is
+  never turned back into a running one. The board stops waiting after the longest a full queue could take and
+  says so; the run stays in the visitor's runs of the hour, which open it again after a reload.
+- **The mock plans one curated run wrong on purpose.** `cart-count`'s first plan names a button the shop does not
+  have ("Add to basket", the mistake of the golden set's re-plan case), so a curated run shows a re-plan on the
+  mock and in the fixtures; the real service with a correct model plans it right. The mock's other differences:
+  a run is worked out whole when it starts (with the service's own finding ledger, verdict and test generator)
+  and shown as far as the clock has got, its screenshots are tiny synthetic PNGs, its page's tree is made from a
+  model of the shop, and a test can end a run with any of the service's failure codes, `goal_refused` and
+  `plan_refused` included, which the service does not produce today (the board has words for both all the same).
+- **The second engine is Chromium wearing Firefox's user agent**, and the board says so under its introduction and
+  under the verdict's table, so "red in the second engine" is never read as a Firefox result. The table shows the
+  three passes as the service ran them: the second engine's pass is red when a step of the test failed there,
+  even when the finding behind it was made in Chromium already (its count of bug findings is then 0).

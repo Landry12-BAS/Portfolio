@@ -95,7 +95,15 @@ the commander's hypotheses, the card that waits for the visitor's approval, the 
 objective, the timeline and the postmortem, a replay of a recorded incident, the visitor's own
 incident with its text screened, a polling fallback for a network that blocks WebSockets, in
 English and Czech (see the web README); next come its recorded sample runs (`just record-sample
-lb-06 <sample>`, which needs the live back end with a model behind it).
+lb-06 <sample>`, which needs the live back end with a model behind it). LB-07's board is on the
+site at `/systems/lb-07/board`: the six bugs as switches and a goal of the visitor's own checked
+before it is sent, eight curated runs, the run followed by polling while it waits for the one
+browser ("2 runs are ahead of yours") and while it runs, the steps grouped by plan and re-plan,
+the findings code made, the bug reports labelled as a model's, the red-then-green verdict with its
+three passes, the generated Playwright test in a code view with its copy and download, the
+screenshots through a picture route of the site's own (the policy unchanged) and the visitor's
+runs of the hour, in English and Czech (see the web README); next come its recorded sample runs
+(`just record-sample lb-07 <sample>`, which needs the live back end with a model behind it).
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
