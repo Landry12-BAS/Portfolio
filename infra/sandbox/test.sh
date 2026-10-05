@@ -10,7 +10,9 @@
 #     filter, a root filesystem it cannot write;
 #   - Chromium starts under those flags, and golden plans run through the runner's API called from
 #     the other container: every bug found by the red passes and none by the green pass, a clean
-#     shop left clean, a link to another host stopped, and nothing that left the shop;
+#     shop left clean, a link to another host stopped, and nothing that left the shop; a call that
+#     does not show the runner's key (or shows the bug-token key) is refused, and only the health
+#     check answers without it;
 #   - the heaviest golden plan, five runs in a row from a fresh start, stays inside the Compose
 #     memory limit with no restart and no out-of-memory kill (the peak is printed);
 #   - the container has no route out: no public address, no public name, no container on another
@@ -183,6 +185,7 @@ expect_equal "inside: uid 65532, no effective capability, no new privileges, a s
 
 echo "2. Chromium runs golden plans, called from another container on the sandbox network"
 if client golden everything-on clean-shop partner-link checkout-in-firefox; then :; else fail "a golden plan did not run as its case says (above)"; fi
+if client keyless; then :; else fail "the runner answered a call that did not show its key (above)"; fi
 
 echo "3. The container reaches nothing but its own shop"
 decoy_address="$(docker inspect -f "{{(index .NetworkSettings.Networks \"$other_network\").IPAddress}}" "$prefix-decoy")"
