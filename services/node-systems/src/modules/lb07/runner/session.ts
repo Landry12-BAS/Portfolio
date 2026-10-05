@@ -12,6 +12,9 @@
 // again with a fresh one. After its share of runs the runner declares itself exhausted, and once its last session is
 // closed or forgotten it says so to whoever listens, so the process can exit and be started fresh.
 import { randomUUID } from 'node:crypto'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import { LB07_LIMITS } from '@lb/contracts'
 import type { Lb07Engine, Lb07Step } from '@lb/contracts'
@@ -84,6 +87,8 @@ export class BrowserSessions {
   readonly #deadEnd = new DeadEnd()
   readonly #exhaustedListeners: (() => void)[] = []
   #browser: Browser | undefined
+  // The browser's home, a folder in the temporary folder made with its first start.
+  #browserHome: string | undefined
   #current: Session | undefined
   #opening = false
   #runsServed = 0
@@ -125,11 +130,21 @@ export class BrowserSessions {
     this.#exhaustedListeners.push(listener)
   }
 
+  /**
+   * The browser's environment: a home of its own in the temporary folder (the container's root, the real home with
+   * it, is read-only, and Chromium's crash reporter writes under the home whatever Playwright says), the path to find
+   * its helpers, and nothing else, so no setting of this process reaches the browser.
+   */
+  #browserEnvironment(): Record<string, string> {
+    this.#browserHome ??= mkdtempSync(join(tmpdir(), 'lb07-browser-home-'))
+    return { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: this.#browserHome, XDG_CONFIG_HOME: join(this.#browserHome, '.config'), XDG_CACHE_HOME: join(this.#browserHome, '.cache'), TMPDIR: tmpdir() }
+  }
+
   /** Starts the browser, once, with the third layer's switches; a browser that died is started again. */
   async #browserReady(): Promise<Browser> {
     if (this.#browser?.isConnected()) return this.#browser
     const deadEndPort = await this.#deadEnd.start()
-    const launch: LaunchOptions = { headless: true, args: [...LAUNCH_ARGS, ...networkWallArgs(this.#options.shopOrigin, deadEndPort)] }
+    const launch: LaunchOptions = { headless: true, args: [...LAUNCH_ARGS, ...networkWallArgs(this.#options.shopOrigin, deadEndPort)], env: this.#browserEnvironment() }
     if (this.#options.executablePath) launch.executablePath = this.#options.executablePath
     const browser = await chromium.launch(launch)
     browser.on('disconnected', () => this.#crashed(browser))
@@ -287,11 +302,13 @@ export class BrowserSessions {
     return { findings: session.findings.drain(), offOriginRequests: session.findings.offOrigin, blocked: session.findings.blocked }
   }
 
-  /** Closes everything, for the process's end. */
+  /** Closes everything, for the process's end, and removes the browser's home. */
   async shutdown(): Promise<void> {
     if (this.#current) await this.close(this.#current.id).catch(() => undefined)
     await this.#browser?.close().catch(() => undefined)
     this.#browser = undefined
     await this.#deadEnd.close()
+    if (this.#browserHome) rmSync(this.#browserHome, { recursive: true, force: true })
+    this.#browserHome = undefined
   }
 }

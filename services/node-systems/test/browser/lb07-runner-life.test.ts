@@ -6,6 +6,9 @@
 // last one is closed. Ports 8161 and 8162 are this suite's.
 import { execFileSync, spawn } from 'node:child_process'
 import type { ChildProcess } from 'node:child_process'
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -148,10 +151,12 @@ describe('the sandbox process', () => {
     child?.kill('SIGKILL')
   })
 
-  it('serves its share of runs, keeps the last one to its end, and exits on its own once it is closed', async () => {
+  it('serves its share of runs, keeps the last one to its end, exits on its own once it is closed, and writes nothing in its home', async () => {
     const tokenKeyHex = Buffer.from(TEST_TOKEN_KEY).toString('hex')
+    // The container's home is on its read-only root: whatever the process or its browser writes must go to the temporary folder.
+    const home = mkdtempSync(join(tmpdir(), 'lb07-home-'))
     child = spawn(process.execPath, [fileURLToPath(new URL('../../src/sandbox.ts', import.meta.url))], {
-      env: { PATH: process.env.PATH, HOME: process.env.HOME, LB07_SHOP_PORT: '8161', LB07_SANDBOX_PORT: '8162', LB07_SANDBOX_HOST: '127.0.0.1', LB07_SHOP_TOKEN_KEY: tokenKeyHex, LB07_BROWSER_PATH: executablePath ?? '', LB07_RUNS_PER_LIFE: '1' },
+      env: { PATH: process.env.PATH, HOME: home, LB07_SHOP_PORT: '8161', LB07_SANDBOX_PORT: '8162', LB07_SANDBOX_HOST: '127.0.0.1', LB07_SHOP_TOKEN_KEY: tokenKeyHex, LB07_BROWSER_PATH: executablePath ?? '', LB07_RUNS_PER_LIFE: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     const exited = new Promise<number | null>(resolve => child?.once('exit', code => resolve(code)))
@@ -175,5 +180,7 @@ describe('the sandbox process', () => {
     await runner.close(id)
     const code = await Promise.race([exited, pause(10_000).then(() => 'still running')])
     expect(code).toBe(0)
+    expect(readdirSync(home, { recursive: true })).toEqual([])
+    rmSync(home, { recursive: true, force: true })
   })
 })
