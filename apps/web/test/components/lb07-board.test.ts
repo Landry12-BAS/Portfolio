@@ -120,7 +120,7 @@ describe('LB-07\'s board', () => {
     const { wrapper } = await openBoard()
     await runLive(wrapper)
     expect(wrapper.find('[data-testid="run-panel"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="stepper"] [aria-current="step"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="stepper"] [aria-current="step"]').exists()).toBe(true)
     await until(() => finished(wrapper) && wrapper.find('[data-testid="evidence"] img').exists(), 'the run to end')
 
     expect(textOf(wrapper, '[data-testid="run-state"]')).toBe('Done')
