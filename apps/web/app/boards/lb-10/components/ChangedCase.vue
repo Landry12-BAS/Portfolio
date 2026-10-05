@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // <ChangedCase>: one case whose grade changed between production's prompt and the visitor's. Its ID and difficulty,
 // whether it improved or regressed (a word and an icon), what the model was given and what the golden set expects, as
-// text, and the two replies side by side (stacked on a narrow screen) with the words only one of them has marked. A
+// text, and (in a disclosure the first cases of a provider start with open) the two replies side by side, stacked on a
+// narrow screen, with the words only one of them has marked. A
 // reply that is one JSON document is shown re-indented, every value as the model wrote it, unless the visitor asks to
 // see both exactly as written; both replies are always shown the same way, so the marks compare like with like.
 import { LbIcon } from '@lb/icons'
@@ -18,6 +19,8 @@ const props = defineProps<{
   change: Lb10ChangedCase
   /** What the target answers with, which says whether a reply must hold a JSON object. */
   output: 'json' | 'text' | 'tool_calls'
+  /** Whether the replies start open: the first cases of a provider do, the rest open on a click, so a long list stays readable. */
+  open: boolean
 }>()
 
 const { t } = useI18n()
@@ -90,57 +93,66 @@ const expected = computed(() => JSON.stringify(props.change.expected, null, 2))
         :aria-label="t('lb10.report.changed.expected')"
       >{{ expected }}</pre>
     </details>
-    <div class="lb10-row">
-      <button
-        v-if="canReindent"
-        type="button"
-        class="lb10-button lb10-button--quiet"
-        :aria-pressed="asWritten"
-        data-testid="as-written"
-        @click="asWritten = !asWritten"
-      >
-        {{ t('lb10.report.changed.showAsWritten') }}
-      </button>
-    </div>
-    <p
-      v-if="!diff.compared"
-      class="lb10-hint"
+    <details
+      class="lb10-details replies"
+      :open="open"
+      data-testid="case-replies"
     >
-      {{ t('lb10.report.changed.notCompared') }}
-    </p>
-    <p
-      v-else-if="!diff.related"
-      class="lb10-hint"
-      data-testid="diff-unrelated"
-    >
-      {{ t('lb10.report.changed.unrelated') }}
-    </p>
-    <p
-      v-else-if="hasChanges(diff)"
-      class="lb10-hint"
-      data-testid="diff-note"
-    >
-      {{ t('lb10.report.changed.diffNote') }}
-    </p>
-    <div class="pair">
-      <ReplyView
-        side="production"
-        :outcome="change.production"
-        :pieces="diff.production"
-        :reindented="production.reindented"
-        :malformed="isMalformed(change.production, output)"
-      />
-      <ReplyView
-        side="edited"
-        :outcome="change.edited"
-        :pieces="diff.edited"
-        :reindented="edited.reindented"
-        :malformed="isMalformed(change.edited, output)"
-      />
-    </div>
-    <p class="lb10-hint">
-      {{ t('lb10.report.changed.cut') }}
-    </p>
+      <summary>{{ t('lb10.report.changed.replies') }}</summary>
+      <div class="replies-body">
+        <div class="lb10-row">
+          <button
+            v-if="canReindent"
+            type="button"
+            class="lb10-button lb10-button--quiet"
+            :aria-pressed="asWritten"
+            data-testid="as-written"
+            @click="asWritten = !asWritten"
+          >
+            {{ t('lb10.report.changed.showAsWritten') }}
+          </button>
+        </div>
+        <p
+          v-if="!diff.compared"
+          class="lb10-hint"
+        >
+          {{ t('lb10.report.changed.notCompared') }}
+        </p>
+        <p
+          v-else-if="!diff.related"
+          class="lb10-hint"
+          data-testid="diff-unrelated"
+        >
+          {{ t('lb10.report.changed.unrelated') }}
+        </p>
+        <p
+          v-else-if="hasChanges(diff)"
+          class="lb10-hint"
+          data-testid="diff-note"
+        >
+          {{ t('lb10.report.changed.diffNote') }}
+        </p>
+        <div class="pair">
+          <ReplyView
+            side="production"
+            :outcome="change.production"
+            :pieces="diff.production"
+            :reindented="production.reindented"
+            :malformed="isMalformed(change.production, output)"
+          />
+          <ReplyView
+            side="edited"
+            :outcome="change.edited"
+            :pieces="diff.edited"
+            :reindented="edited.reindented"
+            :malformed="isMalformed(change.edited, output)"
+          />
+        </div>
+        <p class="lb10-hint">
+          {{ t('lb10.report.changed.cut') }}
+        </p>
+      </div>
+    </details>
   </article>
 </template>
 
@@ -172,6 +184,11 @@ const expected = computed(() => JSON.stringify(props.change.expected, null, 2))
 }
 .inputs .lb10-text {
   max-height: 12rem;
+}
+.replies-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
 .pair {
   display: grid;

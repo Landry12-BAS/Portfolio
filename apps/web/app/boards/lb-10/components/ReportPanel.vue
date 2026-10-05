@@ -32,6 +32,11 @@ const target = computed(() => targets.value?.targets.find(item => item.pack === 
 const sample = computed(() => (target.value?.version === props.report.pack_version ? target.value.sample : undefined))
 const output = computed(() => target.value?.output ?? 'json')
 const title = computed(() => words.packTitle(props.report.pack, target.value?.name))
+// The title's part number, such as LB-01, kept on one line: a narrow screen would otherwise break it after its hyphen.
+const titleParts = computed(() => {
+  const match = /^(LB-\d{2})\s(.+)$/.exec(title.value)
+  return match ? { part: match[1] ?? '', rest: match[2] ?? '' } : { part: '', rest: title.value }
+})
 </script>
 
 <template>
@@ -42,7 +47,10 @@ const title = computed(() => words.packTitle(props.report.pack, target.value?.na
     data-testid="report"
   >
     <h2 :id="`${id}-title`">
-      {{ t('lb10.report.title') }}: {{ title }}
+      {{ t('lb10.report.title') }}: <span
+        v-if="titleParts.part"
+        class="part"
+      >{{ titleParts.part }}</span> {{ titleParts.rest }}
     </h2>
     <p
       v-if="!brief"
@@ -88,6 +96,9 @@ const title = computed(() => words.packTitle(props.report.pack, target.value?.na
 <style scoped>
 .report {
   gap: 18px;
+}
+.part {
+  white-space: nowrap;
 }
 .small-sample {
   padding: 8px 10px;

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // <ChangedCases>: every case whose grade changed between production's prompt and the visitor's, provider by provider,
 // each with both replies and what every grader said (ChangedCase). A provider on which no case changed says so: the two
-// prompts passed and failed the same cases there.
+// prompts passed and failed the same cases there. The first cases of a provider show their replies at once and the rest
+// open on a click, since an edit that breaks a prompt can change every case, and twenty open cases are a long page.
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Lb10Comparison } from '../schemas'
@@ -17,6 +18,9 @@ const props = defineProps<{
 const { t } = useI18n()
 const words = useLb10Words()
 const id = useId()
+
+// How many cases of a provider show their replies when the report opens.
+const OPEN_CASES = 2
 
 const groups = computed(() => props.comparisons.map(comparison => ({
   key: comparison.provider,
@@ -54,10 +58,11 @@ const groups = computed(() => props.comparisons.map(comparison => ({
         {{ t('lb10.report.changed.none', { provider: group.name }) }}
       </p>
       <ChangedCase
-        v-for="change in group.changed"
+        v-for="(change, index) in group.changed"
         :key="change.case_id"
         :change="change"
         :output="output"
+        :open="index < OPEN_CASES"
       />
     </div>
   </section>

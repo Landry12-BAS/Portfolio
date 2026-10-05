@@ -5,7 +5,7 @@
 // production baseline is computed once for everybody; a cached prompt cost this run nothing, and its latency and tokens
 // are those of the calls that first made its results), and the calls that got no answer. The Brief reading keeps the
 // score and the calls.
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { passedCount } from '../report'
 import type { Lb10Report } from '../schemas'
@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const words = useLb10Words()
+const id = useId()
 
 /** Says a prompt's calls: those made in this run and those answered from the cache, each when there are any. */
 function callsText(made: number, cached: number): string {
@@ -48,17 +49,23 @@ const anyCached = computed(() => rows.value.some(row => row.cached))
 
 <template>
   <div class="report-table">
+    <p
+      :id="`${id}-caption`"
+      class="lb10-caption"
+    >
+      {{ t('lb10.report.table.caption') }}
+    </p>
     <div
       class="lb10-table-wrap"
       tabindex="0"
       role="group"
-      :aria-label="t('lb10.report.table.caption')"
+      :aria-labelledby="`${id}-caption`"
     >
       <table
         class="lb10-table"
+        :aria-labelledby="`${id}-caption`"
         data-testid="report-table"
       >
-        <caption>{{ t('lb10.report.table.caption') }}</caption>
         <thead>
           <tr>
             <th scope="col">

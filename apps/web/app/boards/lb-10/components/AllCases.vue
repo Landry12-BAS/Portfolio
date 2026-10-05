@@ -2,7 +2,7 @@
 // <AllCases>: table 2 of the report, every case of the sample and whether each prompt passed it on each provider, so
 // the cases that did not change can be read too. A call that got no answer is said as such, not as a plain failure.
 // The Technical reading shows it; the Brief reading keeps the changed cases alone.
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Lb10Report, Lb10TargetCase } from '../schemas'
 import { useLb10Words } from '../words'
@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const words = useLb10Words()
+const id = useId()
 
 const columns = computed(() => props.report.variants.map(variant => ({
   key: `${variant.provider}-${variant.variant}`,
@@ -41,14 +42,22 @@ const rows = computed(() => props.report.case_ids.map((caseId) => {
     class="all"
     data-testid="all-cases"
   >
+    <p
+      :id="`${id}-caption`"
+      class="lb10-caption"
+    >
+      {{ t('lb10.report.all.caption') }}
+    </p>
     <div
       class="lb10-table-wrap"
       tabindex="0"
       role="group"
-      :aria-label="t('lb10.report.all.caption')"
+      :aria-labelledby="`${id}-caption`"
     >
-      <table class="lb10-table">
-        <caption>{{ t('lb10.report.all.caption') }}</caption>
+      <table
+        class="lb10-table"
+        :aria-labelledby="`${id}-caption`"
+      >
         <thead>
           <tr>
             <th scope="col">

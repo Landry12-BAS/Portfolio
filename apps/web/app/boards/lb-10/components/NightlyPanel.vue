@@ -122,64 +122,73 @@ const committed = computed(() => baselines.value.map((baseline, index) => ({
         >
           {{ t('lb10.nightly.noResults') }}
         </p>
-        <div
-          v-else
-          class="lb10-table-wrap"
-          tabindex="0"
-          role="group"
-          :aria-label="t('lb10.nightly.resultsCaption')"
-        >
-          <table class="lb10-table">
-            <caption>{{ t('lb10.nightly.resultsCaption') }}</caption>
-            <thead>
-              <tr>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.day') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.pack') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.provider') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.score') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.interval') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.calls') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="row in evals"
-                :key="row.key"
-              >
-                <td class="lb10-num">
-                  {{ row.day }}
-                </td>
-                <th scope="row">
-                  {{ row.pack }}
-                </th>
-                <td>
-                  {{ row.provider }} <span class="lb10-mono lb10-hint">{{ row.alias }}</span>
-                </td>
-                <td class="lb10-num">
-                  {{ row.score }}
-                </td>
-                <td class="lb10-num">
-                  {{ row.interval }}
-                </td>
-                <td class="lb10-num">
-                  {{ row.calls }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <template v-else>
+          <p
+            :id="`${id}-results-caption`"
+            class="lb10-caption"
+          >
+            {{ t('lb10.nightly.resultsCaption') }}
+          </p>
+          <div
+            class="lb10-table-wrap"
+            tabindex="0"
+            role="group"
+            :aria-labelledby="`${id}-results-caption`"
+          >
+            <table
+              class="lb10-table"
+              :aria-labelledby="`${id}-results-caption`"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.day') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.pack') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.provider') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.score') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.interval') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.calls') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in evals"
+                  :key="row.key"
+                >
+                  <td class="lb10-num">
+                    {{ row.day }}
+                  </td>
+                  <th scope="row">
+                    {{ row.pack }}
+                  </th>
+                  <td>
+                    {{ row.provider }} <span class="lb10-mono lb10-hint">{{ row.alias }}</span>
+                  </td>
+                  <td class="lb10-num">
+                    {{ row.score }}
+                  </td>
+                  <td class="lb10-num">
+                    {{ row.interval }}
+                  </td>
+                  <td class="lb10-num">
+                    {{ row.calls }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
       <div
         class="lb10-panel"
@@ -192,64 +201,73 @@ const committed = computed(() => baselines.value.map((baseline, index) => ({
         >
           {{ t('lb10.nightly.noJudge') }}
         </p>
-        <div
-          v-else
-          class="lb10-table-wrap"
-          tabindex="0"
-          role="group"
-          :aria-label="t('lb10.nightly.judgeCaption')"
-        >
-          <table class="lb10-table">
-            <caption>{{ t('lb10.nightly.judgeCaption') }}</caption>
-            <thead>
-              <tr>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.day') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.pack') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.judge') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.rules') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.agreement') }}
-                </th>
-                <th scope="col">
-                  {{ t('lb10.nightly.columns.standing') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="row in judges"
-                :key="row.key"
-                data-testid="judge-row"
-                :data-counts="row.counts"
-              >
-                <td class="lb10-num">
-                  {{ row.day }}
-                </td>
-                <th scope="row">
-                  {{ row.pack }} <span class="lb10-mono lb10-hint">{{ row.alias }}</span>
-                </th>
-                <td class="lb10-num">
-                  {{ row.judge }}
-                </td>
-                <td class="lb10-num">
-                  {{ row.rules }}
-                </td>
-                <td class="lb10-num">
-                  {{ row.agreement }}
-                </td>
-                <td>{{ row.counts ? t('lb10.nightly.counts') : t('lb10.nightly.doesNotCount') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <template v-else>
+          <p
+            :id="`${id}-judge-caption`"
+            class="lb10-caption"
+          >
+            {{ t('lb10.nightly.judgeCaption') }}
+          </p>
+          <div
+            class="lb10-table-wrap"
+            tabindex="0"
+            role="group"
+            :aria-labelledby="`${id}-judge-caption`"
+          >
+            <table
+              class="lb10-table"
+              :aria-labelledby="`${id}-judge-caption`"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.day') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.pack') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.judge') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.rules') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.agreement') }}
+                  </th>
+                  <th scope="col">
+                    {{ t('lb10.nightly.columns.standing') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in judges"
+                  :key="row.key"
+                  data-testid="judge-row"
+                  :data-counts="row.counts"
+                >
+                  <td class="lb10-num">
+                    {{ row.day }}
+                  </td>
+                  <th scope="row">
+                    {{ row.pack }} <span class="lb10-mono lb10-hint">{{ row.alias }}</span>
+                  </th>
+                  <td class="lb10-num">
+                    {{ row.judge }}
+                  </td>
+                  <td class="lb10-num">
+                    {{ row.rules }}
+                  </td>
+                  <td class="lb10-num">
+                    {{ row.agreement }}
+                  </td>
+                  <td>{{ row.counts ? t('lb10.nightly.counts') : t('lb10.nightly.doesNotCount') }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
       <p
         v-if="unreadable"
@@ -284,69 +302,78 @@ const committed = computed(() => baselines.value.map((baseline, index) => ({
       >
         {{ t('lb10.nightly.noBaselines') }}
       </p>
-      <div
-        v-else
-        class="lb10-table-wrap"
-        tabindex="0"
-        role="group"
-        :aria-label="t('lb10.nightly.baselinesCaption')"
-      >
-        <table class="lb10-table">
-          <caption>{{ t('lb10.nightly.baselinesCaption') }}</caption>
-          <thead>
-            <tr>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.pack') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.alias') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.score') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.interval') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.cases') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.measured') }}
-              </th>
-              <th scope="col">
-                {{ t('lb10.nightly.columns.source') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in committed"
-              :key="row.key"
-              data-testid="baseline-row"
-            >
-              <th scope="row">
-                {{ row.pack }}
-              </th>
-              <td class="lb10-mono">
-                {{ row.alias }}
-              </td>
-              <td class="lb10-num">
-                {{ row.score }}
-              </td>
-              <td class="lb10-num">
-                {{ row.interval }}
-              </td>
-              <td class="lb10-num">
-                {{ row.cases }}
-              </td>
-              <td class="lb10-num">
-                {{ row.measured }}
-              </td>
-              <td>{{ row.source }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <template v-else>
+        <p
+          :id="`${id}-baselines-caption`"
+          class="lb10-caption"
+        >
+          {{ t('lb10.nightly.baselinesCaption') }}
+        </p>
+        <div
+          class="lb10-table-wrap"
+          tabindex="0"
+          role="group"
+          :aria-labelledby="`${id}-baselines-caption`"
+        >
+          <table
+            class="lb10-table"
+            :aria-labelledby="`${id}-baselines-caption`"
+          >
+            <thead>
+              <tr>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.pack') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.alias') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.score') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.interval') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.cases') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.measured') }}
+                </th>
+                <th scope="col">
+                  {{ t('lb10.nightly.columns.source') }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="row in committed"
+                :key="row.key"
+                data-testid="baseline-row"
+              >
+                <th scope="row">
+                  {{ row.pack }}
+                </th>
+                <td class="lb10-mono">
+                  {{ row.alias }}
+                </td>
+                <td class="lb10-num">
+                  {{ row.score }}
+                </td>
+                <td class="lb10-num">
+                  {{ row.interval }}
+                </td>
+                <td class="lb10-num">
+                  {{ row.cases }}
+                </td>
+                <td class="lb10-num">
+                  {{ row.measured }}
+                </td>
+                <td>{{ row.source }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
     </div>
   </section>
 </template>

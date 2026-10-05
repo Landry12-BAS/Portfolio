@@ -136,6 +136,7 @@ const rows = computed(() => props.comparisons.map((comparison) => {
             v-for="tick in TICKS"
             :key="tick"
             class="tick"
+            :class="{ 'tick--half': Math.abs(tick) === 0.5 }"
             :style="{ left: `${differenceAt(tick)}%` }"
           >{{ tick === 0 ? t('lb10.report.difference.zero') : words.points(tick) }}</span>
         </div>
@@ -273,6 +274,10 @@ const rows = computed(() => props.comparisons.map((comparison) => {
     grid-column: 1 / -1;
   }
   .axis-line > span:first-child {
+    display: none;
+  }
+  /* A narrow axis keeps its ends and the zero line's words, which need the room between them. */
+  .tick--half {
     display: none;
   }
 }

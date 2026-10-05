@@ -232,11 +232,18 @@
   border-collapse: collapse;
 }
 
-/* A table's caption is centred by default; the captions here are numbered titles that read from the left. */
-.lb10-table caption {
-  padding-bottom: 6px;
+/* A table's numbered title, above the box that scrolls the table sideways rather than inside it, so on a narrow screen
+   the title wraps in view instead of running off with the table; the table is named by it (aria-labelledby). */
+.lb10-caption {
+  margin: 0 0 -4px;
+  font-size: 13px;
   font-weight: 600;
-  text-align: left;
+}
+
+/* A name written as code (a case, a pack, an alias) is never broken inside a table: the table scrolls instead. */
+.lb10-table .lb10-mono {
+  overflow-wrap: normal;
+  white-space: nowrap;
 }
 
 .lb10-table th,

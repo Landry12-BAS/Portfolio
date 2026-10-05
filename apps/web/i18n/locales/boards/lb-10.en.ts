@@ -302,6 +302,7 @@ const lb10 = {
       difficulty: '{difficulty} case',
       inputs: 'What the model was given',
       expected: 'What the golden set expects',
+      replies: 'Both replies, and what each grader said',
       production: 'Production\'s reply',
       edited: 'Your prompt\'s reply',
       passed: 'Passed',

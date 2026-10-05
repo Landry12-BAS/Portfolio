@@ -166,6 +166,9 @@ describe('LB-10\'s board', () => {
     expect(words).toContain('Groq, production\'s prompt: 90% passed, interval')
     expect(words).toContain('Groq, your prompt: 100% passed')
     expect(wrapper.findAll('[data-testid="report-row"]').map(row => row.attributes('data-variant'))).toEqual(['production', 'edited'])
+    // The table is named by its numbered title, which sits above the box that scrolls it so it never runs off with it.
+    const title = wrapper.get('[data-testid="report-table"]').attributes('aria-labelledby') ?? ''
+    expect(wrapper.get(`[id="${title}"]`).text()).toBe('Table 1. The numbers of figure 1, and what each prompt cost')
     expect(wrapper.get('[data-testid="verdict"]').attributes('data-verdict')).toBe('no_detectable_difference')
     expect(textOf(wrapper, '[data-testid="verdict"]')).toContain('this run cannot tell the two prompts apart')
     const changed = wrapper.findAll('[data-testid="changed-case"]')
@@ -196,6 +199,10 @@ describe('LB-10\'s board', () => {
     expect(first.find('[data-testid="diff-unrelated"]').exists()).toBe(true)
     expect(first.get('[data-side="production"]').text()).toContain('Shown re-indented')
     expect(first.get('[data-side="edited"]').text()).toContain('Shown exactly as written')
+    // Every case that changed is listed; the first two of a provider show their replies, the rest open on a click.
+    const groq = wrapper.findAll('[data-provider="groq"] [data-testid="changed-case"]')
+    expect(groq.length).toBeGreaterThan(2)
+    expect(groq.map(item => (item.get('[data-testid="case-replies"]').element as HTMLDetailsElement).open)).toEqual(groq.map((_, index) => index < 2))
   })
 
   it('runs an unchanged prompt once, and says its report has nothing to compare', async () => {
