@@ -98,9 +98,14 @@ function timeOf(item: Meeting): string {
 </template>
 
 <style scoped>
+/* A card of its own in the side column, as the visitor's runs are on LB-06's and LB-07's boards. */
 .mine {
   display: grid;
   gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--lb-sheet);
+  border: 1px solid var(--lb-rule);
 }
 
 .note {
@@ -123,6 +128,11 @@ function timeOf(item: Meeting): string {
   padding-bottom: 8px;
   font-size: 13.5px;
   border-bottom: 1px solid var(--lb-rule);
+}
+
+.row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .what {

@@ -265,7 +265,7 @@ session's meetings.
 |---|---|
 | `GET /api/lb09/samples` | The curated sample meetings, each with its committed audio file and its length |
 | `GET /api/lb09/limits` | Meetings left today, when the day resets, and the limits every recording is held to |
-| `POST /api/lb09/meetings` | Start a meeting: `{"source": "upload", "mode": "fast"\|"private", "audio": "<base64>", "language": "en"\|"cs"}` or `{"source": "sample", "mode": ..., "sample": "monday-roasting-plan"}`. Answers 202 with the meeting and its run ID, and queues it; 413, 415, 429 (five a day) or 404 (no such sample) |
+| `POST /api/lb09/meetings` | Start a meeting: `{"source": "upload", "mode": "fast"\|"private", "audio": "<base64>"}` or `{"source": "sample", "mode": ..., "sample": "monday-roasting-plan"}`, with an optional `"language"` (a two-letter code) that holds the transcriber to one language. Without it the transcriber hears which, and the board leaves it out for a visitor's own recording: told the wrong language, Whisper writes invented words and takes far longer. Answers 202 with the meeting and its run ID, and queues it; 413, 415, 429 (five a day) or 404 (no such sample) |
 | `GET /api/lb09/meetings` | The visitor's own meetings, newest first |
 | `GET /api/lb09/meetings/{id}` | Where a meeting stands: status, stage, failure code, run ID, measured length, transcriber, calls, dropped items. The polling fallback for the WebSocket |
 | `GET /api/lb09/meetings/{id}/transcript` | The segments with their seconds and inferred speaker labels (409 until the meeting is done) |
@@ -319,9 +319,29 @@ LB-09's grading is tested the same way: a scripted model that answers what the g
 passes every check at 1.0 on every case through the real pipeline, timed by the committed audio's
 manifest, which proves the server's own alignment turns the model's quotes into the right seconds;
 models that paraphrase a quote, invent an item, obey the line spoken to the assistant or name a
-speaker who never introduced themselves are caught by the code. **The live eval and the word error
-rate have not been run**: no provider key was available, and the private model's weights are not
-here, so no score and no rate is claimed anywhere; the gate's numbers are targets.
+speaker who never introduced themselves are caught by the code. **The live eval and fast mode's word
+error rate have not been run**: no provider key was available, so no score and no fast-mode rate is
+claimed anywhere; the gate's numbers are targets.
+
+Private mode's word error rate was measured with `just wer-lb09 --mode private` on 5 October 2026,
+on a development machine (x86-64, 4 shared cores), not on the box (an Ampere A1), with faster-whisper's
+base weights in int8, the model the image ships:
+
+| Meeting | Words | Word error rate |
+|---|---|---|
+| grinder-repair | 57 | 0.158 |
+| monday-roasting-plan | 98 | 0.173 |
+| newsletter-draft | 53 | 0.038 |
+| quarterly-check-in | 61 | 0.066 |
+| tasting-notes-overlap | 42 | 0.143 |
+| weekend-staffing | 47 | 0.000 |
+| All six | 358 | 0.106 |
+
+The meetings are spoken by Flite, a robotic voice, so the rate says how the transcriber copes with
+it, not with people. On the same machine the base model transcribed in 0.045 to 0.082 seconds of
+work a second of audio (0.060 over the six, three runs each; 0.093 when the machine was busy), and
+the worker's transcription step took 4.1 to 5.1 seconds for a 59.5-second recording, the model's
+load included; two at once took 7.6 to 7.9 seconds each.
 
 Search recall today, keyword search only: 1.000 at 4 when searching by the classifier's
 English query, 0.441 when searching by the customer's own words, and 0 of 14 Czech
@@ -509,9 +529,10 @@ Short notes, as the playbook asks (step 8).
   failure reaches the page as a code, never an error's words.
 - **Denial of service.** 5 meetings a visitor a day, counted under a per-visitor lock so that
   simultaneous uploads cannot pass it (a meeting the service failed for its own reasons gives its
-  place back, and the gateway's 30 calls a visitor a day still bound what such meetings cost); 3 MiB an upload, a minute of audio, 15 seconds and 1 GiB to
-  decode it, 120 segments and 6,000 characters of transcript, 4 chat calls a meeting; the gateway
-  adds 6 calls a run, 30 a visitor a day and 240 a day, and 60 seconds of audio a call. The queue
+  place back, and the gateway's 30 calls a visitor a day still bound what such meetings cost);
+  3 MiB an upload, a minute of audio, 15 seconds and 1 GiB to decode it, 120 segments and 6,000
+  characters of transcript, 4 chat calls a meeting; the gateway adds 6 calls a run, 30 a visitor
+  a day and 240 a day, and 60 seconds of audio a call. The queue
   drops a task unrun after 5 minutes and stops one after 150 seconds. A socket gets 2 KB frames,
   10 seconds to say hello, 5 minutes of silence, 8 frames and 4 connections a visitor in a process.
 - **Privilege escalation.** No tool, no side effect: the export for LB-08 is text a visitor
@@ -528,9 +549,14 @@ Known gaps, stated rather than hidden:
   joke worded as a task only fails the golden set's `forbidden` rule, which the live eval measures.
 - An owner is accepted when it is a label or a capitalised word the meeting said, so a model that
   assigns a job to the wrong person who was named in the meeting is not caught by the code.
+- The code checks that an item's quote was said, not that it says the item. A model that obeys an
+  instruction spoken in the meeting and pins the job it invented on a real sentence keeps it: seen
+  when the meeting was driven with a provider scripted to obey. Whether a real model obeys is what
+  the golden set's hostile lines measure; the code cannot.
+- A deadline is shown as the model gives it, whether or not its quote says it.
 - The connection cap and the stage announcements are per process, as LB-02's are.
-- Not run live: the golden eval, the word error rate in either mode, and recorded samples. The
-  private model's weights are not in this image until the download step in docs/DEPLOY.md runs.
+- Not run live: the golden eval, fast mode's word error rate, and recorded samples. Private mode's
+  rate was measured on a development machine (above), not on the box.
 
 ## Operating notes for LB-09
 
@@ -542,7 +568,8 @@ Known gaps, stated rather than hidden:
   that route through at 5 MB and keeps the 1 MB cap for everything else.
 - Private mode needs faster-whisper and the weights folder named by `LB09_WHISPER_DIR`, loaded
   with `local_files_only` so nothing is ever downloaded at run time; the Dockerfile's build step
-  fetches them. The model runs on the CPU in int8; a minute of audio takes the small model a
-  good part of a minute on the box, which is why a meeting's task has 150 seconds.
+  fetches the base model's. The model runs on the CPU in int8. On a development machine (x86-64,
+  4 shared cores) a 59.5-second recording took 4 to 8 seconds to transcribe (above); the box, an
+  Ampere A1, has not been measured, and a meeting's task keeps its 150 seconds until it is.
 - The channel layer's group for a meeting is `lb09.meeting.<id>`, under the same Redis prefix
   as LB-02's, so the Redis role needs nothing new.

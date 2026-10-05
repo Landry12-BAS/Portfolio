@@ -146,7 +146,7 @@ const lb09 = {
       decode_limit: 'Decoding the audio took more time or memory than a recording is allowed, so it was stopped.',
       no_speech: 'No speech was heard in the recording.',
       transcriber: 'The transcriber could not transcribe the audio. Try again, or the other mode.',
-      model: 'The model\'s answer did not fit what the recorder checks for, twice, so the meeting was not finished.',
+      model: 'The language model could not be reached, or its answer did not fit what the recorder checks for even when asked again, so the meeting was not finished.',
       audio_gone: 'The audio was gone before it could be transcribed. Send it again.',
       stale: 'The worker did not finish the meeting in time: it waited too long for a worker, or took longer than the 150 seconds a meeting is given. Send it again.',
       pipeline_error: 'Something went wrong while the meeting was worked on. Send it again.',

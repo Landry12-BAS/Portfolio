@@ -143,7 +143,7 @@ const lb09 = {
       decode_limit: 'Dekódování zvuku zabralo víc času nebo paměti, než nahrávka smí, a bylo zastaveno.',
       no_speech: 'V nahrávce nebyla slyšet žádná řeč.',
       transcriber: 'Přepisovač zvuk nedokázal přepsat. Zkuste to znovu, nebo druhý režim.',
-      model: 'Odpověď modelu dvakrát neodpovídala tomu, co záznamník kontroluje, takže porada nebyla dokončena.',
+      model: 'Jazykový model nebyl k dispozici, nebo jeho odpověď neodpovídala tomu, co záznamník kontroluje, ani na druhý pokus, takže porada nebyla dokončena.',
       audio_gone: 'Zvuk zmizel dřív, než mohl být přepsán. Odešlete ho znovu.',
       stale: 'Worker poradu nedokončil včas: čekala na workera příliš dlouho, nebo trvala déle než 150 sekund, které porada dostává. Odešlete ji znovu.',
       pipeline_error: 'Při zpracování porady se něco pokazilo. Odešlete ji znovu.',

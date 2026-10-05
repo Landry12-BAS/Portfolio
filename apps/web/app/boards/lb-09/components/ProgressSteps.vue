@@ -7,7 +7,8 @@
 // reason belongs to when the board read the meeting only now and then), and says when the meeting gave
 // its place for the day back. The panel also says honestly how the board hears about progress (over the
 // WebSocket, by reading the meeting every second or two when the socket is not there, or from a recording
-// in a replay), and counts the seconds since the meeting was sent.
+// in a replay), and counts the seconds since the meeting was sent. Its heading can take the keyboard's
+// focus, for the board to give the focus a place when the control that held it is gone.
 import { LbIcon } from '@lb/icons'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -42,6 +43,15 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+const title = ref<HTMLHeadingElement>()
+
+/** Puts the keyboard's focus on the progress's heading. */
+function focusTitle(): void {
+  title.value?.focus()
+}
+
+defineExpose({ focusTitle })
 
 // The clock advances once a second while the component is on the page.
 const clock = ref(props.now ?? Date.now())
@@ -130,7 +140,9 @@ const givenBack = computed(() => failed.value && !props.replaying && givesPlaceB
       />
       <h2
         id="lb09-progress-title"
+        ref="title"
         class="title"
+        tabindex="-1"
       >
         {{ headline }}
       </h2>

@@ -493,17 +493,39 @@ planning when the browser is free); its output, labelled `live` though a fake mo
   against the real service once and its output was thrown away).
 - **LB-09's board** records with the microphone and plays the audio from the browser. The recorder
   (`app/boards/lb-09/recorder.ts`) asks for the microphone only when the visitor presses record, after
-  the panel has said what will happen; it counts down the minute and stops itself; it reads the sound
-  level only while recording and not for a visitor who prefers reduced motion; and the audio stays in
-  the page (an object URL) until the visitor sends it, so the player plays the visitor's own recording
-  and a sample's file from the site, never anything from the back end, which deletes the audio once
-  transcribed. Its two board pages alone widen the policy, each addition the smallest that works:
-  `connect-src` gains the API's WebSocket origin (the grant from `POST /api/tokens/lb-09`, as LB-02's),
-  `media-src` is `'self' blob:`, and the `Permissions-Policy` allows `microphone=(self)`
-  (`server/lib/lb09-policy.ts`, tested in `e2e/security.spec.ts`; `docs/SECURITY.md`, section 3). The
-  board follows a meeting over the socket and, when the socket cannot be opened or drops, reads the
-  meeting every second or two and says so. The exports are made in the browser from what the page
-  holds (`export.ts` mirrors the service's), so a replay exports the same thing a live run does.
+  the panel has said what will happen; it counts down the minute and stops itself; it reads and draws
+  the sound level only while recording and not for a visitor who prefers reduced motion; and the audio
+  stays in the page (an object URL) until the visitor sends it. A file from the visitor's device is
+  checked in the page first (one of the containers the service takes, 3 MiB, a minute by the length
+  the browser reads), so a file the service would refuse spends nothing. The visitor's own recording is
+  sent with no language: the transcriber hears which, since Whisper told the wrong language writes
+  invented words. The player plays the visitor's recording and a sample's file, never anything from
+  the back end, which deletes the audio once transcribed; a sample's file is fetched once and played
+  from the page's memory (`AudioPlayer.vue`, up to 8 MiB), because the site serves its static files
+  without byte ranges and Chrome cannot seek such a file, so a click on an item played from 0:00. Its
+  two board pages alone widen the policy, each addition the smallest that works: `connect-src` gains
+  the API's WebSocket origin (the grant from `POST /api/tokens/lb-09`, as LB-02's), `media-src` is
+  `'self' blob:`, and the `Permissions-Policy` allows `microphone=(self)` (`server/lib/lb09-policy.ts`,
+  tested in `e2e/security.spec.ts`; `docs/SECURITY.md`, section 3). The board follows a meeting over the
+  socket and, when the socket cannot be opened or drops, reads the meeting every second or two and says
+  so; it reads the meeting once more when the transcription is over, for the transcriber, the language
+  heard and the length the socket's states leave out. Each stage is said in words, on the page and in
+  the live region. The visitor's meetings of the last 24 hours are listed beside the board
+  (`MyMeetings.vue`), so a reload or another tab opens one again where it stands, and the day's count
+  is read again when a meeting ends, since one the service could not finish gives its place back. When
+  the control that held the keyboard's focus gives way (the run button switched off, the recording
+  sent), the progress's heading takes the focus, and the result's when it is done. The exports are made
+  in the browser from what the page holds (`export.ts` mirrors the service's, formula-safe CSV cells
+  included), so a replay exports the same thing a live run does.
+- **What ran against the real thing for LB-09.** The board ran in Chromium (with a fake microphone)
+  against the real Django service as production runs it: the API under uvicorn with its WebSocket, the
+  Celery worker with its beat, Postgres, Redis, the shared audio folder, private mode on faster-whisper's
+  base weights, and the real gateway on the real `routing.yaml` with a scripted provider standing in for
+  Groq, Workers AI and the chat models. Every sample in both modes, uploads of WAV, WebM, Ogg and MP3,
+  the microphone in both modes, the failure paths, hostile recordings, the sweep and the page in both
+  languages, both themes and four widths (axe clean) were driven. It found the bugs fixed with the
+  jump, the facts, the Scope that gave up on a long meeting, the lost meetings, the forced language and
+  the focus. Not run there: a real provider, the real Turnstile, and a recording made on a live back end.
 - **LB-08's canvas** (Vue Flow) is a separate chunk, fetched when the canvas view is first shown, which
   a wide screen with a pointer does at once and a phone does not (it starts on the outline). It costs
   about 52 KB gzipped of script and 1.6 KB of style, and nothing else on the page pays for it. It

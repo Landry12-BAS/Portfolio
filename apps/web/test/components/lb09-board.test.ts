@@ -143,6 +143,30 @@ describe('the board', () => {
     expect(site.callsTo('/api/lb09/meetings', 'POST')).toHaveLength(1)
   })
 
+  it('gives the keyboard\'s focus to the progress when the run button it was on is switched off, and to the result when the meeting is done', async () => {
+    const { wrapper } = await openBoard()
+    const run = wrapper.get('[data-testid="run-sample"]').element as HTMLButtonElement
+    run.focus()
+    await wrapper.get('[data-testid="run-sample"]').trigger('click')
+    await pass(2 * 700)
+    expect(run.disabled).toBe(true)
+    expect(document.activeElement?.id).toBe('lb09-progress-title')
+    await pass(8 * 700)
+    expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false)
+    expect(document.activeElement?.id).toBe('lb09-items-title')
+  })
+
+  it('leaves the keyboard\'s focus where the visitor put it while a meeting runs', async () => {
+    const { wrapper } = await openBoard()
+    await wrapper.get('[data-testid="run-sample"]').trigger('click')
+    await pass(2 * 700)
+    const privateMode = wrapper.findAll('.mode .lb-seg__btn')[1]?.element as HTMLButtonElement
+    privateMode.focus()
+    await pass(8 * 700)
+    expect(wrapper.find('[data-testid="items"]').exists()).toBe(true)
+    expect(document.activeElement).toBe(privateMode)
+  })
+
   it('jumps the player to an item\'s evidence when the item is clicked, and marks the segment being heard', async () => {
     const { wrapper } = await openBoard()
     await wrapper.get('[data-testid="run-sample"]').trigger('click')
@@ -263,6 +287,8 @@ describe('the board', () => {
     expect(wrapper.find('[data-stage="transcribing"]').attributes('data-mark')).toBe('done')
     expect(wrapper.find('[data-stage="labelling"]').attributes('data-mark')).toBe('failed')
     expect(wrapper.find('[data-stage="extracting"]').attributes('data-mark')).toBe('waiting')
+    // The service fails a meeting this way when the models are out of reach as well as when their answers will not do.
+    expect(wrapper.get('[data-testid="progress-failure"]').text()).toContain('could not be reached')
     expect(wrapper.get('[data-testid="progress-given-back"]').text()).toContain('does not count')
     expect(wrapper.get('[data-testid="quota"]').text()).toContain('5 of 5')
     expect(wrapper.get('[data-testid="facts"] [data-fact="calls"]').text()).toBe('2')
@@ -340,8 +366,8 @@ describe('the recorder', () => {
     expect(wrapper.find('[data-testid="recorder-made"]').exists()).toBe(false)
   })
 
-  it('records, counts down, offers to listen back, and sends the recording as the visitor\'s own', async () => {
-    const { site, wrapper } = await openBoard()
+  /** Stubs a microphone the page can record from, through a MediaRecorder that hands over three seconds of WebM bytes when stopped. */
+  function fakeMicrophone() {
     const tracks = [{ stop: vi.fn() }]
     const listeners: Record<string, ((event?: unknown) => void)[]> = {}
     /** A MediaRecorder that hands over three seconds' worth of WebM bytes when stopped. */
@@ -371,10 +397,52 @@ describe('the recorder', () => {
     vi.stubGlobal('MediaRecorder', FakeMediaRecorder)
     vi.stubGlobal('navigator', { ...globalThis.navigator, mediaDevices: { getUserMedia: () => Promise.resolve({ getTracks: () => tracks }) } })
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:site.test/recording', revokeObjectURL: vi.fn() }))
+    return { tracks }
+  }
+
+  it('keeps the keyboard\'s focus on the one button that records and stops, and gives it back when a recording is discarded', async () => {
+    const { wrapper } = await openBoard()
+    fakeMicrophone()
+    await openRecorder(wrapper)
+    const button = wrapper.get('[data-testid="record"]').element as HTMLButtonElement
+    button.focus()
+    await wrapper.get('[data-testid="record"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="stop-recording"]').element).toBe(button)
+    expect(document.activeElement).toBe(button)
+    await pass(2_000)
+    await wrapper.get('[data-testid="stop-recording"]').trigger('click')
+    await flushPromises()
+    expect(document.activeElement).toBe(button)
+    expect(button.textContent?.trim()).toBe('Record again')
+    const discard = wrapper.get('[data-testid="discard-recording"]')
+    ;(discard.element as HTMLButtonElement).focus()
+    await discard.trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="recorder-made"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(button)
+    expect(button.textContent?.trim()).toBe('Record')
+  })
+
+  it('leaves the level meter out for a visitor who prefers reduced motion, and keeps the countdown', async () => {
+    const { wrapper } = await openBoard()
+    fakeMicrophone()
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }))
     await openRecorder(wrapper)
     await wrapper.get('[data-testid="record"]').trigger('click')
     await flushPromises()
     expect(wrapper.get('[data-testid="recorder-live"]').text()).toContain('60 s left of 60')
+    expect(wrapper.find('[data-testid="level-meter"]').exists()).toBe(false)
+  })
+
+  it('records, counts down, offers to listen back, and sends the recording as the visitor\'s own', async () => {
+    const { site, wrapper } = await openBoard()
+    const { tracks } = fakeMicrophone()
+    await openRecorder(wrapper)
+    await wrapper.get('[data-testid="record"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="recorder-live"]').text()).toContain('60 s left of 60')
+    expect(wrapper.find('[data-testid="level-meter"]').exists()).toBe(true)
     await pass(3_000)
     expect(wrapper.get('[data-testid="recorder-live"]').text()).toContain('57 s left of 60')
     await wrapper.get('[data-testid="stop-recording"]').trigger('click')
@@ -416,12 +484,32 @@ describe('a file of the visitor\'s own', () => {
     expect(sent.language).toBeUndefined()
   })
 
+  it('stays in the picker, which says so, until it is sent or discarded, and leaves the button saying record rather than record again', async () => {
+    const { wrapper } = await openBoard()
+    browserFor(20)
+    await openRecorder(wrapper)
+    const input = wrapper.get('[data-testid="file-input"]').element as HTMLInputElement
+    const emptied: string[] = []
+    Object.defineProperty(input, 'value', { get: () => '', set: (value: string) => emptied.push(value), configurable: true })
+    await chooseFile(wrapper, new File([wavBytes(64_000)], 'stand-up.wav', { type: 'audio/wav' }))
+    expect(wrapper.get('[data-testid="file-chosen"]').text()).toContain('stand-up.wav')
+    expect(emptied).toEqual([])
+    expect(wrapper.get('[data-testid="record"]').text()).toBe('Record')
+    await wrapper.get('[data-testid="discard-recording"]').trigger('click')
+    await flushPromises()
+    expect(emptied).toEqual([''])
+    expect(wrapper.find('[data-testid="file-chosen"]').exists()).toBe(false)
+  })
+
   it('is refused before it is sent when it is too big, not audio, or longer than a minute, and nothing is spent', async () => {
     const { site, wrapper } = await openBoard()
     browserFor(75)
     await openRecorder(wrapper)
     await chooseFile(wrapper, new File([new Uint8Array(3 * 1024 * 1024 + 1)], 'big.wav', { type: 'audio/wav' }))
     expect(wrapper.get('[data-testid="file-problem"]').attributes('data-problem')).toBe('too_big')
+    // The picker says it holds a file that will not do, and why, to a screen reader as well.
+    expect(wrapper.get('[data-testid="file-input"]').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('[data-testid="file-input"]').attributes('aria-describedby')).toContain('lb09-file-problem')
     await chooseFile(wrapper, new File(['<html>not audio</html>'], 'page.mp3', { type: 'audio/mpeg' }))
     expect(wrapper.get('[data-testid="file-problem"]').attributes('data-problem')).toBe('unreadable')
     await chooseFile(wrapper, new File([wavBytes(64_000)], 'long.wav', { type: 'audio/wav' }))
@@ -438,6 +526,14 @@ describe('other readings', () => {
     expect(wrapper.get('[data-testid="sample-facts"]').text()).toContain('Mluvčí: 4')
     await openRecorder(wrapper)
     expect(wrapper.get('[data-testid="record"]').text()).toBe('Nahrát')
+  })
+
+  it('names the language heard and writes the length as Czech does', async () => {
+    const { wrapper } = await openBoard({ locale: 'cs' })
+    await wrapper.get('[data-testid="run-sample"]').trigger('click')
+    await pass(9 * 700 + 100)
+    expect(wrapper.get('[data-testid="facts"] [data-fact="language"]').text()).toBe('Angličtina')
+    expect(wrapper.get('[data-testid="facts"] [data-fact="duration"]').text()).toBe('41,1 s')
   })
 
   it('keeps the Brief reading to the essentials: no export panel, the facts cut down', async () => {

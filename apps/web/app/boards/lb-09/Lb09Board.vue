@@ -10,8 +10,9 @@
 // the back end deletes it once transcribed. The export panel writes the result as JSON, CSV or the
 // plain-English follow-up for Automation Studio (LB-08). The visitor's meetings of the last 24 hours
 // are listed beside the board, so a reload or another tab opens them again. A live region says each
-// stage as the worker reaches it. The two board pages are the only ones whose Permissions-Policy
-// allows the microphone (docs/SECURITY.md, section 3).
+// stage as the worker reaches it, and the keyboard's focus is never left nowhere: when the control
+// that held it gives way, the progress or the result takes it. The two board pages are the only ones
+// whose Permissions-Policy allows the microphone (docs/SECURITY.md, section 3).
 import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -142,8 +143,9 @@ const announcement = computed(() => {
 const lastRequest = ref<() => void>()
 
 /**
- * Scrolls a part of the board into view if it is below the fold. It scrolls and nothing else: focus stays
- * where the visitor put it, and a visitor who prefers reduced motion gets no animation.
+ * Scrolls a part of the board into view if it is below the fold. It scrolls and nothing else (the focus moves
+ * only when the control that held it gave way, in keepFocus), and a visitor who prefers reduced motion gets no
+ * animation.
  */
 async function bringIntoView(id: string): Promise<void> {
   await nextTick()
@@ -212,6 +214,30 @@ function seek(seconds: number, play: boolean): void {
   player.value?.seekTo(seconds, play)
 }
 
+// The progress and the result, whose headings take the keyboard's focus when the control that held it gave way.
+const progressSteps = ref<InstanceType<typeof ProgressSteps>>()
+const itemsList = ref<InstanceType<typeof ItemsList>>()
+
+/** Whether the keyboard's focus was lost: the control that held it was taken off the page or switched off. */
+function focusLost(): boolean {
+  const active = document.activeElement
+  if (active === null || active === document.body) return true
+  return active instanceof HTMLButtonElement && active.disabled
+}
+
+/**
+ * Gives the keyboard's focus a place in the run when the control that held it gave way as the run moved on: the
+ * run button switched off while the meeting runs, the recording sent and its panel gone, a meeting opened from the
+ * list, the progress replaced by the result. The progress's heading takes it while the meeting is worked on or when
+ * it failed, the result's when it is done; focus the visitor put anywhere else stays where it is.
+ */
+async function keepFocus(): Promise<void> {
+  await nextTick()
+  if (!focusLost()) return
+  if (done.value) itemsList.value?.focusTitle()
+  else progressSteps.value?.focusTitle()
+}
+
 // A live meeting is shown once it has been sent: before that the check that the visitor is a person may
 // still open and close above it, and the page would be scrolled to where the meeting was a moment ago.
 watch(startedAt, (sent) => {
@@ -221,6 +247,10 @@ watch(startedAt, (sent) => {
 watch(phase, (next) => {
   if (next === 'done') void bringIntoView('lb09-result')
   else if (next === 'failed') void bringIntoView(RUN_ID)
+  void keepFocus()
+})
+watch(done, (now) => {
+  if (now) void keepFocus()
 })
 // The player starts over with each meeting.
 watch(playback, () => {
@@ -357,6 +387,7 @@ onBeforeUnmount(() => {
 
       <ProgressSteps
         v-if="meeting && (working || meetingFailed)"
+        ref="progressSteps"
         :stages="stages"
         :current="meeting.stage"
         :status="meeting.status"
@@ -415,6 +446,7 @@ onBeforeUnmount(() => {
         class="result"
       >
         <ItemsList
+          ref="itemsList"
           :items="items"
           @play="seek($event, true)"
         />

@@ -8,6 +8,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { decimalSeconds, languageName } from '../format'
 import { isOver } from '../schemas'
 import type { Meeting } from '../schemas'
 
@@ -23,21 +24,6 @@ const { t, locale } = useI18n()
 // The stages before the audio has been transcribed, while it still waits in the service.
 const BEFORE_TRANSCRIBED = new Set(['received', 'decoding', 'transcribing'])
 
-/**
- * Names the language the transcriber heard, in the visitor's language. Providers say it as a code (`en`) or as a
- * name in English (`English`, `english`), so a code is named and a name is written with a capital, as it came.
- */
-function languageName(heard: string, over: boolean): string {
-  if (heard === '') return over ? t('lb09.facts.noValue') : t('lb09.facts.unknown')
-  if (!/^[a-z]{2,3}$/i.test(heard)) return `${heard.charAt(0).toUpperCase()}${heard.slice(1)}`
-  try {
-    return new Intl.DisplayNames(locale.value, { type: 'language' }).of(heard.toLowerCase()) ?? heard.toUpperCase()
-  }
-  catch {
-    return heard.toUpperCase()
-  }
-}
-
 /** Says what is known of a value: the value, "not yet known" while the meeting runs, or "none" once it is over. */
 function known(value: string, over: boolean): string {
   if (value !== '') return value
@@ -49,12 +35,13 @@ const rows = computed(() => {
   if (!meeting) return []
   const over = isOver(meeting)
   const held = !over && BEFORE_TRANSCRIBED.has(meeting.stage)
-  const length = meeting.duration_seconds > 0 ? t('lb09.facts.seconds', { seconds: meeting.duration_seconds.toFixed(1) }) : ''
+  const length = meeting.duration_seconds > 0 ? t('lb09.facts.seconds', { seconds: decimalSeconds(meeting.duration_seconds, locale.value) }) : ''
+  const language = meeting.heard_language.trim() === '' ? '' : languageName(meeting.heard_language, locale.value)
   const all = [
     { key: 'mode', label: t('lb09.facts.mode'), value: t(`lb09.facts.modes.${meeting.mode}`) },
     { key: 'audio', label: t('lb09.facts.audio'), value: held ? t('lb09.facts.audioHeld') : t('lb09.facts.audioValue') },
     { key: 'transcriber', label: t('lb09.facts.transcriber'), value: known(meeting.transcriber, over) },
-    { key: 'language', label: t('lb09.facts.language'), value: languageName(meeting.heard_language, over) },
+    { key: 'language', label: t('lb09.facts.language'), value: known(language, over) },
     { key: 'duration', label: t('lb09.facts.duration'), value: known(length, over) },
     { key: 'calls', label: t('lb09.facts.modelCalls'), value: String(meeting.model_calls) },
     { key: 'dropped', label: t('lb09.facts.dropped'), value: String(meeting.dropped_items) },
