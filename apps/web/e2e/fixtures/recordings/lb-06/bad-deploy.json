@@ -1,0 +1,4614 @@
+{
+  "v": 1,
+  "system": "lb-06",
+  "sample": "bad-deploy",
+  "origin": "mock",
+  "recordedAt": "2026-10-05T10:57:11.528Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb06/incidents",
+        "body": {
+          "from": "sample",
+          "sampleId": "bad-deploy"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "origin": "sample",
+          "sampleId": "bad-deploy",
+          "scenario": {
+            "seed": 101,
+            "fault": "bad_deploy",
+            "params": {},
+            "baselineMinutes": 30
+          },
+          "state": "detecting",
+          "endReason": null,
+          "minute": 30,
+          "faultMinute": 30,
+          "guard": "not_needed",
+          "modelCalls": 0,
+          "cached": false,
+          "proposalsMade": 0,
+          "pendingProposal": null,
+          "remediations": [],
+          "slo": {
+            "badFraction": 0.215,
+            "burns": [
+              {
+                "shortMinutes": 2,
+                "longMinutes": 6,
+                "shortBurn": 21.74,
+                "longBurn": 7.5
+              },
+              {
+                "shortMinutes": 5,
+                "longMinutes": 15,
+                "shortBurn": 8.92,
+                "longBurn": 3.25
+              }
+            ],
+            "healthy": false,
+            "alerting": false
+          },
+          "healthyStreak": 0,
+          "alertMinute": null,
+          "recoveredMinute": null,
+          "lastSeq": 33,
+          "createdAt": "2026-10-05T10:57:09.461Z",
+          "deadlineAt": "2026-10-05T10:58:39.461Z",
+          "expiresAt": "2026-10-06T10:57:09.461Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "events": [
+            {
+              "seq": 1,
+              "minute": 0,
+              "at": "2026-10-05T10:57:09.468Z",
+              "kind": "incident.started",
+              "data": {
+                "seed": 101,
+                "fault": "bad_deploy",
+                "params": {},
+                "baselineMinutes": 30
+              }
+            },
+            {
+              "seq": 2,
+              "minute": 0,
+              "at": "2026-10-05T10:57:09.469Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 123.9,
+                    "error_rate": 0.0022,
+                    "latency_p50": 88,
+                    "latency_p95": 257,
+                    "latency_p99": 516,
+                    "saturation": 0.313,
+                    "memory_mb": 516
+                  },
+                  "cart": {
+                    "request_rate": 80.1,
+                    "error_rate": 0.0025,
+                    "latency_p50": 61,
+                    "latency_p95": 175,
+                    "latency_p99": 331,
+                    "saturation": 0.385,
+                    "memory_mb": 655
+                  },
+                  "payment": {
+                    "request_rate": 26.4,
+                    "error_rate": 0.0036,
+                    "latency_p50": 244,
+                    "latency_p95": 497,
+                    "latency_p99": 904,
+                    "saturation": 0.272,
+                    "memory_mb": 380
+                  },
+                  "inventory": {
+                    "request_rate": 73.3,
+                    "error_rate": 0.0025,
+                    "latency_p50": 39,
+                    "latency_p95": 117,
+                    "latency_p99": 214,
+                    "saturation": 0.302,
+                    "memory_mb": 395
+                  },
+                  "database": {
+                    "request_rate": 295.6,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 39,
+                    "saturation": 0.406,
+                    "memory_mb": 2048
+                  },
+                  "cache": {
+                    "request_rate": 491.8,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.222,
+                    "memory_mb": 1036
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0022,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.22,
+                      "longBurn": 0.07
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.09,
+                      "longBurn": 0.03
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 3,
+              "minute": 1,
+              "at": "2026-10-05T10:57:09.471Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 118.1,
+                    "error_rate": 0.0024,
+                    "latency_p50": 93,
+                    "latency_p95": 260,
+                    "latency_p99": 485,
+                    "saturation": 0.339,
+                    "memory_mb": 504
+                  },
+                  "cart": {
+                    "request_rate": 81.3,
+                    "error_rate": 0.0031,
+                    "latency_p50": 61,
+                    "latency_p95": 177,
+                    "latency_p99": 398,
+                    "saturation": 0.414,
+                    "memory_mb": 644
+                  },
+                  "payment": {
+                    "request_rate": 26.2,
+                    "error_rate": 0.0034,
+                    "latency_p50": 243,
+                    "latency_p95": 464,
+                    "latency_p99": 945,
+                    "saturation": 0.284,
+                    "memory_mb": 379
+                  },
+                  "inventory": {
+                    "request_rate": 71.7,
+                    "error_rate": 0.0016,
+                    "latency_p50": 38,
+                    "latency_p95": 123,
+                    "latency_p99": 230,
+                    "saturation": 0.273,
+                    "memory_mb": 415
+                  },
+                  "database": {
+                    "request_rate": 302.5,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 49,
+                    "saturation": 0.44,
+                    "memory_mb": 2059
+                  },
+                  "cache": {
+                    "request_rate": 499.9,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.205,
+                    "memory_mb": 1020
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0024,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.46,
+                      "longBurn": 0.15
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.18,
+                      "longBurn": 0.06
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 4,
+              "minute": 2,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 112.9,
+                    "error_rate": 0.0018,
+                    "latency_p50": 90,
+                    "latency_p95": 276,
+                    "latency_p99": 533,
+                    "saturation": 0.385,
+                    "memory_mb": 522
+                  },
+                  "cart": {
+                    "request_rate": 81.4,
+                    "error_rate": 0.0024,
+                    "latency_p50": 61,
+                    "latency_p95": 190,
+                    "latency_p99": 371,
+                    "saturation": 0.424,
+                    "memory_mb": 630
+                  },
+                  "payment": {
+                    "request_rate": 25.5,
+                    "error_rate": 0.0029,
+                    "latency_p50": 237,
+                    "latency_p95": 484,
+                    "latency_p99": 890,
+                    "saturation": 0.264,
+                    "memory_mb": 376
+                  },
+                  "inventory": {
+                    "request_rate": 70,
+                    "error_rate": 0.0022,
+                    "latency_p50": 41,
+                    "latency_p95": 115,
+                    "latency_p99": 210,
+                    "saturation": 0.295,
+                    "memory_mb": 400
+                  },
+                  "database": {
+                    "request_rate": 310,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 49,
+                    "saturation": 0.324,
+                    "memory_mb": 2041
+                  },
+                  "cache": {
+                    "request_rate": 508.8,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.188,
+                    "memory_mb": 1017
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.21
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.26,
+                      "longBurn": 0.09
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 5,
+              "minute": 3,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 121.1,
+                    "error_rate": 0.0019,
+                    "latency_p50": 91,
+                    "latency_p95": 274,
+                    "latency_p99": 512,
+                    "saturation": 0.355,
+                    "memory_mb": 502
+                  },
+                  "cart": {
+                    "request_rate": 88.5,
+                    "error_rate": 0.0026,
+                    "latency_p50": 59,
+                    "latency_p95": 191,
+                    "latency_p99": 325,
+                    "saturation": 0.402,
+                    "memory_mb": 643
+                  },
+                  "payment": {
+                    "request_rate": 25.6,
+                    "error_rate": 0.0046,
+                    "latency_p50": 233,
+                    "latency_p95": 467,
+                    "latency_p99": 836,
+                    "saturation": 0.241,
+                    "memory_mb": 373
+                  },
+                  "inventory": {
+                    "request_rate": 68.8,
+                    "error_rate": 0.0019,
+                    "latency_p50": 38,
+                    "latency_p95": 114,
+                    "latency_p99": 198,
+                    "saturation": 0.361,
+                    "memory_mb": 400
+                  },
+                  "database": {
+                    "request_rate": 312.5,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 41,
+                    "saturation": 0.348,
+                    "memory_mb": 2055
+                  },
+                  "cache": {
+                    "request_rate": 509.3,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.185,
+                    "memory_mb": 1031
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0019,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.37,
+                      "longBurn": 0.28
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.33,
+                      "longBurn": 0.11
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 6,
+              "minute": 4,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 117.7,
+                    "error_rate": 0.0023,
+                    "latency_p50": 81,
+                    "latency_p95": 281,
+                    "latency_p99": 493,
+                    "saturation": 0.376,
+                    "memory_mb": 518
+                  },
+                  "cart": {
+                    "request_rate": 79.4,
+                    "error_rate": 0.0027,
+                    "latency_p50": 59,
+                    "latency_p95": 189,
+                    "latency_p99": 360,
+                    "saturation": 0.405,
+                    "memory_mb": 633
+                  },
+                  "payment": {
+                    "request_rate": 24.6,
+                    "error_rate": 0.0038,
+                    "latency_p50": 236,
+                    "latency_p95": 499,
+                    "latency_p99": 780,
+                    "saturation": 0.284,
+                    "memory_mb": 378
+                  },
+                  "inventory": {
+                    "request_rate": 71.9,
+                    "error_rate": 0.0021,
+                    "latency_p50": 38,
+                    "latency_p95": 124,
+                    "latency_p99": 203,
+                    "saturation": 0.313,
+                    "memory_mb": 398
+                  },
+                  "database": {
+                    "request_rate": 323.7,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 44,
+                    "saturation": 0.356,
+                    "memory_mb": 2038
+                  },
+                  "cache": {
+                    "request_rate": 524.9,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.185,
+                    "memory_mb": 1015
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0023,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.35
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.14
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 7,
+              "minute": 5,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 119.2,
+                    "error_rate": 0.0022,
+                    "latency_p50": 99,
+                    "latency_p95": 244,
+                    "latency_p99": 455,
+                    "saturation": 0.341,
+                    "memory_mb": 511
+                  },
+                  "cart": {
+                    "request_rate": 80.1,
+                    "error_rate": 0.0036,
+                    "latency_p50": 59,
+                    "latency_p95": 171,
+                    "latency_p99": 330,
+                    "saturation": 0.402,
+                    "memory_mb": 649
+                  },
+                  "payment": {
+                    "request_rate": 25.9,
+                    "error_rate": 0.0042,
+                    "latency_p50": 254,
+                    "latency_p95": 511,
+                    "latency_p99": 1002,
+                    "saturation": 0.264,
+                    "memory_mb": 385
+                  },
+                  "inventory": {
+                    "request_rate": 70.9,
+                    "error_rate": 0.002,
+                    "latency_p50": 40,
+                    "latency_p95": 118,
+                    "latency_p99": 233,
+                    "saturation": 0.285,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 307.6,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 48,
+                    "saturation": 0.309,
+                    "memory_mb": 2041
+                  },
+                  "cache": {
+                    "request_rate": 528.3,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.166,
+                    "memory_mb": 1025
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0022,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.45,
+                      "longBurn": 0.43
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.17
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 8,
+              "minute": 6,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 120.7,
+                    "error_rate": 0.0027,
+                    "latency_p50": 90,
+                    "latency_p95": 252,
+                    "latency_p99": 514,
+                    "saturation": 0.349,
+                    "memory_mb": 496
+                  },
+                  "cart": {
+                    "request_rate": 86.4,
+                    "error_rate": 0.0033,
+                    "latency_p50": 62,
+                    "latency_p95": 169,
+                    "latency_p99": 406,
+                    "saturation": 0.434,
+                    "memory_mb": 626
+                  },
+                  "payment": {
+                    "request_rate": 26.3,
+                    "error_rate": 0.0037,
+                    "latency_p50": 257,
+                    "latency_p95": 423,
+                    "latency_p99": 902,
+                    "saturation": 0.289,
+                    "memory_mb": 374
+                  },
+                  "inventory": {
+                    "request_rate": 69.3,
+                    "error_rate": 0.0019,
+                    "latency_p50": 38,
+                    "latency_p95": 125,
+                    "latency_p99": 214,
+                    "saturation": 0.275,
+                    "memory_mb": 405
+                  },
+                  "database": {
+                    "request_rate": 306.3,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 36,
+                    "saturation": 0.322,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 520.1,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.191,
+                    "memory_mb": 1016
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0027,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.49,
+                      "longBurn": 0.44
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.44,
+                      "longBurn": 0.21
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 9,
+              "minute": 7,
+              "at": "2026-10-05T10:57:09.472Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 133.2,
+                    "error_rate": 0.0023,
+                    "latency_p50": 92,
+                    "latency_p95": 255,
+                    "latency_p99": 576,
+                    "saturation": 0.404,
+                    "memory_mb": 523
+                  },
+                  "cart": {
+                    "request_rate": 81.9,
+                    "error_rate": 0.0033,
+                    "latency_p50": 65,
+                    "latency_p95": 175,
+                    "latency_p99": 399,
+                    "saturation": 0.41,
+                    "memory_mb": 634
+                  },
+                  "payment": {
+                    "request_rate": 25.4,
+                    "error_rate": 0.0043,
+                    "latency_p50": 244,
+                    "latency_p95": 463,
+                    "latency_p99": 977,
+                    "saturation": 0.229,
+                    "memory_mb": 373
+                  },
+                  "inventory": {
+                    "request_rate": 70,
+                    "error_rate": 0.0018,
+                    "latency_p50": 41,
+                    "latency_p95": 108,
+                    "latency_p99": 228,
+                    "saturation": 0.3,
+                    "memory_mb": 395
+                  },
+                  "database": {
+                    "request_rate": 321.2,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 41,
+                    "saturation": 0.363,
+                    "memory_mb": 2046
+                  },
+                  "cache": {
+                    "request_rate": 517.3,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.204,
+                    "memory_mb": 1020
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0023,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.5,
+                      "longBurn": 0.44
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.46,
+                      "longBurn": 0.24
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 10,
+              "minute": 8,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 122.8,
+                    "error_rate": 0.0017,
+                    "latency_p50": 91,
+                    "latency_p95": 261,
+                    "latency_p99": 527,
+                    "saturation": 0.389,
+                    "memory_mb": 513
+                  },
+                  "cart": {
+                    "request_rate": 85.1,
+                    "error_rate": 0.0022,
+                    "latency_p50": 62,
+                    "latency_p95": 181,
+                    "latency_p99": 348,
+                    "saturation": 0.4,
+                    "memory_mb": 638
+                  },
+                  "payment": {
+                    "request_rate": 27.6,
+                    "error_rate": 0.0045,
+                    "latency_p50": 237,
+                    "latency_p95": 453,
+                    "latency_p99": 889,
+                    "saturation": 0.238,
+                    "memory_mb": 367
+                  },
+                  "inventory": {
+                    "request_rate": 70.7,
+                    "error_rate": 0.0015,
+                    "latency_p50": 43,
+                    "latency_p95": 114,
+                    "latency_p99": 181,
+                    "saturation": 0.347,
+                    "memory_mb": 403
+                  },
+                  "database": {
+                    "request_rate": 304.4,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 16,
+                    "latency_p99": 45,
+                    "saturation": 0.308,
+                    "memory_mb": 2045
+                  },
+                  "cache": {
+                    "request_rate": 508.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.163,
+                    "memory_mb": 1034
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0017,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.44
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.45,
+                      "longBurn": 0.26
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 11,
+              "minute": 9,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 128.7,
+                    "error_rate": 0.0023,
+                    "latency_p50": 91,
+                    "latency_p95": 271,
+                    "latency_p99": 576,
+                    "saturation": 0.378,
+                    "memory_mb": 524
+                  },
+                  "cart": {
+                    "request_rate": 84.3,
+                    "error_rate": 0.0025,
+                    "latency_p50": 59,
+                    "latency_p95": 185,
+                    "latency_p99": 357,
+                    "saturation": 0.433,
+                    "memory_mb": 639
+                  },
+                  "payment": {
+                    "request_rate": 26.8,
+                    "error_rate": 0.0027,
+                    "latency_p50": 229,
+                    "latency_p95": 451,
+                    "latency_p99": 845,
+                    "saturation": 0.228,
+                    "memory_mb": 384
+                  },
+                  "inventory": {
+                    "request_rate": 75.4,
+                    "error_rate": 0.0021,
+                    "latency_p50": 41,
+                    "latency_p95": 115,
+                    "latency_p99": 241,
+                    "saturation": 0.338,
+                    "memory_mb": 402
+                  },
+                  "database": {
+                    "request_rate": 306.6,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 49,
+                    "saturation": 0.3,
+                    "memory_mb": 2039
+                  },
+                  "cache": {
+                    "request_rate": 511.1,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.209,
+                    "memory_mb": 1025
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0023,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.45
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.45,
+                      "longBurn": 0.29
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 12,
+              "minute": 10,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 123.9,
+                    "error_rate": 0.0021,
+                    "latency_p50": 90,
+                    "latency_p95": 245,
+                    "latency_p99": 474,
+                    "saturation": 0.393,
+                    "memory_mb": 514
+                  },
+                  "cart": {
+                    "request_rate": 84.2,
+                    "error_rate": 0.0028,
+                    "latency_p50": 55,
+                    "latency_p95": 180,
+                    "latency_p99": 311,
+                    "saturation": 0.411,
+                    "memory_mb": 648
+                  },
+                  "payment": {
+                    "request_rate": 26.2,
+                    "error_rate": 0.0037,
+                    "latency_p50": 249,
+                    "latency_p95": 494,
+                    "latency_p99": 932,
+                    "saturation": 0.256,
+                    "memory_mb": 373
+                  },
+                  "inventory": {
+                    "request_rate": 70.4,
+                    "error_rate": 0.0019,
+                    "latency_p50": 40,
+                    "latency_p95": 123,
+                    "latency_p99": 215,
+                    "saturation": 0.323,
+                    "memory_mb": 403
+                  },
+                  "database": {
+                    "request_rate": 321.6,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 41,
+                    "saturation": 0.326,
+                    "memory_mb": 2033
+                  },
+                  "cache": {
+                    "request_rate": 512.8,
+                    "error_rate": 0.0003,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.189,
+                    "memory_mb": 1018
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0021,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.44,
+                      "longBurn": 0.44
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.44,
+                      "longBurn": 0.32
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 13,
+              "minute": 11,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 130,
+                    "error_rate": 0.0025,
+                    "latency_p50": 94,
+                    "latency_p95": 261,
+                    "latency_p99": 469,
+                    "saturation": 0.303,
+                    "memory_mb": 518
+                  },
+                  "cart": {
+                    "request_rate": 83.8,
+                    "error_rate": 0.0024,
+                    "latency_p50": 63,
+                    "latency_p95": 176,
+                    "latency_p99": 327,
+                    "saturation": 0.386,
+                    "memory_mb": 629
+                  },
+                  "payment": {
+                    "request_rate": 26.3,
+                    "error_rate": 0.0037,
+                    "latency_p50": 245,
+                    "latency_p95": 500,
+                    "latency_p99": 954,
+                    "saturation": 0.245,
+                    "memory_mb": 382
+                  },
+                  "inventory": {
+                    "request_rate": 72.9,
+                    "error_rate": 0.0022,
+                    "latency_p50": 37,
+                    "latency_p95": 115,
+                    "latency_p99": 215,
+                    "saturation": 0.286,
+                    "memory_mb": 404
+                  },
+                  "database": {
+                    "request_rate": 310.5,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 42,
+                    "saturation": 0.368,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 515,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.187,
+                    "memory_mb": 1016
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0025,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.46,
+                      "longBurn": 0.45
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.44,
+                      "longBurn": 0.35
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 14,
+              "minute": 12,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 130.6,
+                    "error_rate": 0.0017,
+                    "latency_p50": 83,
+                    "latency_p95": 276,
+                    "latency_p99": 587,
+                    "saturation": 0.308,
+                    "memory_mb": 518
+                  },
+                  "cart": {
+                    "request_rate": 82.7,
+                    "error_rate": 0.0028,
+                    "latency_p50": 66,
+                    "latency_p95": 185,
+                    "latency_p99": 358,
+                    "saturation": 0.424,
+                    "memory_mb": 641
+                  },
+                  "payment": {
+                    "request_rate": 26.7,
+                    "error_rate": 0.0039,
+                    "latency_p50": 245,
+                    "latency_p95": 484,
+                    "latency_p99": 918,
+                    "saturation": 0.303,
+                    "memory_mb": 391
+                  },
+                  "inventory": {
+                    "request_rate": 71.8,
+                    "error_rate": 0.0019,
+                    "latency_p50": 39,
+                    "latency_p95": 128,
+                    "latency_p99": 197,
+                    "saturation": 0.336,
+                    "memory_mb": 407
+                  },
+                  "database": {
+                    "request_rate": 309.4,
+                    "error_rate": 0.0012,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 50,
+                    "saturation": 0.298,
+                    "memory_mb": 2051
+                  },
+                  "cache": {
+                    "request_rate": 515,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.202,
+                    "memory_mb": 1037
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0017,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.37
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 15,
+              "minute": 13,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 122.3,
+                    "error_rate": 0.0021,
+                    "latency_p50": 87,
+                    "latency_p95": 285,
+                    "latency_p99": 520,
+                    "saturation": 0.304,
+                    "memory_mb": 515
+                  },
+                  "cart": {
+                    "request_rate": 81.1,
+                    "error_rate": 0.0027,
+                    "latency_p50": 62,
+                    "latency_p95": 186,
+                    "latency_p99": 345,
+                    "saturation": 0.38,
+                    "memory_mb": 645
+                  },
+                  "payment": {
+                    "request_rate": 26.1,
+                    "error_rate": 0.0036,
+                    "latency_p50": 213,
+                    "latency_p95": 465,
+                    "latency_p99": 982,
+                    "saturation": 0.246,
+                    "memory_mb": 385
+                  },
+                  "inventory": {
+                    "request_rate": 72.7,
+                    "error_rate": 0.0016,
+                    "latency_p50": 40,
+                    "latency_p95": 123,
+                    "latency_p99": 193,
+                    "saturation": 0.337,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 313.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 49,
+                    "saturation": 0.358,
+                    "memory_mb": 2056
+                  },
+                  "cache": {
+                    "request_rate": 504.6,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.256,
+                    "memory_mb": 1020
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0021,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.38,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.4
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 16,
+              "minute": 14,
+              "at": "2026-10-05T10:57:09.473Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 121,
+                    "error_rate": 0.0023,
+                    "latency_p50": 92,
+                    "latency_p95": 255,
+                    "latency_p99": 588,
+                    "saturation": 0.356,
+                    "memory_mb": 517
+                  },
+                  "cart": {
+                    "request_rate": 81.3,
+                    "error_rate": 0.0032,
+                    "latency_p50": 59,
+                    "latency_p95": 166,
+                    "latency_p99": 301,
+                    "saturation": 0.406,
+                    "memory_mb": 646
+                  },
+                  "payment": {
+                    "request_rate": 24.3,
+                    "error_rate": 0.0051,
+                    "latency_p50": 243,
+                    "latency_p95": 470,
+                    "latency_p99": 848,
+                    "saturation": 0.234,
+                    "memory_mb": 385
+                  },
+                  "inventory": {
+                    "request_rate": 73.4,
+                    "error_rate": 0.0023,
+                    "latency_p50": 42,
+                    "latency_p95": 126,
+                    "latency_p99": 182,
+                    "saturation": 0.258,
+                    "memory_mb": 389
+                  },
+                  "database": {
+                    "request_rate": 324.7,
+                    "error_rate": 0.0008,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 42,
+                    "saturation": 0.308,
+                    "memory_mb": 2039
+                  },
+                  "cache": {
+                    "request_rate": 524.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.209,
+                    "memory_mb": 1029
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0023,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.44,
+                      "longBurn": 0.43
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 17,
+              "minute": 15,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 126.3,
+                    "error_rate": 0.002,
+                    "latency_p50": 90,
+                    "latency_p95": 259,
+                    "latency_p99": 577,
+                    "saturation": 0.341,
+                    "memory_mb": 511
+                  },
+                  "cart": {
+                    "request_rate": 90,
+                    "error_rate": 0.0036,
+                    "latency_p50": 62,
+                    "latency_p95": 184,
+                    "latency_p99": 314,
+                    "saturation": 0.394,
+                    "memory_mb": 650
+                  },
+                  "payment": {
+                    "request_rate": 25.6,
+                    "error_rate": 0.0037,
+                    "latency_p50": 223,
+                    "latency_p95": 462,
+                    "latency_p99": 858,
+                    "saturation": 0.271,
+                    "memory_mb": 379
+                  },
+                  "inventory": {
+                    "request_rate": 73.9,
+                    "error_rate": 0.0022,
+                    "latency_p50": 41,
+                    "latency_p95": 118,
+                    "latency_p99": 201,
+                    "saturation": 0.296,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 310.3,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 39,
+                    "saturation": 0.353,
+                    "memory_mb": 2050
+                  },
+                  "cache": {
+                    "request_rate": 511,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.202,
+                    "memory_mb": 1018
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.002,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 18,
+              "minute": 16,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 120.9,
+                    "error_rate": 0.0021,
+                    "latency_p50": 89,
+                    "latency_p95": 289,
+                    "latency_p99": 528,
+                    "saturation": 0.372,
+                    "memory_mb": 510
+                  },
+                  "cart": {
+                    "request_rate": 85.2,
+                    "error_rate": 0.0031,
+                    "latency_p50": 57,
+                    "latency_p95": 162,
+                    "latency_p99": 350,
+                    "saturation": 0.419,
+                    "memory_mb": 638
+                  },
+                  "payment": {
+                    "request_rate": 24.8,
+                    "error_rate": 0.0041,
+                    "latency_p50": 248,
+                    "latency_p95": 479,
+                    "latency_p99": 885,
+                    "saturation": 0.288,
+                    "memory_mb": 375
+                  },
+                  "inventory": {
+                    "request_rate": 74.2,
+                    "error_rate": 0.0018,
+                    "latency_p50": 41,
+                    "latency_p95": 131,
+                    "latency_p99": 243,
+                    "saturation": 0.266,
+                    "memory_mb": 403
+                  },
+                  "database": {
+                    "request_rate": 322.3,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 21,
+                    "latency_p99": 48,
+                    "saturation": 0.329,
+                    "memory_mb": 2040
+                  },
+                  "cache": {
+                    "request_rate": 526.1,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.239,
+                    "memory_mb": 1028
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0021,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 19,
+              "minute": 17,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 127.5,
+                    "error_rate": 0.0019,
+                    "latency_p50": 87,
+                    "latency_p95": 262,
+                    "latency_p99": 567,
+                    "saturation": 0.377,
+                    "memory_mb": 508
+                  },
+                  "cart": {
+                    "request_rate": 83.6,
+                    "error_rate": 0.0033,
+                    "latency_p50": 64,
+                    "latency_p95": 201,
+                    "latency_p99": 357,
+                    "saturation": 0.411,
+                    "memory_mb": 644
+                  },
+                  "payment": {
+                    "request_rate": 26.8,
+                    "error_rate": 0.0036,
+                    "latency_p50": 243,
+                    "latency_p95": 541,
+                    "latency_p99": 995,
+                    "saturation": 0.25,
+                    "memory_mb": 389
+                  },
+                  "inventory": {
+                    "request_rate": 72.6,
+                    "error_rate": 0.0023,
+                    "latency_p50": 40,
+                    "latency_p95": 125,
+                    "latency_p99": 228,
+                    "saturation": 0.325,
+                    "memory_mb": 390
+                  },
+                  "database": {
+                    "request_rate": 317.5,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 20,
+                    "latency_p99": 49,
+                    "saturation": 0.388,
+                    "memory_mb": 2051
+                  },
+                  "cache": {
+                    "request_rate": 549.4,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.221,
+                    "memory_mb": 1033
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0019,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.4
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 20,
+              "minute": 18,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 120.3,
+                    "error_rate": 0.0018,
+                    "latency_p50": 88,
+                    "latency_p95": 261,
+                    "latency_p99": 506,
+                    "saturation": 0.333,
+                    "memory_mb": 515
+                  },
+                  "cart": {
+                    "request_rate": 82.5,
+                    "error_rate": 0.0028,
+                    "latency_p50": 54,
+                    "latency_p95": 191,
+                    "latency_p99": 381,
+                    "saturation": 0.396,
+                    "memory_mb": 638
+                  },
+                  "payment": {
+                    "request_rate": 25.1,
+                    "error_rate": 0.0036,
+                    "latency_p50": 234,
+                    "latency_p95": 490,
+                    "latency_p99": 846,
+                    "saturation": 0.296,
+                    "memory_mb": 399
+                  },
+                  "inventory": {
+                    "request_rate": 74.8,
+                    "error_rate": 0.0013,
+                    "latency_p50": 38,
+                    "latency_p95": 129,
+                    "latency_p99": 222,
+                    "saturation": 0.295,
+                    "memory_mb": 399
+                  },
+                  "database": {
+                    "request_rate": 322.8,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 40,
+                    "saturation": 0.389,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 509.6,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.19,
+                    "memory_mb": 1027
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.37,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 21,
+              "minute": 19,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 121.9,
+                    "error_rate": 0.0024,
+                    "latency_p50": 91,
+                    "latency_p95": 250,
+                    "latency_p99": 549,
+                    "saturation": 0.286,
+                    "memory_mb": 511
+                  },
+                  "cart": {
+                    "request_rate": 84.8,
+                    "error_rate": 0.0031,
+                    "latency_p50": 62,
+                    "latency_p95": 184,
+                    "latency_p99": 385,
+                    "saturation": 0.342,
+                    "memory_mb": 645
+                  },
+                  "payment": {
+                    "request_rate": 26.2,
+                    "error_rate": 0.0041,
+                    "latency_p50": 248,
+                    "latency_p95": 462,
+                    "latency_p99": 1010,
+                    "saturation": 0.232,
+                    "memory_mb": 389
+                  },
+                  "inventory": {
+                    "request_rate": 76.6,
+                    "error_rate": 0.0017,
+                    "latency_p50": 40,
+                    "latency_p95": 119,
+                    "latency_p99": 239,
+                    "saturation": 0.261,
+                    "memory_mb": 402
+                  },
+                  "database": {
+                    "request_rate": 320,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 53,
+                    "saturation": 0.343,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 527.8,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.11,
+                    "memory_mb": 1027
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0024,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.43
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 22,
+              "minute": 20,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 125.8,
+                    "error_rate": 0.0015,
+                    "latency_p50": 90,
+                    "latency_p95": 256,
+                    "latency_p99": 453,
+                    "saturation": 0.339,
+                    "memory_mb": 511
+                  },
+                  "cart": {
+                    "request_rate": 83.9,
+                    "error_rate": 0.0027,
+                    "latency_p50": 61,
+                    "latency_p95": 184,
+                    "latency_p99": 344,
+                    "saturation": 0.377,
+                    "memory_mb": 638
+                  },
+                  "payment": {
+                    "request_rate": 26,
+                    "error_rate": 0.004,
+                    "latency_p50": 237,
+                    "latency_p95": 474,
+                    "latency_p99": 911,
+                    "saturation": 0.249,
+                    "memory_mb": 376
+                  },
+                  "inventory": {
+                    "request_rate": 69.8,
+                    "error_rate": 0.0023,
+                    "latency_p50": 39,
+                    "latency_p95": 126,
+                    "latency_p99": 197,
+                    "saturation": 0.254,
+                    "memory_mb": 417
+                  },
+                  "database": {
+                    "request_rate": 300.1,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 48,
+                    "saturation": 0.388,
+                    "memory_mb": 2064
+                  },
+                  "cache": {
+                    "request_rate": 529,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.124,
+                    "memory_mb": 1021
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0015,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.39,
+                      "longBurn": 0.39
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.39,
+                      "longBurn": 0.42
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 23,
+              "minute": 21,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 123.9,
+                    "error_rate": 0.0018,
+                    "latency_p50": 85,
+                    "latency_p95": 291,
+                    "latency_p99": 510,
+                    "saturation": 0.358,
+                    "memory_mb": 503
+                  },
+                  "cart": {
+                    "request_rate": 81.9,
+                    "error_rate": 0.0027,
+                    "latency_p50": 61,
+                    "latency_p95": 180,
+                    "latency_p99": 355,
+                    "saturation": 0.422,
+                    "memory_mb": 642
+                  },
+                  "payment": {
+                    "request_rate": 27,
+                    "error_rate": 0.0041,
+                    "latency_p50": 240,
+                    "latency_p95": 507,
+                    "latency_p99": 898,
+                    "saturation": 0.256,
+                    "memory_mb": 394
+                  },
+                  "inventory": {
+                    "request_rate": 72,
+                    "error_rate": 0.002,
+                    "latency_p50": 40,
+                    "latency_p95": 117,
+                    "latency_p99": 218,
+                    "saturation": 0.321,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 314.8,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 43,
+                    "saturation": 0.345,
+                    "memory_mb": 2046
+                  },
+                  "cache": {
+                    "request_rate": 524.2,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.229,
+                    "memory_mb": 1028
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.33,
+                      "longBurn": 0.38
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.38,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 24,
+              "minute": 22,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 120.8,
+                    "error_rate": 0.0024,
+                    "latency_p50": 97,
+                    "latency_p95": 285,
+                    "latency_p99": 538,
+                    "saturation": 0.385,
+                    "memory_mb": 515
+                  },
+                  "cart": {
+                    "request_rate": 81.6,
+                    "error_rate": 0.0031,
+                    "latency_p50": 61,
+                    "latency_p95": 168,
+                    "latency_p99": 313,
+                    "saturation": 0.417,
+                    "memory_mb": 644
+                  },
+                  "payment": {
+                    "request_rate": 25.8,
+                    "error_rate": 0.0039,
+                    "latency_p50": 223,
+                    "latency_p95": 457,
+                    "latency_p99": 1005,
+                    "saturation": 0.207,
+                    "memory_mb": 385
+                  },
+                  "inventory": {
+                    "request_rate": 69.4,
+                    "error_rate": 0.002,
+                    "latency_p50": 41,
+                    "latency_p95": 122,
+                    "latency_p99": 210,
+                    "saturation": 0.276,
+                    "memory_mb": 412
+                  },
+                  "database": {
+                    "request_rate": 307.6,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 38,
+                    "saturation": 0.397,
+                    "memory_mb": 2051
+                  },
+                  "cache": {
+                    "request_rate": 540.4,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.18,
+                    "memory_mb": 1035
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0024,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.39
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 25,
+              "minute": 23,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 125.6,
+                    "error_rate": 0.0023,
+                    "latency_p50": 83,
+                    "latency_p95": 292,
+                    "latency_p99": 553,
+                    "saturation": 0.335,
+                    "memory_mb": 509
+                  },
+                  "cart": {
+                    "request_rate": 82.7,
+                    "error_rate": 0.0022,
+                    "latency_p50": 57,
+                    "latency_p95": 184,
+                    "latency_p99": 291,
+                    "saturation": 0.341,
+                    "memory_mb": 634
+                  },
+                  "payment": {
+                    "request_rate": 24.3,
+                    "error_rate": 0.0038,
+                    "latency_p50": 250,
+                    "latency_p95": 490,
+                    "latency_p99": 973,
+                    "saturation": 0.249,
+                    "memory_mb": 379
+                  },
+                  "inventory": {
+                    "request_rate": 71.6,
+                    "error_rate": 0.0025,
+                    "latency_p50": 41,
+                    "latency_p95": 121,
+                    "latency_p99": 205,
+                    "saturation": 0.294,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 316.5,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 41,
+                    "saturation": 0.349,
+                    "memory_mb": 2053
+                  },
+                  "cache": {
+                    "request_rate": 519.6,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.195,
+                    "memory_mb": 1021
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0023,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.47,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.42
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 26,
+              "minute": 24,
+              "at": "2026-10-05T10:57:09.474Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 122.7,
+                    "error_rate": 0.0022,
+                    "latency_p50": 102,
+                    "latency_p95": 276,
+                    "latency_p99": 528,
+                    "saturation": 0.335,
+                    "memory_mb": 501
+                  },
+                  "cart": {
+                    "request_rate": 78.3,
+                    "error_rate": 0.0031,
+                    "latency_p50": 61,
+                    "latency_p95": 174,
+                    "latency_p99": 356,
+                    "saturation": 0.396,
+                    "memory_mb": 650
+                  },
+                  "payment": {
+                    "request_rate": 27.1,
+                    "error_rate": 0.0041,
+                    "latency_p50": 251,
+                    "latency_p95": 478,
+                    "latency_p99": 949,
+                    "saturation": 0.245,
+                    "memory_mb": 379
+                  },
+                  "inventory": {
+                    "request_rate": 71.3,
+                    "error_rate": 0.0022,
+                    "latency_p50": 39,
+                    "latency_p95": 128,
+                    "latency_p99": 244,
+                    "saturation": 0.335,
+                    "memory_mb": 407
+                  },
+                  "database": {
+                    "request_rate": 306.9,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 47,
+                    "saturation": 0.349,
+                    "memory_mb": 2054
+                  },
+                  "cache": {
+                    "request_rate": 522.9,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.227,
+                    "memory_mb": 1030
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0022,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.45,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 27,
+              "minute": 25,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 117.6,
+                    "error_rate": 0.002,
+                    "latency_p50": 89,
+                    "latency_p95": 259,
+                    "latency_p99": 577,
+                    "saturation": 0.364,
+                    "memory_mb": 513
+                  },
+                  "cart": {
+                    "request_rate": 84,
+                    "error_rate": 0.0036,
+                    "latency_p50": 61,
+                    "latency_p95": 177,
+                    "latency_p99": 352,
+                    "saturation": 0.416,
+                    "memory_mb": 633
+                  },
+                  "payment": {
+                    "request_rate": 25.8,
+                    "error_rate": 0.0047,
+                    "latency_p50": 240,
+                    "latency_p95": 482,
+                    "latency_p99": 943,
+                    "saturation": 0.268,
+                    "memory_mb": 390
+                  },
+                  "inventory": {
+                    "request_rate": 73.3,
+                    "error_rate": 0.0022,
+                    "latency_p50": 38,
+                    "latency_p95": 121,
+                    "latency_p99": 201,
+                    "saturation": 0.273,
+                    "memory_mb": 400
+                  },
+                  "database": {
+                    "request_rate": 311,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 48,
+                    "saturation": 0.356,
+                    "memory_mb": 2045
+                  },
+                  "cache": {
+                    "request_rate": 540.4,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.218,
+                    "memory_mb": 1017
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.002,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 28,
+              "minute": 26,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 125.4,
+                    "error_rate": 0.0019,
+                    "latency_p50": 89,
+                    "latency_p95": 256,
+                    "latency_p99": 468,
+                    "saturation": 0.349,
+                    "memory_mb": 508
+                  },
+                  "cart": {
+                    "request_rate": 81.4,
+                    "error_rate": 0.0027,
+                    "latency_p50": 58,
+                    "latency_p95": 183,
+                    "latency_p99": 353,
+                    "saturation": 0.411,
+                    "memory_mb": 634
+                  },
+                  "payment": {
+                    "request_rate": 26.1,
+                    "error_rate": 0.0039,
+                    "latency_p50": 253,
+                    "latency_p95": 521,
+                    "latency_p99": 891,
+                    "saturation": 0.276,
+                    "memory_mb": 392
+                  },
+                  "inventory": {
+                    "request_rate": 70.8,
+                    "error_rate": 0.0021,
+                    "latency_p50": 39,
+                    "latency_p95": 117,
+                    "latency_p99": 194,
+                    "saturation": 0.323,
+                    "memory_mb": 416
+                  },
+                  "database": {
+                    "request_rate": 289.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 47,
+                    "saturation": 0.347,
+                    "memory_mb": 2044
+                  },
+                  "cache": {
+                    "request_rate": 523.5,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.176,
+                    "memory_mb": 1021
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0019,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.39,
+                      "longBurn": 0.42
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 29,
+              "minute": 27,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 123.6,
+                    "error_rate": 0.0022,
+                    "latency_p50": 84,
+                    "latency_p95": 271,
+                    "latency_p99": 535,
+                    "saturation": 0.383,
+                    "memory_mb": 522
+                  },
+                  "cart": {
+                    "request_rate": 81.7,
+                    "error_rate": 0.0029,
+                    "latency_p50": 59,
+                    "latency_p95": 176,
+                    "latency_p99": 349,
+                    "saturation": 0.395,
+                    "memory_mb": 637
+                  },
+                  "payment": {
+                    "request_rate": 24.9,
+                    "error_rate": 0.0042,
+                    "latency_p50": 253,
+                    "latency_p95": 460,
+                    "latency_p99": 968,
+                    "saturation": 0.288,
+                    "memory_mb": 389
+                  },
+                  "inventory": {
+                    "request_rate": 67.6,
+                    "error_rate": 0.0017,
+                    "latency_p50": 39,
+                    "latency_p95": 120,
+                    "latency_p99": 237,
+                    "saturation": 0.282,
+                    "memory_mb": 399
+                  },
+                  "database": {
+                    "request_rate": 300.9,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 45,
+                    "saturation": 0.379,
+                    "memory_mb": 2048
+                  },
+                  "cache": {
+                    "request_rate": 519.4,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.191,
+                    "memory_mb": 1036
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0022,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.41,
+                      "longBurn": 0.43
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.42,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 30,
+              "minute": 28,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 121.4,
+                    "error_rate": 0.0016,
+                    "latency_p50": 83,
+                    "latency_p95": 237,
+                    "latency_p99": 491,
+                    "saturation": 0.358,
+                    "memory_mb": 520
+                  },
+                  "cart": {
+                    "request_rate": 79.2,
+                    "error_rate": 0.0026,
+                    "latency_p50": 65,
+                    "latency_p95": 196,
+                    "latency_p99": 325,
+                    "saturation": 0.408,
+                    "memory_mb": 651
+                  },
+                  "payment": {
+                    "request_rate": 27,
+                    "error_rate": 0.0026,
+                    "latency_p50": 225,
+                    "latency_p95": 498,
+                    "latency_p99": 958,
+                    "saturation": 0.21,
+                    "memory_mb": 402
+                  },
+                  "inventory": {
+                    "request_rate": 69.4,
+                    "error_rate": 0.0023,
+                    "latency_p50": 39,
+                    "latency_p95": 116,
+                    "latency_p99": 197,
+                    "saturation": 0.383,
+                    "memory_mb": 410
+                  },
+                  "database": {
+                    "request_rate": 297.8,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 45,
+                    "saturation": 0.39,
+                    "memory_mb": 2052
+                  },
+                  "cache": {
+                    "request_rate": 475.4,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.181,
+                    "memory_mb": 1035
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0016,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.38,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 31,
+              "minute": 29,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 116.6,
+                    "error_rate": 0.0024,
+                    "latency_p50": 90,
+                    "latency_p95": 257,
+                    "latency_p99": 580,
+                    "saturation": 0.347,
+                    "memory_mb": 522
+                  },
+                  "cart": {
+                    "request_rate": 83.8,
+                    "error_rate": 0.0022,
+                    "latency_p50": 58,
+                    "latency_p95": 189,
+                    "latency_p99": 341,
+                    "saturation": 0.398,
+                    "memory_mb": 635
+                  },
+                  "payment": {
+                    "request_rate": 23.8,
+                    "error_rate": 0.0037,
+                    "latency_p50": 255,
+                    "latency_p95": 501,
+                    "latency_p99": 940,
+                    "saturation": 0.253,
+                    "memory_mb": 365
+                  },
+                  "inventory": {
+                    "request_rate": 70.8,
+                    "error_rate": 0.0019,
+                    "latency_p50": 37,
+                    "latency_p95": 125,
+                    "latency_p99": 205,
+                    "saturation": 0.279,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 304.4,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 50,
+                    "saturation": 0.375,
+                    "memory_mb": 2042
+                  },
+                  "cache": {
+                    "request_rate": 512.4,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.22,
+                    "memory_mb": 1024
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0024,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.41
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.4,
+                      "longBurn": 0.41
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 32,
+              "minute": 30,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "fault.injected",
+              "data": {
+                "fault": "bad_deploy",
+                "service": "cart"
+              }
+            },
+            {
+              "seq": 33,
+              "minute": 30,
+              "at": "2026-10-05T10:57:09.475Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 114.5,
+                    "error_rate": 0.215,
+                    "latency_p50": 126,
+                    "latency_p95": 350,
+                    "latency_p99": 589,
+                    "saturation": 0.31,
+                    "memory_mb": 525
+                  },
+                  "cart": {
+                    "request_rate": 79.8,
+                    "error_rate": 0.2269,
+                    "latency_p50": 94,
+                    "latency_p95": 298,
+                    "latency_p99": 561,
+                    "saturation": 0.41,
+                    "memory_mb": 623
+                  },
+                  "payment": {
+                    "request_rate": 25.1,
+                    "error_rate": 0.0035,
+                    "latency_p50": 261,
+                    "latency_p95": 478,
+                    "latency_p99": 931,
+                    "saturation": 0.216,
+                    "memory_mb": 398
+                  },
+                  "inventory": {
+                    "request_rate": 71,
+                    "error_rate": 0.0018,
+                    "latency_p50": 39,
+                    "latency_p95": 129,
+                    "latency_p99": 244,
+                    "saturation": 0.265,
+                    "memory_mb": 403
+                  },
+                  "database": {
+                    "request_rate": 298.3,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 42,
+                    "saturation": 0.278,
+                    "memory_mb": 2053
+                  },
+                  "cache": {
+                    "request_rate": 508.1,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.199,
+                    "memory_mb": 1023
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.215,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 21.74,
+                      "longBurn": 7.5
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 8.92,
+                      "longBurn": 3.25
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 34,
+              "minute": 31,
+              "at": "2026-10-05T10:57:09.632Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 119.9,
+                    "error_rate": 0.1767,
+                    "latency_p50": 121,
+                    "latency_p95": 344,
+                    "latency_p99": 719,
+                    "saturation": 0.345,
+                    "memory_mb": 511
+                  },
+                  "cart": {
+                    "request_rate": 76.9,
+                    "error_rate": 0.2555,
+                    "latency_p50": 101,
+                    "latency_p95": 313,
+                    "latency_p99": 612,
+                    "saturation": 0.373,
+                    "memory_mb": 636
+                  },
+                  "payment": {
+                    "request_rate": 25.1,
+                    "error_rate": 0.0044,
+                    "latency_p50": 220,
+                    "latency_p95": 464,
+                    "latency_p99": 969,
+                    "saturation": 0.257,
+                    "memory_mb": 385
+                  },
+                  "inventory": {
+                    "request_rate": 69,
+                    "error_rate": 0.002,
+                    "latency_p50": 39,
+                    "latency_p95": 116,
+                    "latency_p99": 223,
+                    "saturation": 0.247,
+                    "memory_mb": 387
+                  },
+                  "database": {
+                    "request_rate": 296.6,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 50,
+                    "saturation": 0.332,
+                    "memory_mb": 2044
+                  },
+                  "cache": {
+                    "request_rate": 501.7,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.147,
+                    "memory_mb": 1023
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.1783,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 39.33,
+                      "longBurn": 13.38
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 15.98,
+                      "longBurn": 5.6
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 35,
+              "minute": 31,
+              "at": "2026-10-05T10:57:09.632Z",
+              "kind": "alert.fired",
+              "data": {
+                "burn": {
+                  "shortMinutes": 2,
+                  "longMinutes": 6,
+                  "shortBurn": 39.33,
+                  "longBurn": 13.38
+                }
+              }
+            },
+            {
+              "seq": 36,
+              "minute": 32,
+              "at": "2026-10-05T10:57:09.780Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 116.2,
+                    "error_rate": 0.1641,
+                    "latency_p50": 137,
+                    "latency_p95": 341,
+                    "latency_p99": 797,
+                    "saturation": 0.376,
+                    "memory_mb": 516
+                  },
+                  "cart": {
+                    "request_rate": 80.4,
+                    "error_rate": 0.211,
+                    "latency_p50": 100,
+                    "latency_p95": 301,
+                    "latency_p99": 518,
+                    "saturation": 0.414,
+                    "memory_mb": 633
+                  },
+                  "payment": {
+                    "request_rate": 24.2,
+                    "error_rate": 0.0043,
+                    "latency_p50": 247,
+                    "latency_p95": 484,
+                    "latency_p99": 965,
+                    "saturation": 0.203,
+                    "memory_mb": 370
+                  },
+                  "inventory": {
+                    "request_rate": 69.1,
+                    "error_rate": 0.0021,
+                    "latency_p50": 42,
+                    "latency_p95": 117,
+                    "latency_p99": 217,
+                    "saturation": 0.325,
+                    "memory_mb": 404
+                  },
+                  "database": {
+                    "request_rate": 308.7,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 20,
+                    "latency_p99": 42,
+                    "saturation": 0.363,
+                    "memory_mb": 2043
+                  },
+                  "cache": {
+                    "request_rate": 472.1,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.218,
+                    "memory_mb": 1033
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.1668,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 34.52,
+                      "longBurn": 18.88
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 22.57,
+                      "longBurn": 7.8
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            }
+          ],
+          "cursor": 36,
+          "more": false,
+          "state": "detecting"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "events": [
+            {
+              "seq": 37,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.081Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 116.8,
+                    "error_rate": 0.2011,
+                    "latency_p50": 136,
+                    "latency_p95": 331,
+                    "latency_p99": 779,
+                    "saturation": 0.359,
+                    "memory_mb": 521
+                  },
+                  "cart": {
+                    "request_rate": 81.2,
+                    "error_rate": 0.2559,
+                    "latency_p50": 102,
+                    "latency_p95": 288,
+                    "latency_p99": 514,
+                    "saturation": 0.384,
+                    "memory_mb": 631
+                  },
+                  "payment": {
+                    "request_rate": 25.4,
+                    "error_rate": 0.0043,
+                    "latency_p50": 248,
+                    "latency_p95": 462,
+                    "latency_p99": 904,
+                    "saturation": 0.246,
+                    "memory_mb": 371
+                  },
+                  "inventory": {
+                    "request_rate": 67.5,
+                    "error_rate": 0.0018,
+                    "latency_p50": 40,
+                    "latency_p95": 119,
+                    "latency_p99": 241,
+                    "saturation": 0.302,
+                    "memory_mb": 402
+                  },
+                  "database": {
+                    "request_rate": 300.4,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 41,
+                    "saturation": 0.335,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 501,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.21,
+                    "memory_mb": 1031
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.2035,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 37.03,
+                      "longBurn": 25.59
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 30.64,
+                      "longBurn": 10.48
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 38,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.082Z",
+              "kind": "investigation.started",
+              "data": {
+                "snapshotMinute": 33
+              }
+            },
+            {
+              "seq": 39,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.090Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 1,
+                "agent": "commander",
+                "kind": "plan",
+                "plan": {
+                  "questions": [
+                    {
+                      "agent": "metrics",
+                      "question": "Which service diverged first, and how far did its error rate and latency move?"
+                    },
+                    {
+                      "agent": "logs",
+                      "question": "Which log signatures are new since the fault minute, and what do they say?"
+                    },
+                    {
+                      "agent": "deploys",
+                      "question": "Which deploys and flag changes preceded the first divergence?"
+                    }
+                  ]
+                },
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 40,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.093Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 2,
+                "agent": "metrics",
+                "kind": "tool_call",
+                "toolCall": {
+                  "tool": "query_metrics",
+                  "args": {
+                    "service": "cart",
+                    "metric": "error_rate",
+                    "lastMinutes": 10
+                  },
+                  "rows": 10
+                },
+                "modelCall": false
+              }
+            },
+            {
+              "seq": 41,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.095Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 3,
+                "agent": "metrics",
+                "kind": "report",
+                "report": {
+                  "agent": "metrics",
+                  "findings": [
+                    {
+                      "text": "metrics: bad_deploy on cart, first seen at minute 30.",
+                      "evidence": [
+                        "metric:cart:error_rate:24",
+                        "metric:cart:error_rate:25",
+                        "metric:cart:error_rate:26",
+                        "deploy:d6",
+                        "log:cart.npe",
+                        "metric:cart:error_rate:30"
+                      ]
+                    }
+                  ],
+                  "toolCalls": [
+                    {
+                      "tool": "query_metrics",
+                      "args": {
+                        "service": "cart",
+                        "metric": "error_rate",
+                        "lastMinutes": 10
+                      },
+                      "rows": 10
+                    }
+                  ]
+                },
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 42,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.097Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 4,
+                "agent": "logs",
+                "kind": "tool_call",
+                "toolCall": {
+                  "tool": "query_logs",
+                  "args": {
+                    "lastMinutes": 10,
+                    "onlyNew": true
+                  },
+                  "rows": 3
+                },
+                "modelCall": false
+              }
+            },
+            {
+              "seq": 43,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.098Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 5,
+                "agent": "logs",
+                "kind": "report",
+                "report": {
+                  "agent": "logs",
+                  "findings": [
+                    {
+                      "text": "logs: bad_deploy on cart, first seen at minute 30.",
+                      "evidence": [
+                        "log:web.upstream_502",
+                        "log:cart.npe",
+                        "log:cart.deployed",
+                        "deploy:d6",
+                        "metric:cart:error_rate:30"
+                      ]
+                    }
+                  ],
+                  "toolCalls": [
+                    {
+                      "tool": "query_logs",
+                      "args": {
+                        "lastMinutes": 10,
+                        "onlyNew": true
+                      },
+                      "rows": 3
+                    }
+                  ]
+                },
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 44,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.099Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 6,
+                "agent": "deploys",
+                "kind": "tool_call",
+                "toolCall": {
+                  "tool": "list_deploys",
+                  "args": {
+                    "lastMinutes": 60
+                  },
+                  "rows": 2
+                },
+                "modelCall": false
+              }
+            },
+            {
+              "seq": 45,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.099Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 7,
+                "agent": "deploys",
+                "kind": "report",
+                "report": {
+                  "agent": "deploys",
+                  "findings": [
+                    {
+                      "text": "deploys: bad_deploy on cart, first seen at minute 30.",
+                      "evidence": [
+                        "deploy:d6",
+                        "deploy:d5",
+                        "log:cart.npe",
+                        "metric:cart:error_rate:30"
+                      ]
+                    }
+                  ],
+                  "toolCalls": [
+                    {
+                      "tool": "list_deploys",
+                      "args": {
+                        "lastMinutes": 60
+                      },
+                      "rows": 2
+                    }
+                  ]
+                },
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 46,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.102Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 8,
+                "agent": "commander",
+                "kind": "ranking",
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 47,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.102Z",
+              "kind": "hypotheses.ranked",
+              "data": {
+                "hypotheses": [
+                  {
+                    "id": "h1",
+                    "service": "cart",
+                    "cause": "bad_deploy",
+                    "confidence": 0.9,
+                    "summary": "bad_deploy on cart, which diverged first.",
+                    "evidence": [
+                      "deploy:d6",
+                      "log:cart.npe",
+                      "metric:cart:error_rate:30"
+                    ]
+                  },
+                  {
+                    "id": "h2",
+                    "service": "web",
+                    "cause": "overload",
+                    "confidence": 0.1,
+                    "summary": "The edge is only showing what is behind it.",
+                    "evidence": [
+                      "deploy:d6"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "seq": 48,
+              "minute": 33,
+              "at": "2026-10-05T10:57:10.102Z",
+              "kind": "proposal.made",
+              "data": {
+                "proposalId": "p1",
+                "hypothesisId": "h1",
+                "action": {
+                  "kind": "rollback",
+                  "service": "cart",
+                  "toVersion": "2.13.4"
+                },
+                "rationale": "Removes the cause on cart rather than a symptom."
+              }
+            },
+            {
+              "seq": 49,
+              "minute": 34,
+              "at": "2026-10-05T10:57:10.213Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 120.8,
+                    "error_rate": 0.2315,
+                    "latency_p50": 126,
+                    "latency_p95": 359,
+                    "latency_p99": 619,
+                    "saturation": 0.326,
+                    "memory_mb": 514
+                  },
+                  "cart": {
+                    "request_rate": 76.6,
+                    "error_rate": 0.2579,
+                    "latency_p50": 107,
+                    "latency_p95": 303,
+                    "latency_p99": 622,
+                    "saturation": 0.397,
+                    "memory_mb": 648
+                  },
+                  "payment": {
+                    "request_rate": 24.4,
+                    "error_rate": 0.0042,
+                    "latency_p50": 248,
+                    "latency_p95": 496,
+                    "latency_p99": 987,
+                    "saturation": 0.222,
+                    "memory_mb": 377
+                  },
+                  "inventory": {
+                    "request_rate": 66.5,
+                    "error_rate": 0.0019,
+                    "latency_p50": 38,
+                    "latency_p95": 106,
+                    "latency_p99": 229,
+                    "saturation": 0.317,
+                    "memory_mb": 416
+                  },
+                  "database": {
+                    "request_rate": 300.9,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 43,
+                    "saturation": 0.309,
+                    "memory_mb": 2043
+                  },
+                  "cache": {
+                    "request_rate": 500.4,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.131,
+                    "memory_mb": 1029
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.2317,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 43.52,
+                      "longBurn": 33.26
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 39.82,
+                      "longBurn": 13.54
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 50,
+              "minute": 35,
+              "at": "2026-10-05T10:57:10.362Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 117.1,
+                    "error_rate": 0.1714,
+                    "latency_p50": 125,
+                    "latency_p95": 368,
+                    "latency_p99": 758,
+                    "saturation": 0.329,
+                    "memory_mb": 516
+                  },
+                  "cart": {
+                    "request_rate": 72.9,
+                    "error_rate": 0.2675,
+                    "latency_p50": 96,
+                    "latency_p95": 286,
+                    "latency_p99": 567,
+                    "saturation": 0.379,
+                    "memory_mb": 651
+                  },
+                  "payment": {
+                    "request_rate": 24.2,
+                    "error_rate": 0.0034,
+                    "latency_p50": 224,
+                    "latency_p95": 475,
+                    "latency_p99": 932,
+                    "saturation": 0.262,
+                    "memory_mb": 391
+                  },
+                  "inventory": {
+                    "request_rate": 69.2,
+                    "error_rate": 0.002,
+                    "latency_p50": 41,
+                    "latency_p95": 120,
+                    "latency_p99": 206,
+                    "saturation": 0.309,
+                    "memory_mb": 400
+                  },
+                  "database": {
+                    "request_rate": 295.8,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 48,
+                    "saturation": 0.36,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 484.2,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 7,
+                    "saturation": 0.189,
+                    "memory_mb": 1022
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.1736,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 40.53,
+                      "longBurn": 38.97
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 38.16,
+                      "longBurn": 15.84
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 51,
+              "minute": 36,
+              "at": "2026-10-05T10:57:10.513Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 111.3,
+                    "error_rate": 0.2002,
+                    "latency_p50": 132,
+                    "latency_p95": 355,
+                    "latency_p99": 675,
+                    "saturation": 0.397,
+                    "memory_mb": 517
+                  },
+                  "cart": {
+                    "request_rate": 77.8,
+                    "error_rate": 0.2493,
+                    "latency_p50": 99,
+                    "latency_p95": 266,
+                    "latency_p99": 538,
+                    "saturation": 0.394,
+                    "memory_mb": 636
+                  },
+                  "payment": {
+                    "request_rate": 24.2,
+                    "error_rate": 0.0039,
+                    "latency_p50": 229,
+                    "latency_p95": 503,
+                    "latency_p99": 795,
+                    "saturation": 0.206,
+                    "memory_mb": 363
+                  },
+                  "inventory": {
+                    "request_rate": 70.4,
+                    "error_rate": 0.0022,
+                    "latency_p50": 40,
+                    "latency_p95": 121,
+                    "latency_p99": 258,
+                    "saturation": 0.259,
+                    "memory_mb": 404
+                  },
+                  "database": {
+                    "request_rate": 286.7,
+                    "error_rate": 0.0012,
+                    "latency_p50": 4,
+                    "latency_p95": 17,
+                    "latency_p99": 45,
+                    "saturation": 0.346,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 488.6,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.245,
+                    "memory_mb": 1009
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.2012,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 37.48,
+                      "longBurn": 38.51
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 39.07,
+                      "longBurn": 18.5
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            }
+          ],
+          "cursor": 51,
+          "more": false,
+          "state": "awaiting_approval"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "origin": "sample",
+          "sampleId": "bad-deploy",
+          "scenario": {
+            "seed": 101,
+            "fault": "bad_deploy",
+            "params": {},
+            "baselineMinutes": 30
+          },
+          "state": "awaiting_approval",
+          "endReason": null,
+          "minute": 36,
+          "faultMinute": 30,
+          "guard": "not_needed",
+          "modelCalls": 8,
+          "cached": false,
+          "proposalsMade": 1,
+          "pendingProposal": {
+            "id": "p1",
+            "hypothesisId": "h1",
+            "action": {
+              "kind": "rollback",
+              "service": "cart",
+              "toVersion": "2.13.4"
+            },
+            "rationale": "Removes the cause on cart rather than a symptom."
+          },
+          "remediations": [],
+          "slo": {
+            "badFraction": 0.2012,
+            "burns": [
+              {
+                "shortMinutes": 2,
+                "longMinutes": 6,
+                "shortBurn": 37.48,
+                "longBurn": 38.51
+              },
+              {
+                "shortMinutes": 5,
+                "longMinutes": 15,
+                "shortBurn": 39.07,
+                "longBurn": 18.5
+              }
+            ],
+            "healthy": false,
+            "alerting": true
+          },
+          "healthyStreak": 0,
+          "alertMinute": 31,
+          "recoveredMinute": null,
+          "lastSeq": 51,
+          "createdAt": "2026-10-05T10:57:09.461Z",
+          "deadlineAt": "2026-10-05T10:58:39.461Z",
+          "expiresAt": "2026-10-06T10:57:09.461Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/proposals/p1/decision",
+        "body": {
+          "decision": "approve"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "origin": "sample",
+          "sampleId": "bad-deploy",
+          "scenario": {
+            "seed": 101,
+            "fault": "bad_deploy",
+            "params": {},
+            "baselineMinutes": 30
+          },
+          "state": "remediating",
+          "endReason": null,
+          "minute": 36,
+          "faultMinute": 30,
+          "guard": "not_needed",
+          "modelCalls": 8,
+          "cached": false,
+          "proposalsMade": 1,
+          "pendingProposal": null,
+          "remediations": [
+            {
+              "minute": 36,
+              "action": {
+                "kind": "rollback",
+                "service": "cart",
+                "toVersion": "2.13.4"
+              }
+            }
+          ],
+          "slo": {
+            "badFraction": 0.1011,
+            "burns": [
+              {
+                "shortMinutes": 2,
+                "longMinutes": 6,
+                "shortBurn": 27.47,
+                "longBurn": 35.17
+              },
+              {
+                "shortMinutes": 5,
+                "longMinutes": 15,
+                "shortBurn": 35.07,
+                "longBurn": 17.16
+              }
+            ],
+            "healthy": false,
+            "alerting": true
+          },
+          "healthyStreak": 0,
+          "alertMinute": 31,
+          "recoveredMinute": null,
+          "lastSeq": 53,
+          "createdAt": "2026-10-05T10:57:09.461Z",
+          "deadlineAt": "2026-10-05T10:58:39.461Z",
+          "expiresAt": "2026-10-06T10:57:09.461Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "events": [
+            {
+              "seq": 52,
+              "minute": 36,
+              "at": "2026-10-05T10:57:10.635Z",
+              "kind": "proposal.approved",
+              "data": {
+                "proposalId": "p1"
+              }
+            },
+            {
+              "seq": 53,
+              "minute": 36,
+              "at": "2026-10-05T10:57:10.635Z",
+              "kind": "remediation.applied",
+              "data": {
+                "proposalId": "p1",
+                "action": {
+                  "kind": "rollback",
+                  "service": "cart",
+                  "toVersion": "2.13.4"
+                }
+              }
+            },
+            {
+              "seq": 54,
+              "minute": 37,
+              "at": "2026-10-05T10:57:10.678Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 119,
+                    "error_rate": 0.0018,
+                    "latency_p50": 98,
+                    "latency_p95": 239,
+                    "latency_p99": 500,
+                    "saturation": 0.366,
+                    "memory_mb": 490
+                  },
+                  "cart": {
+                    "request_rate": 72.8,
+                    "error_rate": 0.0031,
+                    "latency_p50": 59,
+                    "latency_p95": 194,
+                    "latency_p99": 342,
+                    "saturation": 0.432,
+                    "memory_mb": 629
+                  },
+                  "payment": {
+                    "request_rate": 24.2,
+                    "error_rate": 0.0039,
+                    "latency_p50": 216,
+                    "latency_p95": 473,
+                    "latency_p99": 873,
+                    "saturation": 0.269,
+                    "memory_mb": 382
+                  },
+                  "inventory": {
+                    "request_rate": 66.8,
+                    "error_rate": 0.0021,
+                    "latency_p50": 38,
+                    "latency_p95": 123,
+                    "latency_p99": 214,
+                    "saturation": 0.266,
+                    "memory_mb": 406
+                  },
+                  "database": {
+                    "request_rate": 287,
+                    "error_rate": 0.001,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 44,
+                    "saturation": 0.392,
+                    "memory_mb": 2036
+                  },
+                  "cache": {
+                    "request_rate": 478.5,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.205,
+                    "memory_mb": 1035
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 10.29,
+                      "longBurn": 29.29
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 28.47,
+                      "longBurn": 17.15
+                    }
+                  ],
+                  "healthy": false,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 55,
+              "minute": 38,
+              "at": "2026-10-05T10:57:10.828Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 110.9,
+                    "error_rate": 0.0016,
+                    "latency_p50": 91,
+                    "latency_p95": 249,
+                    "latency_p99": 529,
+                    "saturation": 0.313,
+                    "memory_mb": 516
+                  },
+                  "cart": {
+                    "request_rate": 76.5,
+                    "error_rate": 0.004,
+                    "latency_p50": 60,
+                    "latency_p95": 179,
+                    "latency_p99": 309,
+                    "saturation": 0.367,
+                    "memory_mb": 638
+                  },
+                  "payment": {
+                    "request_rate": 24.4,
+                    "error_rate": 0.0056,
+                    "latency_p50": 237,
+                    "latency_p95": 488,
+                    "latency_p99": 868,
+                    "saturation": 0.249,
+                    "memory_mb": 391
+                  },
+                  "inventory": {
+                    "request_rate": 68.3,
+                    "error_rate": 0.0017,
+                    "latency_p50": 38,
+                    "latency_p95": 103,
+                    "latency_p99": 262,
+                    "saturation": 0.296,
+                    "memory_mb": 392
+                  },
+                  "database": {
+                    "request_rate": 301.2,
+                    "error_rate": 0.0009,
+                    "latency_p50": 4,
+                    "latency_p95": 16,
+                    "latency_p99": 43,
+                    "saturation": 0.387,
+                    "memory_mb": 2027
+                  },
+                  "cache": {
+                    "request_rate": 474.7,
+                    "error_rate": 0.0005,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.183,
+                    "memory_mb": 1026
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0016,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.34,
+                      "longBurn": 23.78
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 20.39,
+                      "longBurn": 17.14
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": true
+                }
+              }
+            },
+            {
+              "seq": 56,
+              "minute": 39,
+              "at": "2026-10-05T10:57:10.980Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 116.6,
+                    "error_rate": 0.0021,
+                    "latency_p50": 92,
+                    "latency_p95": 236,
+                    "latency_p99": 566,
+                    "saturation": 0.341,
+                    "memory_mb": 509
+                  },
+                  "cart": {
+                    "request_rate": 73.8,
+                    "error_rate": 0.0025,
+                    "latency_p50": 57,
+                    "latency_p95": 168,
+                    "latency_p99": 331,
+                    "saturation": 0.392,
+                    "memory_mb": 643
+                  },
+                  "payment": {
+                    "request_rate": 24.1,
+                    "error_rate": 0.0036,
+                    "latency_p50": 220,
+                    "latency_p95": 512,
+                    "latency_p99": 864,
+                    "saturation": 0.243,
+                    "memory_mb": 376
+                  },
+                  "inventory": {
+                    "request_rate": 63.4,
+                    "error_rate": 0.0022,
+                    "latency_p50": 39,
+                    "latency_p95": 128,
+                    "latency_p99": 225,
+                    "saturation": 0.293,
+                    "memory_mb": 393
+                  },
+                  "database": {
+                    "request_rate": 288.1,
+                    "error_rate": 0.0008,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 47,
+                    "saturation": 0.32,
+                    "memory_mb": 2051
+                  },
+                  "cache": {
+                    "request_rate": 475.5,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 5,
+                    "saturation": 0.266,
+                    "memory_mb": 1032
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0021,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.37,
+                      "longBurn": 17.06
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 11.21,
+                      "longBurn": 17.14
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": true
+                }
+              }
+            }
+          ],
+          "cursor": 56,
+          "more": false,
+          "state": "verifying"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "events": [
+            {
+              "seq": 57,
+              "minute": 40,
+              "at": "2026-10-05T10:57:11.132Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 111.6,
+                    "error_rate": 0.0018,
+                    "latency_p50": 85,
+                    "latency_p95": 228,
+                    "latency_p99": 468,
+                    "saturation": 0.353,
+                    "memory_mb": 520
+                  },
+                  "cart": {
+                    "request_rate": 76.8,
+                    "error_rate": 0.0035,
+                    "latency_p50": 57,
+                    "latency_p95": 181,
+                    "latency_p99": 325,
+                    "saturation": 0.448,
+                    "memory_mb": 635
+                  },
+                  "payment": {
+                    "request_rate": 23,
+                    "error_rate": 0.0033,
+                    "latency_p50": 236,
+                    "latency_p95": 503,
+                    "latency_p99": 928,
+                    "saturation": 0.231,
+                    "memory_mb": 373
+                  },
+                  "inventory": {
+                    "request_rate": 64.2,
+                    "error_rate": 0.002,
+                    "latency_p50": 38,
+                    "latency_p95": 134,
+                    "latency_p99": 219,
+                    "saturation": 0.298,
+                    "memory_mb": 399
+                  },
+                  "database": {
+                    "request_rate": 291.9,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 49,
+                    "saturation": 0.317,
+                    "memory_mb": 2051
+                  },
+                  "cache": {
+                    "request_rate": 474.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.21,
+                    "memory_mb": 1026
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.39,
+                      "longBurn": 9.4
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 4.34,
+                      "longBurn": 17.14
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 58,
+              "minute": 41,
+              "at": "2026-10-05T10:57:11.282Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 109.6,
+                    "error_rate": 0.0025,
+                    "latency_p50": 86,
+                    "latency_p95": 260,
+                    "latency_p99": 395,
+                    "saturation": 0.268,
+                    "memory_mb": 505
+                  },
+                  "cart": {
+                    "request_rate": 72.8,
+                    "error_rate": 0.004,
+                    "latency_p50": 63,
+                    "latency_p95": 164,
+                    "latency_p99": 390,
+                    "saturation": 0.477,
+                    "memory_mb": 641
+                  },
+                  "payment": {
+                    "request_rate": 24.8,
+                    "error_rate": 0.004,
+                    "latency_p50": 243,
+                    "latency_p95": 477,
+                    "latency_p99": 1004,
+                    "saturation": 0.283,
+                    "memory_mb": 376
+                  },
+                  "inventory": {
+                    "request_rate": 72.8,
+                    "error_rate": 0.0021,
+                    "latency_p50": 39,
+                    "latency_p95": 122,
+                    "latency_p99": 202,
+                    "saturation": 0.303,
+                    "memory_mb": 403
+                  },
+                  "database": {
+                    "request_rate": 300.2,
+                    "error_rate": 0.0011,
+                    "latency_p50": 4,
+                    "latency_p95": 19,
+                    "latency_p99": 51,
+                    "saturation": 0.346,
+                    "memory_mb": 2047
+                  },
+                  "cache": {
+                    "request_rate": 485.9,
+                    "error_rate": 0.0004,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.192,
+                    "memory_mb": 1027
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0025,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.43,
+                      "longBurn": 3.7
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.39,
+                      "longBurn": 17.15
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 59,
+              "minute": 42,
+              "at": "2026-10-05T10:57:11.433Z",
+              "kind": "tick",
+              "data": {
+                "metrics": {
+                  "web": {
+                    "request_rate": 110.4,
+                    "error_rate": 0.0018,
+                    "latency_p50": 84,
+                    "latency_p95": 251,
+                    "latency_p99": 465,
+                    "saturation": 0.38,
+                    "memory_mb": 519
+                  },
+                  "cart": {
+                    "request_rate": 75.2,
+                    "error_rate": 0.0036,
+                    "latency_p50": 60,
+                    "latency_p95": 164,
+                    "latency_p99": 355,
+                    "saturation": 0.377,
+                    "memory_mb": 645
+                  },
+                  "payment": {
+                    "request_rate": 22.7,
+                    "error_rate": 0.0049,
+                    "latency_p50": 233,
+                    "latency_p95": 485,
+                    "latency_p99": 1014,
+                    "saturation": 0.236,
+                    "memory_mb": 383
+                  },
+                  "inventory": {
+                    "request_rate": 70.3,
+                    "error_rate": 0.0023,
+                    "latency_p50": 42,
+                    "latency_p95": 128,
+                    "latency_p99": 222,
+                    "saturation": 0.325,
+                    "memory_mb": 418
+                  },
+                  "database": {
+                    "request_rate": 291.1,
+                    "error_rate": 0.0013,
+                    "latency_p50": 4,
+                    "latency_p95": 18,
+                    "latency_p99": 42,
+                    "saturation": 0.323,
+                    "memory_mb": 2049
+                  },
+                  "cache": {
+                    "request_rate": 466.7,
+                    "error_rate": 0.0006,
+                    "latency_p50": 1,
+                    "latency_p95": 3,
+                    "latency_p99": 6,
+                    "saturation": 0.164,
+                    "memory_mb": 1024
+                  }
+                },
+                "slo": {
+                  "badFraction": 0.0018,
+                  "burns": [
+                    {
+                      "shortMinutes": 2,
+                      "longMinutes": 6,
+                      "shortBurn": 0.43,
+                      "longBurn": 0.39
+                    },
+                    {
+                      "shortMinutes": 5,
+                      "longMinutes": 15,
+                      "shortBurn": 0.39,
+                      "longBurn": 17.14
+                    }
+                  ],
+                  "healthy": true,
+                  "alerting": false
+                }
+              }
+            },
+            {
+              "seq": 60,
+              "minute": 42,
+              "at": "2026-10-05T10:57:11.433Z",
+              "kind": "slo.recovered",
+              "data": {
+                "healthyMinutes": 5
+              }
+            },
+            {
+              "seq": 61,
+              "minute": 42,
+              "at": "2026-10-05T10:57:11.436Z",
+              "kind": "agent.step",
+              "data": {
+                "step": 9,
+                "agent": "commander",
+                "kind": "postmortem",
+                "modelCall": true
+              }
+            },
+            {
+              "seq": 62,
+              "minute": 42,
+              "at": "2026-10-05T10:57:11.436Z",
+              "kind": "postmortem.written",
+              "data": {
+                "prose": {
+                  "summary": "At minute 30 the shop broke (bad_deploy on cart); the alert fired, the agents investigated, the operator approved rollback cart to 2.13.4, and the SLO recovered.",
+                  "rootCause": "bad_deploy on cart",
+                  "whatWentWell": "The burn-rate alert fired within minutes and the remediation was approved by a person before anything changed.",
+                  "actionItems": [
+                    "Add a canary stage to the deploy pipeline.",
+                    "Alert on the signature that was new before the SLO burns."
+                  ],
+                  "references": [
+                    "fault.injected",
+                    "alert.fired",
+                    "investigation.started",
+                    "hypotheses.ranked",
+                    "proposal.made",
+                    "proposal.approved",
+                    "remediation.applied",
+                    "slo.recovered"
+                  ]
+                },
+                "modelCalls": 9
+              }
+            },
+            {
+              "seq": 63,
+              "minute": 42,
+              "at": "2026-10-05T10:57:11.437Z",
+              "kind": "incident.closed",
+              "data": {
+                "modelCalls": 9,
+                "proposals": 1
+              }
+            }
+          ],
+          "cursor": 63,
+          "more": false,
+          "state": "closed"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "origin": "sample",
+          "sampleId": "bad-deploy",
+          "scenario": {
+            "seed": 101,
+            "fault": "bad_deploy",
+            "params": {},
+            "baselineMinutes": 30
+          },
+          "state": "closed",
+          "endReason": null,
+          "minute": 42,
+          "faultMinute": 30,
+          "guard": "not_needed",
+          "modelCalls": 9,
+          "cached": false,
+          "proposalsMade": 1,
+          "pendingProposal": null,
+          "remediations": [
+            {
+              "minute": 36,
+              "action": {
+                "kind": "rollback",
+                "service": "cart",
+                "toVersion": "2.13.4"
+              }
+            }
+          ],
+          "slo": {
+            "badFraction": 0.0018,
+            "burns": [
+              {
+                "shortMinutes": 2,
+                "longMinutes": 6,
+                "shortBurn": 0.43,
+                "longBurn": 0.39
+              },
+              {
+                "shortMinutes": 5,
+                "longMinutes": 15,
+                "shortBurn": 0.39,
+                "longBurn": 17.14
+              }
+            ],
+            "healthy": true,
+            "alerting": false
+          },
+          "healthyStreak": 5,
+          "alertMinute": 31,
+          "recoveredMinute": 42,
+          "lastSeq": 63,
+          "createdAt": "2026-10-05T10:57:09.461Z",
+          "deadlineAt": "2026-10-05T10:58:39.461Z",
+          "expiresAt": "2026-10-06T10:57:09.461Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb06/incidents/6ba16466-9621-45dd-92ba-25512ce4b4c5/postmortem"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "incidentId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+          "timeline": [
+            {
+              "seq": 32,
+              "minute": 30,
+              "kind": "fault.injected",
+              "detail": "bad_deploy on cart"
+            },
+            {
+              "seq": 35,
+              "minute": 31,
+              "kind": "alert.fired",
+              "detail": "burn rate 39.33x over 2 min, 13.38x over 6 min"
+            },
+            {
+              "seq": 38,
+              "minute": 33,
+              "kind": "investigation.started",
+              "detail": "the agents began"
+            },
+            {
+              "seq": 47,
+              "minute": 33,
+              "kind": "hypotheses.ranked",
+              "detail": "top hypothesis: cart, bad_deploy (90%)"
+            },
+            {
+              "seq": 48,
+              "minute": 33,
+              "kind": "proposal.made",
+              "detail": "p1: rollback cart to 2.13.4"
+            },
+            {
+              "seq": 52,
+              "minute": 36,
+              "kind": "proposal.approved",
+              "detail": "p1 approved by the operator"
+            },
+            {
+              "seq": 53,
+              "minute": 36,
+              "kind": "remediation.applied",
+              "detail": "rollback cart to 2.13.4"
+            },
+            {
+              "seq": 60,
+              "minute": 42,
+              "kind": "slo.recovered",
+              "detail": "5 healthy minutes"
+            },
+            {
+              "seq": 63,
+              "minute": 42,
+              "kind": "incident.closed",
+              "detail": "9 model calls, 1 proposal(s)"
+            }
+          ],
+          "prose": {
+            "summary": "At minute 30 the shop broke (bad_deploy on cart); the alert fired, the agents investigated, the operator approved rollback cart to 2.13.4, and the SLO recovered.",
+            "rootCause": "bad_deploy on cart",
+            "whatWentWell": "The burn-rate alert fired within minutes and the remediation was approved by a person before anything changed.",
+            "actionItems": [
+              "Add a canary stage to the deploy pipeline.",
+              "Alert on the signature that was new before the SLO burns."
+            ],
+            "references": [
+              "fault.injected",
+              "alert.fired",
+              "investigation.started",
+              "hypotheses.ranked",
+              "proposal.made",
+              "proposal.approved",
+              "remediation.applied",
+              "slo.recovered"
+            ]
+          },
+          "modelCalls": 9,
+          "proposals": 1,
+          "recoveredMinute": 42
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "af94668660b66b2d",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "commander plans",
+        "status": "ok",
+        "startMs": 1791197830089,
+        "endMs": 1791197830090,
+        "attrs": {
+          "agent": "commander",
+          "step": 1,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "510fc35614957479",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "metrics agent investigates",
+        "status": "ok",
+        "startMs": 1791197830092,
+        "endMs": 1791197830092,
+        "attrs": {
+          "agent": "metrics",
+          "step": 2,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "1db67d86900be3fd",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.tool",
+        "name": "tool query_metrics",
+        "status": "ok",
+        "startMs": 1791197830093,
+        "endMs": 1791197830093,
+        "attrs": {
+          "agent": "metrics",
+          "tool": "query_metrics",
+          "rows": 10
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "ce12715ca9d6100e",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "metrics agent answers",
+        "status": "ok",
+        "startMs": 1791197830094,
+        "endMs": 1791197830094,
+        "attrs": {
+          "agent": "metrics",
+          "step": 3,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "891940d03de0e4d2",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "logs agent investigates",
+        "status": "ok",
+        "startMs": 1791197830096,
+        "endMs": 1791197830096,
+        "attrs": {
+          "agent": "logs",
+          "step": 4,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "f51ac3c3c8565c55",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.tool",
+        "name": "tool query_logs",
+        "status": "ok",
+        "startMs": 1791197830097,
+        "endMs": 1791197830097,
+        "attrs": {
+          "agent": "logs",
+          "tool": "query_logs",
+          "rows": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "86e266ba6e8026a1",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "logs agent answers",
+        "status": "ok",
+        "startMs": 1791197830097,
+        "endMs": 1791197830098,
+        "attrs": {
+          "agent": "logs",
+          "step": 5,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "eee5ce10d3aac7c8",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "deploys agent investigates",
+        "status": "ok",
+        "startMs": 1791197830098,
+        "endMs": 1791197830098,
+        "attrs": {
+          "agent": "deploys",
+          "step": 6,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "e500a8397e69d11b",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.tool",
+        "name": "tool list_deploys",
+        "status": "ok",
+        "startMs": 1791197830099,
+        "endMs": 1791197830099,
+        "attrs": {
+          "agent": "deploys",
+          "tool": "list_deploys",
+          "rows": 2
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "16caf6d6b6d3ef9b",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "deploys agent answers",
+        "status": "ok",
+        "startMs": 1791197830099,
+        "endMs": 1791197830099,
+        "attrs": {
+          "agent": "deploys",
+          "step": 7,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "8c34c25e595374c7",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "commander ranks hypotheses",
+        "status": "ok",
+        "startMs": 1791197830100,
+        "endMs": 1791197830100,
+        "attrs": {
+          "agent": "commander",
+          "step": 8,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "04d19b10bfcbfc1f",
+        "parentId": "6ba16466962145dd",
+        "kind": "system.step",
+        "name": "commander writes the postmortem",
+        "status": "ok",
+        "startMs": 1791197831435,
+        "endMs": 1791197831435,
+        "attrs": {
+          "agent": "commander",
+          "step": 9,
+          "repair": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6ba16466-9621-45dd-92ba-25512ce4b4c5",
+        "system": "lb-06",
+        "spanId": "6ba16466962145dd",
+        "kind": "system.run",
+        "name": "incident",
+        "status": "ok",
+        "startMs": 1791197829461,
+        "endMs": 1791197831438,
+        "attrs": {
+          "outcome": "closed",
+          "origin": "sample",
+          "minutes": 42,
+          "model_calls": 9,
+          "proposals": 1,
+          "cached": false
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 12,
+    "durationMs": 1977
+  }
+}

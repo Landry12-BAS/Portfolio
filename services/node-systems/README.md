@@ -1,7 +1,7 @@
-# Node systems · LB-08 Automation Studio and LB-04 Contract Radar
+# Node systems · LB-08 Automation Studio, LB-04 Contract Radar, LB-06 Incident Commander and LB-07 QA Engineer
 
-One Node monolith for the systems that suit Node best: LB-08 Automation Studio and LB-04
-Contract Radar today, then LB-06 and LB-07. Each system is a module with its own API prefix,
+One Node monolith for the systems that suit Node best: LB-08 Automation Studio, LB-04
+Contract Radar, LB-06 Incident Commander and LB-07 QA Engineer. Each system is a module with its own API prefix,
 Postgres schema, queues and tests, so it can be split into a service of its own later. Models
 are called only through the AI gateway.
 
@@ -15,15 +15,26 @@ contract's own text by code, so a clause the model invented never reaches the pa
 built this way: [`docs/STACK.md`](../../docs/STACK.md), Node systems. Platform security:
 [`docs/SECURITY.md`](../../docs/SECURITY.md).
 
+LB-06 breaks a simulated shop on a visitor's click and has a team of agents find the cause and propose
+a fix the visitor approves: the simulator is seeded and event-sourced, the alert and the correlation are
+code, the agents read compact summaries and cite evidence the server checks, and nothing changes the
+shop without the approval. Its section is near the end of this file.
+
+LB-07 tests a staging shop from a goal in plain words: a model plans the test once in a closed vocabulary,
+a sandboxed browser runs it, code makes the findings, the model writes the bug reports' prose, and a
+template writes the Playwright test, kept only when it is red with the bugs on and green with them off.
+Its section, with its threat model, is the last of this file.
+
 ## At a glance
 
 | Parameter | Value |
 |---|---|
-| API | Fastify 5 with the Zod type provider, under `/api/`: LB-08 at `/api/lb08/` and LB-04 at `/api/lb04/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema and Redis). Schema: [`openapi.json`](openapi.json), served at `/api/openapi.json` |
+| API | Fastify 5 with the Zod type provider, under `/api/`: LB-08 at `/api/lb08/`, LB-04 at `/api/lb04/`, LB-06 at `/api/lb06/` (and its WebSocket at `/ws/lb06/`) and LB-07 at `/api/lb07/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's schema and Redis). Schema: [`openapi.json`](openapi.json), served at `/api/openapi.json` |
+| Sandbox | LB-07's own process (`src/sandbox.ts`), in a container of its own: the staging shop and the browser runner, driven by the worker over HTTP |
 | Callers | The site's server, with an Ed25519 visitor token scoped to one system and valid 5 minutes at most (`@lb/common`'s [visitor check](../../packages/common/src/visitors.ts)) |
-| Worker | A separate process (`src/worker.ts`): BullMQ on Redis, one job per workflow step (LB-08) and one per contract under review (LB-04), plus a repeating sweep for each |
-| Data | PostgreSQL 17: one schema per system (`lb08`, `lb04`), Drizzle ORM and drizzle-kit migrations |
-| Model calls | Through the gateway only. LB-08: alias `lb-tools`, at most 2 a description. LB-04: `lb-guard`, `lb-long`, `lb-reason` and `lb-fast`, 2 to 5 a review and one a redline (at most 8 in all), every call labelled with the one run that contract is |
+| Worker | A separate process (`src/worker.ts`): BullMQ on Redis, one job per workflow step (LB-08), one per contract under review (LB-04) and one per incident for its whole life (LB-06), plus a repeating sweep for each |
+| Data | PostgreSQL 17: one schema per system (`lb08`, `lb04`, `lb06`), Drizzle ORM and drizzle-kit migrations |
+| Model calls | Through the gateway only. LB-08: alias `lb-tools`, at most 2 a description. LB-04: `lb-guard`, `lb-long`, `lb-reason` and `lb-fast`, 2 to 5 a review and one a redline (at most 8 in all), every call labelled with the one run that contract is. LB-06: `lb-guard`, `lb-reason` and `lb-tools`, 9 or 10 an incident on a clean run and 15 at the step cap |
 | Runtime | Node 22.18 or later (CI runs 24) with type stripping: TypeScript runs as written, so only erasable syntax is allowed |
 | Shared code | [`@lb/contracts`](../../packages/contracts/README.md) (the schemas), [`@lb/common`](../../packages/common/README.md) (gateway client, tokens, tracer) |
 
@@ -279,7 +290,8 @@ model; LB-04's limits, samples and playbook do too.
 |---|---|
 | `LB_NODE_HOST`, `LB_NODE_PORT`, `LB_NODE_LOG_LEVEL` | Where the API listens (default `0.0.0.0:8002`) and how much it logs |
 | `LB_DATABASE_URL` | The shared Postgres. Each system uses a pool whose search path holds only its own schema |
-| `LB08_DATABASE_URL`, `LB04_DATABASE_URL` | In production, a role that owns only the `lb08` (or `lb04`) schema; the shared URL is then not used for that system. Migrations run as this role too |
+| `LB08_DATABASE_URL`, `LB04_DATABASE_URL`, `LB06_DATABASE_URL`, `LB07_DATABASE_URL` | In production, a role that owns only the `lb08` (or `lb04`, `lb06`, `lb07`) schema; the shared URL is then not used for that system. Migrations run as this role too |
+| `LB07_RUNNER_URL`, `LB07_SHOP_TOKEN_KEY`, `LB07_SHOP_ORIGIN` | LB-07's worker: the sandbox's runner, the key bug tokens are signed with (hex, at least 64 digits; the runner's own key is derived from it), and the shop's origin as a reader of a generated test runs it. Without the first two a worker fails every LB-07 run as `runner_unavailable` |
 | `LB_REDIS_URL`, `LB_REDIS_PREFIX` | Redis, and the prefix of every key this service writes (default `lb:`) |
 | `LB_WEB_TOKEN_KEY` | The site's Ed25519 public key. Without it the API refuses every visitor |
 | `LB_GATEWAY_URL`, `LB_SERVICE_NAME`, `LB_SERVICE_KEY_FILE` | The gateway, and the service's own name and private key (a file nobody else can read). Required by the API and by the worker |
@@ -290,8 +302,11 @@ mistake names the variables, never their values.
 
 Redis keys this service writes, for the Redis ACL: `<prefix>bull:lb08-steps:*`,
 `<prefix>bull:lb08-dead-letters:*`, `<prefix>bull:lb08-maintenance:*`,
-`<prefix>bull:lb04-reviews:*`, `<prefix>bull:lb04-maintenance:*`, and the run spans the
-gateway reads, `<prefix>run:<run id>:spans` and `<prefix>spans`.
+`<prefix>bull:lb04-reviews:*`, `<prefix>bull:lb04-maintenance:*`, `<prefix>bull:lb06-incidents:*`,
+`<prefix>bull:lb06-maintenance:*`, the feed of each incident, `<prefix>lb06:feed:<incident id>` (a
+stream the worker appends to and the API reads), `<prefix>bull:lb07-runs:*`, `<prefix>bull:lb07-maintenance:*`,
+and the run spans the gateway reads, `<prefix>run:<run id>:spans` and `<prefix>spans`. The sandbox process uses
+no Redis and no database.
 
 ## Layout
 
@@ -304,10 +319,20 @@ src/modules/lb04/    the system: pdf/ (the file's checks and the extraction thre
                      (clauses, screen, prompts, verifier, report, redline, pipeline), playbook/,
                      data/, golden/, db/ (schema, migrations), engine/ (contracts, queue, sweep,
                      quotas, trace), routes/
+src/modules/lb06/    the system: sim/ (the seeded shop: faults, world, logs, deploys), detect/ (the SLO,
+                     the correlation, the summary, the tick), agents/ (the orchestrator, the prompts,
+                     the tools, the model wrapper, the postmortem), golden/ (the golden set, its grader,
+                     the reference agents, the runner), data/ (the samples), db/ (schema, migrations),
+                     engine/ (store, service, job, feed, socket, queue, sweep, cache, usage, trace), routes/
+src/modules/lb07/    the system: shop/ (the staging shop and its bug token), runner/ (the browser sessions, the
+                     plan's check, interception and the browser's network, the runner's API, its key and its
+                     client), agent/ (the state machine, the prompts, the model wrapper, the report rules, the test
+                     template), data/ and golden/ (the bug catalogue, the golden set, its grader and runner),
+                     db/ (schema, migrations), engine/ (store, service, job, queue, sweep, usage, trace), routes/
 src/modules/registry.ts   the list of systems the monolith hosts
-src/main.ts, src/worker.ts   the API process and the worker process
-src/cli/             migrate, seed, openapi, eval-lb08, eval-lb04 and the drift check
-scripts/             the generator of LB-04's sample contracts
+src/main.ts, src/worker.ts, src/sandbox.ts   the API process, the worker process and LB-07's sandbox process
+src/cli/             migrate, seed, openapi, eval-lb08, eval-lb04, eval-lb06, eval-lb07 and the drift check
+scripts/             the generator of LB-04's sample contracts, and LB-07's memory measurement
 ```
 
 A new system joins by adding a module (its schema, routes, queues, `migrate`, `seed` and
@@ -492,3 +517,462 @@ Known gaps, stated rather than hidden:
   taken for the moment and one is given back, so the cost is a call, never a place.
 - **No live eval score and no live prompt tuning.** The prompts were written from the golden
   set and checked against scripts, never against a model.
+
+## LB-06: from a click to a postmortem
+
+A visitor breaks a simulated shop (six services: web, cart, payment, inventory, database, cache) with
+one of four faults, and a team of agents finds the cause and proposes a fix the visitor approves. The
+simulator is the product: it is seeded and event-sourced, so an incident replays exactly from its seed
+and its log; the alert and the correlation are code; the agents see compact summaries and cite
+evidence the server checks; nothing changes the shop without the visitor's click; and the incident
+closes only when the SLO has recovered, measured by code.
+
+| Step | What it does | When it can't |
+|---|---|---|
+| Start | The visitor picks a curated sample (a fault with a fixed seed from the golden set) or a fault of their own with a seed and two optional strings (the bad deploy's version label, a flag's name). The strings go to the injection screen first (`lb-guard`, 1 call); a flagged one is replaced by a label. The incident is stored with the opening of its log: the start, 30 calm minutes, the fault, and the first minute of the fault, in one transaction with the visitor's place for the day and the global count | 429 after the day's incident, 503 when eight incidents run already or the queue refuses (the place is given back) |
+| Tick | The worker's job ticks the shop every two seconds of wall time: one simulated minute, its metrics and SLO appended as a `tick` event (Postgres first, then the incident's Redis Stream), so a dashboard draws the shop from the feed alone. The shop is a pure function of the seed, the fault and the remediations applied (`sim/world.ts`): every rebuild gives the same minute | The wall-clock cap (8 minutes) or 180 simulated minutes end the incident as timed out, whatever its state |
+| Detect | Code: the share of bad requests at the edge (errors, and requests over 600 ms), its burn rate against a 99.5% SLO, and two window pairs (2 and 6 minutes at 10x, 5 and 15 at 5x); both windows of a pair burning fires the alert. Code also says which service's series left its baseline first, which deploys and flag changes came in the half hour before, and which log signatures the calm baseline never showed (`detect/`) | |
+| Investigate | Two minutes after the alert the agents read a snapshot: the commander plans (`lb-reason`, 1 call), each specialist (logs, metrics, deploys; `lb-tools`) gets a turn that may call the read-only tools the server runs (`query_logs`, `query_metrics`, `list_deploys`, at most 12 rows each) and a last turn that must answer, the commander ranks the hypotheses and proposes one typed action from a closed list (1 call). Every answer gets one repair; every evidence id is checked against what the server holds and the rest dropped and counted; a rollback must name a version the history shows and a flag flip a flag the shop has. The clock keeps ticking meanwhile | The step cap (15, enforced by code, never asked of the model) ends the incident as aborted; an answer unusable twice or a gateway out of reach ends it as failed |
+| Approve | The proposal waits for the visitor. Approving is a transition checked against the pending proposal's id under the row's lock: the action is applied to the shop at that minute. Rejecting sends the commander back for one more ranking (1 call) with what was tried; three proposals at most | A decision that names anything but the pending proposal is 409 |
+| Verify | Code: five healthy minutes in a row (the short window under 1x) close the loop. A remediation that has not brought the SLO back in twelve minutes sends the commander back | The proposals spent end the incident as aborted |
+| Postmortem | Code builds the timeline from the log; the model writes prose over it (`lb-reason`, 1 call, 1 repair) that must reference only kinds of event the log holds, or no prose is shown. Then the incident closes and its root span is written | |
+
+A clean incident costs 9 calls (10 with the screen), up to 15 with repairs and a
+second ranking, and never more than 15 (the datasheet says 9 to 15). The agents' work for a scenario is cached by the scenario's
+key and the prompts' version (`engine/cache.ts`): a curated sample's second run replays its plan, tool
+calls, reports, ranking and postmortem at no model call, so the samples spend quota once. **No live
+score is recorded here: no provider key exists where this was built, so the live eval has never been
+run, and the datasheet's 9 to 15 stays an estimate.**
+
+### What a running incident costs
+
+A tick rebuilds the whole world from the seed: measured at about 15 to 20 ms for 240 minutes on this
+machine (`test/unit/lb06-sim.test.ts` holds it under 500 ms), once every two seconds, so one incident is
+under 1% of a core and the eight the service runs at once under 10%. The job holds the incident's log
+in Postgres and a few kilobytes in memory; a tick event is about 500 bytes, a whole log under 100 KB.
+A hub in the API reads one incident's stream for every socket of that incident, on one Redis
+connection each.
+
+### The LB-06 API
+
+All routes are under `/api/lb06/` and need a visitor token for `lb-06`; another visitor's incident is
+indistinguishable from one that doesn't exist.
+
+| Route | What it does |
+|---|---|
+| `GET /limits` | The visitor's day (one incident), the step cap, the concurrent cap and how many run now, the wall-clock cap, when the day resets |
+| `GET /catalogue` | The four faults with their sample, the samples (fault, seed, golden case), the baseline minutes and the tick pace |
+| `POST /incidents` | Start one: `{from: "sample", sampleId}` or `{from: "custom", fault, seed?, params?: {version?, flag?}}`. 201 the incident at its first minute; 404, 422, 429 (`daily_limit`, with `resets_at` and `Retry-After`), 503 (`too_many_incidents`, `queue_unavailable`, `agents_unavailable`) |
+| `GET /incidents`, `GET /incidents/{id}` | The visitor's incidents, and one with its state, its minute, its SLO as code measures it, the pending proposal, the remediations, the counts |
+| `GET /incidents/{id}/events?after=N` | The events after N, 200 a page: the polling fallback of the socket. A tick carries the minute's metrics and SLO |
+| `POST /incidents/{id}/proposals/{proposalId}/decision` | `{decision: "approve" | "reject"}`. 409 `proposal_settled` when the id is not the pending one |
+| `POST /incidents/{id}/abort` | End it now. 409 when it has ended |
+| `GET /incidents/{id}/postmortem` | The timeline and the prose. 409 `not_ready` until closed |
+
+### The LB-06 WebSocket
+
+`/ws/lb06/`, one JSON object a text frame, as LB-02's. The first frame, within ten seconds, is
+`{"type": "hello", "token": "<visitor token for lb-06>", "incident": "<id>", "after": N}`: the token
+travels in the frame and never in the address. The server answers `ready` (the incident, and the
+events after N), then `event` for every event the worker appends, read from the incident's stream by
+a hub shared by every socket of that incident. A second hello gets `error already_said_hello`; a
+visitor with four connections open gets `error too_many_connections` and 1013. The server pings every
+30 seconds and closes after 15 minutes of silence (4408), a frame over 4 KB (1009), a binary frame
+(1003), a frame that is not a hello (4400), a bad token (4401), somebody else's incident (4404). A page
+whose socket drops reconnects with the last number it holds and polls the events route meanwhile.
+
+### LB-06 limits
+
+| Limit | Value | Where it lives |
+|---|---|---|
+| Incidents per visitor per day (an incident the agents could not run, `failed`, is given back, once; one ended early or at the step cap stays spent) | 1 | `usage_counters`, one atomic statement in the transaction that stores the incident |
+| Incidents running at once, across visitors | 8 | the same transaction; also the worker's concurrency |
+| Model calls per incident | 15, the orchestrator's cap; the gateway caps the run at 15 and the visitor at 15 a day | `agents/orchestrator.ts`, `routing.yaml` |
+| Proposals per incident | 3 | `engine/job.ts`, `engine/service.ts` |
+| Wall-clock life, simulated minutes | 8 min, 180 | `config.ts`, checked on every tick |
+| Visitor text | two strings of 40 characters, `[\w .,:;!?'"()/-]` only (no `<` or `>`, so the data slot's markers can't be closed) | `@lb/contracts`' `LB06_PARAM_PATTERN` |
+| Tool rows, hypotheses, evidence per hypothesis, events | 12, 5, 6, 600 | `@lb/contracts`' `LB06_LIMITS` |
+| Socket frame, hello, idle, connections a visitor, a process | 4 KB, 10 s, 15 min, 4, 256 | `engine/socket.ts`, `core/app.ts` |
+| How long anything is kept | 24 hours, then the sweep deletes the incident with its log | `engine/sweep.ts` |
+
+### LB-06 data and evals
+
+| What | Where | Command |
+|---|---|---|
+| Golden set: eight incidents, two a fault, two hostile, graded by rules (cause, first proposal, evidence, calls, recovery, postmortem, injection) | [`evals/lb06/golden.yaml`](../../evals/lb06/golden.yaml) | `just eval-lb06` runs the live agents; the reader checks the set against the simulator (`just check`) |
+| The curated samples: the golden cases marked `sample: true`, one a fault | the same file | `GET /api/lb06/catalogue` |
+| OpenAPI document | [`openapi.json`](openapi.json) | `just node-openapi` |
+| Migrations | [`src/modules/lb06/db/migrations`](src/modules/lb06/db/migrations) | `pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb06.config.ts` after editing `schema.ts` |
+
+The golden set was written before any prompt. The reference agents (`golden/reference.ts`) answer every
+prompt correctly from its data slots, and the offline test (`test/unit/lb06-golden-run.test.ts`) runs
+the whole set through the whole simulator, the detection, the orchestrator and the postmortem with
+them: every case passes every rule in 9 calls, so the rules can be met. Tests also show the hostile
+strings reach the agents only inside a data slot of a user message, invented evidence is dropped and
+counted, a tempting first proposal fails its rule while the run still recovers on the second round,
+and an obeyed injection fails its rule.
+
+### LB-06 tests
+
+- **Unit:** the simulator (determinism minute for minute, bounds, cost, no alert on a calm shop, the alert
+  within five minutes of every fault, the cure recovers and the temptation does not, the correlation,
+  the leak's timeline, the summary and the evidence index), the golden set's reader and grader, the
+  golden run with the reference agents, the orchestrator with scripted models (one repair, the step cap,
+  a proposal checked against the history and the flags, tool calls run by the server and bounded,
+  discarded evidence counted, a postmortem with bad references left out), and the routing contract (the
+  caps, the aliases, the trace reader, the largest ranking prompt within the alias's input limit, the
+  datasheet's numbers).
+- **Integration:** a whole incident on a real Postgres with a fast clock, the approval that a replay or
+  a forged id cannot repeat, the rejection and the second ranking, a remediation that does not recover
+  and the second proposal, the allowances and the global cap, the cache that spares a second run its
+  calls, the wall-clock cap, the step cap, unusable agents, the abort, the injection screen, the sweep;
+  the API through Fastify (every route, every refusal, another visitor's 404); the socket on a real
+  port over the real Redis feed (hello, ready, live events in order, a late page, every refusal, the
+  caps); the schema (its own schema only, a role that owns nothing else, the checks, the cascade).
+
+### LB-06 threat model
+
+- **Spoofing.** As LB-08's: tokens the site signed for `lb-06`, 5 minutes at most, the visitor known by
+  their session hash. The socket takes the token in its first frame and closes on any failure with
+  the same code. A decision is a server-side transition checked against the pending proposal's id
+  under the row's lock, so a replayed or forged approval matches nothing and does nothing.
+- **Tampering: the visitor's words.** Two strings of 40 characters from a pattern with no `<` or `>`,
+  read by the injection screen (flagged ones replaced), then placed in a delimited data slot the
+  prompts say is data; the reference tests show they never reach a system prompt. Whatever the model
+  makes of them, it can only cite evidence the server holds and propose an action from a closed list,
+  whose parameters are checked against the deploy history and the flags, and nothing is applied
+  without the visitor's click. The golden set's hostile cases grade that the action the injection asks
+  for is never proposed.
+- **Tampering: the model's output.** Every answer is checked by a strict schema with one repair; a
+  hypothesis's evidence is verified; a postmortem that references events the log lacks is not shown.
+  The agents never see raw logs or raw series: the tools return bounded rows and the summaries are
+  built by code.
+- **Bounds.** The step cap is the orchestrator's; the tools' rows, the hypotheses, the evidence, the
+  events and the simulated minutes are capped; the wall clock ends an incident at 8 minutes; eight
+  incidents run at once across every visitor; a visitor holds four sockets; a tick rebuild is
+  milliseconds.
+- **Data exposure.** Another visitor's incident is a 404 over HTTP and a 4404 over the socket. Spans
+  carry agents, steps, tools and counts, never the visitor's strings (a test checks the trace of a
+  hostile incident). Logs hold ids and error names. Everything is deleted after 24 hours; the feed's
+  stream expires with it. A custom incident's calls travel as visitor data.
+- **Denial of service.** The daily incident, the global cap, the wall-clock cap, the socket caps, the
+  gateway's caps per run, per visitor and per system (230 a day).
+- **Privilege escalation.** LB-06's connection searches only its own schema and, in production, logs in
+  as a role granted nothing else (a test migrates as such a role). The tools read a world built in
+  memory from the seed and can change nothing.
+
+Known gaps, stated rather than hidden:
+
+- **Allowances are per session.** As for the other systems: a script that mints sessions gets
+  incidents, and the global cap and the gateway's budgets are what stop it.
+- **A job that dies mid-investigation loses the count of the calls it spent.** The budget resumes from
+  the row's count, which is written when the proposal is made; a crash between two agent calls can
+  cost up to a few calls more than the cap counts, within the gateway's own cap of 15.
+- **The concurrent cap has a race of one.** The count is read in the transaction that stores the
+  incident, under the visitor's own counter row, so two visitors starting at the same instant can make
+  nine incidents where eight are allowed.
+- **The cache keys on the scenario, not on the minute.** The investigation's snapshot is taken two
+  minutes after the alert, which is the same minute every run of a scenario, so the cached work is
+  the work a live run would do; a change in `investigationDelayMinutes` must bump `PROMPT_VERSION`.
+- **No live eval score and no live prompt tuning.** The prompts were written from the golden set and
+  checked against the reference agents, never against a model.
+- **No browser-direct HTTP.** As LB-08: the site's server calls the API for the visitor; only the
+  socket is browser-direct, at the site's origin, as LB-02's.
+
+## LB-07 QA Engineer
+
+A visitor switches on bugs in a synthetic staging shop and gives a goal in plain words ("buy two bags with
+WELCOME10 and check the total"), or picks a curated sample. A model plans the whole test once, in a closed
+vocabulary of six actions; a browser in a sandbox runs it step by step; code, never a model, makes the findings
+(an expectation that failed, a console error, a failed request, an axe violation, a navigation the sandbox
+stopped); the model only puts the findings into bug reports' words; and a template writes the Playwright test
+from the validated plan, which is kept only when it fails with the bugs on and passes with them off. The model
+never sees a cookie, a URL or a line of code, and nothing it writes is ever run.
+
+| Step | What runs it | Model calls | When it can't |
+|---|---|---|---|
+| Start | `POST /runs`: a sample, or a goal of at most 300 plain characters and a set of the six bugs. One transaction, behind a lock every start takes, counts the runs queued or running (four at most), takes the visitor's place for the day and stores the run; then the job is queued (BullMQ, one at a time: one browser, one run) | 0 | 404 `unknown_sample`, 422, 429 `daily_limit` (with `resets_at` and `Retry-After`), 503 `busy` (no place taken) or `queue_unavailable` (the place given back) |
+| Screen the goal | A visitor's own goal only: the injection guard (`lb-guard`). A sample's goal is the owner's | 1 | A flagged goal ends the run as `goal_refused` before any other model sees it, and the place stays spent (so the guard cannot be probed for free). A guard out of reach leaves the goal `unchecked` and the run goes on: the vocabulary and the sandbox hold whatever it says |
+| Plan | `lb-tools`: the goal between `<goal>` markers in a user message, the shop's guide and the vocabulary in the system prompt; the answer is one sentence of reading and 1 to 16 steps that start with a `goto`, checked by a strict schema (`@lb/contracts`' `lb07PlanAnswerSchema`, and the first-step rule in `agent/machine.ts`) | 1, 2 with its one repair | Unusable twice: `plan_invalid` (the place given back). Gateway out of reach: tried again after a wait; quota spent: `planning_unavailable` (given back) |
+| Run | The runner: a fresh browser context with the run's signed bug token in its cookie jar; each step is one Playwright call by role and name, label or text, never a selector (10 s each); after each page opened and at the end, axe. Up to three screenshots of the steps that made a finding, one at the end, and the page's trimmed accessibility tree | 0 | A step that would leave the shop is refused before the browser moves and recorded; the plan ends there and proves nothing (`not_verified`) |
+| Re-plan | Only when a step failed (not found, ambiguous, timed out): `lb-tools` with the page's accessibility tree, at most 6,000 characters, as data between `<page>` markers; its answer replaces the failed step and the rest | 1 each, at most 2, no repair | An unusable or empty answer stops the plan there: no verdict |
+| Cross-check | The final plan again, bugs on, in "the second engine": Chromium wearing Firefox's user agent, since only Chromium is installed (the `checkout-engine` bug reads the user agent) | 0 | Skipped when the plan did not run to its end |
+| Bug reports | `lb-tools` with the steps and the bug findings as data (`<steps>`, `<findings>`); a report is kept only if every finding it names is a bug finding of this run, and once | 1, 2 with its repair; 0 with nothing to report | Unusable twice: no reports, the findings stand on their own |
+| Verify | The final plan on the clean shop (no token), axe on. The verdict is code's: `kept` (red with the bugs on, in either engine, and green without), `passing` (no bug on and green), `discarded_not_red`, `discarded_not_green`, `not_verified` | 0 | Skipped when the plan did not run to its end |
+| Generate the test | A template over the final plan (`agent/testgen.ts`): every string a JSON literal, the line separators JSON keeps raw written as escapes; the service shows it and never runs or loads it | 0 | Longer than 20,000 characters: refused, never cut |
+
+A run costs 1 to 7 model calls: the guard (custom goals only), the plan (1 or 2), up to two re-plans, the reports
+(0 to 2). `routing.yaml` caps LB-07 at 8 a run, 16 a visitor a day and 200 a day. The three minutes of the wall
+clock count from the agent's start, model calls included; each pass's browser session is closed by the runner at
+what is left of them. Everything that cost a call (the guard's verdict, the plan, the reports) is saved as it is
+made, so a retry never pays twice; a browser pass that was cut short is run again from the plan.
+
+### The shop and its six bugs
+
+The staging shop (`src/modules/lb07/shop`) is a small `node:http` server: six synthetic coffees, one coupon, a
+cart in a cookie, a checkout and an about page that talks to automated testers on purpose (a note, a picture whose
+text alternative gives an order, a heading that imitates the end of a data block). Pages are rendered by a tagged
+template that escapes every value. Bugs are switched on only by a token the service signs (HMAC-SHA-256 over the
+run, its bugs and an expiry of 15 minutes), which the runner puts in the browser's cookie jar (`HttpOnly`) before
+the first page opens: no step can read, set or carry a cookie, so the agent cannot flip a bug, and a token that is
+missing, altered or expired means a clean shop.
+
+| Bug | What it does | Where a correct run finds it |
+|---|---|---|
+| `coupon-twice` | WELCOME10 is taken off twice | an expectation on the total, on `/cart` |
+| `checkout-engine` | the checkout answers 500 to a browser that is not Chromium | a failed request on `/checkout`, in the second engine |
+| `missing-alt` | the coffees' pictures lose their text alternative | axe's `image-alt` |
+| `cart-off-by-one` | the cart counts one item too many | an expectation on the count |
+| `broken-image` | the front page's picture points at a missing file | a failed request for `/images/hero-missing.svg` |
+| `script-error` | the checkout runs a script that throws a TypeError | a console error on `/checkout` |
+
+The catalogue with each bug's truth is [`data/seed/lb07/bugs.yaml`](../../data/seed/lb07/bugs.yaml). Every answer
+of the shop carries its own Content-Security-Policy (the shop's origin only; no script at all but the
+`script-error` bug's own, allowed by its hash on the one page that has it; the stylesheet by its hash; no plugin,
+no base, forms to the shop, no framing), `nosniff`, `X-Frame-Options: DENY`, no referrer and no CORS header; its
+redirects go only to its own paths.
+
+### The sandbox
+
+One process (`src/sandbox.ts`, `just lb07-sandbox`) holds the shop, on the loopback interface only, and the
+runner's API, on the container's own address, which the worker calls to open a session, run a step, read the
+page's snapshot or a screenshot, run axe and close the session. It runs one Chromium for its life and gives every
+pass of a run a fresh context (cookies, storage, cache), with one page: any window a page opens is closed at once.
+A context keeps the shop's policy, takes no download and runs no service worker. One session at a time, even when
+two ask at once. A session its worker never closes (a worker that died) is closed at its wall clock and forgotten
+30 seconds later. After 20 sessions (`LB07_RUNS_PER_LIFE`; a run opens one to three, one for each pass) the
+process exits once its last session is closed or forgotten, never while a run is in the browser, and Compose
+starts a fresh one; a test starts the real process and watches it do so. A browser that crashes in the middle of a
+run is reported as such, and the worker tries the run again with a fresh one.
+
+Chromium is started with `--no-sandbox` (Playwright adds it too unless asked not to): its own sandbox needs user
+namespaces, which a container without capabilities and with `no-new-privileges` does not grant. That is acceptable
+because the container is the sandbox, and because what reaches the renderer is the shop's own pages: a page the
+model cannot write, whose only script is the bug's own, under the shop's policy. The rest of what Chromium is
+started with: no shared memory (`--disable-dev-shm-usage`), no GPU, no extensions, one renderer with a 128 MB
+heap, the third layer's switches below, an environment of five variables (the path, a home and its two XDG folders, the temporary folder: no setting of the runner reaches it),
+and a home, a profile and a crash-report folder of its own in the temporary folder. Traced with strace over a whole
+run, nothing in the process tree writes outside `/tmp`; as the user `nobody`, with no new privileges and no
+capabilities, on a read-only root with a tmpfs at `/tmp` (a private mount namespace standing in for the
+container), two runs of the heaviest golden case kept their tests. The container itself is `lb07-sandbox` in
+`infra/docker-compose.yml`, built from `infra/docker/lb07-sandbox.Dockerfile`, with its rules and the proof that
+they hold (`just test-lb07-sandbox`) in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), [`docs/SECURITY.md`](../../docs/SECURITY.md)
+and `infra/sandbox/test.sh`.
+
+### What "one container per run" became, and why
+
+The datasheet first promised one container per run. Starting a container for each run needs the Docker socket
+(or an API with the same power) inside the service, and whoever holds that socket holds the host, so this
+platform never exposes it to any service. What LB-07 has instead, layer by layer: one dedicated sandbox container
+with the platform's hardening (a non-root user, a read-only root, no capabilities, no new privileges, memory, CPU
+and process limits) on an internal network that reaches nothing but the worker, which serves no port (`lb07-sandbox` in
+`infra/docker-compose.yml`); a
+fresh throwaway browser context for every pass of every run, closed at a hard wall clock; the runner process
+restarted after 20 sessions, so nothing a run leaves in the browser outlives a handful of runs; and the browser's
+network held by the three layers below, each of which holds on its own. The datasheet now says so, in both
+languages.
+
+### The LB-07 API
+
+All routes are under `/api/lb07/` and need a visitor token for `lb-07`; another visitor's run, report, test or
+evidence is indistinguishable from one that does not exist (the same 404 and the same body, on every route and for
+every spelling of the id), and so is a run past its hour.
+
+| Route | What it does |
+|---|---|
+| `GET /bugs` | The six bugs, each with where a correct run finds it |
+| `GET /limits` | What is left of the visitor's day, the goal's length, the run time, how long a run is kept, the queue's size, when the day resets |
+| `GET /samples` | The curated samples: the golden cases marked `sample: true` |
+| `POST /runs` | Start a run: `{from: "sample", sampleId}` or `{from: "custom", goal, bugs}`. 201 queued; 404, 422, 429, 503 (`busy`, `queue_unavailable`, `planning_unavailable`) |
+| `GET /runs`, `GET /runs/{id}` | The visitor's runs of the hour (ten at most), and one with its state, its place in the queue, its steps as they happen, its calls and findings |
+| `GET /runs/{id}/report` | The findings, the bug reports, the verification. 409 `not_ready` while it runs, `run_failed` when it failed |
+| `GET /runs/{id}/test` | The generated test, as text, with its verdict and a file name made from the goal |
+| `GET /runs/{id}/evidence/{evidenceId}` | A screenshot (PNG as base64) or the trimmed accessibility snapshot |
+| `DELETE /runs/{id}` | Delete it now, with everything that belongs to it. The day's place is not given back |
+
+A failed run says why with a code the board words itself: `planning_unavailable`, `plan_invalid`,
+`runner_unavailable`, `run_timeout`, `goal_refused`, `internal`. The contract also lists `plan_refused`, which
+nothing produces today: a plan outside the vocabulary is `plan_invalid` after its repair, and a step outside the
+shop is a blocked step of a run that proves nothing.
+
+### LB-07 limits
+
+| Limit | Value | Where it lives |
+|---|---|---|
+| Runs per visitor per day (a sample counts; a run the system could not run, `planning_unavailable`, `runner_unavailable`, `plan_invalid` or `internal`, is given back once; a refused goal or a run that used its time stays spent) | 2 | `usage_counters`, one atomic statement in the transaction that stores the run |
+| Runs queued or running, across visitors | 4, then 503 `busy` with no place taken | `engine/store.ts`, under an advisory lock every start takes |
+| Time a run may wait in the queue | 15 minutes, then it is ended as `runner_unavailable` and its place given back | `config.ts`, `engine/sweep.ts` |
+| Runs in the browser at once | 1 | the worker's concurrency and the runner's single session |
+| Goal, bugs | 300 plain characters; each of the six at most once | `@lb/contracts`' `lb07GoalSchema`, `lb07BugListSchema` |
+| Plan, re-plans | 16 steps, starting with a `goto`; 2 re-plans | `@lb/contracts`, `agent/machine.ts` |
+| A step's strings | a path of lowercase letters, digits, `/` and `-` (81 characters); names, labels and texts of 120 plain characters; fill values of 200 | `@lb/contracts`' `lb07StepSchema` |
+| Model calls per run | 7 at most; the gateway caps 8 a run, 16 a visitor a day and 200 a day | `agent/machine.ts`, `routing.yaml` |
+| Wall clock, one step | 3 minutes for the whole run, 10 seconds a step | `LB07_LIMITS`, the runner's session timer, `runner/executor.ts` |
+| Attempts | 2 (backoff 5 s doubling, or the gateway's Retry-After), at most 4 starts in all; a run silent for 7 minutes is queued again | `config.ts`, `engine/job.ts`, `engine/sweep.ts` |
+| Findings, evidence, snapshot, screenshot | 40 findings; up to four screenshots and one snapshot a run; 6,000 characters; 400 KB, or none | `LB07_LIMITS`, `agent/machine.ts` |
+| Generated test | 20,000 characters | `agent/testgen.ts` |
+| Runner: request body, answer read by the worker | 8 KB; 1 MiB | `runner/server.ts`, `runner/client.ts` |
+| Runner: sessions per process, a forgotten session | 20; closed at its wall clock and forgotten 30 s later | `src/sandbox.ts`, `runner/session.ts` |
+| How long anything is kept | 1 hour: the run, its steps, findings, screenshots, snapshot, report and test, deleted by the sweep (every minute) and not found after the hour even before it runs | `engine/sweep.ts`, `expires_at` |
+
+### LB-07 data, golden set and commands
+
+| What | Where | Command |
+|---|---|---|
+| The bug catalogue (the six bugs and each one's truth) | [`data/seed/lb07/bugs.yaml`](../../data/seed/lb07/bugs.yaml) | `just node-seed` and `just check` read it strictly |
+| Golden set: eleven goals (each bug, every bug at once, a clean shop that must stay clean, a link out of the shop that must be stopped, a hostile goal, a re-plan after a wrong name), each with a reference plan in the vocabulary; eight are the curated samples | [`evals/lb07/golden.yaml`](../../evals/lb07/golden.yaml) | `just eval-lb07` runs the live agent through the real sandbox (`just lb07-sandbox` running): at most seven calls a case, about 77 for the set. Samples run as the board runs them (no guard); the other cases run as a visitor's own goals, through the guard |
+| The sandbox, as its container runs it | `src/sandbox.ts` | `just lb07-sandbox` |
+| The browser tests (no model, no database) | `test/browser/` | `just test-lb07-browser` |
+| What a run costs in memory | `scripts/lb07-memory.ts` | `node scripts/lb07-memory.ts [--case ID] [--runs N] [--cgroup DIR]` |
+| Migrations | [`src/modules/lb07/db/migrations`](src/modules/lb07/db/migrations) | `pnpm --filter @lb/node-systems exec drizzle-kit generate --config drizzle.lb07.config.ts` |
+
+The golden set was written before any prompt. The offline test (`test/browser/lb07-golden.test.ts`) runs every
+case through the whole agent, the real runner on a real Chromium and the real shop, with a scripted model that
+answers as a correct planner would, and every case passes every rule (the bugs found by their truth, a clean shop
+with no finding, the verdict, nothing out of the shop, the calls). **No live score is recorded here: no provider
+key exists where this was built, so the live eval has never been run.**
+
+### LB-07: what a run costs in memory
+
+Measured on 5 October 2026 with `scripts/lb07-memory.ts` on an x86-64 machine with 4 cores and 16 GB, not on
+the box's ARM cores (Ampere A1): Node 22.22, Chrome for Testing 153 (Playwright 1.63's `chromium-1243`). The
+script starts the sandbox process as its container runs it, runs the heaviest golden case (`everything-on`: 15
+steps, all six bugs, three passes) five times in a row through the runner's API with the real agent and a
+scripted model, and samples the whole process tree (Node, Chromium's browser, renderer, GPU, utility and zygote
+processes: nine at the peak) every 100 ms. Three measures: RSS summed process by process (what `ps` shows; a page
+shared by several processes counts once for each, so it overstates), PSS summed (each shared page divided among
+its sharers, so the sum counts it once: what the tree really occupies), and the charge of a memory cgroup the
+sandbox ran in (what a container's limit counts; on this busy machine Chromium's binary and libraries were already
+in the cache under other processes, so the charge leaves them out, and is the floor of what a fresh container pays).
+
+The five runs measured in the cgroup:
+
+| Moment | RSS, summed | PSS, summed | cgroup charge (anonymous) |
+|---|---|---|---|
+| Started, before any run (Node alone, no browser yet) | 179 MiB | 140 MiB | 126 MiB (122) |
+| Peak of a run | 1,131 to 1,156 MiB | 537 to 561 MiB | 348 to 366 MiB |
+| After a run (the browser kept, no context) | 746 to 777 MiB | 293 to 406 MiB | 206 to 236 MiB (194 to 223) |
+
+A run of the heaviest case takes about 25 seconds. After a run, the charge grew from 206 MiB to 236 MiB over the
+first three runs and then stayed there (235.8 MiB after the fifth); the peak moved from 357 MiB to 366 MiB. That is
+no leak worth a restart of its own, and the restart after 20 sessions bounds whatever is left. Over six measuring
+sessions (the one above, one as the user `nobody` on a read-only root, one under strace), the started process was
+179 to 183 MiB RSS and a run's peak 1,108 to 1,159 MiB RSS; PSS moves with what else on the machine maps the same
+files (a run's peak 443 to 575 MiB), so it is a range, not a constant. For the container: a fresh one should expect
+about 550 to 600 MiB at the peak of a run, which a limit of 768 MiB covers with room for the growth before a
+restart; ARM64 builds of Chromium and Node are of the same order, but that is unmeasured.
+
+The container does not run Chrome for Testing but Chrome Headless Shell (a build with no interface code, pinned in
+`infra/docker/lb07-sandbox.Dockerfile`), and it was measured in the container itself, under its Compose limit: 96 to
+127 MiB when idle, and a peak of 263 to 271 MiB over five runs in a row of the same heaviest case under the 384 MiB
+limit (327 to 332 MiB with no limit), with 83 tasks. So `lb07-sandbox` has `mem_limit: 384m`, and the 768 MiB above
+is what `just lb07-sandbox` needs on a development machine with the full Chrome for Testing. How the 384 MiB fits the
+box's budget, and what the owner has to decide about it, is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), "The memory
+budget".
+
+### LB-07 tests
+
+- **Unit (301):** the shop (pages, cart, each bug, the token, its policy and headers, no open redirect, no field
+  that flips a bug), the plan's check against every spelling of another place, the vocabulary against what a
+  hostile model could answer (unknown actions, selectors, URLs, prototype keys, broken numbers, control characters,
+  ten megabytes, a hundred thousand levels), the prompts' data blocks (no marker survives in a goal, a page, a step
+  or a finding, full-width or not), the generated test read back by the TypeScript compiler for every fuzzed string,
+  the runner's key and the worker's bounded reads, the machine with scripted runners and models (the guard, the
+  plain reading, re-plans, budgets, the wall clock), the report rules, the golden set and its runner, the routing
+  contract and the datasheet, and a scan (98 of the 301) that no LB-07 file evaluates a string, starts a process or
+  imports a path made at run time.
+- **Integration (32):** the engine on a real Postgres with a queue driven by hand (a run from start to report,
+  retries, failures and what each gives back, the sweep, the trace), races (twenty starts from twenty visitors and
+  from one, ten refunds at once), the queue wait, a flagged goal, nothing left of an expired run, no visitor's or
+  page's words in the logs, the API through Fastify (every route and refusal, another visitor's 404 on every route
+  and id spelling, the model's sentence as plain text), the real BullMQ queue and the schema.
+- **Browser (50, `just test-lb07-browser`):** every golden plan on a real Chromium over the real shop; the whole
+  agent on every golden case; hostile pages against a canary on another address (every way out a page has, the
+  runner's own API included); each layer alone; a model that obeys the about page; the runner's life (two opens at
+  once, a forgotten session, the exit after its share, a crashed browser, the real process exiting with its home
+  left empty).
+
+### LB-07 threat model
+
+The visitor's goal, every page the browser opens and everything the model says are untrusted. Short notes, as the
+playbook asks (step 8).
+
+- **Spoofing.** As LB-08's: tokens the site signed for `lb-07`, five minutes at most, the visitor known by their
+  session hash. The runner's API answers its health to anyone and nothing else without the worker's key (derived
+  with HKDF from the bug-token key the two already share, so it needs no setting of its own and is not that key); a
+  call without it is refused before its body is read. The shop believes only a bug token signed with its key.
+- **Tampering: the model's output.** A plan is data in a closed vocabulary, checked by strict schemas with one
+  repair (a re-plan gets none): six actions, a role from a closed list, plain strings with bounds, no selector, no
+  script, no URL; a hostile answer of any size or depth is refused cheaply, before a browser session opens. The one
+  sentence of reading is made plain before anyone sees it. Bug reports must rest on bug findings of the run. The
+  verdict and the findings are code's.
+- **Tampering: the visitor's goal and the pages.** A custom goal is screened by the guard first and refused when
+  flagged; the goal and the page reach the model only inside data blocks (`<goal>`, `<page>`, `<steps>`,
+  `<findings>`) that no string in them can close, however it is spelled (markers are removed after NFKC, angle
+  brackets are removed from the page and escaped in the findings' JSON). The about page talks to the agent on
+  purpose, and a test with a model that obeys it shows the address it names is no step the vocabulary has, the link
+  it names is refused before the browser moves, and the run proves nothing.
+- **Tampering: the generated test.** Written by a template from the validated plan, every string a JSON literal
+  with the line separators escaped (before this review a goal holding U+2028 put a line of code after its
+  comment); the TypeScript compiler reads every fuzzed plan back as one test whose statements are the plan's. The
+  service never writes it to a file, imports it or runs it, and a scan of the module's sources fails if anything
+  could.
+- **Information disclosure.** Another visitor's run is a 404 everywhere. Spans carry counts and labels, never the
+  goal, a page's words or an address; logs carry ids and error names. A blocked navigation names the refused place
+  by its scheme and host only, never its path or query. The bug token never reaches the model or a page's script
+  (`HttpOnly`). Everything is deleted after an hour, screenshots included. A custom goal travels as visitor data, so
+  only providers that do not train on inputs read it.
+- **Denial of service.** Two runs a visitor a day; four queued or running across visitors, counted under a lock;
+  fifteen minutes in the queue at most; one run in the browser; a three-minute wall clock and ten seconds a step; a
+  page's windows closed, its snapshot, screenshots and the runner's answers bounded; a session nobody closes
+  forgotten; a crashed browser replaced; the runner restarted after 20 sessions; the gateway's caps per run, per
+  visitor and for the system.
+- **Elevation of privilege: the browser's network.** Three layers inside the browser, each tested on its own
+  against pages that try every way out (`test/browser/lb07-layers.test.ts`), with the shop's policy and the
+  container's network around them:
+  1. *The plan's check* (`runner/guard.ts`): a `goto` is a lowercase path of the shop, and a link's `href` is
+     checked before the click; both are decided by the origin after the URL standard's own parsing, so `//evil`,
+     backslashes, userinfo and fragment tricks, other ports, `localhost`, `[::1]`, `[::ffff:127.0.0.1]`, `0.0.0.0`,
+     decimal, octal and hex addresses of other hosts, the metadata address and names, `file:`, `data:`,
+     `javascript:`, `blob:`, `view-source:` and `chrome:` are refused before the browser is asked, and spellings of
+     the shop's own address (`127.1`, `2130706433`) are the shop.
+  2. *Interception* (`runner/network.ts`): every HTTP request of every page, frame, worker and window goes on only
+     to the shop's origin, and every WebSocket is refused. By Playwright's documented design it does not see the
+     second hop of a redirect, nor anything that is not HTTP (WebRTC's UDP): a test shows the redirect hop getting
+     through it alone. That is what the third layer is for.
+  3. *The browser's own network*: Chromium sends everything but the shop's host and port to a proxy that is a dead
+     end in the runner's process (`<-loopback>` first, so the loopback interface is no exception), resolves no host
+     name but the shop's, and lets WebRTC use no UDP it does not proxy, which is none. A redirect hop, a socket and
+     a STUN packet all stop there; its refusals are recorded too.
+  4. *The shop's own policy*, at the page's level: a script that got into a page could load and connect to nothing
+     outside the shop. (Before this review the context bypassed the page's policy, so a policy would have meant
+     nothing.)
+  5. *The container's network* (the infrastructure's, not part of this module): an internal network that reaches
+     only the worker.
+
+  DNS rebinding has nothing to work with: the one allowed origin is an address, a host name is never allowed and
+  never resolved by the browser, and the check compares origins, not answers. A refused request is recorded as a
+  blocked navigation; a run whose plan was stopped proves nothing.
+- **Elevation of privilege: the runner.** A page cannot reach the runner's API (all three layers refuse its
+  address, and a test shows it hears nothing), and could not drive it without the key. The browser's environment
+  holds five variables and nothing of the runner's settings.
+
+Known gaps, stated rather than hidden:
+
+- **Chromium's own sandbox is off.** A renderer exploit would run as the runner's user in the sandbox container: it
+  could read the runner's environment through `/proc` (the bug-token key, which opens the shop's bugs and the
+  runner's API and nothing else), drive the runner, and reach what the container's network reaches. The
+  container's own limits are the wall, and they are the infrastructure's (not tested here).
+- **Interception alone has blind spots** (a redirect's second hop, UDP): the browser's own network holds them, and
+  a test shows it does; that the browser makes no DNS query at all rests on Chromium's resolver rules, which the
+  tests show indirectly (a navigation by name reaches nothing).
+- **The guard can be wrong.** A false positive refuses an honest goal and keeps the place; a false negative lets an
+  injection reach the planner, where the vocabulary and the sandbox hold.
+- **Allowances are per session**, as for the other systems; and one visitor may hold two of the four places in the
+  queue.
+- **The second engine is simulated**: Chromium with Firefox's user agent, since only Chromium is installed.
+- **The runner counts sessions, not runs** (`LB07_RUNS_PER_LIFE`, and the contract's `runsPerRunnerLife`, are
+  sessions: a run opens one to three).
+- **The memory figures are x86's**; the box's ARM cores are unmeasured.
+- **No live eval score and no live prompt tuning.** The prompts were written from the golden set and checked
+  against scripted models, never against a model.

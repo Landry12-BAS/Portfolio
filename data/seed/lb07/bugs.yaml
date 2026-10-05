@@ -1,0 +1,63 @@
+# LB-07's bug catalogue: the six bugs the staging shop can switch on, what each does, how it is
+# switched on, and what a correct finding of it looks like (the ground truth the golden set is graded
+# against). Read strictly by services/node-systems/src/modules/lb07/data/bugs.ts; the shop's code is
+# the other half of each entry (src/modules/lb07/shop/cart.ts, pages.ts and server.ts).
+#
+# How a bug is switched on, for every one of them: the service signs the run's bug list into a token
+# (HMAC-SHA256, src/modules/lb07/shop/token.ts), the runner puts the token in the browser's cookie jar
+# before the first page opens, and the shop reads it on every request. The model's plan has no action
+# that can read, set or carry a cookie, so the agent cannot flip a bug.
+#
+# `truth` says what a correct finding is: a finding of that kind, and where given, in that engine, on
+# that shop path, for that axe rule, with those words in its detail. A run that switches a bug on and
+# makes no such finding has missed it.
+bugs:
+  - id: coupon-twice
+    title: The coupon applies twice
+    summary: WELCOME10 takes 10% off the subtotal, but the cart and the checkout take it off twice, so the total is lower than it should be.
+    surfaces: [expectation_failed]
+    truth:
+      kind: expectation_failed
+      path: /cart
+      detail: ['Total']
+
+  - id: checkout-engine
+    title: The checkout fails in one browser engine
+    summary: Placing an order works in Chromium and fails with a server error in Firefox or Safari. The sandbox has only Chromium, so the second engine is Chromium wearing Firefox's user agent.
+    surfaces: [failed_request, expectation_failed]
+    truth:
+      kind: failed_request
+      engine: firefox-ua
+      path: /checkout
+
+  - id: missing-alt
+    title: Product pictures have no text alternative
+    summary: The pictures of the coffees lose their alt text, which a screen reader cannot work around.
+    surfaces: [accessibility]
+    truth:
+      kind: accessibility
+      rule: image-alt
+
+  - id: cart-off-by-one
+    title: The cart count is off by one
+    summary: The header and the cart page count one item more than the cart holds, whenever it holds anything.
+    surfaces: [expectation_failed]
+    truth:
+      kind: expectation_failed
+      detail: ['item']
+
+  - id: broken-image
+    title: The front page's picture is missing
+    summary: The shelf picture on the front page points at a file the server does not have, so the browser gets a 404 for it.
+    surfaces: [failed_request]
+    truth:
+      kind: failed_request
+      path: /images/hero-missing.svg
+
+  - id: script-error
+    title: A script on the checkout page throws
+    summary: The checkout page runs a script that reaches for an element that is not there and throws a TypeError, which the console records.
+    surfaces: [console_error]
+    truth:
+      kind: console_error
+      path: /checkout

@@ -6,3 +6,6 @@
 
 /** The pages of LB-09's board, in English and in Czech. */
 export const LB09_BOARD_PAGE_ROUTES = ['/systems/lb-09/board', '/cs/systems/lb-09/board'] as const
+
+/** Where LB-09's meeting progress listens on the API's host (services/django-systems/config/routing.py). */
+export const LB09_SOCKET_PATH = '/ws/lb09/'

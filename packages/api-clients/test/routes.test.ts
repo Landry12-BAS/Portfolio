@@ -40,7 +40,7 @@ describe('the table of routes', () => {
       expect(route.path.startsWith(`/api/lb${route.system.slice(3)}/`), route.path).toBe(true)
       expect(['GET', 'POST', 'PUT', 'DELETE']).toContain(route.method)
     }
-    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-03', 'lb-04', 'lb-05', 'lb-08', 'lb-09']))
+    expect(new Set(API_ROUTES.map(route => route.system))).toEqual(new Set(['lb-01', 'lb-02', 'lb-03', 'lb-04', 'lb-05', 'lb-06', 'lb-07', 'lb-08', 'lb-09']))
   })
 
   it('marks the one route that takes a file as an upload and the two that answer with files, and no other', () => {

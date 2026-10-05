@@ -1,0 +1,476 @@
+{
+  "id": "8c2576df-b4bc-47c3-a782-3583e59269f5",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "lb06.incident_events": {
+      "name": "incident_events",
+      "schema": "lb06",
+      "columns": {
+        "incident_id": {
+          "name": "incident_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minute": {
+          "name": "minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "incident_events_incident_id_incidents_id_fk": {
+          "name": "incident_events_incident_id_incidents_id_fk",
+          "tableFrom": "incident_events",
+          "tableTo": "incidents",
+          "schemaTo": "lb06",
+          "columnsFrom": [
+            "incident_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "incident_events_incident_id_seq_pk": {
+          "name": "incident_events_incident_id_seq_pk",
+          "columns": [
+            "incident_id",
+            "seq"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "incident_events_seq_check": {
+          "name": "incident_events_seq_check",
+          "value": "\"lb06\".\"incident_events\".\"seq\" between 1 and 600"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "lb06.incidents": {
+      "name": "incidents",
+      "schema": "lb06",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "session_key": {
+          "name": "session_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sample_id": {
+          "name": "sample_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seed": {
+          "name": "seed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fault": {
+          "name": "fault",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "guard": {
+          "name": "guard",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_needed'"
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'baseline'"
+        },
+        "end_reason": {
+          "name": "end_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minute": {
+          "name": "minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_tick_at": {
+          "name": "next_tick_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_calls": {
+          "name": "model_calls",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cached": {
+          "name": "cached",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "proposals_made": {
+          "name": "proposals_made",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "pending_proposal": {
+          "name": "pending_proposal",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rerank": {
+          "name": "rerank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "remediations": {
+          "name": "remediations",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "remediated_at": {
+          "name": "remediated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "investigation": {
+          "name": "investigation",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alert_minute": {
+          "name": "alert_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recovered_minute": {
+          "name": "recovered_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deadline_at": {
+          "name": "deadline_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "incidents_session_idx": {
+          "name": "incidents_session_idx",
+          "columns": [
+            {
+              "expression": "session_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "incidents_expires_idx": {
+          "name": "incidents_expires_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "incidents_state_idx": {
+          "name": "incidents_state_idx",
+          "columns": [
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "incidents_origin_check": {
+          "name": "incidents_origin_check",
+          "value": "\"lb06\".\"incidents\".\"origin\" in ('sample', 'custom')"
+        },
+        "incidents_sample_check": {
+          "name": "incidents_sample_check",
+          "value": "(\"lb06\".\"incidents\".\"origin\" = 'sample') = (\"lb06\".\"incidents\".\"sample_id\" is not null)"
+        },
+        "incidents_fault_check": {
+          "name": "incidents_fault_check",
+          "value": "\"lb06\".\"incidents\".\"fault\" in ('bad_deploy', 'slow_payment', 'memory_leak', 'cache_stampede')"
+        },
+        "incidents_guard_check": {
+          "name": "incidents_guard_check",
+          "value": "\"lb06\".\"incidents\".\"guard\" in ('not_needed', 'clean', 'flagged', 'unchecked')"
+        },
+        "incidents_state_check": {
+          "name": "incidents_state_check",
+          "value": "\"lb06\".\"incidents\".\"state\" in ('baseline', 'detecting', 'investigating', 'awaiting_approval', 'remediating', 'verifying', 'writing_postmortem', 'closed', 'aborted', 'failed')"
+        },
+        "incidents_end_check": {
+          "name": "incidents_end_check",
+          "value": "(\"lb06\".\"incidents\".\"state\" in ('aborted', 'failed')) = (\"lb06\".\"incidents\".\"end_reason\" is not null)"
+        },
+        "incidents_pending_check": {
+          "name": "incidents_pending_check",
+          "value": "(\"lb06\".\"incidents\".\"state\" = 'awaiting_approval') = (\"lb06\".\"incidents\".\"pending_proposal\" is not null)"
+        },
+        "incidents_calls_check": {
+          "name": "incidents_calls_check",
+          "value": "\"lb06\".\"incidents\".\"model_calls\" between 0 and 15"
+        },
+        "incidents_proposals_check": {
+          "name": "incidents_proposals_check",
+          "value": "\"lb06\".\"incidents\".\"proposals_made\" between 0 and 3"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "lb06.scenario_cache": {
+      "name": "scenario_cache",
+      "schema": "lb06",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "scenario_cache_key_stage_pk": {
+          "name": "scenario_cache_key_stage_pk",
+          "columns": [
+            "key",
+            "stage"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "lb06.usage_counters": {
+      "name": "usage_counters",
+      "schema": "lb06",
+      "columns": {
+        "session_key": {
+          "name": "session_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used": {
+          "name": "used",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "usage_counters_session_key_day_kind_pk": {
+          "name": "usage_counters_session_key_day_kind_pk",
+          "columns": [
+            "session_key",
+            "day",
+            "kind"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "usage_counters_kind_check": {
+          "name": "usage_counters_kind_check",
+          "value": "\"lb06\".\"usage_counters\".\"kind\" in ('incident')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

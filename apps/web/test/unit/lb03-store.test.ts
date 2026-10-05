@@ -137,8 +137,11 @@ describe('LB-03\'s store: a live document', () => {
   it('takes one upload at a time', async () => {
     const { site, store } = await start({ verified: true })
     site.delayNext('POST /api/lb03/documents', 500)
+    const arrived = site.nextCall('POST /api/lb03/documents')
     const first = store.upload(fileOf('clean-pdf'))
     await store.upload(fileOf('euro-vat'))
+    // The file is read into its form before the call is made; let the clock run only once it has arrived.
+    await arrived
     await vi.advanceTimersByTimeAsync(600)
     await first
     expect(site.callsTo('/api/lb03/documents', 'POST')).toHaveLength(1)

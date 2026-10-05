@@ -18,4 +18,6 @@ lb03
 lb05
 lb08
 lb04
+lb06
+lb07
 lb09

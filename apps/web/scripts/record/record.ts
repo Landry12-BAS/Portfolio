@@ -17,6 +17,8 @@ import { runLb05Sample } from './lb05.ts'
 import { runLb08Sample } from './lb08.ts'
 import { runLb03Sample } from './lb03.ts'
 import { runLb04Sample } from './lb04.ts'
+import { runLb06Sample } from './lb06.ts'
+import { runLb07Sample } from './lb07.ts'
 import { runLb09Sample } from './lb09.ts'
 
 /** What a system's runner hands back: the language of the sample, what the board asked and was told, and the run's ID. */
@@ -39,6 +41,8 @@ const RUNNERS: Readonly<Record<string, SampleRunner>> = {
   'lb-08': runLb08Sample,
   'lb-03': runLb03Sample,
   'lb-04': runLb04Sample,
+  'lb-06': runLb06Sample,
+  'lb-07': runLb07Sample,
   'lb-09': runLb09Sample,
 }
 

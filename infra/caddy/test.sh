@@ -3,7 +3,7 @@
 # the repository's Caddyfile, in front of stand-ins for four services (test-upstream.py):
 #
 #   - only the routes the Caddyfile lists reach a service (LB-01 and LB-02 at the Django
-#     systems, LB-03 and LB-05 at the Flask systems, LB-08 and LB-04 at the Node systems, one path of
+#     systems, LB-03 and LB-05 at the Flask systems, LB-08, LB-04, LB-06 and LB-07 at the Node systems, one path of
 #     the gateway); health checks, the OpenAPI schema and the rest of the gateway answer 404
 #     from Caddy itself;
 #   - paths built to slip past the allowlist (dot segments, escaped slashes) never reach
@@ -124,11 +124,11 @@ for path in /v1/models /v1/usage /v1/embeddings /v1/rerank /v1/guard /v1/runs; d
     call GET "$path"; check "the gateway's $path stays internal" caddy_404
 done
 call POST /v1/chat/completions -d '{}'; check "POST /v1/chat/completions stays internal" caddy_404
-for path in /api/lb06/x /api/lb07/x /api/lb10/x; do
+for path in /api/lb10/x; do
     call GET "$path"; check "$path has no route until its service exists" caddy_404
 done
-for path in /ws/lb04/x /ws/lb05/x /ws/lb08/x; do
-    call GET "$path" -H "Origin: $site_origin"; check "$path has no route: only LB-02 and LB-09 have a WebSocket" caddy_404
+for path in /ws/lb04/x /ws/lb05/x /ws/lb07/x /ws/lb08/x; do
+    call GET "$path" -H "Origin: $site_origin"; check "$path has no route: only LB-02, LB-06 and LB-09 have a WebSocket" caddy_404
 done
 call GET /ws/lb09/ -H "Origin: $site_origin"; check "/ws/lb09/ reaches the Django systems from the site's origin" reached django
 call GET /ws/lb09/ -H "Origin: https://elsewhere.example"; check "/ws/lb09/ from another origin is refused" test "$status" = 403
@@ -136,6 +136,8 @@ call GET /api/lb05; check "the bare /api/lb05 is not a route" caddy_404
 call GET /api/lb03; check "the bare /api/lb03 is not a route" caddy_404
 call GET /api/lb08; check "the bare /api/lb08 is not a route" caddy_404
 call GET /api/lb04; check "the bare /api/lb04 is not a route" caddy_404
+call GET /api/lb06; check "the bare /api/lb06 is not a route" caddy_404
+call GET /api/lb07; check "the bare /api/lb07 is not a route" caddy_404
 call GET /api/lb01/customers -H "Authorization: Bearer test-token"
 check "GET /api/lb01/customers reaches the Django systems" reached django
 check "  with the path unchanged" grep -q '"path": "/api/lb01/customers"' <<<"$body"
@@ -178,6 +180,23 @@ call POST /api/lb04/contracts -H 'Content-Type: application/json' -d "$payload"
 check "POST /api/lb04/contracts reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
 call GET /api/lb04/contracts/11111111-1111-4111-8111-111111111111/report; check "a contract's report reaches the Node systems" reached node
 call POST /api/lb04/contracts/11111111-1111-4111-8111-111111111111/findings/f1/redline; check "a redline's route reaches the Node systems" reached node
+call GET /api/lb06/catalogue -H "Authorization: Bearer test-token"
+check "GET /api/lb06/catalogue reaches the Node systems" reached node
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+payload='{"from":"sample","sampleId":"bad-deploy"}'
+call POST /api/lb06/incidents -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb06/incidents reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call POST /api/lb06/incidents/11111111-1111-4111-8111-111111111111/proposals/p1/decision -H 'Content-Type: application/json' -d '{"decision":"approve"}'; check "a decision's route reaches the Node systems" reached node
+call GET /api/lb06/incidents/11111111-1111-4111-8111-111111111111/postmortem; check "an incident's postmortem route reaches the Node systems" reached node
+call GET /api/lb07/bugs -H "Authorization: Bearer test-token"
+check "GET /api/lb07/bugs reaches the Node systems" reached node
+check "  with the caller's Authorization header" grep -q '"authorization": "Bearer test-token"' <<<"$body"
+payload='{"from":"custom","goal":"Buy two bags of Ethiopia Guji with WELCOME10","bugs":["coupon-twice"]}'
+call POST /api/lb07/runs -H 'Content-Type: application/json' -d "$payload"
+check "POST /api/lb07/runs reaches the Node systems with its body" grep -q "\"body_bytes\": ${#payload}" <<<"$body"
+call GET /api/lb07/runs/11111111-1111-4111-8111-111111111111/evidence/e1; check "a test run's evidence reaches the Node systems" reached node
+call GET /api/lb07/runs/11111111-1111-4111-8111-111111111111/test; check "a test run's generated test reaches the Node systems" reached node
+call DELETE /api/lb07/runs/11111111-1111-4111-8111-111111111111; check "DELETE of a test run reaches the Node systems" reached node
 call GET /v1/runs/run12345-abcdef/spans; check "GET /v1/runs/<id>/spans reaches the gateway" reached gateway
 call POST /v1/runs/run12345-abcdef/spans -d '{}'; check "POST on that path stays internal" caddy_404
 call GET /v1/runs/short/spans; check "a run id under 8 characters is refused" caddy_404
@@ -192,7 +211,9 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
     /api/lb08/%2e%2e/healthz '/api/lb08/..;/readyz' /api/lb05/../lb08/workflows \
     /api/lb03/../healthz /api/lb03/%2e%2e/readyz /api/lb03/..%2fhealthz /api/lb03/documents/../../../healthz \
     /api/lb03/../lb08/workflows \
-    /api/lb04/../openapi.json /api/lb04/%2e%2e/healthz '/api/lb04/..;/readyz' /api/lb04/..%2fhealthz /api/lb05/../lb04/contracts; do
+    /api/lb04/../openapi.json /api/lb04/%2e%2e/healthz '/api/lb04/..;/readyz' /api/lb04/..%2fhealthz /api/lb05/../lb04/contracts \
+    /api/lb06/../openapi.json /api/lb06/%2e%2e/healthz '/api/lb06/..;/readyz' /api/lb06/..%2fhealthz /api/lb05/../lb06/incidents \
+    /api/lb07/../openapi.json /api/lb07/%2e%2e/healthz '/api/lb07/..;/readyz' /api/lb07/..%2fhealthz /api/lb05/../lb07/runs; do
     call GET "$path"
     if [ "$status" = 404 ] && grep -q 'There is nothing at this address' <<<"$body"; then
         pass "refused: $path"
@@ -202,7 +223,7 @@ for path in /api/lb01/../healthz /api/lb01/%2e%2e/healthz /api/lb01/..%2fhealthz
         received="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["path"])' "$body")"
         resolved="$(python3 -c 'import posixpath,sys,urllib.parse; print(posixpath.normpath(urllib.parse.unquote(sys.argv[1].split("?")[0])))' "$received")"
         case "$resolved" in
-            /api/lb01/* | /api/lb02/* | /api/lb03/* | /api/lb05/* | /api/lb08/* | /api/lb04/* | /api/lb09/* | /ws/lb02/* | /ws/lb09/*) pass "forwarded as $received, which still resolves to $resolved" ;;
+            /api/lb01/* | /api/lb02/* | /api/lb03/* | /api/lb05/* | /api/lb08/* | /api/lb04/* | /api/lb06/* | /api/lb07/* | /api/lb09/* | /ws/lb02/* | /ws/lb06/* | /ws/lb09/*) pass "forwarded as $received, which still resolves to $resolved" ;;
             /v1/runs/*/spans) pass "forwarded as $received, which still resolves to $resolved" ;;
             *) fail "$path reached a service as $received, which resolves to $resolved" ;;
         esac
@@ -263,7 +284,7 @@ call OPTIONS /api/lb01/tickets -H "Origin: $site_origin" -H "Access-Control-Requ
 check "the site's preflight is answered 204 at the edge" test "$status" = 204
 check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"
 check "  and the Authorization header" grep -qi 'authorization' <<<"$(header_of access-control-allow-headers)"
-for path in /api/lb05/ask /api/lb08/workflows /api/lb04/contracts; do
+for path in /api/lb05/ask /api/lb08/workflows /api/lb04/contracts /api/lb06/incidents /api/lb07/runs; do
     call OPTIONS "$path" -H "Origin: $site_origin" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization"
     check "the site's preflight for $path is answered 204 at the edge" test "$status" = 204
     check "  allowing the site's origin" test "$(header_of access-control-allow-origin)" = "$site_origin"
@@ -313,17 +334,17 @@ check "the first event arrives as it is written, not when the stream ends ($firs
 check "all three events arrive" test "$events" = 3
 
 websocket() {
-    # websocket <origin or empty>: opens a handshake and prints the status line and the first frame.
-    python3 - "$port" "$api_host" "${1:-}" <<'PY'
+    # websocket <origin or empty> [path]: opens a handshake and prints the status line and the first frame.
+    python3 - "$port" "$api_host" "${1:-}" "${2:-/ws/lb02/live}" <<'PY'
 import base64
 import os
 import socket
 import sys
 
-port, host, origin = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+port, host, origin, path = int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 key = base64.b64encode(os.urandom(16)).decode()
 request = (
-    f"GET /ws/lb02/live HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+    f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
     f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n" + (f"Origin: {origin}\r\n" if origin else "") + "\r\n"
 )
 with socket.create_connection(("127.0.0.1", port), timeout=5) as connection:
@@ -344,6 +365,12 @@ answer="$(websocket "$site_origin")"
 check "a WebSocket from the site's origin is upgraded and reaches the service" grep -q '101.*hello from django' <<<"$answer"
 answer="$(websocket "https://evil.lb.test")"
 check "a WebSocket from another origin is refused with 403" grep -q ' 403 ' <<<"$answer"
+answer="$(websocket "$site_origin" /ws/lb06/)"
+check "LB-06's WebSocket from the site's origin is upgraded and reaches the Node systems" grep -q '101.*hello from node' <<<"$answer"
+answer="$(websocket "https://evil.lb.test" /ws/lb06/)"
+check "LB-06's WebSocket from another origin is refused with 403" grep -q ' 403 ' <<<"$answer"
+answer="$(websocket '' /ws/lb06/)"
+check "LB-06's WebSocket with no origin is refused with 403" grep -q ' 403 ' <<<"$answer"
 answer="$(websocket "")"
 check "a WebSocket with no origin is refused with 403" grep -q ' 403 ' <<<"$answer"
 

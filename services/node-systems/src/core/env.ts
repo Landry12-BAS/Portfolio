@@ -19,6 +19,8 @@ export const envSchema = z.object({
   LB_DATABASE_URL: postgresUrl,
   LB08_DATABASE_URL: postgresUrl.optional(),
   LB04_DATABASE_URL: postgresUrl.optional(),
+  LB06_DATABASE_URL: postgresUrl.optional(),
+  LB07_DATABASE_URL: postgresUrl.optional(),
   LB_REDIS_URL: z.string().regex(/^rediss?:\/\/.+/, 'a redis:// or rediss:// URL'),
   // Every key this service writes starts with this, the gateway's own rule.
   LB_REDIS_PREFIX: z.string().regex(/^[a-z0-9-]{1,24}:$/, 'lowercase letters, digits and hyphens, ending in a colon').default('lb:'),
@@ -31,6 +33,14 @@ export const envSchema = z.object({
   LB_SERVICE_KEY_FILE: z.string().min(1).optional(),
   // Where the synthetic seed data lives; without it, the repository's data/seed.
   LB_SEED_DIR: z.string().min(1).optional(),
+  // Where the golden sets live; without it, the repository's evals (LB-07 reads its samples from there).
+  LB_EVALS_DIR: z.string().min(1).optional(),
+  // LB-07's sandbox, for the worker: the runner's address on the sandbox network, the key the bug tokens
+  // are signed with (hex), and the shop's origin as the generated test's reader would run it. Without the
+  // first two, a worker fails every LB-07 run as runner_unavailable instead of leaving it queued.
+  LB07_RUNNER_URL: z.string().regex(/^https?:\/\/.+/, 'an http:// or https:// URL').optional(),
+  LB07_SHOP_TOKEN_KEY: z.string().regex(/^[0-9a-f]{64,256}$/i, '64 to 256 hex digits').optional(),
+  LB07_SHOP_ORIGIN: z.string().regex(/^https?:\/\/[^/]+$/, 'a scheme, a host and a port').default('http://127.0.0.1:8007'),
 })
 
 /** The Node systems' settings after validation, with defaults filled in. */

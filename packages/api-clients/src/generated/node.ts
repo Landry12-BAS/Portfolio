@@ -720,6 +720,1111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb06/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The faults a visitor may inject, and the curated samples
+         * @description The four faults ("break the shop"), each with the sample that shows it: a fault with a fixed seed from the golden set, whose incident replays the same way every time. Starting one takes the visitor's incident of the day.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06CatalogueView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The visitor's incidents, newest first */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06IncidentView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Break the shop: start an incident
+         * @description A curated sample (`{from: "sample", sampleId}`) or a fault of the visitor's own with an optional seed and parameters (a version label for the bad deploy, a flag's name), which the injection screen reads first (one model call). The answer is the incident at its first minute; follow it over the WebSocket at /ws/lb06/ or by polling GET /incidents/{id}/events. The agents spend at most 15 model calls, and nothing changes the shop until a proposal is approved. One incident per visitor per day; 8 at once across every visitor.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Lb06StartIncidentRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06IncidentView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One incident and where it stands
+         * @description The state moves detecting, investigating, awaiting_approval, remediating, verifying, writing_postmortem, closed; `aborted` and `failed` can follow any of them, with a reason. The SLO is as code measures it at the incident's minute.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06IncidentView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents/{id}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End the incident now
+         * @description The incident ends as aborted and its log stays readable until it expires. It does not give the visitor's incident of the day back.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06IncidentView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The events after the last one seen
+         * @description The polling fallback of the WebSocket: the events numbered after `after`, at most 200 a page, with the incident's state. A tick carries the minute's metrics and SLO, so the dashboards are drawn from the events alone.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    after?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06EventsPage"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents/{id}/postmortem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The postmortem
+         * @description The timeline the server built from the event log, and the prose a model wrote over it, which the server checked to reference only events the log holds (null when it could not be trusted). 409 `not_ready` until the incident has closed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06PostmortemView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/incidents/{id}/proposals/{proposalId}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or reject the pending proposal
+         * @description The one thing that changes the shop. Approving applies the action at the incident's minute and the SLO is then watched by code; rejecting sends the agents back to rank again. A decision that does not name the pending proposal is refused with 409, so a replayed or forged approval does nothing.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    proposalId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Lb06DecisionRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06IncidentView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb06/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What is left of the visitor's day, and the limits of the system
+         * @description Incidents started today against the daily limit of one, the step cap, how many incidents the service runs at once and how many it runs now, how long an incident may live, and when the day's allowance starts again.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb06LimitsView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/bugs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The bugs the staging shop can switch on
+         * @description Six synthetic bugs, each with where a correct run finds it. The visitor chooses which are on; they travel to the shop in a token the service signs, which the agent can neither read nor change.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07BugView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What is left of the visitor's day, and the limits of the system
+         * @description Runs started today against the daily limit (a sample counts; a run the system could not start is given back), the goal's length, the run time, how long a run is kept, and when the day's allowance starts again.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07LimitsView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The visitor's runs of the last hour, newest first */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Start a test run: a curated sample, or the visitor's own goal and bugs
+         * @description The run is queued and answered at once; follow it with GET /runs/{id}. A run plans the test in one model call, runs it step by step in a sandboxed browser that can reach only the staging shop, asks the model again only when a step fails (twice at most), writes the bug reports from the findings code made, generates the Playwright test and verifies it red on the buggy shop and green on the clean one: 2 to 7 model calls. 2 runs a visitor a day; a goal is at most 300 characters; at most 4 runs wait for the one browser, and the next is told the system is busy (503 `busy`).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Lb07CreateRunRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One run: its state, its place in the queue, and its steps as they happen
+         * @description The state moves queued, planning, running (with replanning when a step failed), cross_checking, reporting, verifying, done; `failed` can follow any of them, with a code that says why. Poll this route while the run goes.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07RunView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a run now
+         * @description Removes the run with its steps, findings, evidence, report and test at once, instead of at the end of the hour. It does not give back the visitor's run for the day.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/evidence/{evidenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One piece of evidence: a screenshot (PNG as base64) or a trimmed accessibility snapshot */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    evidenceId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07EvidenceView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The finished report: the findings code made, the bug reports the model wrote from them, and the verification
+         * @description 409 `not_ready` while the run goes, `run_failed` when it failed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07Report"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/runs/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The generated Playwright test, as text, with its verdict
+         * @description Written by a template from the validated plan; every string is a JSON literal. The verdict says whether the test was red with the bugs on and green with them off. This service never runs it.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07TestView"];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb07/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The curated samples
+         * @description Goals from the golden set with the bugs each switches on: a wrong total, an off-by-one count, missing alt text, a checkout that fails in one engine, every bug at once, a clean shop, a link out of the shop, a goal that talks to the agent. Running one live takes one of the visitor's runs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lb07SampleView"][];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorBody"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lb08/catalogue": {
         parameters: {
             query?: never;
@@ -2270,6 +3375,1402 @@ export interface components {
             id: string;
             pages: number;
             title: string;
+        };
+        Lb06CatalogueView: {
+            baselineMinutes: number;
+            faults: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                sampleId: string;
+                service: string;
+            }[];
+            samples: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                goldenCase: string;
+                id: string;
+                seed: number;
+            }[];
+            tickMs: number;
+        };
+        Lb06CatalogueViewInput: {
+            baselineMinutes: number;
+            faults: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                sampleId: string;
+                service: string;
+            }[];
+            samples: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                goldenCase: string;
+                id: string;
+                seed: number;
+            }[];
+            tickMs: number;
+        };
+        Lb06DecisionRequest: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+        };
+        Lb06DecisionRequestInput: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+        };
+        Lb06Event: {
+            /** Format: date-time */
+            at: string;
+            data: {
+                baselineMinutes: number;
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                params: {
+                    flag?: string;
+                    version?: string;
+                };
+                seed: number;
+            };
+            /** @constant */
+            kind: "incident.started";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                metrics: {
+                    [key: string]: {
+                        [key: string]: number;
+                    };
+                };
+                slo: {
+                    alerting: boolean;
+                    badFraction: number;
+                    burns: {
+                        longBurn: number;
+                        longMinutes: number;
+                        shortBurn: number;
+                        shortMinutes: number;
+                    }[];
+                    healthy: boolean;
+                };
+            };
+            /** @constant */
+            kind: "tick";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                /** @enum {string} */
+                service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+            };
+            /** @constant */
+            kind: "fault.injected";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                burn: {
+                    longBurn: number;
+                    longMinutes: number;
+                    shortBurn: number;
+                    shortMinutes: number;
+                };
+            };
+            /** @constant */
+            kind: "alert.fired";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                snapshotMinute: number;
+            };
+            /** @constant */
+            kind: "investigation.started";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                agent: "commander" | "logs" | "metrics" | "deploys";
+                /** @enum {string} */
+                kind: "plan" | "tool_call" | "report" | "ranking" | "postmortem" | "repair";
+                modelCall: boolean;
+                plan?: {
+                    questions: {
+                        /** @enum {string} */
+                        agent: "logs" | "metrics" | "deploys";
+                        question: string;
+                    }[];
+                };
+                report?: {
+                    /** @enum {string} */
+                    agent: "logs" | "metrics" | "deploys";
+                    findings: {
+                        evidence: string[];
+                        text: string;
+                    }[];
+                    toolCalls: {
+                        args: {
+                            [key: string]: string | number | boolean;
+                        };
+                        rows: number;
+                        /** @enum {string} */
+                        tool: "query_logs" | "query_metrics" | "list_deploys";
+                    }[];
+                };
+                step: number;
+                toolCall?: {
+                    args: {
+                        [key: string]: string | number | boolean;
+                    };
+                    rows: number;
+                    /** @enum {string} */
+                    tool: "query_logs" | "query_metrics" | "list_deploys";
+                };
+            };
+            /** @constant */
+            kind: "agent.step";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                agent: "commander" | "logs" | "metrics" | "deploys";
+                count: number;
+            };
+            /** @constant */
+            kind: "evidence.discarded";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                hypotheses: {
+                    /** @enum {string} */
+                    cause: "bad_deploy" | "slow_provider" | "memory_leak" | "cache_stampede" | "overload" | "unknown";
+                    confidence: number;
+                    evidence: string[];
+                    id: string;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    summary: string;
+                }[];
+            };
+            /** @constant */
+            kind: "hypotheses.ranked";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                hypothesisId: string;
+                proposalId: string;
+                rationale: string;
+            };
+            /** @constant */
+            kind: "proposal.made";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "proposal.approved";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "proposal.rejected";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "remediation.applied";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                healthyMinutes: number;
+            };
+            /** @constant */
+            kind: "slo.recovered";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                modelCalls: number;
+                prose: {
+                    actionItems: string[];
+                    references: string[];
+                    rootCause: string;
+                    summary: string;
+                    whatWentWell: string;
+                } | null;
+            };
+            /** @constant */
+            kind: "postmortem.written";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                modelCalls: number;
+                proposals: number;
+            };
+            /** @constant */
+            kind: "incident.closed";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                reason: "visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost";
+            };
+            /** @constant */
+            kind: "incident.aborted";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                reason: "visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost";
+            };
+            /** @constant */
+            kind: "incident.failed";
+            minute: number;
+            seq: number;
+        };
+        Lb06EventInput: {
+            /** Format: date-time */
+            at: string;
+            data: {
+                baselineMinutes: number;
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                params: {
+                    flag?: string;
+                    version?: string;
+                };
+                seed: number;
+            };
+            /** @constant */
+            kind: "incident.started";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                metrics: {
+                    [key: string]: {
+                        [key: string]: number;
+                    };
+                };
+                slo: {
+                    alerting: boolean;
+                    badFraction: number;
+                    burns: {
+                        longBurn: number;
+                        longMinutes: number;
+                        shortBurn: number;
+                        shortMinutes: number;
+                    }[];
+                    healthy: boolean;
+                };
+            };
+            /** @constant */
+            kind: "tick";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                /** @enum {string} */
+                service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+            };
+            /** @constant */
+            kind: "fault.injected";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                burn: {
+                    longBurn: number;
+                    longMinutes: number;
+                    shortBurn: number;
+                    shortMinutes: number;
+                };
+            };
+            /** @constant */
+            kind: "alert.fired";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                snapshotMinute: number;
+            };
+            /** @constant */
+            kind: "investigation.started";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                agent: "commander" | "logs" | "metrics" | "deploys";
+                /** @enum {string} */
+                kind: "plan" | "tool_call" | "report" | "ranking" | "postmortem" | "repair";
+                modelCall: boolean;
+                plan?: {
+                    questions: {
+                        /** @enum {string} */
+                        agent: "logs" | "metrics" | "deploys";
+                        question: string;
+                    }[];
+                };
+                report?: {
+                    /** @enum {string} */
+                    agent: "logs" | "metrics" | "deploys";
+                    findings: {
+                        evidence: string[];
+                        text: string;
+                    }[];
+                    toolCalls: {
+                        args: {
+                            [key: string]: string | number | boolean;
+                        };
+                        rows: number;
+                        /** @enum {string} */
+                        tool: "query_logs" | "query_metrics" | "list_deploys";
+                    }[];
+                };
+                step: number;
+                toolCall?: {
+                    args: {
+                        [key: string]: string | number | boolean;
+                    };
+                    rows: number;
+                    /** @enum {string} */
+                    tool: "query_logs" | "query_metrics" | "list_deploys";
+                };
+            };
+            /** @constant */
+            kind: "agent.step";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                agent: "commander" | "logs" | "metrics" | "deploys";
+                count: number;
+            };
+            /** @constant */
+            kind: "evidence.discarded";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                hypotheses: {
+                    /** @enum {string} */
+                    cause: "bad_deploy" | "slow_provider" | "memory_leak" | "cache_stampede" | "overload" | "unknown";
+                    confidence: number;
+                    evidence: string[];
+                    id: string;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    summary: string;
+                }[];
+            };
+            /** @constant */
+            kind: "hypotheses.ranked";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                hypothesisId: string;
+                proposalId: string;
+                rationale: string;
+            };
+            /** @constant */
+            kind: "proposal.made";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "proposal.approved";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "proposal.rejected";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                proposalId: string;
+            };
+            /** @constant */
+            kind: "remediation.applied";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                healthyMinutes: number;
+            };
+            /** @constant */
+            kind: "slo.recovered";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                modelCalls: number;
+                prose: {
+                    actionItems: string[];
+                    references: string[];
+                    rootCause: string;
+                    summary: string;
+                    whatWentWell: string;
+                } | null;
+            };
+            /** @constant */
+            kind: "postmortem.written";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                modelCalls: number;
+                proposals: number;
+            };
+            /** @constant */
+            kind: "incident.closed";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                reason: "visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost";
+            };
+            /** @constant */
+            kind: "incident.aborted";
+            minute: number;
+            seq: number;
+        } | {
+            /** Format: date-time */
+            at: string;
+            data: {
+                /** @enum {string} */
+                reason: "visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost";
+            };
+            /** @constant */
+            kind: "incident.failed";
+            minute: number;
+            seq: number;
+        };
+        Lb06EventsPage: {
+            cursor: number;
+            events: components["schemas"]["Lb06Event"][];
+            more: boolean;
+            /** @enum {string} */
+            state: "baseline" | "detecting" | "investigating" | "awaiting_approval" | "remediating" | "verifying" | "writing_postmortem" | "closed" | "aborted" | "failed";
+        };
+        Lb06EventsPageInput: {
+            cursor: number;
+            events: components["schemas"]["Lb06EventInput"][];
+            more: boolean;
+            /** @enum {string} */
+            state: "baseline" | "detecting" | "investigating" | "awaiting_approval" | "remediating" | "verifying" | "writing_postmortem" | "closed" | "aborted" | "failed";
+        };
+        Lb06IncidentView: {
+            alertMinute: number | null;
+            cached: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            deadlineAt: string;
+            endReason: ("visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost") | null;
+            /** Format: date-time */
+            expiresAt: string;
+            faultMinute: number;
+            /** @enum {string} */
+            guard: "not_needed" | "clean" | "flagged" | "unchecked";
+            healthyStreak: number;
+            /** Format: uuid */
+            id: string;
+            lastSeq: number;
+            minute: number;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            pendingProposal: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                hypothesisId: string;
+                id: string;
+                rationale: string;
+            } | null;
+            proposalsMade: number;
+            recoveredMinute: number | null;
+            remediations: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                minute: number;
+            }[];
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            scenario: {
+                baselineMinutes: number;
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                params: {
+                    flag?: string;
+                    version?: string;
+                };
+                seed: number;
+            };
+            slo: {
+                alerting: boolean;
+                badFraction: number;
+                burns: {
+                    longBurn: number;
+                    longMinutes: number;
+                    shortBurn: number;
+                    shortMinutes: number;
+                }[];
+                healthy: boolean;
+            } | null;
+            /** @enum {string} */
+            state: "baseline" | "detecting" | "investigating" | "awaiting_approval" | "remediating" | "verifying" | "writing_postmortem" | "closed" | "aborted" | "failed";
+        };
+        Lb06IncidentViewInput: {
+            alertMinute: number | null;
+            cached: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            deadlineAt: string;
+            endReason: ("visitor" | "timed_out" | "step_cap" | "proposals_spent" | "agents_unavailable" | "lost") | null;
+            /** Format: date-time */
+            expiresAt: string;
+            faultMinute: number;
+            /** @enum {string} */
+            guard: "not_needed" | "clean" | "flagged" | "unchecked";
+            healthyStreak: number;
+            /** Format: uuid */
+            id: string;
+            lastSeq: number;
+            minute: number;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            pendingProposal: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                hypothesisId: string;
+                id: string;
+                rationale: string;
+            } | null;
+            proposalsMade: number;
+            recoveredMinute: number | null;
+            remediations: {
+                action: {
+                    /** @constant */
+                    kind: "rollback";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                    toVersion: string;
+                } | {
+                    /** @constant */
+                    kind: "restart";
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "scale";
+                    replicas: number;
+                    /** @enum {string} */
+                    service: "web" | "cart" | "payment" | "inventory" | "database" | "cache";
+                } | {
+                    /** @constant */
+                    kind: "flush_cache";
+                } | {
+                    flag: string;
+                    /** @constant */
+                    kind: "flip_flag";
+                    value: boolean;
+                };
+                minute: number;
+            }[];
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            scenario: {
+                baselineMinutes: number;
+                /** @enum {string} */
+                fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+                params: {
+                    flag?: string;
+                    version?: string;
+                };
+                seed: number;
+            };
+            slo: {
+                alerting: boolean;
+                badFraction: number;
+                burns: {
+                    longBurn: number;
+                    longMinutes: number;
+                    shortBurn: number;
+                    shortMinutes: number;
+                }[];
+                healthy: boolean;
+            } | null;
+            /** @enum {string} */
+            state: "baseline" | "detecting" | "investigating" | "awaiting_approval" | "remediating" | "verifying" | "writing_postmortem" | "closed" | "aborted" | "failed";
+        };
+        Lb06LimitsView: {
+            incidents: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            /** @constant */
+            keptHours: 24;
+            /** @constant */
+            maxConcurrentIncidents: 8;
+            maxWallMinutes: number;
+            /** Format: date-time */
+            resetsAt: string;
+            running: number;
+            /** @constant */
+            stepCap: 15;
+        };
+        Lb06LimitsViewInput: {
+            incidents: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            /** @constant */
+            keptHours: 24;
+            /** @constant */
+            maxConcurrentIncidents: 8;
+            maxWallMinutes: number;
+            /** Format: date-time */
+            resetsAt: string;
+            running: number;
+            /** @constant */
+            stepCap: 15;
+        };
+        Lb06PostmortemView: {
+            /** Format: uuid */
+            incidentId: string;
+            modelCalls: number;
+            proposals: number;
+            prose: {
+                actionItems: string[];
+                references: string[];
+                rootCause: string;
+                summary: string;
+                whatWentWell: string;
+            } | null;
+            recoveredMinute: number | null;
+            timeline: {
+                detail: string;
+                kind: string;
+                minute: number;
+                seq: number;
+            }[];
+        };
+        Lb06PostmortemViewInput: {
+            /** Format: uuid */
+            incidentId: string;
+            modelCalls: number;
+            proposals: number;
+            prose: {
+                actionItems: string[];
+                references: string[];
+                rootCause: string;
+                summary: string;
+                whatWentWell: string;
+            } | null;
+            recoveredMinute: number | null;
+            timeline: {
+                detail: string;
+                kind: string;
+                minute: number;
+                seq: number;
+            }[];
+        };
+        Lb06StartIncidentRequest: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            /** @enum {string} */
+            fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+            /** @constant */
+            from: "custom";
+            params?: {
+                flag?: string;
+                version?: string;
+            };
+            seed?: number;
+        };
+        Lb06StartIncidentRequestInput: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            /** @enum {string} */
+            fault: "bad_deploy" | "slow_payment" | "memory_leak" | "cache_stampede";
+            /** @constant */
+            from: "custom";
+            params?: {
+                flag?: string;
+                version?: string;
+            };
+            seed?: number;
+        };
+        Lb07BugView: {
+            /** @enum {string} */
+            id: "coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error";
+            summary: string;
+            surfaces: ("expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation")[];
+            title: string;
+        };
+        Lb07BugViewInput: {
+            /** @enum {string} */
+            id: "coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error";
+            summary: string;
+            surfaces: ("expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation")[];
+            title: string;
+        };
+        Lb07CreateRunRequest: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** @constant */
+            from: "custom";
+            goal: string;
+        };
+        Lb07CreateRunRequestInput: {
+            /** @constant */
+            from: "sample";
+            sampleId: string;
+        } | {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** @constant */
+            from: "custom";
+            goal: string;
+        };
+        Lb07EvidenceView: {
+            base64: string;
+            /** @constant */
+            contentType: "image/png";
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "screenshot";
+            stepIndex: number | null;
+        } | {
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "snapshot";
+            stepIndex: number | null;
+            text: string;
+        };
+        Lb07EvidenceViewInput: {
+            base64: string;
+            /** @constant */
+            contentType: "image/png";
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "screenshot";
+            stepIndex: number | null;
+        } | {
+            /** @enum {string} */
+            engine: "chromium" | "firefox-ua";
+            id: string;
+            /** @constant */
+            kind: "snapshot";
+            stepIndex: number | null;
+            text: string;
+        };
+        Lb07LimitsView: {
+            keptMinutes: number;
+            maxBugs: number;
+            maxGoalLength: number;
+            maxQueued: number;
+            /** Format: date-time */
+            resetsAt: string;
+            runs: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            runTimeSeconds: number;
+        };
+        Lb07LimitsViewInput: {
+            keptMinutes: number;
+            maxBugs: number;
+            maxGoalLength: number;
+            maxQueued: number;
+            /** Format: date-time */
+            resetsAt: string;
+            runs: {
+                limit: number;
+                remaining: number;
+                used: number;
+            };
+            runTimeSeconds: number;
+        };
+        Lb07Report: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            durationMs: number;
+            engines: ("chromium" | "firefox-ua")[];
+            findings: {
+                detail: string;
+                /** @enum {string} */
+                engine: "chromium" | "firefox-ua";
+                evidenceIds: string[];
+                id: string;
+                /** @enum {string} */
+                kind: "expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation";
+                path: string | null;
+                rule: string | null;
+                stepIndex: number | null;
+                title: string;
+            }[];
+            findingsDropped: number;
+            goal: string;
+            modelCalls: number;
+            reading: string | null;
+            replans: number;
+            reports: {
+                actual: string;
+                expected: string;
+                findingIds: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                steps: string[];
+                title: string;
+            }[];
+            reportsDropped: number;
+            /** Format: uuid */
+            runId: string;
+            verification: {
+                cross: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                green: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                red: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                /** @enum {string} */
+                verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+            };
+        };
+        Lb07ReportInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            durationMs: number;
+            engines: ("chromium" | "firefox-ua")[];
+            findings: {
+                detail: string;
+                /** @enum {string} */
+                engine: "chromium" | "firefox-ua";
+                evidenceIds: string[];
+                id: string;
+                /** @enum {string} */
+                kind: "expectation_failed" | "console_error" | "failed_request" | "accessibility" | "blocked_navigation";
+                path: string | null;
+                rule: string | null;
+                stepIndex: number | null;
+                title: string;
+            }[];
+            findingsDropped: number;
+            goal: string;
+            modelCalls: number;
+            reading: string | null;
+            replans: number;
+            reports: {
+                actual: string;
+                expected: string;
+                findingIds: string[];
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                steps: string[];
+                title: string;
+            }[];
+            reportsDropped: number;
+            /** Format: uuid */
+            runId: string;
+            verification: {
+                cross: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                green: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                red: {
+                    bugsOn: boolean;
+                    durationMs: number;
+                    /** @enum {string} */
+                    engine: "chromium" | "firefox-ua";
+                    findings: number;
+                    stepsPassed: boolean;
+                } | null;
+                /** @enum {string} */
+                verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+            };
+        };
+        Lb07RunView: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** Format: date-time */
+            createdAt: string;
+            endedAt: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "planning_unavailable" | "plan_invalid" | "plan_refused" | "runner_unavailable" | "run_timeout" | "goal_refused" | "internal";
+                message: string;
+            } | null;
+            findings: number;
+            goal: string;
+            /** Format: uuid */
+            id: string;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            queuePosition: number | null;
+            reading: string | null;
+            replans: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            startedAt: string | null;
+            /** @enum {string} */
+            state: "queued" | "planning" | "running" | "replanning" | "cross_checking" | "reporting" | "verifying" | "done" | "failed";
+            steps: {
+                durationMs: number | null;
+                index: number;
+                outcome: ("ok" | "not_found" | "ambiguous" | "timeout" | "blocked" | "expectation" | "error") | null;
+                plan: number;
+                /** @enum {string} */
+                status: "pending" | "running" | "passed" | "failed" | "finding" | "blocked" | "skipped";
+                step: {
+                    /** @constant */
+                    action: "goto";
+                    path: string;
+                } | {
+                    /** @constant */
+                    action: "click";
+                    name: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem";
+                } | {
+                    /** @constant */
+                    action: "fill";
+                    label: string;
+                    value: string;
+                } | {
+                    /** @constant */
+                    action: "select";
+                    label: string;
+                    option: string;
+                } | {
+                    /** @constant */
+                    action: "expectText";
+                    text: string;
+                } | {
+                    /** @constant */
+                    action: "expectCount";
+                    count: number;
+                    name?: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem" | "listitem" | "row" | "img" | "heading" | "textbox";
+                };
+            }[];
+        };
+        Lb07RunViewInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            /** Format: date-time */
+            createdAt: string;
+            endedAt: string | null;
+            /** Format: date-time */
+            expiresAt: string;
+            failure: {
+                /** @enum {string} */
+                code: "planning_unavailable" | "plan_invalid" | "plan_refused" | "runner_unavailable" | "run_timeout" | "goal_refused" | "internal";
+                message: string;
+            } | null;
+            findings: number;
+            goal: string;
+            /** Format: uuid */
+            id: string;
+            modelCalls: number;
+            /** @enum {string} */
+            origin: "sample" | "custom";
+            queuePosition: number | null;
+            reading: string | null;
+            replans: number;
+            /** Format: uuid */
+            runId: string;
+            sampleId: string | null;
+            startedAt: string | null;
+            /** @enum {string} */
+            state: "queued" | "planning" | "running" | "replanning" | "cross_checking" | "reporting" | "verifying" | "done" | "failed";
+            steps: {
+                durationMs: number | null;
+                index: number;
+                outcome: ("ok" | "not_found" | "ambiguous" | "timeout" | "blocked" | "expectation" | "error") | null;
+                plan: number;
+                /** @enum {string} */
+                status: "pending" | "running" | "passed" | "failed" | "finding" | "blocked" | "skipped";
+                step: {
+                    /** @constant */
+                    action: "goto";
+                    path: string;
+                } | {
+                    /** @constant */
+                    action: "click";
+                    name: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem";
+                } | {
+                    /** @constant */
+                    action: "fill";
+                    label: string;
+                    value: string;
+                } | {
+                    /** @constant */
+                    action: "select";
+                    label: string;
+                    option: string;
+                } | {
+                    /** @constant */
+                    action: "expectText";
+                    text: string;
+                } | {
+                    /** @constant */
+                    action: "expectCount";
+                    count: number;
+                    name?: string;
+                    /** @enum {string} */
+                    role: "button" | "link" | "checkbox" | "radio" | "tab" | "menuitem" | "listitem" | "row" | "img" | "heading" | "textbox";
+                };
+            }[];
+        };
+        Lb07SampleView: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            goal: string;
+            id: string;
+            title: string;
+        };
+        Lb07SampleViewInput: {
+            bugs: ("coupon-twice" | "checkout-engine" | "missing-alt" | "cart-off-by-one" | "broken-image" | "script-error")[];
+            goal: string;
+            id: string;
+            title: string;
+        };
+        Lb07TestView: {
+            filename: string;
+            /** @constant */
+            language: "typescript";
+            source: string;
+            /** @enum {string} */
+            verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
+        };
+        Lb07TestViewInput: {
+            filename: string;
+            /** @constant */
+            language: "typescript";
+            source: string;
+            /** @enum {string} */
+            verdict: "kept" | "passing" | "discarded_not_red" | "discarded_not_green" | "not_verified";
         };
         LimitsView: {
             generations: {

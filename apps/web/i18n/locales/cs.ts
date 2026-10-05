@@ -11,6 +11,8 @@ import lb05 from './boards/lb-05.cs'
 import lb08 from './boards/lb-08.cs'
 import lb03 from './boards/lb-03.cs'
 import lb04 from './boards/lb-04.cs'
+import lb06 from './boards/lb-06.cs'
+import lb07 from './boards/lb-07.cs'
 import lb09 from './boards/lb-09.cs'
 import type { Messages } from './en'
 
@@ -163,6 +165,8 @@ const cs = {
   lb08,
   lb03,
   lb04,
+  lb06,
+  lb07,
   lb09,
   error: {
     code: 'Chyba {code}',

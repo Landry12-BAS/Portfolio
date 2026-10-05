@@ -107,7 +107,9 @@ describe('LB-05\'s store: a live question', () => {
   it('says it is waiting for the trace while the one request is out, because the analyst names its run only in the answer', async () => {
     const { site, store, scope } = await start({ verified: true })
     site.delayNext('POST /api/lb05/ask', 20_000)
+    const arrived = site.nextCall('POST /api/lb05/ask')
     const asking = store.ask({ question: QUESTION, source: 'sample' })
+    await arrived
     await seconds(5)
 
     expect(store.phase).toBe('asking')
@@ -131,8 +133,10 @@ describe('LB-05\'s store: a live question', () => {
   it('does nothing about a second question while the first is out', async () => {
     const { site, store } = await start({ verified: true })
     site.delayNext('POST /api/lb05/ask', 5_000)
+    const arrived = site.nextCall('POST /api/lb05/ask')
     const first = store.ask({ question: QUESTION, source: 'sample' })
     await store.ask({ question: LB05_SAMPLES[1].question, source: 'sample' })
+    await arrived
     await seconds(6)
     await first
 

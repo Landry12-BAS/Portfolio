@@ -91,9 +91,11 @@
 		path /api/lb09/meetings
 	}
 
-	# The Flask systems (LB-03 and LB-05) and the Node systems (LB-08 and LB-04): one API prefix each.
+	# The Flask systems (LB-03 and LB-05) and the Node systems (LB-08, LB-04, LB-06 and LB-07): one API
+	# prefix each, and LB-06's WebSocket, which the visitor's browser opens straight from the site's
+	# origin. LB-07's browser sandbox has no route: only the Node worker reaches it.
 	@flask path /api/lb03/* /api/lb05/*
-	@node path /api/lb08/* /api/lb04/*
+	@node path /api/lb08/* /api/lb04/* /api/lb06/* /api/lb07/* /ws/lb06/*
 
 	# One of the two routes that take a file: LB-04's contract upload, a PDF of up to 2 MB sent as
 	# base64 inside JSON (a third larger) with its name. Every other route keeps the small limit.
@@ -186,7 +188,8 @@
 		# those get 95 seconds: more than the service needs, and less than the 100 at which
 		# Cloudflare gives up on its own and shows its error page in place of ours. (LB-03 shares
 		# the Flask systems' 95 seconds, though every call of it answers at once: a document is
-		# read in the background and its page polls.) The rest answer within a minute or not at all.
+		# read in the background and its page polls. So does LB-07 with the Node systems': a test
+		# run is queued and its page polls.) The rest answer within a minute or not at all.
 		import proxy @django django-api:8000 60s
 		import proxy @flask flask-api:8102 95s
 		import proxy @node node-api:8002 95s

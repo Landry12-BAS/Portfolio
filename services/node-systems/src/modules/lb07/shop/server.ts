@@ -1,0 +1,249 @@
+// The staging shop's HTTP server: a plain node:http server with a handful of routes, a cart in a
+// cookie, and the bugs switched on by a signed token (token.ts). It is one small server of its own,
+// started by the sandbox process (src/sandbox.ts) on the loopback interface of the sandbox container, so
+// the browser the agent drives can reach it and nothing else; it holds no database, no queue and no
+// model, and the one secret it has is the key that verifies bug tokens. Every answer carries a strict
+// Content-Security-Policy of the shop's own (pagePolicy), which the agent's browser keeps: it is the sandbox's
+// layer at the page's level, so a script that got into a page could load or connect to nothing outside the shop.
+// The `checkout-engine` bug lives here: when it is on, the checkout fails for a browser that is not Chromium,
+// told apart by its user agent, since the sandbox installs only Chromium and a second engine is simulated by its
+// user agent (README, "LB-07 QA Engineer").
+import { createHash } from 'node:crypto'
+import { createServer } from 'node:http'
+import type { IncomingMessage, Server, ServerResponse } from 'node:http'
+
+import type { Lb07BugId } from '@lb/contracts'
+
+import { productBySlug } from './catalogue.ts'
+import { addToCart, applyCoupon, CART_COOKIE, readCart, setQuantity, totalsOf, writeCart } from './cart.ts'
+import type { Cart } from './cart.ts'
+import { aboutPage, BUG_SCRIPT, cartPage, checkoutFailedPage, checkoutPage, frontPage, imageSvg, notFoundPage, orderPage, productPage, STYLE } from './pages.ts'
+import type { CheckoutForm, Order } from './pages.ts'
+import { BUG_COOKIE, checkTokenKey, verifyBugToken } from './token.ts'
+
+/** What the shop is built with. */
+export interface ShopOptions {
+  // The key bug tokens are verified with; the service signs with the same one.
+  tokenKey: Uint8Array
+  now?: () => Date
+}
+
+// The most bytes a form may send.
+const MAX_FORM_BYTES = 4_096
+// How many placed orders the shop remembers (the oldest are forgotten first).
+const MAX_ORDERS = 200
+
+/** Tells whether a user agent is a browser other than Chromium: Firefox, or Safari that is not Chrome. */
+export function isSecondEngine(userAgent: string | undefined): boolean {
+  if (!userAgent) return false
+  if (userAgent.includes('Firefox/')) return true
+  return userAgent.includes('Safari/') && !/Chrom(?:e|ium)\//.test(userAgent)
+}
+
+/** Reads the cookies of a request into a map. */
+function cookiesOf(request: IncomingMessage): Map<string, string> {
+  const cookies = new Map<string, string>()
+  const header = request.headers.cookie
+  if (!header || header.length > 8_192) return cookies
+  for (const part of header.split(';')) {
+    const separator = part.indexOf('=')
+    if (separator === -1) continue
+    cookies.set(part.slice(0, separator).trim(), part.slice(separator + 1).trim())
+  }
+  return cookies
+}
+
+/** Reads a small urlencoded form body, or undefined when it is too large or not a form. */
+function readForm(request: IncomingMessage): Promise<URLSearchParams | undefined> {
+  return new Promise((resolve) => {
+    const type = request.headers['content-type'] ?? ''
+    if (!type.startsWith('application/x-www-form-urlencoded')) {
+      request.resume()
+      resolve(undefined)
+      return
+    }
+    const chunks: Buffer[] = []
+    let size = 0
+    request.on('data', (chunk: Buffer) => {
+      size += chunk.length
+      if (size > MAX_FORM_BYTES) {
+        request.destroy()
+        resolve(undefined)
+        return
+      }
+      chunks.push(chunk)
+    })
+    request.on('end', () => resolve(new URLSearchParams(Buffer.concat(chunks).toString('utf8'))))
+    request.on('error', () => resolve(undefined))
+  })
+}
+
+/** An inline block's hash, as a Content-Security-Policy source. */
+function hashSource(text: string): string {
+  return `'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`
+}
+
+// The two inline blocks the shop's pages may hold: the stylesheet every page carries, and the bug's one script.
+const STYLE_SOURCE = hashSource(STYLE)
+const BUG_SCRIPT_SOURCE = hashSource(BUG_SCRIPT)
+
+/**
+ * The shop's policy for a page, the third of the sandbox's layers at the page's own level: everything from the
+ * shop's origin only, so a script that got into a page could load and connect to nothing else; no script at all,
+ * but the checkout's one bug script by its hash when that page needs it; the stylesheet by its hash; no plugin, no
+ * base, forms only to the shop, and no frame of a page anywhere. The browser keeps it (the sandbox does not bypass it).
+ */
+export function pagePolicy(allowBugScript: boolean): string {
+  return [
+    'default-src \'self\'',
+    `script-src ${allowBugScript ? BUG_SCRIPT_SOURCE : '\'none\''}`,
+    `style-src ${STYLE_SOURCE}`,
+    'img-src \'self\'',
+    'object-src \'none\'',
+    'base-uri \'none\'',
+    'form-action \'self\'',
+    'frame-ancestors \'none\'',
+  ].join('; ')
+}
+
+// The policy of every answer that is not a page (a picture, a redirect, a refusal): nothing in it may load or run.
+const NOTHING_POLICY = 'default-src \'none\'; frame-ancestors \'none\''
+
+/** The headers every answer of the shop carries: no caching, no sniffing, no referrer, no framing, and the policy given. No CORS header, ever. */
+function baseHeaders(policy: string): Record<string, string> {
+  return {
+    'cache-control': 'no-store',
+    'content-security-policy': policy,
+    'x-content-type-options': 'nosniff',
+    'x-frame-options': 'DENY',
+    'referrer-policy': 'no-referrer',
+    'cross-origin-opener-policy': 'same-origin',
+    'cross-origin-resource-policy': 'same-origin',
+  }
+}
+
+/** Writes an HTML page with the shop's headers; the page's policy allows the bug's script only when asked to. */
+function sendPage(response: ServerResponse, status: number, body: string, cart?: Cart, allowBugScript = false): void {
+  const headers: Record<string, string> = { ...baseHeaders(pagePolicy(allowBugScript)), 'content-type': 'text/html; charset=utf-8' }
+  if (cart) headers['set-cookie'] = `${CART_COOKIE}=${writeCart(cart)}; Path=/; HttpOnly; SameSite=Lax`
+  response.writeHead(status, headers)
+  response.end(body)
+}
+
+/** Redirects after a form to a path of the shop, saving the cart. */
+function redirect(response: ServerResponse, location: string, cart: Cart): void {
+  response.writeHead(303, { ...baseHeaders(NOTHING_POLICY), 'location': location, 'set-cookie': `${CART_COOKIE}=${writeCart(cart)}; Path=/; HttpOnly; SameSite=Lax` })
+  response.end()
+}
+
+/** Makes an order number from what was ordered, so the same cart at the same moment gives the same number. */
+function orderNumber(cart: Cart, moment: Date): string {
+  const digest = createHash('sha256').update(JSON.stringify(cart)).update(String(moment.getTime())).digest('hex')
+  return `bb-${Number.parseInt(digest.slice(0, 6), 16).toString().padStart(7, '0').slice(0, 7)}`
+}
+
+/** Reads one field of a form as plain, bounded text. */
+function field(form: URLSearchParams, name: string, max: number): string {
+  return (form.get(name) ?? '').trim().slice(0, max)
+}
+
+/** The shop: builds the server. */
+export function createShopServer(options: ShopOptions): Server {
+  const key = checkTokenKey(options.tokenKey)
+  const now = options.now ?? (() => new Date())
+  const orders = new Map<string, Order>()
+
+  /** Remembers an order, forgetting the oldest past the limit. */
+  const remember = (order: Order): void => {
+    orders.set(order.number, order)
+    if (orders.size > MAX_ORDERS) {
+      const oldest = orders.keys().next().value
+      if (oldest !== undefined) orders.delete(oldest)
+    }
+  }
+
+  /** Answers one request. */
+  const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
+    const url = new URL(request.url ?? '/', 'http://shop.invalid')
+    const path = url.pathname
+    const cookies = cookiesOf(request)
+    const claims = verifyBugToken(key, cookies.get(BUG_COOKIE), now())
+    const bugs: readonly Lb07BugId[] = claims?.bugs ?? []
+    let cart = readCart(cookies.get(CART_COOKIE))
+    const totals = () => totalsOf(cart, bugs)
+    const method = request.method ?? 'GET'
+
+    if (method === 'GET' || method === 'HEAD') {
+      if (path === '/') return sendPage(response, 200, frontPage(totals(), bugs))
+      if (path === '/cart') return sendPage(response, 200, cartPage(cart, totals()))
+      if (path === '/checkout') return sendPage(response, 200, checkoutPage(cart, totals(), bugs), undefined, bugs.includes('script-error'))
+      if (path === '/about') return sendPage(response, 200, aboutPage(totals()))
+      const product = /^\/products\/([a-z0-9-]{1,40})$/.exec(path)
+      if (product) {
+        const found = productBySlug(product[1] ?? '')
+        return found ? sendPage(response, 200, productPage(found, totals(), bugs)) : sendPage(response, 404, notFoundPage(totals()))
+      }
+      const image = /^\/images\/([a-z0-9-]{1,40})\.svg$/.exec(path)
+      if (image) {
+        const svg = imageSvg(image[1] ?? '')
+        if (svg === undefined) return sendPage(response, 404, notFoundPage(totals()))
+        response.writeHead(200, { ...baseHeaders(NOTHING_POLICY), 'content-type': 'image/svg+xml' })
+        response.end(svg)
+        return
+      }
+      const order = /^\/orders\/(bb-\d{1,7})$/.exec(path)
+      if (order) {
+        const found = orders.get(order[1] ?? '')
+        return found ? sendPage(response, 200, orderPage(found, totals())) : sendPage(response, 404, notFoundPage(totals()))
+      }
+      return sendPage(response, 404, notFoundPage(totals()))
+    }
+
+    if (method === 'POST') {
+      const form = await readForm(request)
+      if (!form) return sendPage(response, 400, notFoundPage(totals()))
+      if (path === '/cart/add') {
+        cart = addToCart(cart, field(form, 'slug', 40), 1)
+        return redirect(response, '/cart', cart)
+      }
+      if (path === '/cart/update') {
+        for (const [name, value] of form) {
+          if (!name.startsWith('qty-')) continue
+          const quantity = Number(value)
+          if (Number.isFinite(quantity)) cart = setQuantity(cart, name.slice(4), quantity)
+        }
+        return redirect(response, '/cart', cart)
+      }
+      if (path === '/cart/remove') {
+        cart = setQuantity(cart, field(form, 'slug', 40), 0)
+        return redirect(response, '/cart', cart)
+      }
+      if (path === '/cart/coupon') {
+        cart = applyCoupon(cart, field(form, 'code', 40))
+        return redirect(response, '/cart', cart)
+      }
+      if (path === '/checkout') {
+        const filled: CheckoutForm = { name: field(form, 'name', 80), email: field(form, 'email', 120), street: field(form, 'street', 120), city: field(form, 'city', 80) }
+        const current = totals()
+        if (current.lines.length === 0) return redirect(response, '/cart', cart)
+        if (Object.values(filled).some(value => value === '')) return sendPage(response, 400, checkoutPage(cart, current, bugs, 'Please fill in every field.'), undefined, bugs.includes('script-error'))
+        // The bug: in a browser that is not Chromium, the checkout fails.
+        if (bugs.includes('checkout-engine') && isSecondEngine(request.headers['user-agent'])) return sendPage(response, 500, checkoutFailedPage(current))
+        const order: Order = { number: orderNumber(cart, now()), totalCents: current.totalCents, items: current.shownItems }
+        remember(order)
+        return redirect(response, `/orders/${order.number}`, { v: 1, items: {}, coupon: null })
+      }
+      return sendPage(response, 404, notFoundPage(totals()))
+    }
+
+    response.writeHead(405, { ...baseHeaders(NOTHING_POLICY), allow: 'GET, HEAD, POST' })
+    response.end()
+  }
+
+  return createServer((request, response) => {
+    handle(request, response).catch(() => {
+      if (!response.headersSent) response.writeHead(500, baseHeaders(NOTHING_POLICY))
+      response.end()
+    })
+  })
+}

@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...`, `/api/lb06/...`, `/api/lb07/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -162,6 +162,15 @@ how a Vercel preview runs.
   conversation, the calendar or a recording, and a WebSocket does not pass through a service
   worker at all. The page is fetched from the network first, so a visitor who is online always
   gets the current page. A test fails if the worker ever stores an API or WebSocket address.
+- **LB-06's board: the feed.** The incident's feed, like LB-02's conversation, connects from the
+  visitor's browser straight to the API: `POST /api/tokens/lb-06` gives the page a five-minute
+  grant and the socket's address, from the same setting the proxy uses, the token goes in the
+  first frame and never in an address, and the page refuses an address that is not `ws:` or `wss:`
+  or that carries credentials. Only LB-06's two board pages get a longer policy, and the one
+  addition is the smallest that works: `connect-src` gains the API's `ws(s)://host` (no wildcard).
+  Nothing else changes: no service worker, no Web Worker, no new Trusted Types policy
+  (`apps/web/server/lib/lb06-csp.ts`, tested in `test/unit/lb06-csp.test.ts` and against the headers
+  a browser gets in `e2e/security.spec.ts`). The page polls the events route when the socket drops.
 - **LB-04's board: the PDF viewer.** The viewer draws a contract's PDF with pdf.js
   (`pdfjs-dist`), loaded only when a visitor asks to see the pages (the build leaves it out of
   the page's prefetch hints), and only from the site's own origin. pdf.js works in a Web Worker,
@@ -188,6 +197,20 @@ how a Vercel preview runs.
   page where they differ it leaves the highlight off and says so, and the passage is still shown
   as text. That the two agree is checked in a browser on every sample the system can review, not
   assumed for a visitor's own file.
+- **LB-07's board: the screenshots.** LB-07's service answers a screenshot of its sandboxed
+  browser as base64 inside JSON. The board does not turn that into a `blob:` or `data:` address
+  of its own, which would need the policy widened; the site answers each screenshot at an address
+  of its own, `GET /api/lb07/runs/{id}/evidence/{evidenceId}/image`, so a plain `<img src>` to the
+  site's origin shows it and the policy stays as it is (`apps/web/server/handlers/lb07-evidence-image.ts`).
+  The route checks both ids by their pattern (a UUID, and `e` with up to three digits), reads the
+  evidence through the same call the proxy makes (the visitor's token for `lb-07`, so a run that
+  is not the visitor's, or is gone, is the service's own 404, as it is for the proxy), and answers
+  only a piece that fits the evidence schema, is of kind `screenshot`, decodes cleanly, starts with
+  the PNG signature and is at most 400 kB (the contract's limit). A page's tree, which is text, is a
+  404; anything else is a 502 in the platform's error shape. A picture is answered as `image/png`
+  with `nosniff` and `no-store`. A replay's screenshots come from the recording and are shown as
+  `data:image/png` addresses, which the site's policy already allows (`img-src 'self' data:`), and
+  only after the browser has checked their PNG signature. The policy is not changed for LB-07.
 
 ### Threat model of the proxy
 
@@ -303,10 +326,12 @@ attempts. Every prompt change must pass it.
 ## 5. Services and data
 
 - **Segmented networks.** Docker networks `edge` (cloudflared, Caddy), `app` (gateway
-  and systems), `data` (Postgres, Redis) and `sandbox` (Playwright worker, staging
-  shop). The data network has no route to the internet. Neither has `edge` or `app`, nor
-  the network of either egress proxy: one `outbound` network has a route out, and only
-  the two proxies and the tunnel connector join it. (`sandbox` arrives with LB-07.)
+  and systems), `data` (Postgres, Redis) and `sandbox` (LB-07's browser sandbox, and the Node
+  worker that calls its runner). The data network has no route to the internet. Neither has
+  `edge`, `app` or `sandbox`, nor the network of either egress proxy: one `outbound` network has
+  a route out, and only the two proxies and the tunnel connector join it. The `sandbox` network
+  also gives the host no address: an internal network's gateway address is the host's own, and
+  through it a container would reach whatever the host listens on (section 6).
 - **Allowlisted egress.** Outbound traffic goes through an egress proxy with a domain
   allowlist: the gateway may reach the model providers, the systems may reach R2 and
   Sentry, and nothing else leaves the box except the tunnel. There are two Squid
@@ -325,7 +350,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01, LB-02, LB-03, LB-05 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01 to LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and
@@ -334,19 +359,23 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues (LB-08's and LB-04's, each under its
-  own pattern), and for every service its own run
-  spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
+  channel layer, the Node systems' BullMQ queues (LB-08's, LB-04's, LB-06's and LB-07's, each
+  under its own pattern) and LB-06's feeds (a stream per incident), and for every service its
+  own run spans; LB-07's browser sandbox has no Redis login at all. The ACL was derived from what
+  the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's, the Node systems' (LB-08's and LB-04's), and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's, LB-04's, LB-06's and LB-07's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
   read-only: a compromised API cannot change the data it answers from. The volume holds
   nothing but synthetic data, is not backed up, and is made again when it is missing.
-- **WebSockets:** only the site's origin may open one (Caddy checks it, and answers `403`
-  to the rest), the visitor token travels in the first frame and never in the address, and
-  uvicorn refuses a frame over 8192 bytes before the service reads it.
+- **WebSockets** (LB-02's at `/ws/lb02/`, LB-06's at `/ws/lb06/`): only the site's origin may
+  open one (Caddy checks it, and answers `403` to the rest), the visitor token travels in the
+  first frame and never in the address, uvicorn refuses a frame over 8192 bytes before LB-02
+  reads it and Fastify one over 4096 before LB-06 does, and LB-06 holds a visitor to four
+  connections and a process to 256, pings every half minute and closes after fifteen minutes
+  of silence (`services/node-systems/src/modules/lb06/engine/socket.ts`).
 - **R2:** one scoped token per bucket. LB-03's uploads bucket is private (nothing sets an ACL
   or makes a public address), its token may read, write and delete there and nowhere else,
   and its one-day lifecycle rule is a backstop behind the service's own hourly sweep.
@@ -366,6 +395,20 @@ attempts. Every prompt change must pass it.
   never sees a passage that talks to it. Its limits and what is not covered are in
   [`services/node-systems/README.md`](../services/node-systems/README.md), "Threat model of
   LB-04".
+- **LB-06's incidents:** the visitor's two strings (a version label, a flag's name, 40
+  characters each from a pattern with no `<` or `>`) go to the injection screen first and then
+  into a delimited data slot of the agents' prompts, never into a system prompt; the agents
+  can only cite evidence the server holds and propose an action from a closed list, and nothing
+  changes the simulated shop without the visitor's click, which is a server-side transition
+  checked against the pending proposal's id. An incident, its log and the scenario cache live in
+  the `lb06` schema under their own role for a day, are left out of the backup, and are deleted
+  by a sweep. The rest is in the same README, "LB-06 threat model".
+- **LB-07's test runs:** the visitor's goal and everything made from it (the plan's steps, the
+  findings, the screenshots and page snapshots, the report and its generated test) live in the
+  `lb07` schema under its own role for an hour, are left out of the backup
+  (`infra/backup/excluded-data.txt`; `infra/postgres/test-roles.sh` proves no word of a goal is
+  in the dump), and are deleted by a sweep. The browser that runs the plan is in a container of
+  its own (section 6).
 
 ## 6. Containers and host
 
@@ -373,8 +416,41 @@ attempts. Every prompt change must pass it.
   root filesystems, `cap_drop: [ALL]`, `no-new-privileges`, and PID, CPU and memory
   limits. CI holds every service block to these rules (`infra/scripts/check-compose.sh`),
   so a new service cannot quietly weaken them, and no service publishes a port.
-- **Browser sandbox:** the LB-07 Playwright worker runs under gVisor, and its network
-  reaches only the staging shop.
+- **Browser sandbox (LB-07).** A headless Chromium, driven by a plan a model wrote from a
+  visitor's goal, is the riskiest process on the box. The design said "one container per run";
+  starting a container needs the Docker socket, which no container on the platform is given (it
+  is root on the host by another name). What stands in for it, layer by layer:
+  - **One container, `lb07-sandbox`, that holds nothing worth taking.** Its own image
+    (`infra/docker/lb07-sandbox.Dockerfile`): distroless, with no shell and no package manager;
+    a non-root user; a read-only root and a tmpfs for what Chromium writes; every capability
+    dropped and no new privileges; memory, CPU and process limits. Its one secret is the key
+    that switches the staging shop's bugs on, which it reads once and removes from its
+    environment; it has no database or Redis login and no gateway key, and makes no model call.
+  - **A network that reaches nothing.** The browser's only destination, the staging shop, is in
+    the same process, on the container's loopback interface. The container's one network,
+    `sandbox`, is internal (no route out, no public name resolves) and its bridge has no address
+    on the host, so nothing on the box is reachable either; its only other member is
+    `node-worker`, which calls the runner's API and listens on nothing. Caddy has no route to it.
+    Inside, every request the page makes for another origin than the shop's is aborted and
+    counted, and a plan's vocabulary has no URL, selector or script to begin with.
+  - **A fresh browser context for every pass** of a run (cookies, storage, cache), closed when
+    the pass ends or its wall clock runs out, and **a fresh process after every 20 sessions**:
+    the runner then refuses new sessions, exits once the last has closed (it is never cut
+    short), and Docker's restart policy starts a new one, so nothing a run left in the browser
+    outlives a few runs.
+  - **Chromium's own sandbox is off** (`--no-sandbox`): it needs user namespaces, which a
+    container with no capabilities under Docker's default seccomp profile does not get (it was
+    tried: "Chromium sandboxing failed"). Allowing them would widen the kernel surface for every
+    process in the container, so the container is the sandbox. A further layer the owner may add
+    is gVisor (`runtime: runsc` for this one service, after installing it on the box); it was
+    not, because it cannot be installed or tested where this was built.
+  `infra/sandbox/test.sh` (CI runs it) starts the image with Compose from the real file and
+  proves each layer: the container's identity and privileges from the inside, golden plans run
+  from a second container, no route to the internet, to another container or to the host,
+  the shop unreachable from outside, the memory limit, and the restart after its share of runs.
+  The Compose policy holds the network to these rules: only the two services may join it, the
+  sandbox may join no other, it is given only its own settings, and the bridge stays without an
+  address.
 - **Host:** an Oracle Cloud Always Free VM running Ubuntu LTS, with unattended
   security upgrades, no password logins, and SSH reachable only over Tailscale.
   Oracle's default VCN security list opens SSH (port 22) to the internet. That rule is
@@ -402,8 +478,9 @@ attempts. Every prompt change must pass it.
   regexes open to catastrophic backtracking), and CI fails on any high or critical
   advisory from `pnpm audit`. An advisory with no fix may be ignored only with its reason
   written beside the entry in `pnpm-workspace.yaml`, and the entry goes when a fix ships;
-  today that is GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
-  certificate helper reaches and the production build does not contain.
+  today those are GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
+  certificate helper reaches and the production build does not contain, and
+  GHSA-vfj7-8cjw-p6xm (braces), which only the build's locale-file globbing reaches.
 - **Every pull request** runs CodeQL and Semgrep on the code, gitleaks for secrets,
   pip-audit and pnpm audit on dependencies, and an OWASP ZAP baseline scan against the
   full stack started in CI.

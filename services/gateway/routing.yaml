@@ -472,6 +472,45 @@ systems:
     # the six committed recordings. Rebalanced as each system ships (docs/STACK.md, Capacity).
     dailyCalls: 240
 
+  lb-06:
+    name: Incident Commander
+    service: node-systems
+    aliases: [lb-reason, lb-tools, lb-guard]
+    # An incident costs the injection screen on the visitor's own words, when there are any
+    # (lb-guard, 1), the commander's plan (lb-reason, 1), the three specialists' turns (lb-tools,
+    # at most 2 each: one that may call the read-only tools the server runs, and a last one that
+    # must answer), the ranking with its proposal (lb-reason, 1) and the postmortem's prose
+    # (lb-reason, 1): 9 or 10 calls on a clean run, plus one repair for any answer that fails its
+    # schema, and one more ranking for each proposal the visitor rejects or that does not bring
+    # the SLO back. The orchestrator stops asking at 15 (the datasheet's step cap) and never asks
+    # the model to count; the gateway's cap is the second line behind it.
+    maxCallsPerRun: 15
+    # 1 incident per visitor per day (the LB-06 datasheet), at up to 15 calls.
+    sessionDailyCalls: 15
+    # About 10 custom incidents a day at the cap, and one full pass of the golden set (eight
+    # incidents, about 72 calls) when a prompt changes. A curated sample's agents' work is cached
+    # by scenario after its first run, so the samples spend nothing after that.
+    dailyCalls: 230
+  lb-07:
+    name: QA Engineer
+    service: node-systems
+    aliases: [lb-tools, lb-guard]
+    # A run costs an injection check of a visitor's own goal (lb-guard; a curated sample's goal is
+    # the owner's and is not checked), the plan of the whole test in one lb-tools call (a second when
+    # the first answer fails the plan schema and gets its one repair), one lb-tools call for each
+    # re-plan after a step failed (at most two, with no repair), and the bug reports' prose (one
+    # call, a second with its repair; none when code found nothing). Running the plan in the browser,
+    # the findings (expectations, the console, failed requests, axe), the generated test and its
+    # red-then-green verification are the service's own code and cost no call. That is at most
+    # seven; the cap leaves one spare.
+    maxCallsPerRun: 8
+    # 2 runs per visitor per day (the LB-07 datasheet), at up to 8 calls each.
+    sessionDailyCalls: 16
+    # About 15 custom runs a day at up to 7 calls each, and one full pass of the golden set (eleven
+    # cases, at most 7 calls each) when a prompt changes. Rebalanced as each system ships
+    # (docs/STACK.md, Capacity).
+    dailyCalls: 200
+
 # The services that read run traces and do nothing else: the site's server, for the Scope
 # (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
 # owns no system above, so the model routes refuse it (system_not_allowed); a service that
@@ -481,4 +520,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-09]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-06, lb-07, lb-09]

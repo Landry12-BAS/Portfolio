@@ -10,20 +10,22 @@
 #  2. The services' own code against the same rules. The gateway's integration tests, the
 #     lb-common span-writer tests, the gateway contract tests, LB-02's WebSocket consumer
 #     tests (the Channels layer), the Flask systems' integration tests (LB-03's documents and
-#     LB-05's questions), the Node systems' whole suite (BullMQ: LB-08's and LB-04's) and
+#     LB-05's questions), the Node systems' unit and integration suites (BullMQ: LB-08's, LB-04's,
+#     LB-06's and LB-07's, and LB-06's feeds; LB-07's browser tests use no Redis and need a
+#     Chromium, so they are left to `just test-lb07-browser`) and
 #     a real Celery worker with its scheduler all run against a Redis whose ACL is the
 #     production ACL with three additions, made mechanically below:
 #       - every key and channel pattern under `lb:` is joined by the same pattern under
 #         `lbtest-*:` (the tests write under random `lbtest-<hex>:` prefixes, while Celery
 #         runs under the real `lb:`);
-#       - LB-08's and LB-04's queue patterns are joined by `lbtest-*-bull:lb08-*` and
-#         `lbtest-*-bull:lb04-*`, because some of their tests give a queue a prefix of its own
-#         (`<test prefix>doomed-`, `quiet-`, `sweep-`);
+#       - the Node systems' queue patterns are joined by `lbtest-*-bull:lb08-*`,
+#         `lbtest-*-bull:lb04-*`, `lbtest-*-bull:lb06-*` and `lbtest-*-bull:lb07-*`, because some of
+#         their tests give a queue a prefix of its own (`<test prefix>doomed-`, `quiet-`, `sweep-`);
 #       - each service user gets one extra selector for the commands the test harnesses use
 #         to read back and clean up (KEYS, SCAN, DEL, XRANGE, TTL ...), which no service runs.
 #     One user exists only in this proof, `node-and-gateway`: the two users' rules together,
 #     for the test files that start the real gateway on the same Redis URL as the Node
-#     service (LB-08's eval-cli, generate-gateway and processes; LB-04's eval-cli, gateway,
+#     service (LB-08's eval-cli, generate-gateway and processes; LB-06's eval-cli and gateway; LB-04's eval-cli, gateway,
 #     module and processes). Everything else in the Node suites runs as `node-systems` alone. Afterwards Redis's own ACL LOG must be empty: any command,
 #     key or channel a service needed and the ACL refused would be recorded there, even where
 #     the service swallowed the error.
@@ -279,6 +281,20 @@ refused "node-systems: cannot run FLUSHALL inside a queue script" node-systems "
 refused "node-systems: cannot reach Celery's queue inside a queue script" node-systems "${password[node-systems]}" \
     eval "return redis.call('lpush', 'lb:celery:celery', 'x')" 1 lb:bull:lb08-steps:x
 refused "node-systems: cannot touch a queue whose name only looks like LB-04's" node-systems "${password[node-systems]}" lpush lb:bull:lb04x:wait x
+allowed "node-systems: queues an LB-06 incident" node-systems "${password[node-systems]}" lpush lb:bull:lb06-incidents:wait incident
+allowed "node-systems: waits on LB-06's sweep marker" node-systems "${password[node-systems]}" bzpopmin lb:bull:lb06-maintenance:marker 0.01
+allowed "node-systems: queues an LB-07 test run" node-systems "${password[node-systems]}" lpush lb:bull:lb07-runs:wait run
+allowed "node-systems: schedules an LB-07 retry" node-systems "${password[node-systems]}" zadd lb:bull:lb07-runs:delayed 1 run
+allowed "node-systems: waits on LB-07's sweep marker" node-systems "${password[node-systems]}" bzpopmin lb:bull:lb07-maintenance:marker 0.01
+allowed "node-systems: runs a queue script on an LB-07 job" node-systems "${password[node-systems]}" \
+    eval "redis.call('hset', KEYS[1], 'name', 'x') return redis.call('hget', KEYS[1], 'name')" 1 lb:bull:lb07-runs:1
+refused "node-systems: cannot touch a queue whose name only looks like LB-07's" node-systems "${password[node-systems]}" lpush lb:bull:lb07x:wait x
+allowed "node-systems: appends to an incident's feed" node-systems "${password[node-systems]}" xadd lb:lb06:feed:incident-1 MAXLEN '~' 1000 '*' seq 1 event '{}'
+allowed "node-systems: lets a feed expire with its incident" node-systems "${password[node-systems]}" expire lb:lb06:feed:incident-1 86400
+allowed "node-systems: reads an incident's feed for a socket" node-systems "${password[node-systems]}" xread COUNT 10 STREAMS lb:lb06:feed:incident-1 0-0
+allowed "node-systems: reads a feed's range" node-systems "${password[node-systems]}" xrange lb:lb06:feed:incident-1 - +
+refused "node-systems: cannot delete a feed" node-systems "${password[node-systems]}" del lb:lb06:feed:incident-1
+refused "node-systems: cannot touch another key under LB-06's prefix" node-systems "${password[node-systems]}" set lb:lb06:other x
 
 # Each family of keys, tried by every service with the family's one ordinary write: only the
 # service(s) that own it get through. Anything a service gains by accident shows here.
@@ -316,7 +332,7 @@ echo "2. The services' own code against the same rules"
 # The same fold the entrypoint does, then the three additions described at the top.
 awk '{ if (sub(/\\$/, "")) { printf "%s", $0 } else { print } }' "$here/users.acl.tmpl" \
     | sed -E 's/[[:space:]]+/ /g; s/^ //' \
-    | sed -E 's/~lb:bull:lb08-\* ~lb:bull:lb04-\*/& ~lbtest-*-bull:lb08-* ~lbtest-*-bull:lb04-*/' \
+    | sed -E 's/~lb:bull:lb08-\* ~lb:bull:lb04-\* ~lb:bull:lb06-\* ~lb:bull:lb07-\*/& ~lbtest-*-bull:lb08-* ~lbtest-*-bull:lb04-* ~lbtest-*-bull:lb06-* ~lbtest-*-bull:lb07-*/' \
     | sed -E 's/([~&])lb:([^ )]*)/\1lb:\2 \1lbtest-*:\2/g' \
     | sed -E '/^user (gateway|django-systems|flask-systems|node-systems) /s/$/ (~lbtest-* +keys +scan +del +unlink +xrange +xrevrange +xlen +ttl +get +type +exists)/' \
     > "$scratch/twin.acl.tmpl"
@@ -363,19 +379,22 @@ if wanted flask; then
 fi
 
 if wanted node; then
-    echo "The Node systems' suites (BullMQ queues, retries, a dying worker, the sweep, run spans: LB-08's and LB-04's)"
+    echo "The Node systems' suites (BullMQ queues, retries, a dying worker, the sweep, run spans, LB-06's feeds: LB-08's, LB-04's, LB-06's and LB-07's)"
     # These start the real gateway on the Redis URL they are given, which is the same one
     # the Node service gets, so they run as the combined user; the rest run as node-systems.
     with_gateway=(test/integration/eval-cli.test.ts test/integration/generate-gateway.test.ts test/integration/processes.test.ts \
-        test/integration/lb04-eval-cli.test.ts test/integration/lb04-gateway.test.ts test/integration/lb04-module.test.ts test/integration/lb04-processes.test.ts)
+        test/integration/lb04-eval-cli.test.ts test/integration/lb04-gateway.test.ts test/integration/lb04-module.test.ts test/integration/lb04-processes.test.ts \
+        test/integration/lb06-eval-cli.test.ts test/integration/lb06-gateway.test.ts)
     exclusions=()
     for file in "${with_gateway[@]}"; do exclusions+=(--exclude "$file"); done
+    # The unit and integration projects, as `pnpm test` runs them: the browser project (LB-07's
+    # runner on a real Chromium) touches no Redis.
     run_suite "the Node systems' suites pass as the node-systems user" "$scratch/node.log" \
         env LB_TEST_REDIS_URL="$node_url" LB_TEST_DATABASE_URL="$database_url" \
-        pnpm --filter @lb/node-systems exec vitest run "${exclusions[@]}"
+        pnpm --filter @lb/node-systems exec vitest run --project unit --project integration "${exclusions[@]}"
     run_suite "the Node systems' tests that run the real gateway pass as node-and-gateway" "$scratch/node-gateway.log" \
         env LB_TEST_REDIS_URL="$node_and_gateway_url" LB_TEST_DATABASE_URL="$database_url" \
-        pnpm --filter @lb/node-systems exec vitest run "${with_gateway[@]}"
+        pnpm --filter @lb/node-systems exec vitest run --project integration "${with_gateway[@]}"
 fi
 
 if wanted celery; then

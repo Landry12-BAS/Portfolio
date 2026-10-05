@@ -41,7 +41,13 @@ import { Lb09Mock, MAX_FRAME_BYTES as LB09_MAX_FRAME_BYTES } from './lb09.ts'
 import type { Lb09MockOptions, StartMeetingRequest } from './lb09.ts'
 import { readLb09Seed } from './lb09-seed.ts'
 import { Lb05Mock } from './lb05.ts'
+import { Lb06Mock } from './lb06.ts'
+import type { Lb06MockOptions } from './lb06.ts'
+import { Lb06Hub, LB06_SOCKET_PATH } from './lb06-socket.ts'
 import { readLb05Seed } from './lb05-seed.ts'
+import { Lb07Mock } from './lb07.ts'
+import type { Lb07MockOptions } from './lb07.ts'
+import { readLb07Seed } from './lb07-seed.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread. Two routes take more: LB-03's upload
 // is a file, so its route may take what the real service takes (10 MB and the few bytes of a multipart form around
@@ -78,6 +84,10 @@ export interface MockBackendOptions {
   lb03?: Lb03MockOptions
   // LB-04's review: how many times a contract is polled before it moves on to its next state.
   lb04?: Lb04MockOptions
+  // LB-06's clock: how fast the simulated minutes pass, and how long an incident may live.
+  lb06?: Lb06MockOptions
+  // LB-07's pace (how long a beat of a run takes) and its queue (how many runs the browser takes at once, how many may be open).
+  lb07?: Lb07MockOptions
   // LB-09's meetings: how long each stage of the worker takes, how long a connection has to say hello, and how long it lingers after the end.
   lb09?: Pick<Lb09MockOptions, 'stageMs' | 'helloTimeoutMs' | 'lingerMs'>
 }
@@ -127,12 +137,15 @@ export interface MockBackend {
   lb02: Lb02Mock
   // LB-04's state and controls: its contracts and the reviews of them, and the failure the next review ends with.
   lb04: Lb04Mock
+  lb06: Lb06Mock
   // LB-05's state, for tests that look inside.
   lb05: Lb05Mock
   // LB-08's state: its workflows, runs and sandbox.
   lb08: Lb08Mock
   // LB-03's state: its documents, the visitors' counts of them and the traces they leave.
   lb03: Lb03Mock
+  // LB-07's state and controls: its runs, the queue, and the failure the next run ends with.
+  lb07: Lb07Mock
   // LB-09's state: its meetings and the connections that follow them, and the control that makes the next one fail.
   lb09: Lb09Mock
   // Queues an answer to use instead of the normal one.
@@ -192,9 +205,12 @@ class MockSite {
   readonly lb01: Lb01Mock
   readonly lb02: Lb02Mock
   readonly lb04: Lb04Mock
+  readonly lb06: Lb06Mock
+  readonly lb06Hub: Lb06Hub
   readonly lb05: Lb05Mock
   readonly lb08: Lb08Mock
   readonly lb03: Lb03Mock
+  readonly lb07: Lb07Mock
   readonly lb09: Lb09Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
@@ -210,11 +226,14 @@ class MockSite {
     this.lb01 = new Lb01Mock(readSeed(), this.#now, { pollsToFinish: options.pollsToFinish, runId: options.runId })
     this.lb02 = new Lb02Mock({ ...options.lb02, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-02')?.sessionKey })
     this.lb04 = new Lb04Mock(readLb04Seed(), this.#now, options.lb04)
+    this.lb06 = new Lb06Mock(this.#now, options.lb06)
+    this.lb06Hub = new Lb06Hub(this.lb06, token => this.#visitor(`Bearer ${token}`, 'lb-06')?.sessionKey)
     this.lb05 = new Lb05Mock(readLb05Seed(), this.#now)
     this.lb08 = new Lb08Mock(readLb08Seed(), this.#now)
     this.lb03 = new Lb03Mock(readLb03Seed(), this.#now, options.lb03)
+    this.lb07 = new Lb07Mock(readLb07Seed(), this.#now, options.lb07)
     this.lb09 = new Lb09Mock(readLb09Seed(), { ...options.lb09, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-09')?.sessionKey })
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb09.spansOf(runId))
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb06.spansOf(runId) ?? this.lb07.spansOf(runId) ?? this.lb09.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -230,9 +249,11 @@ class MockSite {
     this.lb01.reset()
     this.lb02.reset()
     this.lb04.reset()
+    this.lb06.reset()
     this.lb05.reset()
     this.lb08.reset()
     this.lb03.reset()
+    this.lb07.reset()
     this.lb09.reset()
   }
 
@@ -320,6 +341,7 @@ class MockSite {
     }
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     if (url.pathname.startsWith('/__mock/lb09/')) return this.#controlLb09(url.pathname.slice('/__mock/lb09/'.length), method, request.headers['content-type'], body, response)
+    if (url.pathname.startsWith('/__mock/lb07/')) return this.#lb07Control(url.pathname.slice('/__mock/lb07/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
     const answer = await this.#answer(found.operation, found.params, url, request.headers.authorization, body, isUpload ? { raw, contentType: request.headers['content-type'] } : undefined)
@@ -379,7 +401,25 @@ class MockSite {
       case 'GET /api/lb09/meetings/{meeting_id}/transcript': return this.lb09.transcript(session, params.meeting_id ?? '')
       case 'GET /api/lb09/meetings/{meeting_id}/items': return this.lb09.items(session, params.meeting_id ?? '')
       case 'GET /api/lb09/meetings/{meeting_id}/export': return this.lb09.export(session, params.meeting_id ?? '', search.get('format'))
-      default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search)
+      default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search) ?? this.#lb06Handler(operation, params, session, json, search) ?? this.#lb07Handler(operation, params, session, json)
+    }
+  }
+
+  /** Runs the handler written for one of LB-07's operations, if there is one. */
+  #lb07Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown): Answer | undefined {
+    const id = params.id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb07/bugs': return this.lb07.bugs()
+      case 'GET /api/lb07/limits': return this.lb07.limits(session)
+      case 'GET /api/lb07/samples': return this.lb07.samples()
+      case 'POST /api/lb07/runs': return this.lb07.start(session, json)
+      case 'GET /api/lb07/runs': return this.lb07.list(session)
+      case 'GET /api/lb07/runs/{id}': return this.lb07.get(session, id)
+      case 'DELETE /api/lb07/runs/{id}': return this.lb07.remove(session, id)
+      case 'GET /api/lb07/runs/{id}/report': return this.lb07.report(session, id)
+      case 'GET /api/lb07/runs/{id}/test': return this.lb07.test(session, id)
+      case 'GET /api/lb07/runs/{id}/evidence/{evidenceId}': return this.lb07.evidence(session, id, params.evidenceId ?? '')
+      default: return undefined
     }
   }
 
@@ -394,6 +434,23 @@ class MockSite {
       case 'POST /api/lb03/documents/{document_id}/corrections': return this.lb03.correct(session, id, json as { path: string, value: string })
       case 'GET /api/lb03/documents/{document_id}/pages/{number}': return this.lb03.page(session, id, Number(params.number))
       case 'GET /api/lb03/documents/{document_id}/export': return this.lb03.exportDocument(session, id, search.get('format') ?? 'json')
+      default: return undefined
+    }
+  }
+
+  /** Runs the handler written for one of LB-06's operations, if there is one. */
+  #lb06Handler(operation: MockOperation, params: Record<string, string>, session: string, json: unknown, search: URLSearchParams): Answer | undefined {
+    const id = params.id ?? ''
+    switch (`${operation.method} ${operation.template}`) {
+      case 'GET /api/lb06/limits': return this.lb06.limits(session)
+      case 'GET /api/lb06/catalogue': return this.lb06.catalogue()
+      case 'POST /api/lb06/incidents': return this.lb06.start(session, json)
+      case 'GET /api/lb06/incidents': return this.lb06.list(session)
+      case 'GET /api/lb06/incidents/{id}': return this.lb06.get(session, id)
+      case 'GET /api/lb06/incidents/{id}/events': return this.lb06.events(session, id, search)
+      case 'POST /api/lb06/incidents/{id}/proposals/{proposalId}/decision': return this.lb06.decide(session, id, params.proposalId ?? '', json)
+      case 'POST /api/lb06/incidents/{id}/abort': return this.lb06.abort(session, id)
+      case 'GET /api/lb06/incidents/{id}/postmortem': return this.lb06.postmortem(session, id)
       default: return undefined
     }
   }
@@ -528,6 +585,25 @@ class MockSite {
     }
   }
 
+  /**
+   * The controls of a test for LB-07, at `/__mock/lb07/<action>`: the next run (or the next with a goal) fails with a
+   * code, other visitors' runs fill the queue, everything is forgotten. Like LB-02's, they take JSON only, and the mock
+   * listens on the loopback address alone.
+   */
+  #lb07Control(action: string, method: string, contentType: string | undefined, text: string, response: ServerResponse): void {
+    if (method !== 'POST' || !contentType?.startsWith('application/json')) return this.#send(response, 415, errorAnswer(415, 'unsupported', 'Send JSON with POST.').body)
+    let body: Record<string, unknown>
+    try {
+      const parsed: unknown = text === '' ? {} : JSON.parse(text)
+      body = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+    }
+    catch {
+      return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'The body is not JSON.').body)
+    }
+    const answer = this.lb07.control(action, body)
+    this.#send(response, answer.status, answer.body)
+  }
+
   /** Makes the answer of an operation nobody wrote a handler for: an example of its first success status. */
   #example(operation: MockOperation): Answer {
     const status = this.#documents.successStatus(operation)
@@ -555,6 +631,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
   })
   const detachSockets = attachSockets(server, [
     { path: '/ws/lb02/', hub: site.lb02.hub, maxFrameBytes: LB02_MAX_FRAME_BYTES },
+    { path: LB06_SOCKET_PATH, hub: site.lb06Hub, maxFrameBytes: LB02_MAX_FRAME_BYTES },
     { path: '/ws/lb09/', hub: site.lb09, maxFrameBytes: LB09_MAX_FRAME_BYTES },
   ])
   await new Promise<void>((resolve) => {
@@ -568,9 +645,11 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb01: site.lb01,
     lb02: site.lb02,
     lb04: site.lb04,
+    lb06: site.lb06,
     lb05: site.lb05,
     lb08: site.lb08,
     lb03: site.lb03,
+    lb07: site.lb07,
     lb09: site.lb09,
     script: answer => site.script(answer),
     reset: () => site.reset(),

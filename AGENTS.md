@@ -97,7 +97,40 @@ with its table, the findings with their quotes as text, a PDF viewer that loads 
 under a policy of its own and highlights exactly the characters a citation names, and redlines
 as insertions and deletions, in English and Czech (see the web README); next come its recorded
 sample runs (`just record-sample lb-04 <sample>`, which needs the live back end with a model
-behind it).
+behind it). LB-06 Incident Commander is in the same monolith too: a seeded, event-sourced shop
+simulator (six services, four faults, the same seed always the same incident), detection and
+correlation written as code (the SLO burn rate, the new log signatures, the deploys before the
+first divergence), a commander and three specialist agents orchestrated in code with a hard cap
+of 15 model calls, proposals from a closed list of actions that only the visitor's approval can
+apply, the incident's log as a Postgres table and a Redis stream, a WebSocket feed, and the
+visitor API with its one-incident-a-day quota (an incident the agents could not run is given
+back) (see the same README). LB-06's board is on the site at `/systems/lb-06/board`: six charts
+that turn when the fault strikes, each with a text alternative and a table, the agents' steps and
+the commander's hypotheses, the card that waits for the visitor's approval, the service level
+objective, the timeline and the postmortem, a replay of a recorded incident, the visitor's own
+incident with its text screened, a polling fallback for a network that blocks WebSockets, in
+English and Czech (see the web README); next come its recorded sample runs (`just record-sample
+lb-06 <sample>`, which needs the live back end with a model behind it). LB-07 QA Engineer is in the
+same monolith too: a synthetic staging shop with six bugs a visitor can switch on (only by a token the
+service signs, which the model can neither read nor change), a planner that writes the whole test in one
+model call over a closed vocabulary of six actions, a runner that executes it step by step in a headless
+Chromium, findings made by code (a failed expectation, a console error, a failed request, an axe
+violation, a navigation that was stopped), bug reports in a model's words that code checks against them,
+a Playwright test written by a template and kept only when it fails with the bugs on and passes with them
+off, a queue of one browser, and the visitor API with its two-runs-a-day quota (see the same README, with
+its threat model). The browser lives in a container of its own, `lb07-sandbox` (distroless, non-root, a
+read-only root, no capabilities, on an internal network that reaches nothing but the worker, restarted
+after twenty sessions), and three independent layers keep the page inside the staging shop; "one
+container per run" became that, because starting containers needs the Docker socket, which no service is
+given (`docs/SECURITY.md`; `just test-lb07-sandbox` proves it). LB-07's board is on the
+site at `/systems/lb-07/board`: the six bugs as switches and a goal of the visitor's own checked
+before it is sent, eight curated runs, the run followed by polling while it waits for the one
+browser ("2 runs are ahead of yours") and while it runs, the steps grouped by plan and re-plan,
+the findings code made, the bug reports labelled as a model's, the red-then-green verdict with its
+three passes, the generated Playwright test in a code view with its copy and download, the
+screenshots through a picture route of the site's own (the policy unchanged) and the visitor's
+runs of the hour, in English and Czech (see the web README); next come its recorded sample runs
+(`just record-sample lb-07 <sample>`, which needs the live back end with a model behind it).
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -253,6 +286,11 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
 | `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
 | `just eval-lb04 [--samples] [--case ID] [--no-redlines] [--pause SECONDS]` | Run LB-04's golden set (six seed contracts, two of them refused before any model) through the live pipeline and grade it by rules: quotes checked against the contract's own text, planted findings found (a recall gate), a hostile contract's instructions never obeyed (at most five gateway calls a contract and one for its redline, about 24 for the set, paced by `--pause`; run it when prompts or routes change; it exits 1 unless every case passes and recall reaches its gate) |
+| `just eval-lb06 [--samples] [--case ID] [--pause SECONDS]` | Run LB-06's golden set (eight incidents: each of the four faults, a second seed for two of them, and a hostile text in the parameters of two) through the whole simulator, the detection and the live agents behind the gateway, and grade it by rules: the cause, the first proposal, the evidence cited, the model calls, the recovery, the postmortem, an injection never obeyed (about nine gateway calls a case, 15 at the cap, about 72 for the set, paced by `--pause`, default 8; run it when prompts or routes change; it exits 1 unless every case passes) |
+| `just eval-lb07 [--samples] [--case ID] [--pause SECONDS]` | Run LB-07's golden set (eleven goals: each of the six bugs, all of them at once, a clean shop that must stay clean, a link to another host that must be stopped, a hostile goal, and a re-plan after a wrong name) through the live agent, the real sandbox browser and the staging shop, and grade it by rules: the bugs found by their truth, a clean shop with no finding, the verdict of the red-then-green verification, nothing left the shop, at most eight model calls (at most seven gateway calls a case, about 77 for the set, paced by `--pause`, default 8; needs `just lb07-sandbox` running; run it when prompts or routes change; it exits 1 unless every case passes) |
+| `just lb07-sandbox` | Run LB-07's sandbox: the staging shop (on the loopback interface only) and the browser runner's API in one process, as its container runs it (needs a Chromium: `LB07_BROWSER_PATH`, or Playwright's own install; and `LB07_SHOP_TOKEN_KEY`, the key the service signs each run's bug token with; settings in `services/node-systems/.env`) |
+| `just test-lb07-browser` | Run the tests that drive LB-07's runner on a real Chromium over the real staging shop (point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium where one is preinstalled; no model, no database) |
+| `just test-lb07-sandbox` | Prove LB-07's sandbox container (`infra/sandbox/test.sh`): build its image (or test `LB_SANDBOX_IMAGE`), start it with Compose from the real file under every flag of the policy, run golden plans through its runner from a second container, show it reaches no public address or name, no other container and not the host, run the heaviest plan five times inside its memory limit, and watch it restart after its share of runs (Docker, jq, age and `just install`; about five minutes) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
@@ -264,9 +302,9 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just visitor-tokens` | Make the shared corpus of visitor tokens again (`packages/common/test/fixtures/visitor-tokens.json`), after a rule of the token check changes; the tests of `@lb/common`, `lb_common.visitors` and the Django, Flask and Node systems all run it, so every verifier accepts and refuses the same tokens |
 | `just stack-secrets [--again]` | Make throwaway secrets for the local stack in `infra/.dev` (git-ignored) |
 | `just stack <docker compose command>` | Run the whole platform locally, hardened as on the box: `just stack up -d --wait`, then Caddy answers on http://127.0.0.1:8180; `just stack down -v` removes it (needs Docker) |
-| `just stack-smoke` | Check a running local stack from the inside: health, the routes through Caddy (LB-02's WebSocket included), an empty Redis ACL log |
+| `just stack-smoke` | Check a running local stack from the inside: health, the routes through Caddy (LB-02's WebSocket included), LB-07's sandbox reaching nothing but its own shop, an empty Redis ACL log |
 | `just infra-check` | Static checks of `infra/` and the workflows: shellcheck, hadolint, actionlint, image digest pins, the Compose security rules, the Caddyfile, the systemd units |
-| `just infra-test` | The infrastructure's tests: secrets, deploy decisions and pinning, then (Docker) Postgres roles, Caddy routing and the Redis ACL proof against the services' own suites |
+| `just infra-test` | The infrastructure's tests: secrets, deploy decisions and pinning, then (Docker) Postgres roles, Caddy routing, the Redis ACL proof against the services' own suites, and LB-07's sandbox (`just test-lb07-sandbox`) |
 | `just pin-images` | Pin every third-party image to the digest its tag names today; CI fails on an unpinned one |
 | `just secrets-init` | Make your age key outside the repository, and list its public half in `.sops.yaml` |
 | `just secrets-new <name>` | Create `infra/secrets/<name>.enc.env` from its template: random values made, then your editor opens for the rest |

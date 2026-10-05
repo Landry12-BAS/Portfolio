@@ -175,6 +175,31 @@ eval-lb08 *args:
 eval-lb04 *args:
     pnpm --filter @lb/node-systems eval:lb04 {{args}}
 
+# Needs the gateway with provider keys, and costs 9 calls a case on a clean run and 15 at the cap: eight cases, about 72 calls; `--samples` or `--case ID` run fewer.
+# Run LB-06's golden set through the whole simulator and the live agents, and grade it by rules.
+eval-lb06 *args:
+    pnpm --filter @lb/node-systems eval:lb06 {{args}}
+
+# Needs the gateway with provider keys and LB-07's sandbox running (`just lb07-sandbox`); at most seven calls a case, about 77 for the eleven cases; `--samples` or `--case ID` run fewer.
+# Run LB-07's golden set through the live agent, the real sandbox browser and the staging shop, and grade it by rules.
+eval-lb07 *args:
+    pnpm --filter @lb/node-systems eval:lb07 {{args}}
+
+# Needs a Chromium (LB07_BROWSER_PATH, or Playwright's own install) and LB07_SHOP_TOKEN_KEY; settings in services/node-systems/.env.
+# Run LB-07's sandbox: the staging shop (loopback) and the browser runner's API in one process, as the container runs it.
+lb07-sandbox:
+    pnpm --filter @lb/node-systems sandbox
+
+# Needs a Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE, or Playwright's own install); no model, no database.
+# Run the tests that drive LB-07's runner on a real Chromium over the real staging shop.
+test-lb07-browser:
+    pnpm --filter @lb/node-systems test:browser
+
+# Needs Docker, jq, age and `just install`; builds the image unless LB_SANDBOX_IMAGE names one; about five minutes.
+# Prove LB-07's sandbox container under the Compose policy: golden plans from another container, no route out, memory, restart.
+test-lb07-sandbox:
+    infra/sandbox/test.sh
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high
@@ -229,7 +254,7 @@ stack *args:
 stack-secrets *args:
     infra/scripts/dev-secrets.sh {{args}}
 
-# Check a running local stack from the inside: health, the routes through Caddy, an empty Redis ACL log.
+# Check a running local stack from the inside: health, the routes through Caddy, LB-07's sandbox reaching nothing, an empty Redis ACL log.
 stack-smoke:
     LB_STACK=dev infra/scripts/smoke.sh
 
@@ -238,8 +263,8 @@ stack-smoke:
 infra-check:
     infra/scripts/check.sh
 
-# The last three need Docker, and the Redis ACL proof runs the services' own suites, so run `just install` first.
-# Run the infrastructure's tests: secrets, deploy decisions, pinning, Postgres roles, Caddy routing, the Redis ACL.
+# The last four need Docker, and the Redis ACL proof and the sandbox's run the services' own code, so run `just install` first.
+# Run the infrastructure's tests: secrets, deploy decisions, pinning, Postgres roles, Caddy routing, the Redis ACL, LB-07's sandbox.
 infra-test:
     infra/scripts/test-secrets.sh
     infra/scripts/test-deploy.sh
@@ -247,6 +272,7 @@ infra-test:
     infra/postgres/test-roles.sh
     infra/caddy/test.sh
     infra/redis/test-acl.sh
+    infra/sandbox/test.sh
 
 # Pin every third-party image to the digest its tag names today, then review the diff (CI fails on an unpinned one).
 pin-images:

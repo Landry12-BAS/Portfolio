@@ -1,0 +1,69 @@
+# Routing for the tests that run LB-07's agent through the real gateway on a fake provider. It is the real
+# routing table in miniature: lb-tools has the real limits (4,000 tokens in, 2,048 out), lb-guard reads
+# 800 tokens in overlapping segments, and the lb-07 entry has the real quotas, so a prompt that is too
+# long, or a run that makes a ninth call, meets the gateway's own refusal here.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 1000
+  responseMs: 2000
+  idleMs: 1000
+  deadlineMs: 6000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      small:
+        id: alpha/small-model
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 1000, tokens: 4000000 }
+          day: { requests: 10000, tokens: 40000000 }
+      guard:
+        id: alpha/guard-model
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 1000, tokens: 400000 }
+          day: { requests: 10000, tokens: 4000000 }
+
+aliases:
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    chain: [alpha/small]
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    maxInputTokens: 800
+    threshold: 0.9
+    chain: [alpha/guard]
+
+systems:
+  lb-07:
+    name: QA Engineer
+    service: node-systems
+    aliases: [lb-tools, lb-guard]
+    maxCallsPerRun: 8
+    sessionDailyCalls: 16
+    dailyCalls: 200
+
+# The site's server reads a run's trace for the Scope, as `web`; the real table lists it as a reader of lb-07.
+traceReaders:
+  web:
+    name: The site's server (the Scope)
+    systems: [lb-07]
