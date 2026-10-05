@@ -16,9 +16,13 @@ the page of the document with the place of every field drawn over it, a table of
 and the checks, the journal entry and the exports), **LB-04's board** (the Contract Radar: a PDF read in the browser
 beside a risk radar, findings with their quotes, and redlines), **LB-06's board** (the Incident Commander: a shop
 simulated minute by minute, dashboards that turn when a fault strikes, a team of agents at work, and a fix that
-waits for the visitor's click) and **LB-07's board** (the QA Engineer: a test run followed while it waits for the
+waits for the visitor's click), **LB-07's board** (the QA Engineer: a test run followed while it waits for the
 one sandboxed browser and while it runs step by step, the findings code made, the bug reports a model wrote, the
-red-then-green verdict, the generated Playwright test in a code view, and the screenshots the browser kept).
+red-then-green verdict, the generated Playwright test in a code view, and the screenshots the browser kept) and
+**LB-10's board** (the Eval Lab: another system's production prompt edited as plain text and checked as it is typed,
+run beside production's on ten cases of that system's golden set on one or two free providers, and a report that
+says how sure ten cases can make it: the scores with their intervals as a figure, a table and words, the paired
+difference and its verdict, and every case that changed with both replies).
 
 ## Run it
 
@@ -30,7 +34,7 @@ All of it through the root `justfile` (see the Commands table in `AGENTS.md`):
 | `just dev` | The site alone. With no `NUXT_*` settings the demos say they are not connected |
 | `just build` / `just check-build` | The production build, and the proof that it holds no trace of the test build's Turnstile stand-in |
 | `just e2e` | The test build, then the Playwright journeys against it and the mock back end |
-| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's, LB-03's and LB-07's), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
+| `just samples` | Regenerate the boards' curated samples from the golden sets (LB-01's, LB-02's, LB-05's, LB-08's, LB-03's and LB-07's), LB-10's prepared edits (`data/seed/lb10/samples.yaml` applied to the packs' production prompts), LB-02's installable-app files (icon, manifests, offline pages) and LB-03's sample files and page pictures (`just check` fails while they are stale) |
 | `just record-sample <system> <sample>` | Record a sample's run on a live back end (see "Replay and recordings") |
 
 The settings are the `NUXT_*` variables of [`docs/DEPLOY.md`](../../docs/DEPLOY.md), part 10;
@@ -271,7 +275,9 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
   obey them), and LB-06's against `FakeLb06Site`, whose back end is the mock's LB-06 (the real simulator, the
   real detection and the reference agents for a model) with a fake WebSocket bound to the mock's hub, and LB-07's
   against `FakeLb07Site`, whose back end is the mock's LB-07 (a whole run worked out when it starts and shown as
-  far as the clock has got, with the service's own finding ledger, verdict and test generator).
+  far as the clock has got, with the service's own finding ledger, verdict and test generator), and LB-10's
+  against `FakeLb10Site`, whose back end is the mock's LB-10 (the packs read from `evals/packs`, each edit's
+  outcome worked out from what the edit does to the prompt, the service's own bootstrap and paired comparison).
 - **integration**: the site's server over HTTP against the mock back end, route by route; the recorder
   and the `record-sample` command.
 - **contract**: the site's server against the real gateway and a real Redis (Testcontainers, or
@@ -281,7 +287,9 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
   fails on a Content-Security-Policy or Trusted Types violation, a page error or a console error. The
   boards whose back end holds one state for everyone (LB-02's calendar, LB-07's one browser and its queue)
   keep their journeys and their accessibility checks in one file that runs one test after another, each
-  from a mock reset by its control.
+  from a mock reset by its control. LB-10's journeys run one after another in `e2e/lb10.spec.ts`, since its
+  mock's controls are one for every visitor; `e2e/lb10-a11y.spec.ts` runs beside them and never meets those
+  controls, because it scripts its live states in its own page (`scriptRun` in `e2e/lb10/support.ts`).
 
 `pnpm typecheck` also runs `tsc -p tsconfig.tools.json`, a strict check of the scripts, the tests and the
 journeys, which `nuxt typecheck` does not read. Where a Chromium is preinstalled, point Playwright at it
@@ -442,6 +450,37 @@ against it with a stand-in for the reset; the re-plan and keyboard journeys need
 and the queue, busy and failure journeys its controls. The recorder (`just record-sample lb-07 <sample> --out
 <a scratch folder>`) ran against it too, for two samples (a real run starts `queued`, where the mock's starts
 planning when the browser is free); its output, labelled `live` though a fake model made it, was thrown away.
+
+LB-10 is a Flask system run as production runs it (`gunicorn --config gunicorn.conf.py wsgi:app`, so its runner is
+real), after `manage.py migrate`, on a scratch database and a Redis key prefix of its own, with `LB_GATEWAY_URL`,
+`LB_SERVICE_NAME=flask-systems` and a throwaway `LB_SERVICE_KEY_FILE`. The real gateway runs in your own process on
+the real `services/gateway/routing.yaml`, its providers' addresses pointed at a scripted provider, so the eval
+aliases' budgets are the real ones. The provider tells the pack and the case from the user message (the pack's user
+template filled with the case's inputs, which a visitor cannot edit) and answers from the case's own graders (the
+fields a classifier's `json_field_equals` names, the passages a drafter's `citation_present` names); a marker in the
+edited prompt makes it answer in prose, wrongly, slowly, with a 500 or a 429, and a control port takes it down for
+every call. The test build of the site goes in front. What running the board there found, none of which the mock could:
+
+- **Groq's free tier allows 8,000 tokens a minute**, and the gateway refuses a call past 90% of it at once
+  (`budget_exhausted`, with a Retry-After). A drafter run of twenty calls had twelve refused, each graded as a failed
+  case, so the visitor's prompt was reported worse than production for the budget's sake. The service now waits for
+  the Retry-After and asks again (a run on Groq then takes up to three minutes, and the board's slow note says why),
+  and figure 2 says beside any verdict how many calls got no answer, and why;
+- **a provider down for every call of a run whose production results were cached** left a `done` run whose prompt
+  failed every case, not given back: the cached results counted as the run's answers. The service now fails such a
+  run as `no_answers` and gives it back, as the mock does;
+- the rest behaved as on the mock: the second visitor found production's ten results cached; the day's run, then
+  a second forced from the page, refused with `daily_limit` and its `resets_at`; each refusal of the service (a
+  dropped and an unknown variable, a prompt one character too long, a control character, OpenRouter, three
+  providers, an unknown target) came before the count; prose replies were malformed, never repaired, and worse on
+  both providers; an unchanged prompt ran from the cache; a slow provider (8 s a call) was followed a read a second;
+  and the Scope's trace held no word of the prompt.
+
+Eight of the journeys of `e2e/lb10.spec.ts`, those that need none of the mock's controls but its reset (the
+replays, the checks as the visitor types, the service's refusal, the Brief reading, a phone), ran against it with a
+stand-in for the reset; the live runs were driven by a script, since a run on Groq takes longer there than a journey
+waits. The recorder (`just record-sample lb-10 drafter-word-limit --out <a scratch folder>`) recorded a run that
+waited for Groq's minute; labelled `live` though a fake model made it, it was thrown away.
 
 ## Decisions worth knowing
 
@@ -653,3 +692,43 @@ planning when the browser is free); its output, labelled `live` though a fake mo
   unmeasured), a real Turnstile site key and challenge, a recording made on a live back end (the three in
   `e2e/fixtures` are the mock's and say so), a run that uses its three minutes of browser time on the real
   service, and the box's two ARM cores.
+- **LB-10's board follows a run by polling**: one read at a time, the next after the answer (0.5 s, then 1 s, and
+  3 s after the first minute), and none once the run has ended or the visitor has left. A read that comes back after
+  a newer one is dropped, and an ended run is never turned back into a running one. Past the moment the service ends
+  any run (its five minutes, and a minute for a dead worker's run) the board stops following and says so; the run
+  stays in the visitor's runs of today, which open it again after a reload.
+- **The visitor's prompt stays in the page**: never in the address, the title, the browser's storage or the Scope
+  (the service keeps only its fingerprint), so a run opened again shows its report and says the text was not kept.
+- **The prompt limit is 8,000 characters**, not the 4,000 first planned: LB-05's production prompt alone is 7,266,
+  so a visitor could not even have run production's. The board, the mock and the service count characters as Python
+  does (a letter outside the basic plane is one), and the run route takes a body of 40 KiB, the site's limit for
+  LB-10 too, so a prompt at the limit is never refused for its bytes.
+- **The checks as the visitor types are the service's rules, ported** (`prompt.ts`: Python's `isprintable`, the
+  placeholder pattern, the pack's variables), and the service stays the authority: its 422 lists every problem,
+  which the board shows beside the editor in the visitor's words (one it has no words for, in the service's
+  English), never as a notice; a refused prompt costs nothing and the list goes once the prompt changes.
+- **A JSON reply is shown re-indented only when every token stays as the model wrote it.** `json.ts` re-indents the
+  text rather than parsing and writing it again, so `1.0`, an escaped letter and a key written twice stay; the
+  visitor can show both replies as written, and anything that is not one JSON document is never touched.
+- **The difference of two replies is computed in the browser**, word by word (a longest common subsequence over words
+  and the spaces between them), and drawn as text in `del` and `ins`, struck through and underlined. Spaces are never
+  marked; replies too long to compare are shown unmarked, and so are two replies that share almost no words, since
+  marking everything says nothing. Every case that changed is listed: the first two of a provider show their
+  replies, the rest open on a click, since an edit that breaks a prompt changes every case.
+- **A call that got no answer is a failed case** in the service's report (a call refused for a minute's budget is
+  asked again once the budget is back, which the gateway did not count); a verdict that rests on some says so beside
+  it, with the gateway's reasons, so a provider's outage is never read as the prompt's doing. A malformed reply is an
+  answer, graded as written and never repaired, and the board says so.
+- **The nightly, the judge and the gate are shown as they are**: nothing has run live, so no nightly row, judge score
+  or baseline exists, and the board says that plainly; stored rows (the mock stores them on command) are shown as
+  tables, the judge's standing in words.
+- **LB-10's samples are a pack and a prepared edit** (`data/seed/lb10/samples.yaml`), which `scripts/samples-lb10.ts`
+  applies to the packs' production prompts and checks by the service's rules; the board sends exactly the prompt
+  that was checked, and `pnpm check` fails when a pack changes under an edit. The mock's differences: an edit's
+  outcome is worked out from what it does to the prompt (a rule added changes a case, prose instead of JSON fails
+  every case), not by a model; it caches a prompt's results only when every call was answered.
+- **LB-10's board ran against the real Flask service** (see "Against the real services"): the API and its runner
+  under gunicorn, the real gateway on the real routing table in front of a scripted provider. Not run: a real model
+  (so how a real prompt edit scores is unmeasured), a real Turnstile site key and challenge, a recording made on a
+  live back end (the three in `e2e/fixtures` are the mock's and say so), the nightly, the judge and the gate live,
+  and the box's two ARM cores.

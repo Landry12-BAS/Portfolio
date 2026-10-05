@@ -76,7 +76,15 @@ confidence said in words and drawn with its own line, a table of fields that can
 every check runs again, the checklist, the duplicate verdict, the journal entry, the exports, an
 upload behind Turnstile and six curated samples, in English and Czech (see the web README); next
 come LB-03's recorded sample runs (`just record-sample lb-03 <sample>`, which needs the live back
-end with a model behind it). The Node side: `packages/contracts`
+end with a model behind it). The same monolith holds LB-10 Eval Lab's back end: the other systems'
+production prompts and golden sets as eval packs (`evals/packs`), a visitor's edited prompt run beside
+production's on a fixed ten-case sample on Groq, Workers AI or both, graded by rules, with a bootstrap
+interval and a paired verdict, results cached by prompt hash, one run a day, and the nightly, the judge
+and the CI gate (see the same README). Its board is at `/systems/lb-10/board`: the prompt edited as plain
+text and checked as it is typed, the run followed by polling, and a report with its figures, tables and
+every case that changed, in English and Czech (see the web README). No nightly result or baseline exists
+until one is measured live; next come its recorded sample runs (`just record-sample lb-10 <sample>`, which
+needs the live back end with a model behind it). The Node side: `packages/contracts`
 (the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
 `lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
 Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
@@ -303,7 +311,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |
-| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set; LB-04's six come from its sample list, `data/seed/lb04/samples.yaml`, and its golden set), LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) and LB-03's sample files and page pictures (`apps/web/public/lb03`, copied from `data/seed/lb03`) |
+| `just samples` | Regenerate the boards' curated samples (`apps/web/shared/data/samples/`) from each golden set's `sample: true` cases (LB-05 also gets its attacks from the adversarial set; LB-04's six come from its sample list, `data/seed/lb04/samples.yaml`, and its golden set; LB-10's prepared edits from `data/seed/lb10/samples.yaml` applied to the packs' production prompts), LB-02's installable-app files (icon, manifests, offline pages in `apps/web/public`) and LB-03's sample files and page pictures (`apps/web/public/lb03`, copied from `data/seed/lb03`) |
 | `just record-sample <system> <sample>` | Run a curated sample on a live back end and write the recording its demo replays (`apps/web/recordings`); needs the back end, the gateway and the site's keys (`LB_API_URL`, `LB_GATEWAY_URL`, `LB_WEB_SIGNING_KEY_FILE`, `LB_GATEWAY_SERVICE_KEY_FILE`) and spends the sample's model calls once |
 | `just record-fixtures` | Make the recordings the journeys replay, on the mock back end (`apps/web/e2e/fixtures/recordings`, labelled `mock`) |
 | `just check` (`pnpm check`) | Fail when a generated file is stale (the OpenAPI clients, the boards' samples, the icon sprite, the visitor-token corpus, the eval packs in `evals/packs`) or `routing.yaml` is invalid (the CI drift check) |
