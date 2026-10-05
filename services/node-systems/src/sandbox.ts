@@ -6,22 +6,25 @@
 //   - the runner (src/modules/lb07/runner), on the container's own network address, which the service's
 //     worker calls to open a session, run a step, read the page and close the session.
 //
-// Why one process and not two containers: the box's memory budget. Measured on this machine, the runner's
-// Node process idles at about 180 MiB (Playwright's library is most of it) and the browser peaks at about
-// 230 MiB for the heaviest plan; a second Node runtime for the shop alone would cost another 110 MiB,
-// which the budget does not have (infra/docker-compose.yml, Resources). The shop in the same process adds
-// a few megabytes. What the two share is harmless: the shop's only secret is the key that verifies bug
-// tokens, and a process that could forge them could only switch on bugs in its own shop; the browser can
-// reach the runner's API no more than any other address but the shop's (the route handler stops it, and
-// the API is not on the loopback interface the shop is on).
+// Why one process and not two containers: the box's memory budget. Measured on an x86 machine with
+// scripts/lb07-memory.ts (README, "LB-07: what a run costs in memory"), the process alone is about 125 MiB
+// as a cgroup charges it (180 MiB RSS; Playwright's library is most of it), and the whole tree with the
+// browser peaks at about 365 MiB charged (550 to 575 MiB summed PSS) on the heaviest golden case; a second
+// Node runtime for the shop alone would cost about another 110 MiB. The shop in the same process adds a few
+// megabytes. What the two share is harmless: the shop's only secret is the key that verifies bug tokens, and
+// a process that could forge them could only switch on bugs in its own shop. The browser cannot reach the
+// runner's API: the plan's check, interception and the browser's own network all refuse any address but the
+// shop's (runner/network.ts), and the API answers nothing but its health without the worker's key, which is
+// derived from the token key (runner/key.ts).
 //
 //   just lb07-sandbox          (development)
 //   node src/sandbox.ts        (production)
 //
 // Settings: LB07_SANDBOX_PORT (default 8008) and LB07_SANDBOX_HOST (the container's own address by
 // default, 127.0.0.1 for development), LB07_SHOP_PORT (default 8007, loopback only), LB07_SHOP_TOKEN_KEY
-// (the key the service signs bug tokens with, as hex), LB07_BROWSER_PATH (a Chromium to start;
-// Playwright's own when empty), LB07_RUNS_PER_LIFE (default 20: the process exits after that many runs).
+// (the key the service signs bug tokens with, as hex; the runner's key comes from it), LB07_BROWSER_PATH (a
+// Chromium to start; Playwright's own when empty), LB07_RUNS_PER_LIFE (default 20: the process exits after
+// that many browser sessions, and a run opens one to three of them, one for each pass).
 import { lookup } from 'node:dns/promises'
 import type { Server } from 'node:http'
 import { hostname } from 'node:os'

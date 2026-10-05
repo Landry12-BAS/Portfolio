@@ -68,6 +68,15 @@ describe('the runner\'s API', () => {
     expect(sessions.runsServed).toBe(0)
   })
 
+  it('checks every body against the protocol before it looks for a session: an axe request with an index no plan has is malformed', async () => {
+    for (const body of [{ index: 1e308 }, { index: -1 }, { index: 'first' }, { index: 1, extra: true }, {}]) {
+      const response = await fetch(`${url}/sessions/0123456789abcdef/axe`, { method: 'POST', body: JSON.stringify(body), headers: { [RUNNER_KEY_HEADER]: KEY, 'content-type': 'application/json' } })
+      expect(response.status, JSON.stringify(body)).toBe(422)
+    }
+    const fine = await fetch(`${url}/sessions/0123456789abcdef/axe`, { method: 'POST', body: JSON.stringify({ index: null }), headers: { [RUNNER_KEY_HEADER]: KEY, 'content-type': 'application/json' } })
+    expect(fine.status).toBe(404)
+  })
+
   it('refuses to be built without a key of the right form', () => {
     expect(() => createRunnerServer({ sessions, key: 'short' })).toThrow(RangeError)
   })

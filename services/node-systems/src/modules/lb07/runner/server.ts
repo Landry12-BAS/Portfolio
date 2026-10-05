@@ -10,7 +10,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import type { z } from 'zod'
 
 import { keyMatches, RUNNER_KEY_HEADER } from './key.ts'
-import { axeResponseSchema, closeResponseSchema, healthResponseSchema, openSessionRequestSchema, openSessionResponseSchema, screenshotResponseSchema, snapshotResponseSchema, stepRequestSchema, stepResponseSchema } from './protocol.ts'
+import { axeRequestSchema, axeResponseSchema, closeResponseSchema, healthResponseSchema, openSessionRequestSchema, openSessionResponseSchema, screenshotResponseSchema, snapshotResponseSchema, stepRequestSchema, stepResponseSchema } from './protocol.ts'
 import type { BrowserSessions } from './session.ts'
 import { SessionError } from './session.ts'
 
@@ -109,9 +109,9 @@ export function createRunnerServer(options: RunnerServerOptions): Server {
     if (method === 'GET' && part === 'snapshot') return send(response, 200, checked(snapshotResponseSchema, await sessions.snapshot(id)))
     if (method === 'GET' && part === 'screenshot') return send(response, 200, checked(screenshotResponseSchema, await sessions.screenshot(id)))
     if (method === 'POST' && part === 'axe') {
-      const body = await readJson(request)
-      const index = typeof body === 'object' && body !== null && typeof (body as { index?: unknown }).index === 'number' ? Math.max(0, Math.floor((body as { index: number }).index)) : null
-      return send(response, 200, checked(axeResponseSchema, await sessions.axe(id, index)))
+      const body = axeRequestSchema.safeParse(await readJson(request))
+      if (!body.success) return sendError(response, 422, 'invalid_request', 'The axe request does not follow its schema.')
+      return send(response, 200, checked(axeResponseSchema, await sessions.axe(id, body.data.index)))
     }
     if (method === 'DELETE' && part === undefined) {
       return send(response, 200, checked(closeResponseSchema, await sessions.close(id)))

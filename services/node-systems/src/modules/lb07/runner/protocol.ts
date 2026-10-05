@@ -56,6 +56,11 @@ export const stepResponseSchema = z.strictObject({
 /** A step's answer. */
 export type StepResponse = z.infer<typeof stepResponseSchema>
 
+/** A request to run axe: the step it follows, for the findings' labels, or null at the end of a pass. */
+export const axeRequestSchema = z.strictObject({
+  index: z.int().min(0).max(LB07_LIMITS.maxPlanSteps * (LB07_LIMITS.maxReplans + 1)).nullable(),
+})
+
 /** The trimmed accessibility snapshot of the page. */
 export const snapshotResponseSchema = z.strictObject({ text: z.string().max(LB07_LIMITS.maxSnapshotChars), path: z.string().max(120) })
 /** A screenshot of the page, as base64 PNG. */

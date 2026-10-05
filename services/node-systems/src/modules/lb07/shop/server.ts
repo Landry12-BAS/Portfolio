@@ -2,9 +2,12 @@
 // cookie, and the bugs switched on by a signed token (token.ts). It is one small server of its own,
 // started by the sandbox process (src/sandbox.ts) on the loopback interface of the sandbox container, so
 // the browser the agent drives can reach it and nothing else; it holds no database, no queue and no
-// model, and the one secret it has is the key that verifies bug tokens. The `checkout-engine` bug lives here: when it is on, the checkout
-// fails for a browser that is not Chromium, told apart by its user agent, since the sandbox installs
-// only Chromium and a second engine is simulated by its user agent (README, "What is simulated").
+// model, and the one secret it has is the key that verifies bug tokens. Every answer carries a strict
+// Content-Security-Policy of the shop's own (pagePolicy), which the agent's browser keeps: it is the sandbox's
+// layer at the page's level, so a script that got into a page could load or connect to nothing outside the shop.
+// The `checkout-engine` bug lives here: when it is on, the checkout fails for a browser that is not Chromium,
+// told apart by its user agent, since the sandbox installs only Chromium and a second engine is simulated by its
+// user agent (README, "LB-07 QA Engineer").
 import { createHash } from 'node:crypto'
 import { createServer } from 'node:http'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
