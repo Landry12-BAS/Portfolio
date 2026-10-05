@@ -24,6 +24,8 @@ from core.migrations import upgrade
 from lb03 import models as lb03_models
 from lb05.models import QuotaUsage
 from lb05.module import MIGRATIONS
+from lb10 import models as lb10_models
+from lb10.module import MIGRATIONS as LB10_MIGRATIONS
 from lb_common.tracing import Span
 
 # The Postgres production runs, and the Redis the gateway's integration tests use too.
@@ -145,3 +147,23 @@ def lb03_engine(lb03_migrated_engine: Engine) -> Engine:
         connection.execute(delete(lb03_models.Document))
         connection.execute(delete(lb03_models.QuotaUsage))
     return lb03_migrated_engine
+
+
+@pytest.fixture(scope="session")
+def lb10_migrated_engine(make_database: Callable[[], str]) -> Iterator[Engine]:
+    """Make a database, bring LB-10's schema up to date with its real migrations, and connect as the service does."""
+    engine = create_system_engine(make_database(), "lb10")
+    upgrade(engine, "lb10", LB10_MIGRATIONS)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def lb10_engine(lb10_migrated_engine: Engine) -> Engine:
+    """Return LB-10's engine with no runs, no cached results and no counters, so a test starts from nothing."""
+    with lb10_migrated_engine.begin() as connection:
+        connection.execute(delete(lb10_models.EvalRun))
+        connection.execute(delete(lb10_models.CaseResult))
+        connection.execute(delete(lb10_models.NightlyResult))
+        connection.execute(delete(lb10_models.QuotaUsage))
+    return lb10_migrated_engine

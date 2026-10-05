@@ -139,7 +139,9 @@ x-django: &django
   networks: [app, data, egress-systems]
   stop_grace_period: 30s
 
-# The Flask systems (LB-03 and LB-05): one image, three jobs (the migration, the data, the API).
+# The Flask systems (LB-03, LB-05 and LB-10): one image, three jobs (the migration, the data, the API).
+# LB-10 is a module of the same API process and adds no container: its runs are a few kilobytes of text
+# waiting on the gateway, inside flask-api's limit, and its nightly commands run in GitHub Actions.
 # Each job names the environment it needs and nothing more: only the API gets a secret, and the
 # jobs that need no Redis or database are given a URL that goes nowhere or no network at all.
 x-flask: &flask
@@ -412,6 +414,7 @@ services:
       LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
       LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
       LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
+      LB10_DATABASE_URL: postgres://lb10:${LB_PG_PASSWORD_LB10:?LB_PG_PASSWORD_LB10 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       postgres-provision:
@@ -461,6 +464,7 @@ services:
       LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
       LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
       LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
+      LB10_DATABASE_URL: postgres://lb10:${LB_PG_PASSWORD_LB10:?LB_PG_PASSWORD_LB10 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://flask-systems:${LB_REDIS_PASSWORD_FLASK_SYSTEMS:?LB_REDIS_PASSWORD_FLASK_SYSTEMS is not set}@redis:6379/0
       LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
       LB_GATEWAY_URL: http://gateway:8080

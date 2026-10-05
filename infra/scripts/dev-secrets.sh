@@ -94,6 +94,7 @@ cat > "$secrets_dir/postgres-roles.env" <<EOF
 LB_PG_PASSWORD_LB01=$(token)
 LB_PG_PASSWORD_LB02=$(token)
 LB_PG_PASSWORD_LB03=$(token)
+LB_PG_PASSWORD_LB10=$(token)
 LB_PG_PASSWORD_LB05=$(token)
 LB_PG_PASSWORD_LB08=$(token)
 LB_PG_PASSWORD_LB04=$(token)

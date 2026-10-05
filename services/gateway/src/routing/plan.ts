@@ -23,9 +23,10 @@ export interface Plan {
  * order of importance: the provider's terms, then the data rules, then capabilities,
  * then whether the provider is configured at all.
  */
-function exclusion(model: Model, dataClass: DataClass, profile: Profile, needs: ReadonlySet<Capability>): Exclusion | undefined {
+function exclusion(model: Model, alias: Alias, dataClass: DataClass, profile: Profile, needs: ReadonlySet<Capability>): Exclusion | undefined {
   if (profile === 'production' && model.provider.terms === 'dev-only') return 'terms'
-  if (dataClass === 'visitor' && (model.provider.trainsOnInputs || model.provider.terms === 'dev-only')) return 'visitor-data'
+  // An alias that takes synthetic content only turns visitor content away whichever model it names.
+  if (dataClass === 'visitor' && (alias.syntheticOnly || model.provider.trainsOnInputs || model.provider.terms === 'dev-only')) return 'visitor-data'
   for (const capability of needs) {
     if (!model.capabilities.has(capability)) return 'capability'
   }
@@ -37,7 +38,7 @@ function exclusion(model: Model, dataClass: DataClass, profile: Profile, needs: 
 export function planChain(alias: Alias, dataClass: DataClass, profile: Profile, needs: ReadonlySet<Capability>): Plan {
   const plan: Plan = { candidates: [], excluded: [] }
   for (const model of alias.chain) {
-    const reason = exclusion(model, dataClass, profile, needs)
+    const reason = exclusion(model, alias, dataClass, profile, needs)
     if (reason) plan.excluded.push({ model, reason })
     else plan.candidates.push(model)
   }

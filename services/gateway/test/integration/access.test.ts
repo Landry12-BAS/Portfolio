@@ -91,7 +91,11 @@ describe('systems and aliases', () => {
 
     expect(response.json()).toEqual({
       object: 'list',
-      data: [{ id: 'lb-fast', object: 'model', created: 0, owned_by: 'lb-gateway', kind: 'chat', description: 'Classification' }],
+      data: [
+        { id: 'lb-eval-alpha', object: 'model', created: 0, owned_by: 'lb-gateway', kind: 'chat', description: 'Eval Lab, pinned to the first provider' },
+        { id: 'lb-eval-gamma', object: 'model', created: 0, owned_by: 'lb-gateway', kind: 'chat', description: 'Eval Lab, pinned to the provider that trains' },
+        { id: 'lb-fast', object: 'model', created: 0, owned_by: 'lb-gateway', kind: 'chat', description: 'Classification' },
+      ],
     })
   })
 })

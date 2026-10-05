@@ -55,6 +55,9 @@ COPY --from=build /repo/services/flask-systems /app/services/flask-systems
 COPY data/seed/lb05 /app/data/seed/lb05
 COPY data/seed/lb03/chart_of_accounts.yaml data/seed/lb03/manifest.json /app/data/seed/lb03/
 COPY evals/lb03/golden.yaml /app/evals/lb03/golden.yaml
+# LB-10 serves the eval packs and the baselines; its nightly commands run elsewhere.
+COPY evals/packs /app/evals/packs
+COPY evals/baselines /app/evals/baselines
 # The data job sits next to manage.py, so it imports the service the way manage.py does.
 COPY --chmod=0444 infra/docker/flask-seed.py /app/services/flask-systems/seed_warehouse.py
 COPY --chmod=0555 infra/docker/python-entrypoint.sh /usr/local/bin/lb-entrypoint

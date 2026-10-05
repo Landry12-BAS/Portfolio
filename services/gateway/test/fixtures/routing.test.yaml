@@ -225,6 +225,25 @@ aliases:
     maxAudioSeconds: 15
     chain: [alpha/whisper-hour]
 
+  # Eval Lab's pinned aliases: one model each, for the flask-systems service only. The second sits on the
+  # provider that trains on inputs, so it takes synthetic content only.
+  lb-eval-alpha:
+    description: Eval Lab, pinned to the first provider
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 512
+    services: [flask-systems]
+    chain: [alpha/small]
+
+  lb-eval-gamma:
+    description: Eval Lab, pinned to the provider that trains
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 512
+    services: [flask-systems]
+    syntheticOnly: true
+    chain: [gamma/big]
+
 systems:
   lb-01:
     name: Support Desk Agent
@@ -247,6 +266,14 @@ systems:
     maxCallsPerRun: 4
     sessionDailyCalls: 12
     dailyCalls: 100
+
+  lb-10:
+    name: Eval Lab
+    service: flask-systems
+    aliases: [lb-eval-alpha, lb-eval-gamma]
+    maxCallsPerRun: 4
+    sessionDailyCalls: 20
+    dailyCalls: 50
 
 # A trace reader that may see LB-01's runs and not LB-05's, to test the per-system limit.
 traceReaders:

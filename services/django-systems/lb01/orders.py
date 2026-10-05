@@ -30,8 +30,13 @@ def look_up_order(number: str, customer: Customer) -> OrderLookup:
     """Find an order on `customer`'s account only; any other order is simply not found."""
     order = Order.objects.filter(number=number, customer=customer).first()
     if order is None:
-        return OrderLookup(number=number, found=False, facts=f"Order {number} is not on this customer's account.")
+        return OrderLookup(number=number, found=False, facts=not_found_facts(number))
     return OrderLookup(number=number, found=True, facts=describe_order(order))
+
+
+def not_found_facts(number: str) -> str:
+    """Write what the tool reports about an order that isn't on the customer's account (or doesn't exist)."""
+    return f"Order {number} is not on this customer's account."
 
 
 def describe_order(order: Order) -> str:

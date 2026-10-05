@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 import lb03
 import lb05
+import lb10
 from config.systems import SYSTEMS
 from core.app import create_app, render_openapi
 from core.cli import OPENAPI_FILE, SERVICE_DIRECTORY
@@ -124,6 +125,27 @@ def test_every_lb_03_route_needs_a_visitor_token_and_says_what_it_takes_and_give
     assert methods == ["delete", "get", "get", "get", "get", "get", "post", "post"]
 
 
+def test_lb10_routes_need_a_visitor_token_and_start_a_run_with_202() -> None:
+    """Every LB-10 route is behind the visitor token, and a run is started with 202 and polled."""
+    document = create_app(make_platform(), SYSTEMS).api_doc
+    lb10_paths = {path: item for path, item in document["paths"].items() if path.startswith("/api/lb10/")}
+
+    assert sorted(lb10_paths) == [
+        "/api/lb10/baselines",
+        "/api/lb10/nightly",
+        "/api/lb10/quota",
+        "/api/lb10/runs",
+        "/api/lb10/runs/{run_id}",
+        "/api/lb10/targets",
+    ]
+    for item in lb10_paths.values():
+        for operation in item.values():
+            assert operation["security"] == [{"visitor": []}]
+            assert "401" in operation["responses"]
+    start = document["paths"]["/api/lb10/runs"]["post"]
+    assert {"202", "404", "422", "429"} <= set(start["responses"])
+
+
 def test_two_systems_never_name_a_model_alike_because_the_document_would_keep_only_one() -> None:
     """The systems share one document, which names a model by its class: a second model of a name replaces the first.
 
@@ -131,7 +153,7 @@ def test_two_systems_never_name_a_model_alike_because_the_document_would_keep_on
     system's client types described the other's answers. Every model is named once across the systems.
     """
     owners: dict[str, set[str]] = {}
-    for package in (lb03, lb05):
+    for package in (lb03, lb05, lb10):
         for info in pkgutil.walk_packages(package.__path__, f"{package.__name__}."):
             if ".migrations" in info.name or ".synthetic" in info.name or ".ocr.worker" in info.name:
                 continue
