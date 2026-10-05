@@ -5,8 +5,14 @@ results cached by prompt hash and about twenty model calls a run. The gateway's 
 second line behind each of these (lb-10: maxCallsPerRun 40, sessionDailyCalls 40).
 """
 
-# What a visitor may edit: the system prompt, as plain text of at most this many characters.
-MAX_PROMPT_CHARS = 4_000
+# What a visitor may edit: the system prompt, as plain text of at most this many characters. A visitor starts from
+# production's prompt, so the limit leaves room above the longest one (LB-05's SQL writer, 7,266 characters): an
+# unchanged prompt must run, and an edit must be able to add a sentence. At about 3.5 characters a token, a prompt
+# at the limit and the largest case's inputs stay well inside the 4,000 input tokens of the pinned eval aliases.
+MAX_PROMPT_CHARS = 8_000
+# The most bytes the request that starts a run may have: a prompt at the limit written in four-byte characters, and
+# its envelope. Every other route keeps the app's few kilobytes (core/app.py).
+MAX_RUN_REQUEST_BYTES = 40 * 1_024
 # How many cases a visitor run uses, and how many providers it may run them on.
 CASES_PER_RUN = 10
 MAX_PROVIDERS_PER_RUN = 2

@@ -230,6 +230,46 @@ def test_a_bad_prompt_or_a_forbidden_provider_is_refused_before_the_quota(serve:
     assert served.chat.calls == []
 
 
+def test_a_prompt_at_the_limit_is_taken_however_many_bytes_its_characters_need(serve: Callable[..., Served]) -> None:
+    """The limit is in characters: a prompt of the most characters allowed, in letters of two bytes, starts a run.
+
+    Such a body is more than the app's few kilobytes for every other route, so the route that starts a run takes
+    as much as a prompt at the limit can need; a character more is the prompt check's refusal, not the server's.
+    """
+    import json
+
+    from lb10.limits import MAX_PROMPT_CHARS
+
+    served = serve()
+
+    def start_as_the_site_writes_it(prompt: str, session: str) -> TestResponse:
+        """Start a run with the body as the site's server writes it: JSON with its letters as UTF-8, not escaped."""
+        body = json.dumps({"target": CLASSIFIER, "prompt": prompt, "providers": ["groq"]}, ensure_ascii=False)
+        headers = {**served.site_key.headers(SYSTEM_KEY, session), "Content-Type": "application/json"}
+        return served.app.test_client().post("/api/lb10/runs", headers=headers, data=body.encode("utf-8"))
+
+    longest = PACK.prompt.system + "\n" + "é" * (MAX_PROMPT_CHARS - len(PACK.prompt.system) - 1)
+    assert len(longest) == MAX_PROMPT_CHARS
+    assert len(longest.encode("utf-8")) > 8_192
+    response = start_as_the_site_writes_it(longest, SESSION)
+    assert response.status_code == 202, response.get_json()
+    one_more = start_as_the_site_writes_it(longest + "é", OTHER_SESSION)
+    assert (one_more.status_code, one_more.get_json()["error"]["code"]) == (422, "invalid_prompt")
+    assert one_more.get_json()["problems"][0]["code"] == "too_long"
+
+
+def test_an_unchanged_prompt_counts_only_the_calls_it_makes(serve: Callable[..., Served]) -> None:
+    """An unchanged prompt runs once, so its run says ten calls a provider, and its bar can reach its end."""
+    served = serve()
+    response = served.start(prompt=PACK.prompt.system, providers=("groq", "workers-ai"))
+    assert response.status_code == 202
+    assert response.get_json()["run"]["calls_total"] == 20
+    run = served.wait_for(response.get_json()["run"]["run_id"])
+    assert run["state"] == "done"
+    assert run["report"]["edited_is_production"] is True
+    assert run["report"]["total_model_calls"] + run["report"]["total_cached_calls"] == run["calls_total"]
+
+
 def test_a_run_whose_calls_all_fail_is_failed_and_given_back(serve: Callable[..., Served]) -> None:
     """When the gateway answers nothing at all, the run fails as such and the visitor keeps their run."""
     from lb_common.gateway import GatewayResponseError

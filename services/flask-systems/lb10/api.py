@@ -15,7 +15,7 @@ import logging
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from flask import Response
+from flask import Response, request
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from core.app import COMMON_RESPONSES
@@ -31,6 +31,7 @@ from lb10.limits import (
     MAX_CALLS_PER_RUN,
     MAX_PROMPT_CHARS,
     MAX_PROVIDERS_PER_RUN,
+    MAX_RUN_REQUEST_BYTES,
     RUN_DEADLINE_SECONDS,
     RUNS_PER_DAY,
 )
@@ -45,6 +46,8 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_KEY = "lb-10"
 NOT_SERVING_MESSAGE = "The lab is not available right now."
+# The route that starts a run, the one route here whose body may be longer than the app's few kilobytes.
+RUNS_PATH = "/api/lb10/runs"
 # A prompt as the API accepts it: text up to the limit (the finer checks name what is wrong).
 type PromptText = Annotated[str, StringConstraints(min_length=1, max_length=MAX_PROMPT_CHARS + 1_000)]
 type ProviderId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9-]{1,30}$")]
@@ -335,6 +338,17 @@ def refused(refusal: Refusal) -> Response:
     return response
 
 
+def allow_a_prompt_at_the_limit() -> None:
+    """Let the request that starts a run be as long as a prompt at the limit can make it, before any of it is read.
+
+    The limit a visitor meets is in characters, and a character takes up to four bytes: the app-wide body limit
+    (a few kilobytes, right for every other route) would refuse a prompt the prompt check takes. A body over this
+    route's own limit is still refused with 413 when it is read.
+    """
+    if request.method == "POST" and request.path == RUNS_PATH:
+        request.max_content_length = MAX_RUN_REQUEST_BYTES
+
+
 def build_blueprint(service: Lb10Service | None, web_token_key: str | None) -> APIBlueprint:
     """Build LB-10's routes. With no `service` (it could not start) every route answers 503 after the token check."""
     blueprint = APIBlueprint(
@@ -345,6 +359,7 @@ def build_blueprint(service: Lb10Service | None, web_token_key: str | None) -> A
         abp_security=[{"visitor": []}],
         abp_responses={**COMMON_RESPONSES, 401: ErrorOut, 503: ErrorOut},
     )
+    blueprint.before_request(allow_a_prompt_at_the_limit)
     blueprint.before_request(require_visitor(SYSTEM_KEY, web_token_key))
     targets_document: dict[str, Any] | None = None
     if service is not None:

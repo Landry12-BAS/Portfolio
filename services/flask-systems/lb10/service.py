@@ -28,7 +28,7 @@ from lb10.chat import EvalChat, GatewayEvalChat
 from lb10.limits import MAX_PROVIDERS_PER_RUN, RUN_DEADLINE_SECONDS
 from lb10.packs import EvalPack, read_packs
 from lb10.pipeline import FAILURE_INTERRUPTED, EvalPipeline, Offload, RunRequest
-from lb10.prompt_check import PromptProblem, check_prompt, prompt_hash
+from lb10.prompt_check import PromptProblem, check_prompt, is_production_prompt, prompt_hash
 from lb10.providers import ProviderNotAllowedError, alias_for, providers_for
 from lb10.quota import Admission, PostgresLedger, Usage
 from lb10.repository import EvalRepository, StoredNightly, StoredRun
@@ -123,6 +123,8 @@ class Lb10Service:
             data_class="visitor",
             session_key=session_key,
         )
+        # An unchanged prompt runs once (lb10/pipeline.py, plan_variants), so its run has half the calls to count.
+        variants = 1 if is_production_prompt(prompt, pack) else 2
         stored = StoredRun(
             run_id=request.run_id,
             session_key=session_key,
@@ -133,7 +135,7 @@ class Lb10Service:
             providers=chosen,
             state="running",
             calls_done=0,
-            calls_total=len(request.cases) * len(chosen) * 2,
+            calls_total=len(request.cases) * len(chosen) * variants,
             cached_calls=0,
             started_at=self.clock(),
             finished_at=None,

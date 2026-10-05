@@ -1,7 +1,8 @@
 """Checking a visitor's edited prompt before anything runs: plain text, within the limit, with the pack's variables.
 
-A prompt is the one thing a visitor writes. It is held to the datasheet's limit (4,000 characters), to plain
-text (no control characters but line breaks and tabs), and to the pack's variables: a prompt that drops a
+A prompt is the one thing a visitor writes. It is held to its limit (8,000 characters, room above the longest
+production prompt: lb10/limits.py), to plain text (no control characters but line breaks and tabs), and to the
+pack's variables: a prompt that drops a
 placeholder the production prompt fills, or adds one the pack doesn't know, would render into something the
 cases can't fill, so it is refused with a sentence that names the variables. The prompt is also hashed here,
 which is how it is named in the cache and the trace: its text never goes into either.

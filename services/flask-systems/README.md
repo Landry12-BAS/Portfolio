@@ -33,7 +33,7 @@ hand-labelled set; in CI, a gate compares every pack with its baseline.
 | Runtime | Python 3.13, gunicorn `gthread` (one worker of eight threads), bound to `127.0.0.1:8102`; the reverse proxy is the only way in. LB-03's documents are read on an asyncio loop of their own (one per worker), and its OCR runs in a caged child process |
 | Operating limits, LB-03 | 10 documents per visitor per day, two being read at a time · 10 MB and 5 pages a file (the site passes 4 MB on to the service, see below) · files kept 1 hour · 2 to 5 model calls a document · 240 s a document at the outside |
 | Operating limits, LB-05 | 25 questions per visitor per day · 5 s query timeout · 1,000-row cap · 2 to 4 model calls a question (5 at most) · 90 s a question |
-| Operating limits, LB-10 | 1 run per visitor per day · 10 cases a run · a prompt of 4,000 characters at most · 1 or 2 providers · about 20 model calls a run (40 at the outside, when the production baseline is not cached yet) · 4 calls in flight · 300 s a run |
+| Operating limits, LB-10 | 1 run per visitor per day · 10 cases a run · a prompt of 8,000 characters at most (the longest production prompt, LB-05's, is 7,266) · 1 or 2 providers · about 20 model calls a run (40 at the outside, when the production baseline is not cached yet) · 4 calls in flight · 300 s a run |
 
 ## Run it
 
@@ -515,7 +515,7 @@ since an exception's message can quote a visitor.
 
 | Step | Who | What it does | When it can't |
 |---|---|---|---|
-| Check | `lb10/prompt_check.py` | Holds the prompt to 4,000 characters of plain text and to the pack's variables: a prompt that drops `{{language}}` or adds `{{today}}` is refused with a sentence naming them | 422 `invalid_prompt`, with every problem listed; nothing is counted |
+| Check | `lb10/prompt_check.py` | Holds the prompt to 8,000 characters of plain text (room above every production prompt, which is where a visitor starts; the route that starts a run takes a body of 40 KiB, so a prompt at the limit is never refused for its bytes) and to the pack's variables: a prompt that drops `{{language}}` or adds `{{today}}` is refused with a sentence naming them | 422 `invalid_prompt`, with every problem listed; nothing is counted |
 | Choose | `lb10/providers.py` | Maps each chosen provider to the pinned alias of the pack's model class. A visitor is offered Groq and Workers AI only: OpenRouter's free hosts may train on inputs, so a visitor's prompt never reaches them (and the gateway refuses it there too, `syntheticOnly`) | 422 `invalid_providers` |
 | Admit | `lb10/quota.py` (Postgres) | One run a visitor a day, one at a time, in one atomic upsert | 429 `daily_limit` with `resets_at`, or `run_running` |
 | Sample | `lb10/sampling.py` | The pack's fixed ten cases: drawn once per pack version with a generator seeded from it, stratified so the hard cases are always in | — |

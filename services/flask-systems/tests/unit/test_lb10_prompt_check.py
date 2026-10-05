@@ -3,6 +3,7 @@
 import pytest
 
 from lb10.limits import MAX_PROMPT_CHARS
+from lb10.packs import read_packs
 from lb10.prompt_check import check_prompt, is_production_prompt, production_prompt_hash, prompt_hash
 from lb10.providers import (
     PROVIDERS,
@@ -16,6 +17,8 @@ from tests.lb10_support import committed_pack
 
 DRAFTER = committed_pack("lb01-drafter")
 CLASSIFIER = committed_pack("lb01-classifier")
+# Room a visitor has to add to the longest production prompt before the limit stops them.
+ROOM_TO_EDIT = 500
 
 
 def test_the_production_prompt_passes_and_is_known_as_production() -> None:
@@ -24,6 +27,18 @@ def test_the_production_prompt_passes_and_is_known_as_production() -> None:
     assert is_production_prompt(DRAFTER.prompt.system, DRAFTER)
     assert prompt_hash(DRAFTER.prompt.system) == production_prompt_hash(DRAFTER)
     assert not is_production_prompt(DRAFTER.prompt.system + " ", DRAFTER)
+
+
+@pytest.mark.parametrize("name", sorted(read_packs()))
+def test_every_production_prompt_fits_the_limit_with_room_to_edit(name: str) -> None:
+    """A visitor starts from production's prompt, so every pack's must pass the check, and leave room to add a sentence.
+
+    An unchanged prompt runs once, and an edit is the production prompt with something changed: a production
+    prompt over the limit could be neither (LB-05's SQL writer is 7,266 characters, LB-08's generator 6,063).
+    """
+    pack = committed_pack(name)
+    assert check_prompt(pack.prompt.system, pack) == []
+    assert len(pack.prompt.system) + ROOM_TO_EDIT <= MAX_PROMPT_CHARS
 
 
 def test_a_dropped_or_added_variable_is_refused_with_its_name() -> None:

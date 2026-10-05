@@ -1868,7 +1868,7 @@
         "type": "object"
       },
       "PromptText": {
-        "maxLength": 5000,
+        "maxLength": 9000,
         "minLength": 1,
         "type": "string"
       },
