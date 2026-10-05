@@ -10,6 +10,7 @@ import { z } from 'zod'
 
 import { SECURITY_HEADERS } from '../../src/core/security-headers.ts'
 import type { GoldenCase } from '../../src/modules/lb07/golden/cases.ts'
+import { ScriptedModel } from '../support/fake-model.ts'
 import { loadGolden } from '../support/lb07.ts'
 import { createLb07ApiHarness } from '../support/lb07-api.ts'
 import type { Lb07ApiHarness } from '../support/lb07-api.ts'
@@ -121,6 +122,56 @@ describe('a run', () => {
     expect((await api.call('GET', `/runs/${other.id}`, session)).statusCode).toBe(404)
     api.engine.clock.set('2026-10-02T09:00:00.000Z')
     await drive(api.engine)
+  })
+})
+
+describe('another visitor', () => {
+  it('finds nothing of a run that is not theirs, on every route and with every spelling of its id, exactly as for a run that never existed', async () => {
+    const owner = newSession()
+    const run = await startSample(owner)
+    await drive(api.engine)
+    const stranger = newSession()
+    const never = '00000000-0000-4000-8000-000000000000'
+    const routes = (id: string): ['GET' | 'DELETE', string][] => [['GET', `/runs/${id}`], ['GET', `/runs/${id}/report`], ['GET', `/runs/${id}/test`], ['GET', `/runs/${id}/evidence/e1`], ['DELETE', `/runs/${id}`]]
+    for (const [method, url] of routes(never)) {
+      const nothing = await api.call(method, url, stranger)
+      expect(nothing.statusCode, url).toBe(404)
+      for (const id of [run.id, run.id.toUpperCase()]) {
+        const theirs = await api.call(method, url.replace(never, id), stranger)
+        // The same status and the same body: nothing tells a run that exists from one that does not.
+        expect(theirs.statusCode, url).toBe(404)
+        expect(theirs.json(), url).toEqual(nothing.json())
+      }
+    }
+    // An id that is not a run's id at all is a malformed request, which names the field and never a run.
+    for (const id of ['1', 'e1', `${run.id}x`, `${run.id.slice(0, -1)}%00`, '%00']) {
+      const malformed = await api.call('GET', `/runs/${id}`, stranger)
+      expect(malformed.statusCode, id).toBe(422)
+      expect(malformed.body).not.toContain(run.id)
+    }
+    expect(z.array(lb07RunViewSchema).parse((await api.call('GET', '/runs', stranger)).json())).toEqual([])
+    // The owner still has it all.
+    expect((await api.call('GET', `/runs/${run.id}/evidence/e1`, owner)).statusCode).toBe(200)
+  })
+})
+
+describe('the model\'s one sentence', () => {
+  it('reaches the visitor as plain text even when the model writes line breaks and control or format characters in it', async () => {
+    api.engine.models.current = new ScriptedModel((messages) => {
+      const system = messages[0]?.content ?? ''
+      if (system.startsWith('You are a QA engineer writing bug reports')) return { kind: 'json', value: { reports: [] } }
+      return { kind: 'json', value: { reading: 'Line one\nline two\u{7} \u{202E}reversed', steps: coupon.plan } }
+    })
+    const session = newSession()
+    const started = await api.call('POST', '/runs', session, { from: 'custom', goal: 'Add one bag of Colombia Huila and check the cart says 1 item.', bugs: [] })
+    expect(started.statusCode, started.body).toBe(201)
+    await drive(api.engine)
+    const id = lb07RunViewSchema.parse(started.json()).id
+    const view = await api.call('GET', `/runs/${id}`, session)
+    expect(view.statusCode, view.body).toBe(200)
+    expect(lb07RunViewSchema.parse(view.json()).reading).toBe('Line one line two reversed')
+    const report = await api.call('GET', `/runs/${id}/report`, session)
+    expect(report.statusCode, report.body).toBe(200)
   })
 })
 

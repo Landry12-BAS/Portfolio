@@ -147,6 +147,20 @@ function statusOf(outcome: StepOutcome): Lb07StepStatus {
   return 'failed'
 }
 
+// What a sentence shown as text has no use for: control and format characters (line breaks, bidirectional overrides,
+// zero-width marks) and the line and paragraph separators.
+const NOT_PLAIN = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
+
+/**
+ * Makes a model's sentence plain: every character a page has no use for becomes a space, runs of spaces become one,
+ * and the ends are trimmed; undefined when nothing is left. The planner's reading is the one sentence a model writes
+ * that its schema does not already hold to plain text, and the API refuses to answer with anything else.
+ */
+export function plainSentence(text: string): string | undefined {
+  const plain = text.replaceAll(NOT_PLAIN, ' ').replaceAll(/\s+/g, ' ').trim()
+  return plain === '' ? undefined : plain
+}
+
 /** Waits for a number of milliseconds. */
 function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -186,9 +200,21 @@ export class Agent {
     await this.#hooks.save(this.#working)
   }
 
-  /** Asks the guard about a visitor's own goal, once; a sample's goal is the owner's and is not asked about. */
+  /**
+   * Screens a visitor's own goal before any model sees it: the guard is asked once (its verdict is saved, so a later
+   * attempt does not pay again), and a goal it flags ends the run as `goal_refused` before the planner is asked. A
+   * sample's goal is the owner's and is not asked about. A guard that cannot be reached leaves the goal `unchecked`
+   * and the run goes on: the closed vocabulary and the sandbox hold whatever the goal says.
+   */
   async #guard(): Promise<void> {
-    if (this.#working.guard !== undefined || this.#input.origin === 'sample') return
+    if (this.#input.origin === 'sample') return
+    if (this.#working.guard === undefined) await this.#askGuard()
+    const verdict = this.#working.guard
+    if (verdict !== undefined && verdict !== 'unchecked' && verdict.flagged) throw new RunEnded('goal_refused', 'The injection guard flagged the goal.')
+  }
+
+  /** Asks the guard about the goal, once, and saves what it said. */
+  async #askGuard(): Promise<void> {
     await this.#deps.tracer.span('guard the goal', async (span) => {
       if (!this.#deps.guard) {
         span.skip('no guard')
@@ -221,7 +247,7 @@ export class Agent {
       span.set('attempts', answer.calls)
       span.set('steps', answer.value.steps.length)
       this.#working.plan = answer.value.steps
-      this.#working.reading = answer.value.reading
+      this.#working.reading = plainSentence(answer.value.reading)
       await this.#paid(answer.calls)
       return answer.value.steps
     })
