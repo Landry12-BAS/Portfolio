@@ -6,7 +6,7 @@ import { createRun, runScope } from '@lb/common'
 import type { Tracer } from '@lb/common'
 import type { Lb07BugId } from '@lb/contracts'
 
-import { runAgent } from '../agent/machine.ts'
+import { runAgent, RunEnded } from '../agent/machine.ts'
 import type { Guard, MachineHooks, MachineLogger } from '../agent/machine.ts'
 import { ModelOutputInvalid } from '../agent/ask.ts'
 import type { JsonModel } from '../agent/model.ts'
@@ -40,20 +40,26 @@ export interface EvalOptions {
 
 const quiet: MachineHooks = { onState: async () => {}, onSteps: async () => {}, onFinding: async () => {}, onEvidence: async () => {}, save: async () => {} }
 
-/** Writes a grade for a case that could not be run: only the error's name is kept. */
+/** Writes a grade for a case that could not be run: a run the agent ended says its failure code as the run's state; for anything else only the error's name is kept. */
 function unavailable(entry: GoldenCase, error: unknown): CaseGrade {
   const name = error instanceof Error ? error.name : 'unknown error'
-  const failure = error instanceof ModelOutputInvalid ? 'plan: the model\'s answer was not usable, even after its one repair' : `unavailable: ${name}`
+  let failure = `unavailable: ${name}`
+  if (error instanceof ModelOutputInvalid) failure = 'plan: the model\'s answer was not usable, even after its one repair'
+  if (error instanceof RunEnded) failure = `state: the run ended failed (${error.code}), and done was expected`
   return { caseId: entry.id, failures: [failure], found: 0, bugsOn: entry.bugs.length, modelCalls: 0 }
 }
 
-/** Runs one case through the agent, in a run of its own over synthetic data, and grades it. */
+/**
+ * Runs one case through the agent, in a run of its own over synthetic data, and grades it. A case the board offers
+ * as a sample runs as the board runs it, with the owner's goal and no guard; every other case runs as a visitor's
+ * own goal, which the guard reads first.
+ */
 export async function evaluateCase(entry: GoldenCase, deps: EvalDeps): Promise<CaseGrade> {
   const runId = `eval-lb07-${entry.id}`.slice(0, 60)
   try {
     const result = await runScope(createRun({ system: 'lb-07', runId, dataClass: 'synthetic' }), () => runAgent(
       { runner: deps.runner, model: deps.modelFor(entry), guard: deps.guard, tracer: deps.tracer, log: deps.log, runTimeMs: deps.runTimeMs, busyWaitMs: 2_000, busyWaits: 90, shopOrigin: deps.shopOrigin, now: () => Date.now() },
-      { runId, goal: entry.goal, bugs: entry.bugs, bugToken: deps.signToken(runId, entry.bugs), origin: 'custom' },
+      { runId, goal: entry.goal, bugs: entry.bugs, bugToken: deps.signToken(runId, entry.bugs), origin: entry.sample ? 'sample' : 'custom' },
       freshWorking(),
       quiet,
     ))
