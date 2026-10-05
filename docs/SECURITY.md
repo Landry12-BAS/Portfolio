@@ -120,7 +120,7 @@ how a Vercel preview runs.
   stops `nuxt build` at once (`shared/build-mode.ts`, read by `nuxt.config.ts`), and a server
   that was built as a test build refuses to start where `VERCEL` is set
   (`server/lib/config.ts`), with settings or without. Both are tested.
-- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...`, `/api/lb06/...` and `/api/lb08/...`
+- **The proxy.** `/api/lb01/...`, `/api/lb02/...`, `/api/lb04/...`, `/api/lb05/...`, `/api/lb06/...`, `/api/lb07/...` and `/api/lb08/...`
   forward a visitor's call to that system with a visitor token the server signs (EdDSA,
   5 minutes, the system as audience, the keyed hash as subject). Only the routes in the back
   ends' committed OpenAPI documents are forwarded, with the methods those documents give
@@ -197,6 +197,20 @@ how a Vercel preview runs.
   page where they differ it leaves the highlight off and says so, and the passage is still shown
   as text. That the two agree is checked in a browser on every sample the system can review, not
   assumed for a visitor's own file.
+- **LB-07's board: the screenshots.** LB-07's service answers a screenshot of its sandboxed
+  browser as base64 inside JSON. The board does not turn that into a `blob:` or `data:` address
+  of its own, which would need the policy widened; the site answers each screenshot at an address
+  of its own, `GET /api/lb07/runs/{id}/evidence/{evidenceId}/image`, so a plain `<img src>` to the
+  site's origin shows it and the policy stays as it is (`apps/web/server/handlers/lb07-evidence-image.ts`).
+  The route checks both ids by their pattern (a UUID, and `e` with up to three digits), reads the
+  evidence through the same call the proxy makes (the visitor's token for `lb-07`, so a run that
+  is not the visitor's, or is gone, is the service's own 404, as it is for the proxy), and answers
+  only a piece that fits the evidence schema, is of kind `screenshot`, decodes cleanly, starts with
+  the PNG signature and is at most 400 kB (the contract's limit). A page's tree, which is text, is a
+  404; anything else is a 502 in the platform's error shape. A picture is answered as `image/png`
+  with `nosniff` and `no-store`. A replay's screenshots come from the recording and are shown as
+  `data:image/png` addresses, which the site's policy already allows (`img-src 'self' data:`), and
+  only after the browser has checked their PNG signature. The policy is not changed for LB-07.
 
 ### Threat model of the proxy
 

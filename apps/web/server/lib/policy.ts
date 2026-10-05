@@ -38,6 +38,9 @@ const MIB = 1_024 * KIB
  * - LB-06 takes a fault's choice with a seed and two short strings; starting an incident makes at most one model call (the
  *   injection screen) and answers at once, the feed runs over the WebSocket, and a page of 200 events with a minute's metrics
  *   each is a few hundred kilobytes.
+ * - LB-07 takes a goal of 300 characters and a list of six bugs. A run is queued at once and read by polling, so every call
+ *   is short; the largest answer is a screenshot of at most 400,000 bytes as base64 in JSON (about 534 KB), which the
+ *   image route reads to answer it as a picture.
  */
 export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-01': { maxBodyBytes: 8 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
@@ -47,6 +50,7 @@ export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-03': { maxBodyBytes: 4 * KIB, maxUploadBytes: LB03_SITE_UPLOAD_BYTES, timeoutMs: 25_000, maxResponseBytes: 2 * MIB },
   'lb-04': { maxBodyBytes: 3 * MIB, timeoutMs: 60_000, maxResponseBytes: 4 * MIB },
   'lb-06': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
+  'lb-07': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
 }
 
 /** The most a trace page from the gateway may weigh: the gateway cuts its pages at 256 KB, and this leaves room for the envelope. */

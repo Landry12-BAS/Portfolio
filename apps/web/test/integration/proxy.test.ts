@@ -127,6 +127,7 @@ describe('who the back end thinks is calling', () => {
     await browser.request('GET', '/api/lb03/quota')
     await browser.request('GET', '/api/lb04/limits')
     await browser.request('GET', '/api/lb06/limits')
+    await browser.request('GET', '/api/lb07/limits')
 
     const publicKey = loadPublicKey(keys.sitePublic)
     const seen = mock.requests.map((sent) => {
@@ -135,7 +136,7 @@ describe('who the back end thinks is calling', () => {
       return verifyVisitorToken(token, `lb-${system}`, publicKey, () => site.clock.now / 1_000)
     })
 
-    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04', 'lb-06'])
+    expect(seen.map(visitor => visitor.system)).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04', 'lb-06', 'lb-07'])
     expect(new Set(seen.map(visitor => visitor.sessionKey)).size).toBe(1)
   })
 
