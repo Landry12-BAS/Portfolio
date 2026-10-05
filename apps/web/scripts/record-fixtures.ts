@@ -53,14 +53,18 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // The bad deploy that a rollback cures and the slow payment provider that the agents trace to its flag. The other
   // two samples (the memory leak and the cache stampede) have no recording on purpose, so the tests can run them live.
   'lb-06': ['bad-deploy', 'slow-payment'],
+  // The doubled coupon (one finding, the test kept), the one-item cart that the mock plans wrong once and puts right with
+  // a re-plan, and the link out of the shop that the sandbox stops (nothing to verify). The other five samples have no
+  // recording on purpose, so the tests can run them live.
+  'lb-07': ['coupon-double-discount', 'cart-count', 'partner-link'],
 }
 
 // The moment LB-02's mock stands still at.
 const LB02_NOW = Date.parse('2026-10-02T09:30:00.000Z')
 
-// The systems whose mock moves on with time (a retry waits for its backoff) need a clock that the
-// recorder moves by waiting; the others move on as they are read and never wait.
-const TIMED = new Set(['lb-08'])
+// The systems whose mock moves on with time (LB-08's retry waits for its backoff, LB-07's run is worked out
+// beat by beat) need a clock that the recorder moves by waiting; the others move on as they are read and never wait.
+const TIMED = new Set(['lb-08', 'lb-07'])
 // The systems whose mock runs on a timer of its own (LB-06's shop ticks every few milliseconds) are read on the wall clock.
 const REAL_TIME = new Set(['lb-06'])
 
@@ -115,6 +119,8 @@ async function recordOnOneMock(system: string, samples: readonly string[], folde
     now: clock.now,
     // LB-06's shop ticks slowly enough that a recording shows the incident unfold in steps, and not as one jump.
     lb06: { tickMs: 150 },
+    // LB-07's beats are longer than the recorder's pause between reads, so every state of a run is read at least once.
+    lb07: { tickMs: 700 },
   })
   try {
     const backend = new Backend({
@@ -136,8 +142,8 @@ async function recordOnOneMock(system: string, samples: readonly string[], folde
   }
 }
 
-// The systems that let a visitor start one thing a day (LB-06's incident) get a fresh mock for each sample, as a fresh day.
-const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06'])
+// The systems that let a visitor start one or two things a day (LB-06's incident, LB-07's runs) get a fresh mock for each sample, as a fresh day.
+const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06', 'lb-07'])
 
 /** Records a system's samples on a mock of its own, or on one mock for each when the system allows one a day, and writes them under the folder. */
 async function recordSystem(system: string, samples: readonly string[], folder: string): Promise<void> {
