@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { evalsDirectory, seedDirectory } from '../../src/core/data-files.ts'
+import { readSamples } from '../../src/modules/lb08/data/samples.ts'
 import { describeSystemPrompt, describeUserMessage } from '../../src/modules/lb08/generate/prompts.ts'
+import { readGoldenSet } from '../../src/modules/lb08/golden/cases.ts'
 import { buildPack, checkMatchesProduction, packableCases, render } from '../../src/modules/lb08/pack/build.ts'
 import { packPath, renderPack } from '../../scripts/lb08-pack.ts'
 
@@ -22,9 +24,12 @@ describe('the LB-08 eval pack', () => {
   })
 
   it('holds every build and resist case, and no reject case, each with a grader', () => {
-    const cases = packableCases(seedDirectory(), GOLDEN)
-    expect(pack.cases.map(entry => entry.id)).toEqual(cases.map(entry => entry.id))
-    expect(cases.every(entry => entry.kind !== 'reject')).toBe(true)
+    const everyCase = readGoldenSet(GOLDEN, readSamples(seedDirectory()))
+    const rejected = everyCase.filter(entry => entry.kind === 'reject').map(entry => entry.id)
+    const packed = pack.cases.map(entry => entry.id)
+    expect(rejected.length).toBeGreaterThan(0)
+    expect(packed).toEqual(everyCase.filter(entry => entry.kind !== 'reject').map(entry => entry.id))
+    for (const id of rejected) expect(packed).not.toContain(id)
     expect(pack.cases.every(entry => entry.graders.length > 0)).toBe(true)
     expect(pack.cases.some(entry => entry.difficulty === 'hard')).toBe(true)
     expect(pack.common_graders.map(grader => grader.kind)).toEqual(['json_schema'])
