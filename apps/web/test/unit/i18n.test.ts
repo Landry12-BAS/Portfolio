@@ -37,7 +37,7 @@ describe('message files', () => {
   })
 
   it('are actually translated where the words differ', () => {
-    const same = czech.filter(([key, text], i) => text === english[i]![1] && !/backends|techniqueNames\.rag|theme\.system|anatomy\.scope$|quickref\.ai$|board\.scope\.columns\.model$|lb01\.pipeline\.title$|lb06\.(?:services\.web|dashboard\.chart|dashboard\.markerLetters\.recovered|hypotheses\.where|postmortem\.title|value\.(?:mb|ms|percent))$|lb07\.(?:findings\.engines\.chromium|counters\.(?:seconds|minutes)|mine\.line)$|lb09\.facts\.seconds$/.test(key))
+    const same = czech.filter(([key, text], i) => text === english[i]![1] && !/backends|techniqueNames\.rag|theme\.system|anatomy\.scope$|quickref\.ai$|board\.scope\.columns\.model$|lb01\.pipeline\.title$|lb06\.(?:services\.web|dashboard\.chart|dashboard\.markerLetters\.recovered|hypotheses\.where|postmortem\.title|value\.(?:mb|ms|percent))$|lb07\.(?:findings\.engines\.chromium|counters\.(?:seconds|minutes)|mine\.line)$|lb09\.facts\.seconds$|lb10\.(?:run\.elapsed|report\.table\.(?:prompt|interval)|report\.changed\.model|nightly\.columns\.(?:alias|interval)|mine\.line)$/.test(key))
     expect(same.map(([key]) => key)).toEqual([])
   })
 })
