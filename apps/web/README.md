@@ -439,7 +439,9 @@ about twenty on the real browser. What running the board there showed:
 
 Twenty-two of the journeys of `e2e/lb07.spec.ts`, those that need none of the mock's controls but its reset, ran
 against it with a stand-in for the reset; the re-plan and keyboard journeys need the mock's re-planned sample,
-and the queue, busy and failure journeys its controls.
+and the queue, busy and failure journeys its controls. The recorder (`just record-sample lb-07 <sample> --out
+<a scratch folder>`) ran against it too, for two samples (a real run starts `queued`, where the mock's starts
+planning when the browser is free); its output, labelled `live` though a fake model made it, was thrown away.
 
 ## Decisions worth knowing
 
