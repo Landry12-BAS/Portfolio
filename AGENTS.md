@@ -13,134 +13,38 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 - Brand: Landry Bodjona, logo mark LB ([`brand/`](brand/README.md)). Part numbers and
   internal names use the LB prefix (`LB-01`, `lb-fast`).
 
-Status: Phase 1 in build. Built so far: the workspace root, `packages/icons`,
-`packages/ui` (the design system as a Nuxt layer), `apps/web` (the site in English and
-Czech: catalog, datasheets, themes, security headers; its Nitro server between the browser
-and the back ends, with the anonymous session, Turnstile and a proxy that forwards only the
-routes the back ends document; the evaluation-board kit with the Scope and the replay player;
-LB-01's board at `/systems/lb-01/board`, LB-08's at `/systems/lb-08/board` and LB-04's at
-`/systems/lb-04/board`; see its [README](apps/web/README.md)),
-`packages/api-clients` (typed clients generated from the back ends' OpenAPI documents, and
-the mock back end the site's tests run against), `services/gateway` (the LB-00 AI
-gateway: routing, fallback, budgets, quotas, service tokens, run spans, reranking and the
-prompt-injection guard; see its [README](services/gateway/README.md)),
-`python/lb-common` (the Python gateway client, service tokens, run context and tracer;
-see its [README](python/lb-common/README.md)) and `infra/` (the deployable platform:
-signed multi-arch images, the hardened Compose stack with the Django, Flask and Node
-systems (LB-01, LB-02, LB-03, LB-04, LB-05, LB-08), Postgres roles, the Redis ACL, the Caddy edge, SOPS
-secrets and the deploy workflow; see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
-In build: `services/django-systems`, the
-Django project for LB-01, LB-02 and LB-09, with LB-01's schema, synthetic data
-(`data/seed/lb01`), golden set (`evals/lb01`), hybrid search, ticket pipeline, visitor
-API and Celery worker so far, and LB-02's back end: the Booking Concierge's schema with
-the database-enforced no-double-booking constraint, its synthetic calendar
-(`data/seed/lb02`), golden set (`evals/lb02`), state-gated tool calling, WebSocket
-(Django Channels) and live calendar, visitor API, and golden-set eval (see its
-[README](services/django-systems/README.md)); LB-02's demo is on the site at
-`/systems/lb-02/board` (a phone-frame chat beside the live calendar, installable as an
-app; see the web README); next come the recorded sample runs of LB-01 and LB-02
-(`just record-sample`, which needs the live back end with a model behind it). LB-09
-Meeting Recorder's back end is built in the same project: the gateway's `lb-stt` route
-with audio-second budgets, six scripted meetings spoken by an offline text-to-speech
-(`data/seed/lb09`) with a golden set (`evals/lb09`), audio taken in safely (magic bytes, a
-bounded decoder, the length measured from the samples, the file deleted once transcribed),
-fast mode through the gateway and private mode with faster-whisper on the box, speaker
-labels inferred from the words, decisions and actions with verified evidence and seconds
-derived in code, progress over a WebSocket with a polling fallback, the visitor API with
-exports, and the infrastructure (its role, the shared audio volume, the upload route, the
-weights in the image), and its board at `/systems/lb-09/board` (a sample meeting or the visitor's
-own minute from the microphone, fast or private mode, the stages over the WebSocket with a polling
-fallback, the transcript with labels inferred from the words, the items that jump the player to
-their evidence, a file picker and the visitor's own meetings of the day, and the exports, with the two
-board pages alone allowing the microphone and `blob:` media; see the web README); private mode's word
-error rate has been measured on a development machine (0.106 over the six scripted meetings) and its
-transcriptions take turns, one at a time, because two at once measured 974 MiB of the worker's 1024;
-next come its recorded sample runs (`just record-sample lb-09 <sample>`), its live eval and fast
-mode's word error rate (`just eval-lb09`, `just wer-lb09`, which need a model). Also in build:
-`services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
-synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
-question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial
-and live eval sets (see its [README](services/flask-systems/README.md)). LB-05's demo is
-on the site at `/systems/lb-05/board`: a question in plain words, the long wait counted honestly, the
-answer with its SQL, table, chart and chain of steps, the safety demo that names the layer which
-stopped each attack, and the semantic layer browser, in English and Czech (see the
-[web README](apps/web/README.md)); next come LB-05's recorded sample runs (`just record-sample lb-05
-<sample>`, which needs the live back end with a model behind it). The same monolith holds LB-03
-Invoice Reader's back end: the file read in a locked-down OCR subprocess (never in the web
-process), a pipeline on one asyncio loop with at most five model calls a document, eleven
-checks (the arithmetic in `Decimal`) that return a failing document with its failing checks and
-never fix it silently, duplicates by vendor, number and content hash, a balanced journal entry from a
-chart-of-accounts file, CSV and JSON export, files that expire after an hour behind a disk or S3
-store, the prompt-injection defence, a 10-a-day visitor API, and a seeded set of 43 synthetic
-documents with its golden set and an offline strict reader (see the same README). LB-03's demo is on
-the site at `/systems/lb-03/board`: the page of the document with each field's box lit and its
-confidence said in words and drawn with its own line, a table of fields that can be corrected so
-every check runs again, the checklist, the duplicate verdict, the journal entry, the exports, an
-upload behind Turnstile and six curated samples, in English and Czech (see the web README); next
-come LB-03's recorded sample runs (`just record-sample lb-03 <sample>`, which needs the live back
-end with a model behind it). The same monolith holds LB-10 Eval Lab's back end: the other systems'
-production prompts and golden sets as eval packs (`evals/packs`), a visitor's edited prompt run beside
-production's on a fixed ten-case sample on Groq, Workers AI or both, graded by rules, with a bootstrap
-interval and a paired verdict, results cached by prompt hash, one run a day, and the nightly, the judge
-and the CI gate (see the same README). Its board is at `/systems/lb-10/board`: the prompt edited as plain
-text and checked as it is typed, the run followed by polling, and a report with its figures, tables and
-every case that changed, in English and Czech (see the web README). No nightly result or baseline exists
-until one is measured live; next come its recorded sample runs (`just record-sample lb-10 <sample>`, which
-needs the live back end with a model behind it). The Node side: `packages/contracts`
-(the Zod schemas the site and the services share), `packages/common` (the TypeScript twin of
-`lb-common`; see its [README](packages/common/README.md)) and `services/node-systems`, the
-Node monolith for LB-04, LB-06, LB-07 and LB-08, with LB-08's back end built: workflow
-graphs checked by one schema, a BullMQ engine with retries, a dead-letter queue, replay and
-exactly-once side effects, and the visitor API (see its
-[README](services/node-systems/README.md)); LB-08's board is on the site (a lazily loaded Vue
-Flow canvas and a keyboard outline over one validated state, the run with its retries, dead
-letters and replay, and what the sandbox sent); next come its recorded sample runs
-(`just record-sample lb-08 <sample>`, which needs the live back end). LB-04 Contract Radar's
-back end is in the same monolith: a PDF's text and where every word sits, read in a worker
-thread with a deadline and a memory limit; an injection screen; a cited analysis whose every
-quote the server checks against the contract's text (a quote that is not there is dropped, and
-counted); the playbook kept as data; proposed wordings with a server-computed diff; a BullMQ
-pipeline of two to five model calls (and one more for each of up to three redlines); and the
-visitor API with its three-contracts-a-day quota and one-hour retention (see the same README).
-LB-04's board is on the site at `/systems/lb-04/board`: a risk radar drawn as an accessible SVG
-with its table, the findings with their quotes as text, a PDF viewer that loads pdf.js on demand
-under a policy of its own and highlights exactly the characters a citation names, and redlines
-as insertions and deletions, in English and Czech (see the web README); next come its recorded
-sample runs (`just record-sample lb-04 <sample>`, which needs the live back end with a model
-behind it). LB-06 Incident Commander is in the same monolith too: a seeded, event-sourced shop
-simulator (six services, four faults, the same seed always the same incident), detection and
-correlation written as code (the SLO burn rate, the new log signatures, the deploys before the
-first divergence), a commander and three specialist agents orchestrated in code with a hard cap
-of 15 model calls, proposals from a closed list of actions that only the visitor's approval can
-apply, the incident's log as a Postgres table and a Redis stream, a WebSocket feed, and the
-visitor API with its one-incident-a-day quota (an incident the agents could not run is given
-back) (see the same README). LB-06's board is on the site at `/systems/lb-06/board`: six charts
-that turn when the fault strikes, each with a text alternative and a table, the agents' steps and
-the commander's hypotheses, the card that waits for the visitor's approval, the service level
-objective, the timeline and the postmortem, a replay of a recorded incident, the visitor's own
-incident with its text screened, a polling fallback for a network that blocks WebSockets, in
-English and Czech (see the web README); next come its recorded sample runs (`just record-sample
-lb-06 <sample>`, which needs the live back end with a model behind it). LB-07 QA Engineer is in the
-same monolith too: a synthetic staging shop with six bugs a visitor can switch on (only by a token the
-service signs, which the model can neither read nor change), a planner that writes the whole test in one
-model call over a closed vocabulary of six actions, a runner that executes it step by step in a headless
-Chromium, findings made by code (a failed expectation, a console error, a failed request, an axe
-violation, a navigation that was stopped), bug reports in a model's words that code checks against them,
-a Playwright test written by a template and kept only when it fails with the bugs on and passes with them
-off, a queue of one browser, and the visitor API with its two-runs-a-day quota (see the same README, with
-its threat model). The browser lives in a container of its own, `lb07-sandbox` (distroless, non-root, a
-read-only root, no capabilities, on an internal network that reaches nothing but the worker, restarted
-after twenty sessions), and three independent layers keep the page inside the staging shop; "one
-container per run" became that, because starting containers needs the Docker socket, which no service is
-given (`docs/SECURITY.md`; `just test-lb07-sandbox` proves it). LB-07's board is on the
-site at `/systems/lb-07/board`: the six bugs as switches and a goal of the visitor's own checked
-before it is sent, eight curated runs, the run followed by polling while it waits for the one
-browser ("2 runs are ahead of yours") and while it runs, the steps grouped by plan and re-plan,
-the findings code made, the bug reports labelled as a model's, the red-then-green verdict with its
-three passes, the generated Playwright test in a code view with its copy and download, the
-screenshots through a picture route of the site's own (the policy unchanged) and the visitor's
-runs of the hour, in English and Czech (see the web README); next come its recorded sample runs
-(`just record-sample lb-07 <sample>`, which needs the live back end with a model behind it).
+Status: all ten systems are built and on the site. Each is a back end, an evaluation board in English
+and Czech at `/systems/lb-NN/board`, a datasheet and tests; each service's README says how it works and
+what it measured, and what it did not. No provider key has been available, so no hosted model has
+been called: there is no recorded sample run, no live eval score and no live baseline (LB-09's private
+mode, which runs Whisper on the machine, is the one real model measured), and every doc says where a
+number was measured and on which machine.
+
+| Part | System | Where it lives | What to know before touching it |
+|---|---|---|---|
+| LB-00 | The platform | `services/gateway` (the AI gateway), `python/lb-common` and `packages/common` (its clients), `packages/contracts` (Zod schemas), `packages/api-clients` (typed clients and the mock back end the site's tests run against), `packages/ui` and `packages/icons`, `apps/web` (the site: its Nitro server, the evaluation-board kit with the Scope and the replay player), `infra/` | [gateway](services/gateway/README.md), [web](apps/web/README.md), [deploy](docs/DEPLOY.md), [security](docs/SECURITY.md) |
+| LB-01 | Support Desk Agent | `services/django-systems`, `lb01` | hybrid search, ticket pipeline, Celery worker |
+| LB-02 | Booking Concierge | `services/django-systems`, `lb02` | the database forbids double bookings; WebSocket; installable as an app |
+| LB-09 | Meeting Recorder | `services/django-systems`, `lb09` | audio decoded in a child process under kernel limits; fast mode through the gateway, private mode with faster-whisper on the box (measured: [README](services/django-systems/README.md)); private transcriptions take turns |
+| LB-03 | Invoice Reader | `services/flask-systems`, `lb03` | OCR in a caged subprocess, never in the web process; eleven checks; files expire after an hour |
+| LB-05 | Data Analyst | `services/flask-systems`, `lb05` | DuckDB, a semantic layer, six layers of SQL safety |
+| LB-10 | Eval Lab | `services/flask-systems`, `lb10`; packs in `evals/packs` | a visitor's edited prompt against production's on ten cases, graded by rules, bootstrap intervals; nightly, judge and CI gate exist but have not run live |
+| LB-04 | Contract Radar | `services/node-systems`, `lb04` | PDFs read in a worker thread; every quote checked against the contract's text |
+| LB-06 | Incident Commander | `services/node-systems`, `lb06` | a seeded, event-sourced shop simulator; actions only on the visitor's approval; WebSocket |
+| LB-07 | QA Engineer | `services/node-systems`, `lb07`, and the `lb07-sandbox` container | the browser runs in its own container (`just test-lb07-sandbox` proves it); the model never writes code that runs |
+| LB-08 | Automation Studio | `services/node-systems`, `lb08` | workflow graphs checked by one schema; BullMQ engine with replay |
+
+The shared design lives in the playbook ([`docs/PLAYBOOK.md`](docs/PLAYBOOK.md)) and in the READMEs of
+`services/*`, `packages/*` and `apps/web`. The box's memory is counted in waves (a deploy's jobs run in
+three waves and only the biggest counts, with the nightly backup under the deploy's lock): `just
+infra-check` fails a change that breaks it, and `docs/DEPLOY.md` says why.
+
+What is not done, and needs the owner (provider keys, the box or an account): the recorded sample runs
+(`just record-sample <system> <sample>`), the live evals (`just eval-lb0N`, `just wer-lb09` in fast
+mode), the nightly, judge and gate of LB-10, the deploy secrets and the Cloudflare rules (`docs/DEPLOY.md`),
+and timings and memory on the box's Ampere A1 (everything measured so far was measured on an x86-64
+development machine).
+
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
