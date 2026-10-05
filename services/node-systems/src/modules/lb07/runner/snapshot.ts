@@ -5,8 +5,9 @@
 // about, never as instructions; this module only makes it small and plain.
 import { LB07_LIMITS } from '@lb/contracts'
 
-// Control and format characters, which a snapshot has no use for.
-const CONTROL = /[\p{Cc}\p{Cf}]/gu
+// Control and format characters, and the Unicode line and paragraph separators, which a snapshot has no use for.
+// The line break itself is a control character too: `trimSnapshot` keeps its own and removes the rest line by line.
+const CONTROL = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
 
 /** Cuts a text to `max` characters, ending with a note that it was cut. */
 export function cutTo(text: string, max: number): string {
@@ -15,9 +16,14 @@ export function cutTo(text: string, max: number): string {
   return `${text.slice(0, Math.max(0, max - note.length))}${note}`
 }
 
-/** Makes a snapshot plain and bounded: in its compatibility form (so full-width brackets are brackets), with no control characters, no angle brackets, at most the limit. */
+/**
+ * Makes a snapshot plain and bounded: in its compatibility form (so full-width brackets are brackets), with no
+ * control characters, no angle brackets, at most the limit. The accessibility tree is a text of lines whose
+ * indentation says what contains what, so its line breaks and the spaces that indent them stay.
+ */
 export function trimSnapshot(raw: string): string {
-  const plain = raw.normalize('NFKC').replaceAll(CONTROL, ' ').replaceAll(/[<>]/g, ' ').replaceAll(/[ \t]+\n/g, '\n').replaceAll(/\n{3,}/g, '\n\n')
+  const lines = raw.normalize('NFKC').replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n')
+  const plain = lines.map(line => line.replaceAll(CONTROL, ' ').replaceAll(/[<>]/g, ' ').trimEnd()).join('\n').replaceAll(/\n{3,}/g, '\n\n')
   return cutTo(plain.trim(), LB07_LIMITS.maxSnapshotChars)
 }
 

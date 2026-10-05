@@ -69,4 +69,10 @@ describe('the snapshot a re-plan is shown', () => {
     expect(trimmed.replaceAll('\n', '')).not.toMatch(/[\p{Cc}\p{Cf}]/u)
     expect(trimmed.length).toBeLessThanOrEqual(6_000)
   })
+
+  it('keeps the lines of the accessibility tree and the spaces that indent them, and turns every other line break into a space', () => {
+    expect(trimSnapshot('- list "Fresh roasts":\n  - link "Basalt Blend"\n    - img "A bag"\r\n  - link "Colombia Huila"')).toBe('- list "Fresh roasts":\n  - link "Basalt Blend"\n    - img "A bag"\n  - link "Colombia Huila"')
+    expect(trimSnapshot('heading "a\u2028b\u2029c\u0085d"')).toBe('heading "a b c d"')
+    expect(trimSnapshot('a\n\n\n\n\nb')).toBe('a\n\nb')
+  })
 })

@@ -145,7 +145,7 @@ export const systemsCs = {
     function: 'Agent v prohlížeči, který testuje firemní e-shop podle cíle zadaného běžnou řečí, zakládá hlášení o chybách a ke každé chybě napíše test v Playwrightu, který ji dokazuje.',
     visitorAction: 'Zapne chyby a dostane hlášení i test',
     problem: 'Malé týmy vydávají bez end-to-end testů, protože jejich psaní a údržba jsou pomalé.',
-    tryIt: 'Zapněte v testovacím e-shopu chyby, třeba kupón, který se uplatní dvakrát, pokladnu, která selže v jednom prohlížeči, chybějící alternativní text nebo počet položek v košíku posunutý o jednu. Zadejte cíl, například koupit dva sáčky s kódem WELCOME10. Sledujte živý prohlížeč a pak si přečtěte hlášení o chybě a vygenerovaný test.',
+    tryIt: 'Zapněte v testovacím e-shopu chyby, třeba kupón, který se uplatní dvakrát, pokladnu, která selže v jednom prohlížeči, chybějící alternativní text nebo počet položek v košíku posunutý o jednu. Zadejte cíl, například koupit dva sáčky s kódem WELCOME10. Sledujte běh krok za krokem a pak si přečtěte hlášení o chybě, prohlédněte si snímky obrazovky a přečtěte vygenerovaný test.',
     proves: 'Agenty v prohlížeči, automatizaci testů a pořádně udělaný sandboxing.',
     tags: ['Agent v prohlížeči', 'Volání nástrojů', 'QA'],
     chain: ['plán podle cíle', 'provedení plánu v Playwrightu', 'nový plán při selhání', 'zachycení chyb a kontroly axe', 'hlášení o chybě', 'vygenerování testu', 'běh červeně, pak zeleně'],

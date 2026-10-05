@@ -754,8 +754,10 @@ heap, the third layer's switches below, an environment of five variables (the pa
 and a home, a profile and a crash-report folder of its own in the temporary folder. Traced with strace over a whole
 run, nothing in the process tree writes outside `/tmp`; as the user `nobody`, with no new privileges and no
 capabilities, on a read-only root with a tmpfs at `/tmp` (a private mount namespace standing in for the
-container), two runs of the heaviest golden case kept their tests. The infrastructure's own container rules are
-in [`docs/DEPLOY.md`](../../docs/DEPLOY.md) and `infra/`, which this change does not touch.
+container), two runs of the heaviest golden case kept their tests. The container itself is `lb07-sandbox` in
+`infra/docker-compose.yml`, built from `infra/docker/lb07-sandbox.Dockerfile`, with its rules and the proof that
+they hold (`just test-lb07-sandbox`) in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), [`docs/SECURITY.md`](../../docs/SECURITY.md)
+and `infra/sandbox/test.sh`.
 
 ### What "one container per run" became, and why
 
@@ -763,8 +765,8 @@ The datasheet first promised one container per run. Starting a container for eac
 (or an API with the same power) inside the service, and whoever holds that socket holds the host, so this
 platform never exposes it to any service. What LB-07 has instead, layer by layer: one dedicated sandbox container
 with the platform's hardening (a non-root user, a read-only root, no capabilities, no new privileges, memory, CPU
-and process limits) on an internal network that reaches nothing but the worker, which serves no port (that
-container is the infrastructure's to set up, in `infra/`; this module is made to run in it, as shown above); a
+and process limits) on an internal network that reaches nothing but the worker, which serves no port (`lb07-sandbox` in
+`infra/docker-compose.yml`); a
 fresh throwaway browser context for every pass of every run, closed at a hard wall clock; the runner process
 restarted after 20 sessions, so nothing a run leaves in the browser outlives a handful of runs; and the browser's
 network held by the three layers below, each of which holds on its own. The datasheet now says so, in both
@@ -859,6 +861,14 @@ sessions (the one above, one as the user `nobody` on a read-only root, one under
 files (a run's peak 443 to 575 MiB), so it is a range, not a constant. For the container: a fresh one should expect
 about 550 to 600 MiB at the peak of a run, which a limit of 768 MiB covers with room for the growth before a
 restart; ARM64 builds of Chromium and Node are of the same order, but that is unmeasured.
+
+The container does not run Chrome for Testing but Chrome Headless Shell (a build with no interface code, pinned in
+`infra/docker/lb07-sandbox.Dockerfile`), and it was measured in the container itself, under its Compose limit: 96 to
+127 MiB when idle, and a peak of 263 to 271 MiB over five runs in a row of the same heaviest case under the 384 MiB
+limit (327 to 332 MiB with no limit), with 83 tasks. So `lb07-sandbox` has `mem_limit: 384m`, and the 768 MiB above
+is what `just lb07-sandbox` needs on a development machine with the full Chrome for Testing. How the 384 MiB fits the
+box's budget, and what the owner has to decide about it, is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), "The memory
+budget".
 
 ### LB-07 tests
 

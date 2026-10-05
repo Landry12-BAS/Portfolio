@@ -201,7 +201,7 @@ export const systems = [
     phase: 2,
     size: 'L',
     problem: 'Small teams ship without end-to-end tests because writing and maintaining them is slow.',
-    tryIt: 'Switch on bugs in the staging shop, such as a coupon that applies twice, a checkout that fails in one browser, missing alt text or a cart count that is off by one. Give a goal like buying two bags with WELCOME10. Watch the live browser, then read the bug report and the generated test.',
+    tryIt: 'Switch on bugs in the staging shop, such as a coupon that applies twice, a checkout that fails in one browser, missing alt text or a cart count that is off by one. Give a goal like buying two bags with WELCOME10. Watch the run step by step, then read the bug report, look at the screenshots and read the generated test.',
     proves: 'Browser agents, test automation, and sandboxing done properly.',
     tags: ['Browser agent', 'Tool use', 'QA'],
     chain: ['plan from goal', 'run plan in Playwright', 're-plan on failure', 'catch errors + axe checks', 'bug report', 'generate test', 'run red, then green'],
