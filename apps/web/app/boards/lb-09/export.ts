@@ -2,7 +2,9 @@
 // CSV for a spreadsheet, and the plain-English follow-up a visitor pastes into Automation Studio
 // (LB-08). They mirror the API's own exports (services/django-systems/lb09/export.py) field for field,
 // so a replay, which never calls the back end, exports the same thing a live run does. Every export
-// says that the speaker labels were inferred from the words, not matched to voices.
+// says that the speaker labels were inferred from the words, not matched to voices. The CSV's cells
+// of free text come from a model and from what was said into a microphone, so a cell that a
+// spreadsheet would read as a formula is written with an apostrophe in front, as the service does.
 import type { Item, Meeting, Segment } from './schemas.ts'
 
 /** The three formats. */
@@ -42,10 +44,21 @@ function csvCell(value: string | number): string {
   return `"${String(value).replaceAll('"', '""')}"`
 }
 
+/** What a spreadsheet reads as the start of a formula: these characters, a tab or a carriage return. */
+const FORMULA_START = /^[=+\-@\t\r]/
+/** The same characters as the first visible one, after Unicode normalisation turns a full-width sign into its plain form. */
+const FORMULA_SIGNS = new Set(['=', '+', '-', '@'])
+
+/** Writes a cell of free text so a spreadsheet shows it as text: one that begins like a formula gets an apostrophe in front. */
+export function safeCell(text: string): string {
+  const leading = text.trimStart().normalize('NFKC').slice(0, 1)
+  return FORMULA_START.test(text) || FORMULA_SIGNS.has(leading) ? `'${text}` : text
+}
+
 /** Writes the items as CSV, one row an item, with a header. */
 export function exportCsv(items: readonly Item[]): string {
   const header = ['kind', 'text', 'owner', 'deadline', 'start_seconds', 'end_seconds', 'evidence']
-  const rows = items.map(item => [item.kind, item.text, item.owner ?? '', item.deadline ?? '', item.start, item.end, item.evidence].map(csvCell).join(','))
+  const rows = items.map(item => [item.kind, safeCell(item.text), safeCell(item.owner ?? ''), safeCell(item.deadline ?? ''), item.start, item.end, safeCell(item.evidence)].map(csvCell).join(','))
   return `${[header.map(csvCell).join(','), ...rows].join('\n')}\n`
 }
 

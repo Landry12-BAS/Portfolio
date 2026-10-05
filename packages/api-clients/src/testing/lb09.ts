@@ -26,6 +26,18 @@ const DAY_MS = 86_400_000
 /** The close codes the real service uses (lb09/events.py, CloseCode). */
 export const CLOSE = { normal: 1000, unsupported: 1003, tooBig: 1009, unavailable: 1011, tryAgainLater: 1013, badFrame: 4400, unauthorized: 4401, notFound: 4404, timedOut: 4408 } as const
 
+/** The failures that are the service's, not the visitor's: a meeting that ends with one gives its place for the day back (lb09/meetings.py). */
+export const GIVEN_BACK_FAILURES: readonly string[] = ['transcriber', 'model', 'stale', 'pipeline_error', 'audio_gone']
+
+/** The characters a spreadsheet reads as the start of a formula, as the service's CSV export guards against them (lb09/export.py). */
+const FORMULA_START = /^[=+\-@\t\r]/
+
+/** Writes a cell of free text so a spreadsheet shows it as text, as the service does: one that begins like a formula gets an apostrophe. */
+export function safeCell(text: string): string {
+  const leading = text.trimStart().normalize('NFKC').slice(0, 1)
+  return FORMULA_START.test(text) || ['=', '+', '-', '@'].includes(leading) ? `'${text}` : text
+}
+
 /** Why a meeting can fail, and the stage each reason belongs to. */
 const FAILURE_STAGE: Record<string, Stage> = {
   undecodable: 'decoding',
@@ -311,7 +323,7 @@ export class Lb09Mock {
     const content = format === 'json'
       ? `${JSON.stringify({ meeting: { id: meeting.id }, items: meeting.found.items, transcript: meeting.found.segments }, null, 2)}\n`
       : format === 'csv'
-        ? `kind,text,owner,deadline,start_seconds,end_seconds,evidence\n${meeting.found.items.map(item => [item.kind, item.text, item.owner ?? '', item.deadline ?? '', item.start, item.end, item.evidence].map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')}\n`
+        ? `kind,text,owner,deadline,start_seconds,end_seconds,evidence\n${meeting.found.items.map(item => [item.kind, safeCell(item.text), safeCell(item.owner ?? ''), safeCell(item.deadline ?? ''), item.start, item.end, safeCell(item.evidence)].map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')}\n`
         : `When the minutes of this meeting are approved, follow up on them.\n${meeting.found.items.map(item => `- ${item.text}.`).join('\n')}\n`
     return { status: 200, body: { format, filename: `meeting-${meeting.id}${suffix}`, content_type: contentType, content } }
   }
@@ -359,10 +371,15 @@ export class Lb09Mock {
     return Math.floor(this.now() / DAY_MS) * DAY_MS
   }
 
-  /** How many meetings a visitor started since midnight. */
+  /** How many meetings a visitor started since midnight that count against the day: one the service failed for its own reasons gave its place back. */
   #startedToday(session: string): number {
     const midnight = this.#midnight()
-    return [...this.#meetings.values()].filter(meeting => meeting.session === session && meeting.createdAt >= midnight).length
+    return [...this.#meetings.values()].filter(meeting => meeting.session === session && meeting.createdAt >= midnight && !this.#givenBack(meeting)).length
+  }
+
+  /** Whether a meeting failed for a reason of the service's own, and so does not count against the visitor's day. */
+  #givenBack(meeting: MeetingRecord): boolean {
+    return this.#status(meeting) === 'failed' && GIVEN_BACK_FAILURES.includes(meeting.failure ?? '')
   }
 
   /** Whether a meeting's 24 hours are up. */
@@ -407,6 +424,19 @@ export class Lb09Mock {
     return meeting.createdAt + stage * this.stageMs
   }
 
+  /**
+   * The chat calls a meeting has made, as the service counts them: the labeller's call once it has answered, the
+   * extractor's once it has; a meeting whose model failed (in labelling, where the mock fails it) spent both of the
+   * labeller's attempts, and the service counts them.
+   */
+  #calls(meeting: MeetingRecord, status: string): number {
+    if (status === 'done') return 2
+    if (status === 'failed') return meeting.failure === 'model' ? 2 : 0
+    const reached = stageIndex(this.#reached(meeting))
+    if (reached >= stageIndex('aligning')) return 2
+    return reached >= stageIndex('extracting') ? 1 : 0
+  }
+
   /** The state a WebSocket event and the API's meeting share. */
   #state(meeting: MeetingRecord): Record<string, unknown> {
     const status = this.#status(meeting)
@@ -417,7 +447,7 @@ export class Lb09Mock {
       stage: this.#stage(meeting),
       failure: status === 'failed' ? meeting.failure ?? null : null,
       run_id: meeting.runId,
-      model_calls: over ? 2 : stageIndex(this.#reached(meeting)) >= stageIndex('extracting') ? 1 : 0,
+      model_calls: this.#calls(meeting, status),
       dropped_items: over ? meeting.found.dropped : 0,
       updated_at: new Date(this.#updatedAt(meeting)).toISOString(),
     }

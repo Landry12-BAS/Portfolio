@@ -48,3 +48,32 @@ export async function readRecording(blob: Blob): Promise<Recording | undefined> 
   if (!container) return undefined
   return { bytes, container, mimeType: blob.type }
 }
+
+/** How long the browser waits for a file's length before it gives up asking. */
+const DURATION_TIMEOUT_MS = 5_000
+
+/**
+ * Asks the browser how long a recording at an address runs, in seconds, or undefined when it cannot tell: a
+ * browser's own recording in WebM often says it is endlessly long until it has been played through, and a file
+ * the browser cannot play says nothing. The service measures every recording from its decoded samples anyway.
+ */
+export function durationOf(url: string): Promise<number | undefined> {
+  if (typeof Audio !== 'function') return Promise.resolve(undefined)
+  return new Promise((resolve) => {
+    const audio = new Audio()
+    let settled = false
+    const timer = setTimeout(() => finish(undefined), DURATION_TIMEOUT_MS)
+    /** Answers once, and lets go of the element. */
+    function finish(seconds: number | undefined): void {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      audio.removeAttribute('src')
+      resolve(seconds)
+    }
+    audio.preload = 'metadata'
+    audio.addEventListener('loadedmetadata', () => finish(Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : undefined))
+    audio.addEventListener('error', () => finish(undefined))
+    audio.src = url
+  })
+}
