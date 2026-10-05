@@ -27,6 +27,8 @@ const id = useId()
 const ICONS: Readonly<Record<Lb07StepStatus, IconName>> = { pending: 'clock', running: 'live', passed: 'check', failed: 'error', finding: 'warning', blocked: 'shield', skipped: 'close' }
 
 const groups = computed(() => planGroups(run.value?.steps ?? []))
+// A run that ended before it had a plan will never have steps, so the panel says so instead of promising them.
+const ended = computed(() => run.value?.state === 'done' || run.value?.state === 'failed')
 </script>
 
 <template>
@@ -42,8 +44,9 @@ const groups = computed(() => planGroups(run.value?.steps ?? []))
     <p
       v-if="groups.length === 0"
       class="lb7-hint"
+      data-testid="no-steps"
     >
-      {{ t('lb07.steps.empty') }}
+      {{ ended ? t('lb07.steps.none') : t('lb07.steps.empty') }}
     </p>
     <div
       v-for="group in groups"

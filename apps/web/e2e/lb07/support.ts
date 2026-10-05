@@ -1,6 +1,7 @@
 // What LB-07's end-to-end tests share: the mock back end's controls, the words that differ between the two
 // languages, opening the board, picking and running a curated run, waiting for a run's state, watching what a
-// page sends, holding a live run still at a moment while it runs, and telling whether a picture was drawn.
+// page sends, holding the board's view of a live run still at a moment, telling whether the page is wider than
+// the window, and telling whether a picture was drawn.
 import type { Lb07State } from '@lb/contracts'
 import type { Locator, Page, Response, Route } from '@playwright/test'
 
@@ -114,6 +115,11 @@ export async function holdRunAt(page: Page, moment: Moment): Promise<() => Promi
   }
   await page.route(RUN_VIEW, answer)
   return () => page.unroute(RUN_VIEW, answer)
+}
+
+/** How many pixels the page is wider than the window, which a visitor would have to scroll sideways for: zero when it fits. */
+export function overflowWidth(page: Page): Promise<number> {
+  return page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth))
 }
 
 /** The width a picture was drawn at, once it is in view: zero for a picture that did not load. */

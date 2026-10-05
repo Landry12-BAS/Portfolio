@@ -122,6 +122,7 @@ const lb07 = {
   steps: {
     title: 'Kroky',
     empty: 'Kroky se objeví, jakmile agent naplánuje test.',
+    none: 'Neproběhl žádný krok: běh skončil dřív, než měl plán.',
     firstPlan: 'První plán',
     replan: 'Nový plán {number}',
     replanIntro: 'Krok {number} selhal, a tak agent požádal model o nové kroky od tohoto místa.',

@@ -112,9 +112,10 @@ onBeforeUnmount(() => {
           data-testid="download-test"
         >{{ t('lb07.test.download') }}</a>
       </div>
+      <!-- "Copied" is said on the button already, so the line says it to a screen reader only; a failure is shown to everyone. -->
       <p
         :id="`${id}-copied`"
-        class="lb7-hint"
+        :class="copyState === 'failed' ? 'lb7-hint' : 'lb-sr-only'"
         role="status"
         data-testid="copy-status"
       >

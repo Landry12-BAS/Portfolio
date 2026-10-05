@@ -177,6 +177,7 @@ function markBroken(item: EvidenceItem): void {
   outline: 2px solid var(--lb-signal);
   outline-offset: 2px;
 }
+/* The tree keeps its lines and their indentation, and a line longer than the panel wraps instead of widening it. */
 .tree-text {
   max-height: 320px;
   padding: 10px 12px;
@@ -184,7 +185,8 @@ function markBroken(item: EvidenceItem): void {
   overflow: auto;
   font-family: var(--lb-font-mono);
   font-size: 11.5px;
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   background: var(--lb-shade);
 }
 </style>

@@ -126,6 +126,7 @@ const lb07 = {
   steps: {
     title: 'Steps',
     empty: 'The steps appear as soon as the agent has planned.',
+    none: 'No step ran: the run ended before it had a plan.',
     firstPlan: 'First plan',
     replan: 'Re-plan {number}',
     replanIntro: 'Step {number} failed, so the agent asked the model for new steps from there.',

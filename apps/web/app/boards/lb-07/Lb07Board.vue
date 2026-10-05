@@ -260,7 +260,9 @@ onBeforeUnmount(() => {
 }
 .stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+  min-width: 0;
   /* Leave room for the site's sticky toolbar when the run is scrolled into view. */
   scroll-margin-top: 72px;
 }

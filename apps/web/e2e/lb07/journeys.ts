@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs'
 
 import { expect, test } from '../fixtures'
-import { choose, control, drawnWidth, ENGLISH, expectFinished, expectState, LANGUAGES, openBoard, replay, runLive, runStarted, watchWrites } from './support'
+import { choose, control, drawnWidth, ENGLISH, expectFinished, expectState, LANGUAGES, openBoard, overflowWidth, replay, runLive, runStarted, watchWrites } from './support'
 
 // The address of a screenshot the site's own server answers as a picture.
 const PICTURE = /^\/api\/lb07\/runs\/[\da-f-]{36}\/evidence\/e\d+\/image$/
@@ -88,14 +88,26 @@ export function journeys(): void {
         expect(answer.headers()['x-content-type-options']).toBe('nosniff')
         expect(answer.headers()['cache-control']).toContain('no-store')
 
-        // The page's tree at the end, as text in a fold-out.
+        // The page's tree at the end, as text in a fold-out, which never widens the page however long its lines.
         const tree = page.getByTestId('snapshot')
         await tree.locator('summary').click()
         await expect(tree.locator('pre')).toBeVisible()
         await expect(tree.locator('pre')).not.toBeEmpty()
+        expect(await overflowWidth(page)).toBe(0)
         await expect(page.getByTestId('scope-row').first()).toBeVisible()
       })
     }
+
+    test('fits a phone: a finished run with its tree open, its test and its table never widens the page', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await openBoard(page)
+      await replay(page, 'cart-count')
+      await page.getByTestId('snapshot').locator('summary').click()
+      await expect(page.getByTestId('snapshot').locator('pre')).toBeVisible()
+      await expect(page.getByTestId('test-code')).toBeVisible()
+      expect(await overflowWidth(page)).toBe(0)
+    })
 
     test('shows a re-plan as a plan of its own, introduced by the step whose failure asked for it', async ({ page }) => {
       await openBoard(page)

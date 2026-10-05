@@ -3,8 +3,11 @@
    alone: it always has words or an icon beside it. The class names start with lb7- so they cannot meet
    anything else on the page. */
 
+/* A section and a panel are one column that never grows past the board: a long line inside one (a page's
+   tree, a line of the generated test, a long address) scrolls or wraps where it is, and never widens the page. */
 .lb7-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
 }
@@ -23,6 +26,7 @@
 
 .lb7-panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   min-width: 0;
   padding: 12px 14px;

@@ -204,6 +204,8 @@ describe('LB-07\'s board', () => {
     expect(textOf(wrapper, '[data-testid="failure-day"]')).toContain('the run is given back')
     expect(wrapper.find('[data-testid="verification"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="stepper"] [data-status="failed"]').attributes('data-stage')).toBe('plan')
+    // A run that ended before it had a plan says so, instead of promising steps that will never come.
+    expect(textOf(wrapper, '[data-testid="no-steps"]')).toBe('No step ran: the run ended before it had a plan.')
     await advance(500)
     expect(wrapper.get('[data-testid="quota"]').text()).toContain('2 of 2')
 

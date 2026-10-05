@@ -143,4 +143,9 @@ function whenOf(finding: Lb07Finding): string {
   align-items: center;
   font-weight: 700;
 }
+/* The monospaced face runs wide, so what code saw and the page's path are set a size down from the text around them. */
+.finding .lb7-mono {
+  font-size: 12px;
+  font-weight: 400;
+}
 </style>
