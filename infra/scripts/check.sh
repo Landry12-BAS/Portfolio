@@ -6,6 +6,7 @@
 #
 #   - every shell script passes shellcheck, and is executable;
 #   - every Dockerfile passes hadolint;
+#   - every file a Dockerfile copies is admitted by its .dockerignore;
 #   - the GitHub workflows pass actionlint (which also runs shellcheck on their scripts);
 #   - every image is pinned by digest or built here (pin-images.sh --check);
 #   - the Compose files resolve and follow the security rules (check-compose.sh);
@@ -99,6 +100,59 @@ systemd_units() {
     fi
 }
 
+# copy_sources <COPY line>: the paths a COPY instruction reads from the build context, one a
+# line: every word after the flags and before the last word, which is the destination.
+copy_sources() {
+    local -a words=() paths=()
+    local word
+    read -ra words <<<"$1"
+    for word in "${words[@]:1}"; do
+        case "$word" in
+            --*) ;;
+            *) paths+=("$word") ;;
+        esac
+    done
+    if [ "${#paths[@]}" -gt 1 ]; then
+        printf '%s\n' "${paths[@]:0:${#paths[@]}-1}"
+    fi
+}
+
+# Every image's .dockerignore excludes everything and then admits the files the image needs, so
+# a COPY of a file the list forgot fails only in the image build, after every other check has
+# passed. This checks the lists against the Dockerfiles instead: every source a COPY names (a
+# copy out of another stage, --from, reads nothing from the repository) must match an admitted
+# pattern. Patterns are matched the way bash matches them, where `**` and `*` alike cross
+# slashes, which is what these lists need; a copied directory is admitted when a pattern admits
+# a file inside it.
+dockerignore_admits_every_copy() {
+    local file ignore line source pattern admitted problems=0
+    for file in "$infra"/docker/*.Dockerfile; do
+        ignore="$file.dockerignore"
+        if [ ! -f "$ignore" ]; then
+            echo "${file#"$repo"/} has no .dockerignore beside it."
+            problems=1
+            continue
+        fi
+        while IFS= read -r line; do
+            while IFS= read -r source; do
+                admitted=0
+                while IFS= read -r pattern; do
+                    # shellcheck disable=SC2053 # the admitted path is a pattern, and is matched as one
+                    if [[ "$source" == $pattern || "${source%/}/file" == $pattern ]]; then
+                        admitted=1
+                        break
+                    fi
+                done < <(sed -n 's/^!//p' "$ignore")
+                if [ "$admitted" = 0 ]; then
+                    echo "${file#"$repo"/} copies $source, which ${ignore#"$repo"/} does not admit."
+                    problems=1
+                fi
+            done < <(copy_sources "$line")
+        done < <(grep -E '^COPY ' "$file" | grep -v -- '--from=')
+    done
+    return "$problems"
+}
+
 secrets_folder() {
     local file
     for file in "$infra"/secrets/*; do
@@ -122,6 +176,7 @@ echo "Infrastructure checks"
 check "shell scripts pass shellcheck" shell_scripts
 check "shell scripts are executable" executable_scripts
 check "Dockerfiles pass hadolint" dockerfiles
+check "every file a Dockerfile copies is admitted by its .dockerignore" dockerignore_admits_every_copy
 check "workflows pass actionlint" workflows
 check "every image is pinned by digest or built here" "$here/pin-images.sh" --check
 check "Compose files follow the security rules" "$here/check-compose.sh"
