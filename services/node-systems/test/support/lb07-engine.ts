@@ -38,6 +38,7 @@ export const LB07_TEST_CONFIG: Lb07Config = {
   sweepEveryMs: 200,
   runTimeMs: 180_000,
   maxQueued: 4,
+  maxQueueWaitMs: 15 * 60_000,
   busyWaitMs: 5,
   busyWaits: 3,
 }
@@ -104,6 +105,10 @@ export interface Lb07Harness {
   runner: FakeRunner
   // The model the agent asks; a test replaces it per run.
   models: { current: ScriptedModel }
+  // What the guard says of every goal from now on, and how many times it was asked.
+  guard: { flags: boolean, asked: number }
+  // Every line the engine logged, as written.
+  logLines: string[]
   close: () => Promise<void>
 }
 
@@ -126,23 +131,30 @@ export async function createLb07Harness(serverUrl: string, options: HarnessOptio
   const runner = new FakeRunner()
   const golden = loadGolden()
   const models = { current: referenceModel(golden[0] as GoldenCase) }
+  const guard = { flags: options.guardFlags ?? false, asked: 0 }
   const agent: AgentServices = {
     model: { ask: messages => models.current.ask(messages) },
-    guard: { check: async () => ({ flagged: options.guardFlags ?? false, score: options.guardFlags ? 0.97 : 0.01 }) },
+    guard: {
+      check: async () => {
+        guard.asked += 1
+        return { flagged: guard.flags, score: guard.flags ? 0.97 : 0.01 }
+      },
+    },
   }
+  const logLines: string[] = []
   const deps: Lb07Deps = {
     db: db.db,
     config: { ...LB07_TEST_CONFIG, ...options.config },
     scheduler,
     tracer: new Tracer(recorder),
-    log: pino({ level: 'silent' }),
+    log: pino({ level: 'debug' }, { write: (line: string) => void logLines.push(line) }),
     now: clock.now,
     catalogue: loadCatalogue(),
     samples: sampleCases(golden),
     agent: options.agent === false ? undefined : agent,
     sandbox: options.sandbox === false ? undefined : { runner, signToken: (runId: string, bugs: readonly Lb07BugId[]) => signBugToken(TEST_TOKEN_KEY, { runId, bugs: [...bugs], exp: clock.now().getTime() + TOKEN_LIFETIME_MS }), shopOrigin: 'http://127.0.0.1:8007' },
   }
-  return { deps, db, scheduler, clock, recorder, runner, models, close: () => testDatabase.drop() }
+  return { deps, db, scheduler, clock, recorder, runner, models, guard, logLines, close: () => testDatabase.drop() }
 }
 
 /** Runs every job the manual queue holds, as the worker would, retrying as the queue would until the attempts are spent. */

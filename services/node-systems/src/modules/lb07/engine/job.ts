@@ -13,7 +13,7 @@ import { runAgent } from '../agent/machine.ts'
 import type { MachineHooks } from '../agent/machine.ts'
 import type { Lb07Deps } from './deps.ts'
 import { reactionTo, RunRetry } from './failures.ts'
-import { addEvidence, addFinding, clearFindings, completeRun, countAttempt, failRun, readRunForWork, readWorking, replaceSteps, saveWorking, setState } from './store.ts'
+import { abandonQueuedRun, addEvidence, addFinding, clearFindings, completeRun, countAttempt, failRun, readRunForWork, readWorking, replaceSteps, saveWorking, setState } from './store.ts'
 import type { RunRow } from './store.ts'
 import { recordRunEnd, rootSpanIdOf } from './trace.ts'
 
@@ -33,6 +33,13 @@ async function recordEnd(deps: Lb07Deps, runId: string, outcome: string): Promis
 /** Ends the run as failed, and writes the root span if this call is the one that ended it. */
 async function fail(deps: Lb07Deps, runId: string, code: Lb07FailureCode): Promise<void> {
   if (await failRun(deps.db, runId, code, deps.now())) await recordEnd(deps, runId, code)
+}
+
+/** Ends a run that waited too long in the queue, unless a worker started it meanwhile, and writes its root span. Returns whether it was ended. */
+export async function abandonOverdue(deps: Lb07Deps, runId: string): Promise<boolean> {
+  if (!(await abandonQueuedRun(deps.db, runId, deps.now(), deps.config.maxQueueWaitMs))) return false
+  await recordEnd(deps, runId, 'runner_unavailable')
+  return true
 }
 
 /** The hooks the agent reports through: its states, steps, findings and evidence are the run's. */
@@ -116,7 +123,10 @@ export async function runJob(deps: Lb07Deps, runId: string, which: Attempt): Pro
   if (!row || row.state === 'done' || row.state === 'failed') return
   const run = createRun({ system: 'lb-07', runId: row.id, session: row.sessionKey, dataClass: row.origin === 'sample' ? 'synthetic' : 'visitor' })
   await runScope(run, async () => spanScope(rootSpanIdOf(row.id), async () => {
-    if (await countAttempt(deps.db, row.id, deps.now()) > deps.config.maxAttempts * 2) {
+    const starts = await countAttempt(deps.db, row.id, deps.now())
+    // The run ended between the read and the start (the sweep ended it for waiting too long): nothing to do.
+    if (starts === 0) return
+    if (starts > deps.config.maxAttempts * 2) {
       deps.log.warn({ runId: row.id }, 'a run was started too often')
       await fail(deps, row.id, 'internal')
       return

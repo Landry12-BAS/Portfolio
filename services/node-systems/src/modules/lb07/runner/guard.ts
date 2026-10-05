@@ -13,11 +13,14 @@ export type UrlDecision
   = | { allowed: true, url: URL }
     | { allowed: false, reason: RefusalReason, target: string }
 
+// The schemes whose addresses have an origin worth naming: the web's and its sockets'.
+const NAMED_SCHEMES: ReadonlySet<string> = new Set(['http:', 'https:', 'ws:', 'wss:'])
+
 /** A short, safe description of an address for a finding: its scheme and host, never its path or query. */
 export function describeTarget(raw: string): string {
   try {
     const url = new URL(raw)
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.origin : `${url.protocol} address`
+    return NAMED_SCHEMES.has(url.protocol) ? url.origin : `${url.protocol} address`
   }
   catch {
     return 'an address that is not a URL'

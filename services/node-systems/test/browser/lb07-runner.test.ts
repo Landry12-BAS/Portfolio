@@ -68,6 +68,14 @@ describe('the runner over the shop in a real Chromium', () => {
     }
   })
 
+  it('runs the bug\'s one script under the shop\'s own policy, so it throws its TypeError, and the policy refuses nothing the shop itself does', async () => {
+    const entry = golden.find(candidate => candidate.id === 'everything-on')!
+    const run = await runPlan(harness.runner, entry.plan, { bugToken: tokenFor(entry.bugs, 'run-policy-00001') })
+    const consoleErrors = run.findings.filter(finding => finding.kind === 'console_error').map(finding => finding.detail)
+    expect(consoleErrors.some(detail => detail.includes('TypeError'))).toBe(true)
+    for (const finding of run.findings) expect(finding.detail).not.toMatch(/Content Security Policy|Refused to/)
+  })
+
   it('finds the engine-specific checkout failure only in the simulated second engine', async () => {
     const entry = golden.find(candidate => candidate.id === 'checkout-in-firefox')!
     const token = tokenFor(['checkout-engine'], 'run-engine-00001')

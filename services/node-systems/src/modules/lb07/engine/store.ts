@@ -5,7 +5,7 @@
 // never undo a finished run or fail it twice.
 import { LB07_FAILURE_MESSAGES, lb07BugListSchema } from '@lb/contracts'
 import type { Lb07BugId, Lb07EvidenceView, Lb07FailureCode, Lb07Finding, Lb07Report, Lb07RunView, Lb07State, Lb07Step, Lb07StepView, Lb07TestView, Lb07Verdict } from '@lb/contracts'
-import { and, asc, desc, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, sql } from 'drizzle-orm'
 
 import { AppError } from '../../../core/errors.ts'
 import type { EvidenceRecord, MachineResult } from '../agent/machine.ts'
@@ -20,6 +20,9 @@ import { dailyLimit, release, reserve } from './usage.ts'
 
 /** The states in which a run is still being worked on. */
 export const OPEN_STATES: readonly Lb07State[] = ['queued', 'planning', 'running', 'replanning', 'cross_checking', 'reporting', 'verifying']
+
+// The name of the advisory lock every start of a run takes, hashed by Postgres into the lock's key.
+const START_LOCK = 'lb07.start-run'
 
 /** The error for a run that is not there for this visitor: never made, someone else's, deleted or past its hour. */
 export function runNotFound(): AppError {
@@ -144,10 +147,16 @@ export async function countOpenRuns(db: Executor, moment: Date): Promise<number>
   return row?.count ?? 0
 }
 
-/** Takes the visitor's place for the day and stores the run, in one transaction: a visitor with no place left gets 429 and nothing is stored; a system with its queue full gets 503 and no place is taken. */
+/**
+ * Takes the visitor's place for the day and stores the run, in one transaction: a visitor with no place left gets 429 and
+ * nothing is stored; a system with its queue full gets 503 and no place is taken. The transaction first takes a lock that
+ * every start takes (a Postgres advisory lock, released when it commits), so starts that arrive together count the open
+ * runs one after another: without it, twenty at once each counted the same empty queue and ten got in where four may.
+ */
 export async function createRun(deps: Lb07Deps, input: NewRun): Promise<string> {
   const moment = deps.now()
   return deps.db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${START_LOCK}))`)
     if (await countOpenRuns(tx, moment) >= deps.config.maxQueued) throw busy()
     if (!(await reserve(tx, input.sessionKey, moment))) throw dailyLimit(moment)
     const [created] = await tx.insert(runs).values({
@@ -198,10 +207,32 @@ export async function readWorking(db: Executor, id: string): Promise<Working> {
   return parsed.success ? parsed.data : { calls: 0 }
 }
 
-/** Counts one more start of a run, and returns how many it has had. */
+/** Counts one more start of a run that is still open, and returns how many it has had: 0 when it has ended or is gone, so the job does nothing. */
 export async function countAttempt(db: Executor, id: string, moment: Date): Promise<number> {
-  const [row] = await db.update(runs).set({ attempts: sql`${runs.attempts} + 1`, startedAt: sql`coalesce(${runs.startedAt}, ${moment})` }).where(eq(runs.id, id)).returning({ attempts: runs.attempts })
+  const [row] = await db.update(runs).set({ attempts: sql`${runs.attempts} + 1`, startedAt: sql`coalesce(${runs.startedAt}, ${moment})` }).where(and(eq(runs.id, id), inArray(runs.state, [...OPEN_STATES]))).returning({ attempts: runs.attempts })
   return row?.attempts ?? 0
+}
+
+/** Lists the runs that have waited longer than `maxWaitMs` in the queue without a worker ever starting them, for the sweep to end. */
+export async function listOverdueQueued(db: Executor, moment: Date, maxWaitMs: number): Promise<string[]> {
+  const cutoff = new Date(moment.getTime() - maxWaitMs)
+  const rows = await db.select({ id: runs.id }).from(runs).where(and(eq(runs.state, 'queued'), isNull(runs.startedAt), lt(runs.createdAt, cutoff), gt(runs.expiresAt, moment))).limit(100)
+  return rows.map(row => row.id)
+}
+
+/**
+ * Ends a run that waited too long in the queue as `runner_unavailable` and gives the visitor's place back, once, in one
+ * transaction. The update holds only while no worker has started the run: a worker's start and this ending are each one
+ * statement on the run's row, so exactly one of them wins. Returns whether this call ended it.
+ */
+export async function abandonQueuedRun(db: Lb07Db, id: string, moment: Date, maxWaitMs: number): Promise<boolean> {
+  const cutoff = new Date(moment.getTime() - maxWaitMs)
+  return db.transaction(async (tx) => {
+    const [row] = await tx.update(runs).set({ state: 'failed', failureCode: 'runner_unavailable', updatedAt: moment, endedAt: moment, working: null }).where(and(eq(runs.id, id), eq(runs.state, 'queued'), isNull(runs.startedAt), lt(runs.createdAt, cutoff))).returning({ sessionKey: runs.sessionKey, createdAt: runs.createdAt })
+    if (!row) return false
+    await release(tx, row.sessionKey, row.createdAt)
+    return true
+  })
 }
 
 /** Moves an open run to a state the visitor sees. Returns false when it has ended or is gone. */

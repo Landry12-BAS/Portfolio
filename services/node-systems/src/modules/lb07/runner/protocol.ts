@@ -23,7 +23,8 @@ export const runnerFindingSchema = z.strictObject({
   kind: z.enum(LB07_FINDING_KINDS),
   engine: z.enum(LB07_ENGINES),
   stepIndex: z.int().min(0).nullable(),
-  title: z.string().min(1).max(120),
+  // Plain text, as the API that shows it requires: a title that is not is refused here, not when a visitor asks for the report.
+  title: z.string().min(1).max(120).regex(/^[^\p{Cc}\p{Cf}]+$/u, 'plain text'),
   detail: z.string().max(600),
   rule: z.string().regex(/^[a-z0-9-]{1,60}$/).nullable(),
   path: z.string().max(120).nullable(),
@@ -54,6 +55,11 @@ export const stepResponseSchema = z.strictObject({
 })
 /** A step's answer. */
 export type StepResponse = z.infer<typeof stepResponseSchema>
+
+/** A request to run axe: the step it follows, for the findings' labels, or null at the end of a pass. */
+export const axeRequestSchema = z.strictObject({
+  index: z.int().min(0).max(LB07_LIMITS.maxPlanSteps * (LB07_LIMITS.maxReplans + 1)).nullable(),
+})
 
 /** The trimmed accessibility snapshot of the page. */
 export const snapshotResponseSchema = z.strictObject({ text: z.string().max(LB07_LIMITS.maxSnapshotChars), path: z.string().max(120) })

@@ -1,6 +1,7 @@
 // The bug catalogue and the golden set are read strictly, agree with each other and with the closed
 // lists, and the grader's rules say what they should about runs made to order. Nothing here needs a
 // browser or a database.
+import { Tracer } from '@lb/common'
 import { LB07_BUG_IDS } from '@lb/contracts'
 import { describe, expect, it } from 'vitest'
 
@@ -8,7 +9,12 @@ import { bugViews, matchesTruth } from '../../src/modules/lb07/data/bugs.ts'
 import { sampleCases } from '../../src/modules/lb07/golden/cases.ts'
 import { casePassed, failuresByRule, gradeRun } from '../../src/modules/lb07/golden/grade.ts'
 import type { RunOutcome } from '../../src/modules/lb07/golden/grade.ts'
+import { evaluateCase } from '../../src/modules/lb07/golden/run.ts'
+import type { EvalDeps } from '../../src/modules/lb07/golden/run.ts'
+import { Recorder } from '../support/lb04.ts'
 import { finding, loadCatalogue, loadGolden } from '../support/lb07.ts'
+import { referenceModel } from '../support/lb07-engine.ts'
+import { FakeRunner } from '../support/lb07-fake-runner.ts'
 
 /** A finished run with no findings and a verdict, which the tests then bend. */
 function outcome(overrides: Partial<RunOutcome> = {}): RunOutcome {
@@ -94,5 +100,46 @@ describe('the grader', () => {
   it('counts failures by rule', () => {
     const grades = [gradeRun(coupon, outcome({ verdict: 'kept' }), catalogue), gradeRun(clean, outcome({ offOriginRequests: 2, modelCalls: 9 }), catalogue)]
     expect([...failuresByRule(grades)]).toEqual([['found', 1], ['escape', 1], ['calls', 1]])
+  })
+})
+
+describe('the eval runner', () => {
+  const golden = loadGolden()
+  const catalogue = loadCatalogue()
+
+  /** What the eval runs a case with: the scripted runner, the reference model, and a guard that flags every goal and counts how often it is asked. */
+  function evalDeps(guard: { asked: number }): EvalDeps {
+    return {
+      catalogue,
+      tracer: new Tracer(new Recorder()),
+      log: { warn: () => {} },
+      runner: new FakeRunner(),
+      guard: {
+        check: async () => {
+          guard.asked += 1
+          return { flagged: true, score: 0.99 }
+        },
+      },
+      shopOrigin: 'http://127.0.0.1:8007',
+      modelFor: entry => referenceModel(entry),
+      signToken: () => 'signed-token',
+      runTimeMs: 180_000,
+    }
+  }
+
+  it('runs a sample as the board does, with the owner\'s goal and no guard, so the hostile sample shows the closed vocabulary holding', async () => {
+    const hostile = golden.find(entry => entry.id === 'hostile-goal')!
+    const guard = { asked: 0 }
+    const grade = await evaluateCase(hostile, evalDeps(guard))
+    expect(guard.asked).toBe(0)
+    expect(grade.failures).toEqual([])
+  })
+
+  it('runs a case that is not a sample as a visitor\'s own goal: the guard is asked, and a goal it flags is refused, said as the run\'s state', async () => {
+    const custom = golden.find(entry => !entry.sample)!
+    const guard = { asked: 0 }
+    const grade = await evaluateCase(custom, evalDeps(guard))
+    expect(guard.asked).toBe(1)
+    expect(grade.failures).toEqual(['state: the run ended failed (goal_refused), and done was expected'])
   })
 })

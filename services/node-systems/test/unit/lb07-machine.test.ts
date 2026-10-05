@@ -33,8 +33,8 @@ interface Observed {
   spans: string[]
 }
 
-/** Runs the machine for a golden case (or any goal) with the fake runner and a model. */
-async function run(entry: Pick<GoldenCase, 'goal' | 'bugs'>, model: ScriptedModel, runner = new FakeRunner(bugScript(entry.bugs)), extra: Partial<MachineDeps> = {}): Promise<Observed> {
+/** Runs the machine for a golden case (or any goal) with the fake runner and a model; a test may change the run's input and what earlier attempts saved. */
+async function run(entry: Pick<GoldenCase, 'goal' | 'bugs'>, model: ScriptedModel, runner = new FakeRunner(bugScript(entry.bugs)), extra: Partial<MachineDeps> = {}, inputExtra: Partial<MachineInput> = {}, working: Working = freshWorking()): Promise<Observed> {
   const recorder = new Recorder()
   for (const bug of entry.bugs) {
     if (bug === 'missing-alt') runner.axeFindings.set('/', [{ kind: 'accessibility', title: 'Accessibility: image-alt (critical impact)', detail: 'Images must have alternate text. 6 elements on /, the first at img', rule: 'image-alt', path: '/' }])
@@ -49,8 +49,8 @@ async function run(entry: Pick<GoldenCase, 'goal' | 'bugs'>, model: ScriptedMode
   }
   let now = 1_000_000
   const deps: MachineDeps = { runner, model, guard: { check: async () => ({ flagged: false, score: 0.01 }) }, tracer: new Tracer(recorder), log: { warn: () => {} }, runTimeMs: 180_000, busyWaitMs: 1, busyWaits: 3, shopOrigin: 'http://127.0.0.1:8007', now: () => (now += 100), ...extra }
-  const input: MachineInput = { runId: 'run-machine-00001', goal: entry.goal, bugs: entry.bugs, bugToken: 'signed-token', origin: 'custom' }
-  const result = await runScope(createRun({ system: 'lb-07', runId: input.runId, dataClass: 'synthetic' }), () => runAgent(deps, input, freshWorking(), hooks))
+  const input: MachineInput = { runId: 'run-machine-00001', goal: entry.goal, bugs: entry.bugs, bugToken: 'signed-token', origin: 'custom', ...inputExtra }
+  const result = await runScope(createRun({ system: 'lb-07', runId: input.runId, dataClass: 'synthetic' }), () => runAgent(deps, input, working, hooks))
   return { ...observed, result, spans: recorder.spans.map(span => span.name) }
 }
 
@@ -102,13 +102,47 @@ describe('the machine', () => {
     const guard = {
       check: async () => {
         asked += 1
-        return { flagged: true, score: 0.99 }
+        return { flagged: false, score: 0.02 }
       },
     }
     const observed = await run(clean, referenceModel(clean), new FakeRunner(), { guard })
     expect(asked).toBe(1)
-    expect(observed.saved.at(-1)?.guard).toEqual({ flagged: true, score: 0.99 })
+    expect(observed.saved.at(-1)?.guard).toEqual({ flagged: false, score: 0.02 })
     expect(observed.result.modelCalls).toBe(2)
+    await run(clean, referenceModel(clean), new FakeRunner(), { guard }, { origin: 'sample' })
+    expect(asked).toBe(1)
+  })
+
+  it('ends a visitor\'s goal the guard flags as goal_refused before the planner is asked, and does so again on a later attempt without asking twice', async () => {
+    let asked = 0
+    const guard = {
+      check: async () => {
+        asked += 1
+        return { flagged: true, score: 0.99 }
+      },
+    }
+    const model = referenceModel(clean)
+    const runner = new FakeRunner()
+    await expect(run(clean, model, runner, { guard })).rejects.toMatchObject({ name: 'RunEnded', code: 'goal_refused' })
+    expect(asked).toBe(1)
+    // The planner never saw the goal, and the browser never opened.
+    expect(model.conversations).toHaveLength(0)
+    expect(runner.sessions).toHaveLength(0)
+    // A later attempt that finds the flagged verdict saved ends the same way without spending the guard again.
+    await expect(run(clean, model, runner, { guard }, {}, { calls: 1, guard: { flagged: true, score: 0.99 } })).rejects.toMatchObject({ code: 'goal_refused' })
+    expect(asked).toBe(1)
+    expect(model.conversations).toHaveLength(0)
+  })
+
+  it('makes the planner\'s reading plain text before anyone sees it: no line breaks, no control or format characters', async () => {
+    const model = new ScriptedModel((messages) => {
+      const system = messages[0]?.content ?? ''
+      if (system.startsWith('You are a QA engineer writing bug reports')) return { kind: 'json', value: { reports: [] } }
+      return { kind: 'json', value: { reading: '  First line\nsecond\u{7}line \u{202E}reversed\u{200B}  ', steps: clean.plan } }
+    })
+    const observed = await run(clean, model, new FakeRunner())
+    expect(observed.result.reading).toBe('First line second line reversed')
+    expect(observed.saved.at(-1)?.reading).toBe('First line second line reversed')
   })
 
   it('re-plans once after a step is not found, keeps the failed step in the list, and runs the new steps', async () => {
@@ -171,7 +205,9 @@ describe('the machine', () => {
   it('ends the run as run_timeout when the wall clock is spent, and when the runner says the session expired', async () => {
     let now = 0
     await expect(run(clean, referenceModel(clean), new FakeRunner(), { runTimeMs: 1_000, now: () => (now += 400) })).rejects.toBeInstanceOf(RunEnded)
-    const expiring = new FakeRunner(() => { throw new RunnerError('expired', 'expired') })
+    const expiring = new FakeRunner(() => {
+      throw new RunnerError('expired', 'expired')
+    })
     await expect(run(clean, referenceModel(clean), expiring)).rejects.toMatchObject({ code: 'run_timeout' })
   })
 })

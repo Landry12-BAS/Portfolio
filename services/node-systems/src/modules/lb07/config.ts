@@ -19,6 +19,8 @@ export interface Lb07Config {
   runTimeMs: number
   // How many runs may be queued or running before a new one is told the system is busy.
   maxQueued: number
+  // How long a run may wait in the queue for the browser before the sweep ends it and gives the visitor's place back.
+  maxQueueWaitMs: number
   // How long the worker waits for the browser when another run holds it, and how many times.
   busyWaitMs: number
   busyWaits: number
@@ -34,6 +36,9 @@ export const DEFAULT_CONFIG: Lb07Config = {
   sweepEveryMs: 60_000,
   runTimeMs: LB07_LIMITS.runTimeMs,
   maxQueued: LB07_LIMITS.maxQueued,
+  // At most three runs are ahead of the last place, at about three and a half minutes each (the run's three-minute clock and
+  // the last model call): about eleven minutes, and fifteen leaves room for one retry. A run that waited longer was not served.
+  maxQueueWaitMs: 15 * 60_000,
   busyWaitMs: 2_000,
   busyWaits: 90,
 }
