@@ -124,9 +124,7 @@ for path in /v1/models /v1/usage /v1/embeddings /v1/rerank /v1/guard /v1/runs; d
     call GET "$path"; check "the gateway's $path stays internal" caddy_404
 done
 call POST /v1/chat/completions -d '{}'; check "POST /v1/chat/completions stays internal" caddy_404
-for path in /api/lb10/x; do
-    call GET "$path"; check "$path has no route until its service exists" caddy_404
-done
+call GET /api/lb10/x; check "/api/lb10/x has no route until its service exists" caddy_404
 for path in /ws/lb04/x /ws/lb05/x /ws/lb07/x /ws/lb08/x; do
     call GET "$path" -H "Origin: $site_origin"; check "$path has no route: only LB-02, LB-06 and LB-09 have a WebSocket" caddy_404
 done
