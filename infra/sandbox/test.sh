@@ -173,8 +173,8 @@ expect_equal "its root filesystem is read-only, with every capability dropped" "
 expect_equal "it is restarted unless stopped, with an init process" "unless-stopped true" "$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}} {{.HostConfig.Init}}' "$sandbox")"
 expect_equal "it is on the sandbox network and no other" "$network" "$(docker inspect -f '{{range $name, $_ := .NetworkSettings.Networks}}{{$name}} {{end}}' "$sandbox" | xargs)"
 status_probe="
-const status = require('node:fs').readFileSync('/proc/self/status', 'utf8');
-const field = name => status.match(new RegExp('^' + name + ':\\\\s*(\\\\S+)', 'm'))[1];
+const status = require('node:fs').readFileSync('/proc/self/status', 'utf8').split('\n');
+const field = name => status.find(line => line.startsWith(name + ':')).split(':')[1].trim().split(/\s+/)[0];
 let root = 'writable';
 try { require('node:fs').writeFileSync('/app/planted', 'x'); } catch (error) { root = error.code; }
 console.log([field('Uid'), field('CapEff'), field('NoNewPrivs'), field('Seccomp'), root].join(' '));"

@@ -340,8 +340,8 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
     LB-03 OCR) run one at a time from their queues, and replay mode covers bursts.
     Each container has a memory limit, and the limits are budgeted to the last MiB of
     the 12 GB (the host keeps 1): 8 GiB for what runs all the time, among them LB-07's
-    browser sandbox at 384 MiB (measured at 266 MiB under that limit for its heaviest
-    plan), and 11 GiB with a deploy's jobs and the nightly backup. The table, with what
+    browser sandbox at 384 MiB (measured at about 270 MiB under that limit for its
+    heaviest plan), and 11 GiB with a deploy's jobs and the nightly backup. The table, with what
     each number rests on, and the owner's decision for the next system that needs
     memory are in `docs/DEPLOY.md`, part 2.
   - **Staying free.** Oracle reclaims an Always Free VM only when CPU, network and

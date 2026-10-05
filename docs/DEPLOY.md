@@ -115,7 +115,7 @@ limit is a ceiling, not a reservation: it is what a service may reach before the
 | `django-api` | 512 | always | Not measured |
 | `redis` | 512 | always | `maxmemory` 384 MB, and room beside it |
 | `gateway`, `node-api` | 384 each | always | V8's default heap (259 MB), and room beside it |
-| **`lb07-sandbox`** | **384** | always | **Measured:** the runner and Chromium over five runs in a row of the heaviest golden plan peaked at 266 MiB under this limit and at 332 MiB with none; idle, 96 to 127 MiB (x86-64; `just test-lb07-sandbox` repeats the runs) |
+| **`lb07-sandbox`** | **384** | always | **Measured:** the runner and Chromium over five runs in a row of the heaviest golden plan peaked at 263 to 271 MiB under this limit (three measurements, the kernel's count with page cache) and at 327 to 332 MiB with none; idle, 96 to 127 MiB (x86-64; `just test-lb07-sandbox` repeats the runs) |
 | `caddy`, `cloudflared`, the two egress proxies | 128 each | always | Not measured |
 | **What runs all the time** | **8192** | | The budget is 8192: nothing is left over |
 | `flask-seed` | 1280 | a deploy, when the data must be made | Measured at 923 MB; DuckDB's limit is 1 GB |
@@ -128,7 +128,7 @@ limit is a ceiling, not a reservation: it is what a service may reach before the
 
 **Owner decision: the memory budget.** LB-07's sandbox is the first system to need memory
 since the budget filled up: the quarter GiB kept for "what is still to come" is less than a
-browser takes (266 MiB at its peak under a 384 MiB limit, 332 MiB with no limit, measured). To
+browser takes (about 270 MiB at its peak under a 384 MiB limit, about 330 MiB with no limit, measured). To
 keep `just infra-check` green, the change that added the sandbox took what it judged the least
 harmful way, and says so here: the sandbox gets 384 MiB, **Postgres goes from 2048 to 1920 MiB,
 and the nightly backup from 768 to 512 MiB** (its tmpfs from 512 to 256 MB, so that a dump that
@@ -145,9 +145,12 @@ measured. The options, for the owner to choose:
    numbers in `infra/scripts/compose-policy.jq`) to 8320 and 11648. The limits then add up to
    more than the box has: if everything peaked at once, the kernel would choose what to kill.
 3. **Count the jobs as they run, not as a sum**: make `flask-seed` wait for the migrations, let
-   the backup take the deploy's lock, and change the policy to add the largest group of jobs
-   instead of every job. That frees about 1.2 GiB of the total without touching a running
-   service, which Whisper (LB-09) will need anyway: nothing is left in the running budget.
+   the backup take the deploy's lock, and change the policy to add only the largest group of
+   jobs (`flask-seed`'s 1280) to what runs all the time. Postgres and the backup could then have
+   their old ceilings back (the running budget raised by 128, to 8320), and everything at once
+   would be 9600 MiB, which leaves about 1.6 GiB for Whisper (LB-09) and the systems after it.
+   It needs a change in the deploy (the jobs' order, a lock the backup shares) and in the
+   policy's formula.
 4. **Run the sandbox only while LB-07 is used.** It would save 384 MiB most of the day, but it
    needs something that starts containers, which the platform does not have on purpose (no
    container is given the Docker socket).
@@ -564,11 +567,11 @@ change and the box.
 
 1. Merge the infrastructure change to `main`. CI runs; when it passes, **Deploy** starts
    by itself.
-2. The `images` job builds the six images for amd64 and arm64 under QEMU (the first time
+2. The `images` job builds the seven images for amd64 and arm64 under QEMU (the first time
    it takes a while, since nothing is cached), pushes them to GHCR, scans them, signs
    them, and checks its own signature.
 3. **The first run stops at the box's pull.** GHCR creates each package private. Make the
-   six packages public (GitHub, your profile, Packages, each `lb-*` package, Package
+   seven packages public (GitHub, your profile, Packages, each `lb-*` package, Package
    settings, Change visibility): the images hold the code of this public repository and
    its synthetic data, and no secret. Then, in the failed Deploy run, choose **Re-run
    failed jobs**. (If you would rather keep them private, log the `deploy` user in once
@@ -729,7 +732,7 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
       prints `CapEff: 0000000000000000 | NoNewPrivs: 1 | Seccomp: 2`; then a sample run on
       `https://example.com/systems/lb-07/board` ends with its report, and `compose logs
       lb07-sandbox` shows no browser crash. Its memory under a real run is in `docker stats
-      --no-stream` (384 MiB is its limit; it was measured at 266 MiB on x86).
+      --no-stream` (384 MiB is its limit; it was measured at about 270 MiB on x86).
 - [ ] `findmnt -T /run/lb/secrets` shows `tmpfs`, and `ls -l /run/lb/secrets` shows every
       file `-rw-------` and owned by `deploy`.
 - [ ] `cat /opt/lb/deploys.log` has one line for the release, and `readlink /opt/lb/current`

@@ -46,9 +46,10 @@
 #   LB-07's sandbox was such a decision, and it is the owner's to revisit: its 384 came from
 #   postgres (2048 to 1920) and the nightly backup (768 to 512), the trims that risk least;
 #   the reasons and the other options are in docs/DEPLOY.md, "Owner decision: the memory
-#   budget". The sandbox's own number is measured: Chromium and the runner peaked at 266 MiB
-#   under that limit over five runs in a row of the heaviest golden plan, and at 332 MiB with
-#   no limit at all (Chrome Headless Shell 153, x86-64; infra/sandbox/test.sh repeats the runs).
+#   budget". The sandbox's own number is measured: Chromium and the runner peaked at 263 to
+#   271 MiB under that limit over five runs in a row of the heaviest golden plan (three
+#   measurements, the kernel's count with page cache), and at 327 to 332 MiB with no limit at all
+#   (Chrome Headless Shell 153, x86-64; infra/sandbox/test.sh repeats the runs).
 #   Where the numbers come from: on a local stack the same services idle at about 0.7 GiB
 #   (without cloudflared and the proxies). LB-05's data job peaks at 923 MB when it makes the
 #   full dataset, and the service's warehouse code at 452 MB while it answers the 100
@@ -66,13 +67,15 @@
 #   Node worker gets 768: it opens LB-04's PDFs in threads of their own (two at a time, each
 #   limited to 192 MB of old and 32 MB of young heap), which measured 291 MB at the peak for two
 #   30-page contracts at once, and up to about 760 MB if hostile files took all the limits allow.
-#   CPU limits cap a service at that many cores. They add up to 10 for the services and 15
+#   CPU limits cap a service at that many cores. They add up to 11 for the services and 16
 #   with the jobs, on 2 cores, on purpose: services rarely use their cap together, and when
 #   they contend, cpu_shares decides: 1536 for the request path (the databases, the gateway,
-#   the APIs and the edge) against 1024 for the workers, the tunnel and the jobs.
-#   Process limits (a runaway service cannot fill the process table) add up to 1644 for the
+#   the APIs and the edge) against 1024 for the workers, LB-07's browser, the tunnel and the
+#   jobs.
+#   Process limits (a runaway service cannot fill the process table) add up to 1836 for the
 #   services and 448 for the jobs. A Node process has about 12 threads when idle, and a
-#   Python one under ten, so the limits leave a wide margin.
+#   Python one under ten, so the limits leave a wide margin; LB-07's browser sandbox, Node and
+#   Chromium's processes, peaked at 83.
 #
 # --- Adding a service ---------------------------------------------------------------------
 #   One block here (and one for each job it needs: a migration, a seed), one route in
@@ -706,8 +709,8 @@ services:
       start_period: 30s
     # The runner closes the browser and both servers on SIGTERM.
     stop_grace_period: 15s
-    # Five runs in a row of the heaviest golden plan peaked at 266 MiB under this limit and at
-    # 332 MiB with none (the header, Resources).
+    # Five runs in a row of the heaviest golden plan peaked at about 270 MiB under this limit
+    # and at about 330 MiB with none (the header, Resources).
     mem_limit: 384m
     memswap_limit: 384m
     cpus: 1.0
