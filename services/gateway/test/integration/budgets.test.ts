@@ -47,13 +47,16 @@ describe('provider budgets', () => {
   it('answers budget_exhausted with Retry-After once every model is spent, and charges the visitor nothing', async () => {
     expect((await chat(chatBody({ model: 'lb-tiny' }))).statusCode).toBe(200)
 
+    // The clock runs while the test does, so the most Retry-After can say is what the wait was before the call:
+    // read after it, the bound could be a second short when a second boundary passed in between.
+    const longestWait = Math.ceil(msUntilUtcMidnight(gw.now()) / 1000)
     const spent = await chat(chatBody({ model: 'lb-tiny' }))
 
     expect(spent.statusCode).toBe(503)
     expect(spent.json()).toMatchObject({ error: { code: 'budget_exhausted', message: expect.stringContaining('Serve a replay') } })
     const retryAfter = Number(spent.headers['retry-after'])
     expect(retryAfter).toBeGreaterThan(0)
-    expect(retryAfter).toBeLessThanOrEqual(Math.ceil(msUntilUtcMidnight(gw.now()) / 1000))
+    expect(retryAfter).toBeLessThanOrEqual(longestWait)
     expect(gw.providers.alpha.requests).toHaveLength(1)
     // Only the call that reached a provider counts against the visitor.
     const session = (await usage()).find(meter => meter.scope === 'system:lb-01')
