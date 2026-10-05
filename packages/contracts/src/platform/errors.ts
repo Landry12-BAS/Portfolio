@@ -8,6 +8,9 @@ import { z } from 'zod'
  * `resets_at` says when a daily limit starts again, `problems` lists what is wrong in a
  * graph); anything else is dropped when a body is read with this schema, which is how the
  * site's server passes a back end's error on without passing on what it didn't plan for.
+ * LB-10 lists the problems of a refused prompt beside the error rather than in it
+ * (`InvalidPromptOut` in services/flask-systems/openapi.json): each a stable code and an
+ * English sentence, at most one of each of the five checks.
  */
 export const platformErrorSchema = z.object({
   error: z.object({
@@ -21,6 +24,10 @@ export const platformErrorSchema = z.object({
       message: z.string().max(400),
     })).max(50).optional(),
   }),
+  problems: z.array(z.object({
+    code: z.string().min(1).max(64),
+    message: z.string().max(500),
+  })).max(10).optional(),
 })
 
 /** An error body, as read back. */

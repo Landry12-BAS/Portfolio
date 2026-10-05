@@ -350,6 +350,7 @@ class MockSite {
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     if (url.pathname.startsWith('/__mock/lb09/')) return this.#controlLb09(url.pathname.slice('/__mock/lb09/'.length), method, request.headers['content-type'], body, response)
     if (url.pathname.startsWith('/__mock/lb07/')) return this.#lb07Control(url.pathname.slice('/__mock/lb07/'.length), method, request.headers['content-type'], body, response)
+    if (url.pathname.startsWith('/__mock/lb10/')) return this.#lb10Control(url.pathname.slice('/__mock/lb10/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
     const answer = await this.#answer(found.operation, found.params, url, request.headers.authorization, body, isUpload ? { raw, contentType: request.headers['content-type'] } : undefined)
@@ -616,6 +617,25 @@ class MockSite {
       return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'The body is not JSON.').body)
     }
     const answer = this.lb07.control(action, body)
+    this.#send(response, answer.status, answer.body)
+  }
+
+  /**
+   * The controls of a test for LB-10, at `/__mock/lb10/<action>`: the next run fails with one of the service's codes, some
+   * of its calls fail with a gateway code, the lab is busy or has no gateway, the nightly results and the baselines are
+   * stored, everything is forgotten (`Lb10Mock.control`). Like LB-07's, they take JSON only, on the loopback address alone.
+   */
+  #lb10Control(action: string, method: string, contentType: string | undefined, text: string, response: ServerResponse): void {
+    if (method !== 'POST' || !contentType?.startsWith('application/json')) return this.#send(response, 415, errorAnswer(415, 'unsupported', 'Send JSON with POST.').body)
+    let body: Record<string, unknown>
+    try {
+      const parsed: unknown = text === '' ? {} : JSON.parse(text)
+      body = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+    }
+    catch {
+      return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'The body is not JSON.').body)
+    }
+    const answer = this.lb10.control(action, body)
     this.#send(response, answer.status, answer.body)
   }
 

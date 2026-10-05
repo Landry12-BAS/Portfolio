@@ -2,7 +2,9 @@
 // packs (evals/packs/*.yaml), each with the production prompt, its variables, its tools and its
 // cases. So the targets a visitor picks from and the prompts they edit are the real ones, and the
 // mock cannot drift from them. Only the shapes the mock needs are read; the strict reader is
-// services/flask-systems/lb10/packs.py.
+// services/flask-systems/lb10/packs.py. A pack's version is a hash of its file here, where the
+// service hashes its parsed content: the same idea, never the same digits.
+import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -20,6 +22,7 @@ export interface Lb10CaseSeed {
 /** One pack: what the mock lists as a target. */
 export interface Lb10PackSeed {
   pack: string
+  version: string
   system: string
   name: string
   description: string
@@ -43,6 +46,8 @@ export interface Lb10Seed {
 // The repository root: this file is packages/api-clients/src/testing/lb10-seed.ts.
 const REPOSITORY_ROOT = `${resolve(import.meta.dirname, '../../../..')}/`
 const PACKS_DIRECTORY = `${REPOSITORY_ROOT}evals/packs`
+// A pack version is sixteen hex digits, as the service writes it.
+const VERSION_CHARS = 16
 
 /** A loosely typed YAML document, before the fields the mock needs are picked out. */
 type Loose = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -54,9 +59,11 @@ function kinds(graders: unknown): string[] {
 
 /** Reads one pack file into the shape the mock needs. */
 function readPack(path: string): Lb10PackSeed {
-  const document = parse(readFileSync(path, 'utf8')) as Loose
+  const text = readFileSync(path, 'utf8')
+  const document = parse(text) as Loose
   return {
     pack: String(document.pack),
+    version: createHash('sha256').update(text).digest('hex').slice(0, VERSION_CHARS),
     system: String(document.system),
     name: String(document.target.name),
     description: String(document.target.description),
