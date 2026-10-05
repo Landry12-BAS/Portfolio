@@ -276,11 +276,11 @@ describe('mistakes the loader catches', () => {
 })
 
 describe('trace readers', () => {
-  it('lets the site\'s server read the traces of the seven systems that have a board, and no other service', () => {
+  it('lets the site\'s server read the traces of the nine systems that have a board, and no other service', () => {
     const routing = loadRouting(committed, allKeys)
 
     expect([...routing.traceReaders.keys()]).toEqual(['web'])
-    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04', 'lb-06', 'lb-07'])
+    expect([...(routing.traceReaders.get('web')?.systems ?? [])]).toEqual(['lb-01', 'lb-02', 'lb-05', 'lb-08', 'lb-03', 'lb-04', 'lb-06', 'lb-07', 'lb-09'])
   })
 
   it('never lets a reader own a system, so no reader can make a model call', () => {
@@ -303,7 +303,7 @@ describe('trace readers', () => {
       doc.traceReaders['django-systems'] = { name: 'Django', systems: ['lb-01'] }
     }))
 
-    expect(issues).toEqual(['traceReaders.django-systems: owns lb-01, lb-02, so it makes model calls and may not read traces'])
+    expect(issues).toEqual(['traceReaders.django-systems: owns lb-01, lb-02, lb-09, so it makes model calls and may not read traces'])
   })
 
   it('refuses a reader that names a system that does not exist, or names one twice', () => {
