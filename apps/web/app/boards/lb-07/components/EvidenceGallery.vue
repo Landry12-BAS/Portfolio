@@ -136,9 +136,10 @@ function markBroken(item: EvidenceItem): void {
 </template>
 
 <style scoped>
+/* The few screenshots a run keeps share the panel's width between them, so a page of the shop can be read. */
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 12px;
   padding: 0;
   margin: 0;

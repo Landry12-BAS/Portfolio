@@ -298,7 +298,7 @@ const lb07 = {
     } satisfies Record<Lb07FailureCode, string>,
     givenBack: 'This was the system\'s doing, so the run is given back: it does not count as one of yours today.',
     counted: 'It still counts as one of your runs today.',
-    noReport: 'A run that failed has no report and no test. What it did before it stopped is in the steps above.',
+    noReport: 'A run that failed has no report and no test. What it did before it stopped is in its steps, below.',
   },
   notices: {
     busy: {

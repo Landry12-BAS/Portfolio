@@ -294,7 +294,7 @@ const lb07 = {
     },
     givenBack: 'Byla to chyba systému, takže se běh vrací: nepočítá se mezi vaše dnešní.',
     counted: 'Pořád se počítá mezi vaše dnešní běhy.',
-    noReport: 'Běh, který selhal, nemá hlášení ani test. Co stihl udělat, než skončil, je v krocích výše.',
+    noReport: 'Běh, který selhal, nemá hlášení ani test. Co stihl udělat, než skončil, je v jeho krocích níže.',
   },
   notices: {
     busy: {
