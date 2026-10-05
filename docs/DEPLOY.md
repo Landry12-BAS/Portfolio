@@ -18,7 +18,7 @@ Part 12 lists exactly what is unverified.
 | Where | What | Reached by |
 |---|---|---|
 | Vercel | The site (`apps/web`) | `https://example.com` |
-| The box (one Oracle Cloud VM) | The whole back end, as one Docker Compose project named `lb`: Caddy, `cloudflared`, the gateway, the Django, Flask and Node systems, Postgres, Redis, two egress proxies | Visitors only through Cloudflare's tunnel to Caddy; you only over Tailscale |
+| The box (one Oracle Cloud VM) | The whole back end, as one Docker Compose project named `lb`: Caddy, `cloudflared`, the gateway, the Django, Flask and Node systems, LB-07's browser sandbox, Postgres, Redis, two egress proxies | Visitors only through Cloudflare's tunnel to Caddy; you only over Tailscale |
 | Cloudflare | DNS, the tunnel, the WAF, Turnstile, and R2 (the backup bucket, and LB-03's uploads bucket) | |
 | GitHub | The code, CI, and GHCR (the signed images) | |
 | Tailscale | The private network that CI and you use to reach the box | |
@@ -99,6 +99,58 @@ allowance since Oracle's June 2026 cut (`STACK.md`, Infrastructure and hosting).
    ssh ubuntu@<public ip>
    sudo apt-get update && sudo apt-get -y full-upgrade && sudo reboot
    ```
+
+**The memory budget.** Every container has a memory limit (`infra/docker-compose.yml`,
+Resources), and the limits are budgeted against the box's 12 GiB: the host keeps 1, what runs all
+the time may hold 8 GiB of limits, and everything that can run at once (the jobs of a deploy and
+the nightly backup included) 11 GiB. `just infra-check` fails a change that breaks either sum. A
+limit is a ceiling, not a reservation: it is what a service may reach before the kernel kills it.
+
+| Service | Limit, MiB | Runs | What the number rests on |
+|---|---|---|---|
+| `flask-api` | 2048 | always | DuckDB's 1 GB limit, and LB-03's OCR worker, measured at 692 to 837 MiB |
+| `postgres` | 1920 (was 2048) | always | Its settings: about 640 MiB for itself (`shared_buffers` 256 MB, three autovacuum workers at `maintenance_work_mem` 128 MB), and the rest for up to 100 connections, a few MiB each and `work_mem` 8 MB for every sort |
+| `django-worker` | 768 | always | Two Celery processes, each recycled at 300 MB |
+| `node-worker` | 768 | always | LB-04's PDF threads: measured at 291 MiB for two 30-page contracts at once, about 760 MiB if hostile files take every limit they are given |
+| `django-api` | 512 | always | Not measured |
+| `redis` | 512 | always | `maxmemory` 384 MB, and room beside it |
+| `gateway`, `node-api` | 384 each | always | V8's default heap (259 MB), and room beside it |
+| **`lb07-sandbox`** | **384** | always | **Measured:** the runner and Chromium over five runs in a row of the heaviest golden plan peaked at 266 MiB under this limit and at 332 MiB with none; idle, 96 to 127 MiB (x86-64; `just test-lb07-sandbox` repeats the runs) |
+| `caddy`, `cloudflared`, the two egress proxies | 128 each | always | Not measured |
+| **What runs all the time** | **8192** | | The budget is 8192: nothing is left over |
+| `flask-seed` | 1280 | a deploy, when the data must be made | Measured at 923 MB; DuckDB's limit is 1 GB |
+| `django-migrate` | 384 | a deploy | Not measured |
+| `flask-migrate` | 256 | a deploy | Not measured |
+| `node-migrate`, `node-seed` | 256 each | a deploy | Measured: 215 and 209 MiB resident (the four Node systems, x86-64) |
+| `postgres-provision` | 128 | a deploy | `psql` |
+| `backup` | 512 (was 768) | 02:30 | `pg_dump`, `age` and `rclone`, and the encrypted dump in a 256 MB tmpfs (was 512): the database holds synthetic data and none of the visitors' rows, a few MiB |
+| **Everything at once** | **11264** | | The budget is 11264: nothing is left over |
+
+**Owner decision: the memory budget.** LB-07's sandbox is the first system to need memory
+since the budget filled up: the quarter GiB kept for "what is still to come" is less than a
+browser takes (266 MiB at its peak under a 384 MiB limit, 332 MiB with no limit, measured). To
+keep `just infra-check` green, the change that added the sandbox took what it judged the least
+harmful way, and says so here: the sandbox gets 384 MiB, **Postgres goes from 2048 to 1920 MiB,
+and the nightly backup from 768 to 512 MiB** (its tmpfs from 512 to 256 MB, so that a dump that
+outgrows it fails as a full disk, not as a kill). Why those two: they are the ceilings furthest
+above any use measured or expected here. Postgres keeps 1280 MiB for its connections, enough for
+more than 80 of them sorting at once on a box with two cores; the backup holds a few MiB of
+synthetic data. Every other ceiling is a measured peak with a margin, or a service nobody has
+measured. The options, for the owner to choose:
+
+1. **Keep this.** If Postgres ever reaches 1920 MiB, the kernel kills one of its processes and
+   Postgres restarts its connections: every system fails for a few seconds. A backup that
+   outgrows 256 MB fails and uploads nothing, and `systemctl status lb-backup` shows it failed.
+2. **Give Postgres and the backup their old ceilings back, and raise both budgets** (the two
+   numbers in `infra/scripts/compose-policy.jq`) to 8320 and 11648. The limits then add up to
+   more than the box has: if everything peaked at once, the kernel would choose what to kill.
+3. **Count the jobs as they run, not as a sum**: make `flask-seed` wait for the migrations, let
+   the backup take the deploy's lock, and change the policy to add the largest group of jobs
+   instead of every job. That frees about 1.2 GiB of the total without touching a running
+   service, which Whisper (LB-09) will need anyway: nothing is left in the running budget.
+4. **Run the sandbox only while LB-07 is used.** It would save 384 MiB most of the day, but it
+   needs something that starts containers, which the platform does not have on purpose (no
+   container is given the Docker socket).
 
 ## 3. The box: Tailscale, then close SSH
 
@@ -374,7 +426,7 @@ base64url string. The private half stays in the file. Where each goes:
 |---|---|---|
 | `django-systems`: the Django systems calling the gateway | An entry of `LB_SERVICE_KEYS` in the gateway's secrets | `LB_SERVICE_KEY_JWK_B64` in the Django secrets: the file, as one line of base64 |
 | `flask-systems`: the Flask systems (LB-05) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Flask secrets |
-| `node-systems`: the Node systems (LB-08, LB-04, LB-06) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API (describing a workflow, writing a redline, LB-06's injection screen) and the worker (LB-04's reviews, LB-06's agents): both start only with it |
+| `node-systems`: the Node systems (LB-08, LB-04, LB-06, LB-07) calling the gateway | An entry of `LB_SERVICE_KEYS` | `LB_SERVICE_KEY_JWK_B64` in the Node secrets, for the API (describing a workflow, writing a redline, LB-06's injection screen) and the worker (LB-04's reviews, LB-06's agents, LB-07's test runs): both start only with it. LB-07's browser sandbox gets no key: it makes no model call |
 | `web`: the site's server calling the gateway (the run-spans route) | An entry of `LB_SERVICE_KEYS` | Vercel: `NUXT_LB_GATEWAY_SERVICE_KEY` |
 | `site`: the site signing its visitors' tokens | `LB_WEB_TOKEN_KEY` in the compose settings: the public key alone, which all three back ends verify visitor tokens against | Vercel: `NUXT_LB_WEB_SIGNING_KEY` |
 
@@ -427,6 +479,7 @@ just secrets-new flask-systems   # LB_SERVICE_KEY_JWK_B64 (the flask-systems fil
                                  #   LB03_S3_ACCESS_KEY_ID and LB03_S3_SECRET_ACCESS_KEY (the
                                  #   lb-uploads token from part 5)
 just secrets-new node-systems    # LB_SERVICE_KEY_JWK_B64 (the node-systems file, in base64)
+just secrets-new lb07-sandbox    # nothing to type: LB-07's shop key, 64 random hex digits
 just secrets-new cloudflared     # TUNNEL_TOKEN
 just secrets-new backup          # see below
 ```
@@ -441,6 +494,14 @@ kernel and the container must allow. Where it is missing the worker still reads,
 less, and says so. After the first deploy (part 11) check that the box has it, and then make
 the service insist: `just secrets-edit compose`, add `LB_LB03_REQUIRE_LANDLOCK=true`, deploy.
 From then on a box that loses Landlock reads nothing, which is the better failure.
+
+`lb07-sandbox` holds one value, `LB07_SHOP_TOKEN_KEY`: the key LB-07's bug tokens are signed
+with. The Node worker signs a token for each test run and the staging shop, inside the browser's
+container, verifies it, so Compose hands that one value to `node-worker` and to `lb07-sandbox`,
+and nothing else from the file reaches either: it is the sandbox's only secret. A box that was
+set up before LB-07 needs this file before its next deploy (the deploy refuses a release with a
+template that has no encrypted file), and `postgres-roles` needs its new line,
+`LB_PG_PASSWORD_LB07`: `just secrets-edit postgres-roles` and paste a `just secret-token`.
 
 The site's public key, `LB_WEB_TOKEN_KEY`, used to be a line of `django-systems`. It is one
 value in `compose` now, so that the three back ends cannot hold different ones; an older
@@ -462,7 +523,7 @@ In `backup`: `LB_BACKUP_AGE_RECIPIENTS` is that public key, `LB_BACKUP_DESTINATI
 
 ```sh
 just secrets-add-recipient box age1...        # the box's public key
-just secrets-check                            # ten lines of "ok"
+just secrets-check                            # eleven lines of "ok"
 ```
 
 Commit the encrypted files and `.sops.yaml` through a pull request, as for any change:
@@ -613,7 +674,7 @@ From a machine **outside** the tailnet:
       `server: cloudflare`).
 - [ ] `curl -si https://api.example.com/api/lb01/customers` is `401`: LB-01's API is
       reached, and asks for a visitor token. So are `/api/lb02/offerings` (LB-02),
-      `/api/lb03/quota` (LB-03), `/api/lb05/quota` (LB-05), `/api/lb08/limits` (LB-08), `/api/lb04/limits` (LB-04) and `/api/lb06/limits` (LB-06).
+      `/api/lb03/quota` (LB-03), `/api/lb05/quota` (LB-05), `/api/lb08/limits` (LB-08), `/api/lb04/limits` (LB-04), `/api/lb06/limits` (LB-06) and `/api/lb07/limits` (LB-07).
 - [ ] `curl -s -o /dev/null -w '%{http_code}\n' https://api.example.com/api/healthz` is `404`,
       and so are `/api/openapi.json` and `/v1/models`: only the routes in the Caddyfile
       exist.
@@ -661,8 +722,14 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
       must not answer `200` (expect `403`; if it ever does, public access is on and must be turned off).
       Then try a file of 9 MB through the site: the board refuses it before sending anything, at 4 MB.
 - [ ] `/opt/lb/current/infra/scripts/smoke.sh --public` ends with "All checks passed.": the
-      routes through Caddy, no way out except through the proxies, an empty Redis ACL
-      log, and the public hostname.
+      routes through Caddy, no way out except through the proxies, LB-07's browser sandbox
+      reaching nothing but its own shop, an empty Redis ACL log, and the public hostname.
+- [ ] LB-07's browser sandbox on the box's own kernel and cores: `compose exec lb07-sandbox
+      /nodejs/bin/node -e "console.log(require('node:fs').readFileSync('/proc/self/status','utf8').match(/^(CapEff|NoNewPrivs|Seccomp):.*$/gm).join(' | '))"`
+      prints `CapEff: 0000000000000000 | NoNewPrivs: 1 | Seccomp: 2`; then a sample run on
+      `https://example.com/systems/lb-07/board` ends with its report, and `compose logs
+      lb07-sandbox` shows no browser crash. Its memory under a real run is in `docker stats
+      --no-stream` (384 MiB is its limit; it was measured at 266 MiB on x86).
 - [ ] `findmnt -T /run/lb/secrets` shows `tmpfs`, and `ls -l /run/lb/secrets` shows every
       file `-rw-------` and owned by `deploy`.
 - [ ] `cat /opt/lb/deploys.log` has one line for the release, and `readlink /opt/lb/current`
@@ -677,7 +744,7 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
 - [ ] `cosign verify --certificate-identity-regexp '^https://github\.com/<owner>/<repo>/\.github/workflows/(images|deploy)\.yml@refs/heads/main$' --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/<owner>/lb-gateway:<commit>`
       succeeds (the owner in lowercase in the image name).
 
-In GitHub: the Deploy run is green, and the six packages show the commit's tag.
+In GitHub: the Deploy run is green, and the seven packages show the commit's tag.
 
 ## 12. What is not verified
 
@@ -688,17 +755,22 @@ with real visitor tokens, the real database roles and the egress proxies, and LB
 read-only warehouse) and LB-08 (a workflow run through BullMQ to its worker) answer
 through it; every Compose service passes the security rules and the memory budgets
 (`infra/scripts/check-compose.sh`, which also has tests that show each rule can fail); the
-Postgres roles cannot reach each other's schemas, for every pair of the five systems
+Postgres roles cannot reach each other's schemas, for every pair of the systems
 (`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
-consumer, the Flask systems' integration (LB-03's and LB-05's) and the Node systems' whole
-test suites (LB-08's, LB-04's and LB-06's) and a Celery worker's, with an empty ACL log
+consumer, the Flask systems' integration (LB-03's and LB-05's) and the Node systems' unit and
+integration suites (LB-08's, LB-04's, LB-06's and LB-07's) and a Celery worker's, with an empty ACL log
 (`infra/redis/test-acl.sh`); Caddy's routes, headers, streaming, timeouts, the upload limits
 of LB-03 and LB-04, a quiet WebSocket (LB-02's and LB-06's) and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
 restores into a scratch database and over the live one, and a wrong key cannot open it; the
 secrets tooling with the real `sops` and `age` (`infra/scripts/test-secrets.sh`); the deploy
 script's order, signature check, rollback and clean-up with stand-ins for Docker and cosign
 (`infra/scripts/test-deploy.sh`); image pinning against the real registries; `docker compose
-config`, hadolint, shellcheck and actionlint.
+config`, hadolint, shellcheck and actionlint. LB-07's browser sandbox image was built (amd64)
+and started by Compose from the real file, with every flag of the policy: Chromium ran golden
+plans called from a second container on the sandbox network, the container reached no public
+address or name, no other container and not the host, five runs of the heaviest plan stayed
+inside its memory limit, and after its share of runs it exited and Docker started a fresh one,
+the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
 
 **Not verified, because it needs the real thing:**
 
@@ -710,15 +782,24 @@ config`, hadolint, shellcheck and actionlint.
 - LB-04 in the **Compose stack and in its image**: its module, queue, extraction thread and
   worker run as real processes against the real gateway on a fake provider, through the
   Redis ACL, the Postgres roles and Caddy's routes, but the Node image could not be built
-  where this was written (the base images were out of reach), so nothing proves that the
-  image's production install carries `pdfjs-dist` and runs the extraction thread under the
+  where this was written (the base images were out of reach). It has been built since (amd64,
+  with LB-07's data in it), and its migration and seed jobs ran in it against a Postgres, read-only
+  and with no capability; but nothing proves that the
+  image's production install runs LB-04's extraction thread under the
   distroless Node, or that the worker holds in the 768 MiB it is given (two extractions of
   a 30-page contract at once measured 291 MiB on a development machine, with the process's
   own working set about 400 MiB).
+- **LB-07's browser sandbox on arm64 and on the box**: the image's arm64 build (a different
+  Chrome Headless Shell zip, pinned by its own SHA-256, and Debian's arm64 libraries) is made
+  by CI under QEMU and has never been run; its memory was measured on x86 only; and the
+  sandbox network's bridge with no address on the host (`inhibit_ipv4`) was proved on Docker
+  29 here, not on the box's Docker. The whole of LB-07 (the API, the worker and the sandbox
+  together, with a model) has not run in the Compose stack: the worker's side was stood in for
+  by a client that calls the runner as the worker does.
 - Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
   list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
-  limits of what runs all the time add up to 7936 MiB (7.75 GiB; the sums are at the top of
-  `infra/docker-compose.yml`); idle, the stack used about 0.7 GiB here (without `cloudflared`
+  limits of what runs all the time add up to 8192 MiB (8 GiB; the sums are at the top of
+  `infra/docker-compose.yml`, and the table is in part 2); idle, the stack used about 0.7 GiB here (without `cloudflared`
   and the proxies), LB-05's data job peaked at 923 MB, and the service's warehouse code at
   452 MB while it answered the 100 reference questions on the full dataset, and LB-03's OCR
   worker at 692 to 837 MiB (a three-page PDF, five pages, the biggest image it accepts), on a
@@ -838,10 +919,11 @@ A systemd timer runs the `backup` job at 02:30 UTC: `pg_dump` is piped straight 
 `r2:lb-backups/postgres`. A failed dump uploads nothing. The dump leaves out the rows of
 the tables that hold what visitors upload (`infra/backup/excluded-data.txt`: LB-04's
 contracts, their files, their text, their reports and their redlines; LB-06's incidents, their
-logs and the scenario cache), because a visitor's
-file is kept for an hour, an incident for a day, and a backup for weeks. A restore makes those tables empty, which
+logs and the scenario cache; LB-07's test runs, their steps, findings, evidence and reports),
+because a visitor's file or test run is kept for an hour, an incident for a day, and a backup
+for weeks. A restore makes those tables empty, which
 is what they are an hour after any restore. `infra/postgres/test-roles.sh` proves it: no
-word of a contract is in the dump. Look at the last run:
+word of a contract or of a test run's goal is in the dump. Look at the last run:
 
 ```sh
 journalctl -u lb-backup.service -n 30 --no-pager
@@ -883,6 +965,7 @@ recreates every container whose settings changed.
 | A service key pair (`django-systems`, `flask-systems`, `node-systems`, `web`) | `just gateway-token keygen <name> <new file>` | The public entry in `LB_SERVICE_KEYS` (`just secrets-edit gateway`), the private half where part 6 says | Delete the old file. The gateway and the service restart in the same deploy; calls fail for the seconds between |
 | The site's pair (`site`) | `just gateway-token keygen site <new file>` | `LB_WEB_TOKEN_KEY` (`just secrets-edit compose`) and `NUXT_LB_WEB_SIGNING_KEY` in Vercel, together | Visitor tokens live five minutes |
 | Django's secret key | `just secret-token 32` | `just secrets-edit django-systems` | |
+| LB-07's shop key | `just secret-token 32` | `just secrets-edit lb07-sandbox`: the worker and the sandbox restart with it | A test run in flight fails its bug token and is run again |
 | The tunnel token | Cloudflare, the tunnel, refresh the token | `just secrets-edit cloudflared` | |
 | The R2 token | Cloudflare, R2, a new API token | `just secrets-edit backup` | Delete the old token |
 | The backup key | `age-keygen -o ~/lb-backup-2.key` | Add its public key to `LB_BACKUP_AGE_RECIPIENTS` (comma separated) | Keep the old private key for old dumps |
@@ -921,8 +1004,10 @@ R2 token and its egress); a new runtime needs all of them. The order that works:
    `egress-systems` only if it calls out, none for a job that needs no network), a health
    check, and memory, CPU and process limits. The memory budgets at the top of the file are
    enforced: `just infra-check` fails when the new limits make the sums too big, and the
-   fix is a decision about the box, not an edit of the budget. Add the build blocks to
-   `infra/docker-compose.dev.yml`, and give Caddy's `depends_on` the new API.
+   fix is a decision about the box, not an edit of the budget (the table and the last such
+   decision are in part 2). Add the build blocks to
+   `infra/docker-compose.dev.yml`, and give Caddy's `depends_on` the new API. The `sandbox`
+   network is LB-07's browser and its worker's alone: the policy refuses any other member.
 3. **Caddy.** In `infra/caddy/Caddyfile`, a system on an existing runtime adds its prefix
    to that runtime's matcher (`@flask path /api/lb05/* /api/lb03/*`); a new runtime gets a
    matcher and a line in the ordered `route`, before the final 404:
@@ -956,6 +1041,36 @@ R2 token and its egress); a new runtime needs all of them. The order that works:
 9. Update the table of what runs where, if the service changes it, and run
    `just infra-check` and `just infra-test` before the pull request.
 
+### LB-07's browser sandbox
+
+LB-07 drives a headless Chromium over a staging shop, with a plan a model wrote. The browser
+runs in `lb07-sandbox`, a container of its own (`infra/docker/lb07-sandbox.Dockerfile`): one Node
+process with the shop on the container's loopback interface, the only place the browser may go,
+and the runner's API on the `sandbox` network, which `node-worker` alone joins to call it. The
+network is internal and its bridge has no address on the host, so the container reaches neither
+the internet nor the box's own services; it holds one secret, the shop key (`lb07-sandbox`,
+part 7), and no database or Redis login. Why it is one long-lived container and not one per run
+is in `docs/SECURITY.md`, section 6.
+
+**It restarts itself, on purpose.** Each browser session is one pass of a test run (a run opens
+up to three: its plan, the plan behind Firefox's user agent, and the green pass with the bugs
+off). After `LB07_RUNS_PER_LIFE` sessions (20, set in its Compose block) the runner refuses new
+ones, waits for the last to close, and exits, and Docker's `unless-stopped` starts a fresh
+process with a fresh browser in a second or two. A session in flight is never cut short by it. A
+run whose next pass asks for a session during those seconds fails its attempt and is run again
+from its plan by the queue, as for any runner that cannot be reached. So `compose ps` shows
+`lb07-sandbox` restarting now and then, and its log says why:
+
+```sh
+compose logs --since 1h lb07-sandbox | grep "served its share"     # one line for each fresh start
+docker inspect -f '{{.RestartCount}}' "$(compose ps -q lb07-sandbox)"
+```
+
+A restart that is not one of those (an out-of-memory kill: `docker inspect -f
+'{{.State.OOMKilled}}'`, or `dmesg | grep -i oom`) means a run needed more than its 384 MiB: see
+part 2, The memory budget. To prove the container again after a change (Docker on any machine,
+about five minutes): `just test-lb07-sandbox`.
+
 ### Upgrading images and tools
 
 Base images and the third-party images are pinned by digest. To take a newer release of
@@ -965,7 +1080,12 @@ build of a tag you already use (a security patch), run `just pin-images` alone. 
 fails a release whose image has a fixable high or critical vulnerability, which is the
 prompt to do this. `sops`, `cosign`, `hadolint` and `actionlint` are pinned in
 `infra/scripts/install-tool.sh`, with their SHA-256; change a version and both checksums
-together, and keep cosign's version the same in `images.yml`.
+together, and keep cosign's version the same in `images.yml`. LB-07's Chromium follows
+playwright-core: after an upgrade of it in the lockfile, the sandbox image's build stops until
+`infra/docker/lb07-sandbox-browser.sh` names the Chrome Headless Shell version the new
+playwright-core's `browsers.json` names, with the SHA-256 of both architectures' zips. The
+Debian libraries it needs are taken from Debian 13 at each build, so a rebuild takes their
+security fixes.
 
 If the repository is renamed or moved, set `LB_SIGNER_REPOSITORY` (`owner/repository`) for
 the deploy, or change the default in `infra/scripts/deploy.sh`: the box accepts only
@@ -991,6 +1111,9 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | `502` or `503` from the API | A back-end container is unhealthy or restarting; Caddy answers 5xx while it is |
 | `flask-api` is `unhealthy`, and its log says the data isn't ready | The warehouse volume is empty or from another generator version: `compose logs flask-seed`, then `compose run --rm flask-seed python seed_warehouse.py --force` and recreate `flask-api` |
 | `node-worker` is `unhealthy` | Its heartbeat file is older than 30 seconds: the worker's event loop is stuck or it is crash-looping. `compose logs node-worker`; Redis's `acl log` shows a command its user may not run |
+| `lb07-sandbox` restarts now and then | Expected: it starts afresh after every 20 browser sessions, and its log says "has served its share of runs" (part 13, LB-07's browser sandbox). Anything else in its log before a restart is a crash |
+| Every LB-07 test run ends `runner_unavailable` | The worker cannot reach the runner: `compose ps lb07-sandbox` (is it healthy?), and the worker's `LB07_RUNNER_URL` and network (`sandbox`). A worker started without `LB07_RUNNER_URL` or the shop key logs "no browser runner is configured" at start |
+| LB-07's runs find no bug they switched on | The worker and the sandbox hold different shop keys, so the shop ignores the bug token: both read `LB07_SHOP_TOKEN_KEY` from `lb07-sandbox.env`; recreate both after editing it |
 | A WebSocket to LB-02 is refused with `403` | The `Origin` is not `LB_SITE_ORIGIN` (Caddy checks it); with `1009` or a drop, a frame was over 8192 bytes (`--ws-max-size`) |
 | A WebSocket to LB-02 gets `too_many_connections` and closes with `1013` | The visitor already holds four connections to this server process: two tabs, the installed app, and one the network cut that the server has not noticed yet (it goes when uvicorn's ping times out, about 40 seconds). Closing a tab frees a place; the page retries by itself |
 | `cloudflared` keeps restarting | The `TUNNEL_TOKEN` is wrong or was refreshed in Cloudflare |

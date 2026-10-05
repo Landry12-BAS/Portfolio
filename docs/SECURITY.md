@@ -298,10 +298,12 @@ attempts. Every prompt change must pass it.
 ## 5. Services and data
 
 - **Segmented networks.** Docker networks `edge` (cloudflared, Caddy), `app` (gateway
-  and systems), `data` (Postgres, Redis) and `sandbox` (Playwright worker, staging
-  shop). The data network has no route to the internet. Neither has `edge` or `app`, nor
-  the network of either egress proxy: one `outbound` network has a route out, and only
-  the two proxies and the tunnel connector join it. (`sandbox` arrives with LB-07.)
+  and systems), `data` (Postgres, Redis) and `sandbox` (LB-07's browser sandbox, and the Node
+  worker that calls its runner). The data network has no route to the internet. Neither has
+  `edge`, `app` or `sandbox`, nor the network of either egress proxy: one `outbound` network has
+  a route out, and only the two proxies and the tunnel connector join it. The `sandbox` network
+  also gives the host no address: an internal network's gateway address is the host's own, and
+  through it a container would reach whatever the host listens on (section 6).
 - **Allowlisted egress.** Outbound traffic goes through an egress proxy with a domain
   allowlist: the gateway may reach the model providers, the systems may reach R2 and
   Sentry, and nothing else leaves the box except the tunnel. There are two Squid
@@ -320,7 +322,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01 to LB-06 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01 to LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and
@@ -329,11 +331,12 @@ attempts. Every prompt change must pass it.
   another's schema.
 - **Redis:** one ACL user per service, limited to its key prefixes, with dangerous
   commands disabled: the gateway's meters, the Django systems' Celery queue and LB-02's
-  channel layer, the Node systems' BullMQ queues (LB-08's, LB-04's and LB-06's, each under its
-  own pattern) and LB-06's feeds (a stream per incident), and for every service its own run
-  spans. The ACL was derived from what the services run, and `infra/redis/test-acl.sh`
+  channel layer, the Node systems' BullMQ queues (LB-08's, LB-04's, LB-06's and LB-07's, each
+  under its own pattern) and LB-06's feeds (a stream per incident), and for every service its
+  own run spans; LB-07's browser sandbox has no Redis login at all. The ACL was derived from what
+  the services run, and `infra/redis/test-acl.sh`
   runs their own test suites against it (the gateway's, lb-common's, LB-02's WebSocket
-  consumers, LB-05's, the Node systems' (LB-08's, LB-04's and LB-06's), and a Celery worker) and then checks that Redis's ACL
+  consumers, LB-05's, the Node systems' (LB-08's, LB-04's, LB-06's and LB-07's), and a Celery worker) and then checks that Redis's ACL
   log is empty. It also tries every service on every other service's keys.
 - **LB-05's data:** the DuckDB warehouse is generated into a volume by a one-shot job
   that has no network, no secret and no database, and the API mounts that volume
@@ -372,6 +375,12 @@ attempts. Every prompt change must pass it.
   checked against the pending proposal's id. An incident, its log and the scenario cache live in
   the `lb06` schema under their own role for a day, are left out of the backup, and are deleted
   by a sweep. The rest is in the same README, "LB-06 threat model".
+- **LB-07's test runs:** the visitor's goal and everything made from it (the plan's steps, the
+  findings, the screenshots and page snapshots, the report and its generated test) live in the
+  `lb07` schema under its own role for an hour, are left out of the backup
+  (`infra/backup/excluded-data.txt`; `infra/postgres/test-roles.sh` proves no word of a goal is
+  in the dump), and are deleted by a sweep. The browser that runs the plan is in a container of
+  its own (section 6).
 
 ## 6. Containers and host
 
@@ -379,8 +388,41 @@ attempts. Every prompt change must pass it.
   root filesystems, `cap_drop: [ALL]`, `no-new-privileges`, and PID, CPU and memory
   limits. CI holds every service block to these rules (`infra/scripts/check-compose.sh`),
   so a new service cannot quietly weaken them, and no service publishes a port.
-- **Browser sandbox:** the LB-07 Playwright worker runs under gVisor, and its network
-  reaches only the staging shop.
+- **Browser sandbox (LB-07).** A headless Chromium, driven by a plan a model wrote from a
+  visitor's goal, is the riskiest process on the box. The design said "one container per run";
+  starting a container needs the Docker socket, which no container on the platform is given (it
+  is root on the host by another name). What stands in for it, layer by layer:
+  - **One container, `lb07-sandbox`, that holds nothing worth taking.** Its own image
+    (`infra/docker/lb07-sandbox.Dockerfile`): distroless, with no shell and no package manager;
+    a non-root user; a read-only root and a tmpfs for what Chromium writes; every capability
+    dropped and no new privileges; memory, CPU and process limits. Its one secret is the key
+    that switches the staging shop's bugs on, which it reads once and removes from its
+    environment; it has no database or Redis login and no gateway key, and makes no model call.
+  - **A network that reaches nothing.** The browser's only destination, the staging shop, is in
+    the same process, on the container's loopback interface. The container's one network,
+    `sandbox`, is internal (no route out, no public name resolves) and its bridge has no address
+    on the host, so nothing on the box is reachable either; its only other member is
+    `node-worker`, which calls the runner's API and listens on nothing. Caddy has no route to it.
+    Inside, every request the page makes for another origin than the shop's is aborted and
+    counted, and a plan's vocabulary has no URL, selector or script to begin with.
+  - **A fresh browser context for every pass** of a run (cookies, storage, cache), closed when
+    the pass ends or its wall clock runs out, and **a fresh process after every 20 sessions**:
+    the runner then refuses new sessions, exits once the last has closed (it is never cut
+    short), and Docker's restart policy starts a new one, so nothing a run left in the browser
+    outlives a few runs.
+  - **Chromium's own sandbox is off** (`--no-sandbox`): it needs user namespaces, which a
+    container with no capabilities under Docker's default seccomp profile does not get (it was
+    tried: "Chromium sandboxing failed"). Allowing them would widen the kernel surface for every
+    process in the container, so the container is the sandbox. A further layer the owner may add
+    is gVisor (`runtime: runsc` for this one service, after installing it on the box); it was
+    not, because it cannot be installed or tested where this was built.
+  `infra/sandbox/test.sh` (CI runs it) starts the image with Compose from the real file and
+  proves each layer: the container's identity and privileges from the inside, golden plans run
+  from a second container, no route to the internet, to another container or to the host,
+  the shop unreachable from outside, the memory limit, and the restart after its share of runs.
+  The Compose policy holds the network to these rules: only the two services may join it, the
+  sandbox may join no other, it is given only its own settings, and the bridge stays without an
+  address.
 - **Host:** an Oracle Cloud Always Free VM running Ubuntu LTS, with unattended
   security upgrades, no password logins, and SSH reachable only over Tailscale.
   Oracle's default VCN security list opens SSH (port 22) to the internet. That rule is

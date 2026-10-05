@@ -21,7 +21,8 @@ has a template beside it that lists its variables and says where every value com
 | `gateway` | `gateway` | The services' public keys, and the provider keys (the only ones on the platform) |
 | `django-systems` | `django-api`, `django-worker`, `django-migrate` | Django's signing key, the service's own gateway key |
 | `flask-systems` | `flask-api` | The service's own gateway key |
-| `node-systems` | `node-api` | The service's own gateway key |
+| `node-systems` | `node-api`, `node-worker` | The service's own gateway key |
+| `lb07-sandbox` | Compose, for `node-worker` and `lb07-sandbox` | LB-07's shop key: the worker signs each test run's bug token with it, the sandbox's shop verifies it |
 | `cloudflared` | `cloudflared` | The Cloudflare Tunnel's token |
 | `backup` | `backup` | The backup's age public keys, and the R2 credentials it uploads with |
 

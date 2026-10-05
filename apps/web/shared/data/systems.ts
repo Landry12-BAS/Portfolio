@@ -205,7 +205,7 @@ export const systems = [
     proves: 'Browser agents, test automation, and sandboxing done properly.',
     tags: ['Browser agent', 'Tool use', 'QA'],
     chain: ['plan from goal', 'run plan in Playwright', 're-plan on failure', 'catch errors + axe checks', 'bug report', 'generate test', 'run red, then green'],
-    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'one container per run'],
+    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'isolated browser container'],
     highlights: [
       'A generated test is kept only if it fails with the bug switched on and passes with it off.',
       'The browser can reach only the staging shop, which closes the server-side request forgery hole that “test any URL” demos leave open.',

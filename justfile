@@ -253,7 +253,7 @@ stack *args:
 stack-secrets *args:
     infra/scripts/dev-secrets.sh {{args}}
 
-# Check a running local stack from the inside: health, the routes through Caddy, an empty Redis ACL log.
+# Check a running local stack from the inside: health, the routes through Caddy, LB-07's sandbox reaching nothing, an empty Redis ACL log.
 stack-smoke:
     LB_STACK=dev infra/scripts/smoke.sh
 

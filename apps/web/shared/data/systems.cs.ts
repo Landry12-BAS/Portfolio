@@ -149,7 +149,7 @@ export const systemsCs = {
     proves: 'Agenty v prohlížeči, automatizaci testů a pořádně udělaný sandboxing.',
     tags: ['Agent v prohlížeči', 'Volání nástrojů', 'QA'],
     chain: ['plán podle cíle', 'provedení plánu v Playwrightu', 'nový plán při selhání', 'zachycení chyb a kontroly axe', 'hlášení o chybě', 'vygenerování testu', 'běh červeně, pak zeleně'],
-    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'jeden kontejner na běh'],
+    stack: ['Node', 'TypeScript', 'Playwright', 'axe-core', 'BullMQ', 'izolovaný kontejner s prohlížečem'],
     highlights: [
       'Vygenerovaný test se ponechá, jen když se zapnutou chybou selže a s vypnutou projde.',
       'Prohlížeč dosáhne jen na testovací e-shop, což zavírá díru pro podvržené požadavky ze serveru (SSRF), kterou dema typu „otestuj libovolnou URL“ nechávají otevřenou.',
