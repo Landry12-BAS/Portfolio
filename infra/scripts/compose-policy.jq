@@ -10,12 +10,15 @@ def long_running: (.restart // "no") != "no";
 def has_healthcheck: ((.healthcheck // null) != null) and ((.healthcheck.disable // false) != true);
 def outbound_members: if $dev then ["egress-gateway", "egress-systems", "cloudflared", "caddy"]
                       else ["egress-gateway", "egress-systems", "cloudflared"] end;
+# LB-07's browser sandbox: the one container that runs a browser, and the one service that calls it.
+def sandbox_members: ["lb07-sandbox", "node-worker"];
 
 # The box's memory budget, in MiB (docker-compose.yml, Resources). A limit is a ceiling, not a
 # reservation, but the ceilings of everything that can run at once, the one-shot jobs of a
-# deploy included, must fit in what the host leaves; and the services that run all the time
-# must leave room for what is still to come (the Playwright sandbox, Whisper). Adding a
-# service that does not fit fails here, and the fix is a decision, not an edit of these numbers.
+# deploy and the nightly backup included, must fit in what the host leaves; and the services
+# that run all the time must stay inside the share planned for them (LB-07's sandbox took the
+# last of it). Adding a service that does not fit fails here, and the fix is a decision, not an
+# edit of these numbers (docs/DEPLOY.md, "Owner decision: the memory budget").
 def total_budget_mib: 11264;
 def running_budget_mib: 8192;
 def limits_mib(selector): [ .services | to_entries[] | select(.value | selector) | ((.value.mem_limit // "0" | tonumber) / 1048576) ] | add // 0;
@@ -26,13 +29,18 @@ def limits_mib(selector): [ .services | to_entries[] | select(.value | selector)
     else empty end ),
 ( limits_mib(long_running) as $running
   | if $running > running_budget_mib
-    then "the services that run all the time have \($running) MiB of memory limits, over the budget of \(running_budget_mib) MiB that leaves room for what is still to come"
+    then "the services that run all the time have \($running) MiB of memory limits, over the \(running_budget_mib) MiB planned for them"
     else empty end ),
 
 # The networks: every one but `outbound` has no route out.
 ( .networks | to_entries[]
   | select(.key != "outbound" and ((.value.internal // false) != true))
   | "network \(.key) is not internal: a container on it could reach the internet" ),
+# The browser's network gives the host no address either: an internal network's gateway address
+# is the host's own, and through it a container reaches what the host listens on.
+( .networks.sandbox // empty
+  | select((.driver_opts["com.docker.network.bridge.inhibit_ipv4"] // "false") != "true")
+  | "network sandbox gives the host an address: LB-07's browser could reach the box's own services" ),
 
 # Each service.
 ( .services | to_entries[] | .key as $name | .value as $s
@@ -63,6 +71,13 @@ def limits_mib(selector): [ .services | to_entries[] | select(.value | selector)
       ( if (($s.networks // {}) | has("outbound")) and (outbound_members | index($name) == null)
         then "joins the outbound network, which only the egress proxies and the tunnel may" else empty end ),
       ( if ($name == "postgres" or $name == "redis") and ((($s.networks // {}) | keys) != ["data"])
-        then "is on networks other than data" else empty end )
+        then "is on networks other than data" else empty end ),
+      ( if (($s.networks // {}) | has("sandbox")) and (sandbox_members | index($name) == null)
+        then "joins the sandbox network, which only LB-07's browser sandbox and the Node worker may" else empty end ),
+      ( if $name == "lb07-sandbox" and ((($s.networks // {}) | keys) != ["sandbox"])
+        then "is on networks other than sandbox" else empty end ),
+      ( ($s.environment // {}) | keys | map(select(startswith("LB07_") | not))
+        | if $name == "lb07-sandbox" and length > 0
+          then "is given settings that are not its own (LB07_*): \(join(", "))" else empty end )
     )
   | "\($name): \(.)" )

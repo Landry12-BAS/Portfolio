@@ -216,9 +216,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # The Redis ACL proof runs the gateway's, lb-common's, LB-02's WebSocket, LB-05's and
-      # LB-08's own tests, and a Celery worker, against a Redis that enforces the production
-      # ACL (a throwaway Postgres serves the suites that need one).
+      # The Redis ACL proof runs the gateway's, lb-common's, LB-02's WebSocket, the Flask systems'
+      # and the Node systems' own tests, and a Celery worker, against a Redis that enforces the
+      # production ACL (a throwaway Postgres serves the suites that need one).
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           cache: true
@@ -237,6 +237,37 @@ jobs:
         run: infra/caddy/test.sh
       - name: Redis refuses what a service must not do, and the services still work
         run: infra/redis/test-acl.sh
+
+  # LB-07's browser sandbox, built from this commit for this runner's architecture and started by
+  # Compose from the real file, so it runs with every flag of the policy: Chromium runs golden
+  # plans called from another container, the container reaches nothing but its own shop, five runs
+  # of the heaviest plan stay inside its memory limit, and it restarts after its share of runs.
+  sandbox:
+    name: LB-07's browser sandbox under the Compose policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The stand-in for the worker imports the service's own runner client, and the throwaway
+      # secrets Compose resolves against need age.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age
+
+      - name: The sandbox runs golden plans under the policy, reaches nothing, and restarts after its share of runs
+        run: infra/sandbox/test.sh
 
   # A Dockerfile that breaks, on either architecture, fails the pull request. Pushes to main
   # are built, pushed and signed by deploy.yml, so building them here too would only repeat it.

@@ -194,6 +194,11 @@ lb07-sandbox:
 test-lb07-browser:
     pnpm --filter @lb/node-systems test:browser
 
+# Needs Docker, jq, age and `just install`; builds the image unless LB_SANDBOX_IMAGE names one; about five minutes.
+# Prove LB-07's sandbox container under the Compose policy: golden plans from another container, no route out, memory, restart.
+test-lb07-sandbox:
+    infra/sandbox/test.sh
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high
@@ -257,8 +262,8 @@ stack-smoke:
 infra-check:
     infra/scripts/check.sh
 
-# The last three need Docker, and the Redis ACL proof runs the services' own suites, so run `just install` first.
-# Run the infrastructure's tests: secrets, deploy decisions, pinning, Postgres roles, Caddy routing, the Redis ACL.
+# The last four need Docker, and the Redis ACL proof and the sandbox's run the services' own code, so run `just install` first.
+# Run the infrastructure's tests: secrets, deploy decisions, pinning, Postgres roles, Caddy routing, the Redis ACL, LB-07's sandbox.
 infra-test:
     infra/scripts/test-secrets.sh
     infra/scripts/test-deploy.sh
@@ -266,6 +271,7 @@ infra-test:
     infra/postgres/test-roles.sh
     infra/caddy/test.sh
     infra/redis/test-acl.sh
+    infra/sandbox/test.sh
 
 # Pin every third-party image to the digest its tag names today, then review the diff (CI fails on an unpinned one).
 pin-images:

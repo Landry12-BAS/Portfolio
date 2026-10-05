@@ -83,22 +83,23 @@ user flask-systems on #__HASH_FLASK_SYSTEMS__ resetkeys resetchannels -@all \
     (~lb:run:*:spans +xadd +expire) \
     (~lb:spans +xadd)
 
-# LB-08, LB-04 and LB-06 (Node): the API and the worker share this user. Run spans, as above,
-# BullMQ, and LB-06's feeds. BullMQ keeps each queue under `<prefix>:<queue>:` (the prefix is
-# `lb:bull`, the queues are lb08-steps, lb08-dead-letters and lb08-maintenance, LB-04's
-# lb04-reviews and lb04-maintenance, and LB-06's lb06-incidents and lb06-maintenance), and
-# moves jobs with Lua scripts (EVALSHA, and EVAL when Redis has not seen a script yet), so each
-# system's queues are covered by one pattern, `lb:bull:lb08-*`, `lb:bull:lb04-*` and
-# `lb:bull:lb06-*`, and no other system's queue is. The commands are the ones the
-# scripts ran while LB-08's and LB-04's whole suites did (queueing, retries with backoff, a
-# worker that dies, the sweep, clean-up by age); a command BullMQ would need on a path the
-# suites never take is refused and shows in ACL LOG, and gets added here after a test
-# covers it. INFO and CLIENT SETNAME are BullMQ's version check and its connection names.
+# LB-08, LB-04, LB-06 and LB-07 (Node): the API and the worker share this user. Run spans, as
+# above, BullMQ, and LB-06's feeds. BullMQ keeps each queue under `<prefix>:<queue>:` (the prefix
+# is `lb:bull`, the queues are lb08-steps, lb08-dead-letters and lb08-maintenance, LB-04's
+# lb04-reviews and lb04-maintenance, LB-06's lb06-incidents and lb06-maintenance, and LB-07's
+# lb07-runs and lb07-maintenance), and moves jobs with Lua scripts (EVALSHA, and EVAL when Redis
+# has not seen a script yet), so each system's queues are covered by one pattern,
+# `lb:bull:lb08-*`, `lb:bull:lb04-*`, `lb:bull:lb06-*` and `lb:bull:lb07-*`, and no other
+# system's queue is. The commands are the ones the scripts ran while the Node systems' whole
+# suites did (queueing, retries with backoff, a worker that dies, the sweep, clean-up by age); a
+# command BullMQ would need on a path the suites never take is refused and shows in ACL LOG, and
+# gets added here after a test covers it. INFO and CLIENT SETNAME are BullMQ's version check and
+# its connection names. LB-07's browser sandbox has no Redis login: only the worker drives it.
 user node-systems on #__HASH_NODE_SYSTEMS__ resetkeys resetchannels -@all \
     +hello +ping +info +quit +client|setinfo +client|setname \
     (~lb:run:*:spans +xadd +expire) \
     (~lb:spans +xadd) \
-    (~lb:bull:lb08-* ~lb:bull:lb04-* ~lb:bull:lb06-* \
+    (~lb:bull:lb08-* ~lb:bull:lb04-* ~lb:bull:lb06-* ~lb:bull:lb07-* \
         +eval +evalsha \
         +get +set +incr +exists +del \
         +hget +hmget +hgetall +hset +hmset +hincrby +hdel \

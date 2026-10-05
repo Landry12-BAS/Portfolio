@@ -98,6 +98,7 @@ LB_PG_PASSWORD_LB05=$(token)
 LB_PG_PASSWORD_LB08=$(token)
 LB_PG_PASSWORD_LB04=$(token)
 LB_PG_PASSWORD_LB06=$(token)
+LB_PG_PASSWORD_LB07=$(token)
 LB_PG_PASSWORD_LBBACKUP=$(token)
 EOF
 
@@ -132,6 +133,11 @@ EOF
 
 cat > "$secrets_dir/node-systems.env" <<EOF
 LB_SERVICE_KEY_JWK_B64=$node_jwk_b64
+EOF
+
+# The key LB-07's bug tokens are signed with: the worker signs, the sandbox's shop verifies.
+cat > "$secrets_dir/lb07-sandbox.env" <<EOF
+LB07_SHOP_TOKEN_KEY=$(openssl rand -hex 32)
 EOF
 
 # No tunnel locally: there is no token to put here, and cloudflared is not started.

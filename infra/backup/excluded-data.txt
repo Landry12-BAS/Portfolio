@@ -16,3 +16,11 @@ lb04.redlines
 # Its daily counters stay.
 lb06.incident*
 lb06.scenario_cache
+# LB-07's test runs hold the visitor's goal, and everything made from a run holds the visitor's
+# words too: the plan's steps (what to type, what to look for), the findings, the evidence (the
+# screenshots and page snapshots) and the report with its generated test. All of it is kept for
+# an hour and no longer. Its daily counters stay.
+lb07.run*
+lb07.findings
+lb07.evidence
+lb07.reports
