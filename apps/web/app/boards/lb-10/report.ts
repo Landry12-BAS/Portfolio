@@ -14,6 +14,12 @@ export interface CallProgress {
   cached: number
 }
 
+/** The calls of one provider that got no answer: how many, and the gateway's codes for them, each once. */
+export interface Unanswered {
+  count: number
+  codes: string[]
+}
+
 /** The report's prompts on one provider: production's, the edited one when there is one, and their comparison. */
 export interface ProviderReport {
   provider: string
@@ -71,6 +77,25 @@ export function byProvider(report: Lb10Report): ProviderReport[] {
 /** Counts the cases a prompt passed. */
 export function passedCount(variant: Lb10VariantReport): number {
   return variant.cases.filter(outcome => outcome.passed).length
+}
+
+/**
+ * Counts the calls on each provider, of either prompt, that got no answer, with the gateway's codes for them. The
+ * service counts such a call as a failed case, so a verdict that rests on some was swayed by the provider (its free
+ * budget spent for the minute, an outage) and not by the prompts alone: the board says so beside it.
+ */
+export function unansweredByProvider(report: Lb10Report): Map<string, Unanswered> {
+  const found = new Map<string, Unanswered>()
+  for (const variant of report.variants) {
+    for (const outcome of variant.cases) {
+      if (outcome.error === null) continue
+      const entry = found.get(variant.provider) ?? { count: 0, codes: [] }
+      entry.count += 1
+      if (!entry.codes.includes(outcome.error)) entry.codes.push(outcome.error)
+      found.set(variant.provider, entry)
+    }
+  }
+  return found
 }
 
 /** Tells whether two intervals share any part. */

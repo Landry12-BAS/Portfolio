@@ -205,6 +205,7 @@ test.describe('the prompt and the day\'s run', () => {
     expect(await runEdit(page)).toBe(202)
     await expectReport(page)
     await expect(page.getByTestId('reply-no-answer').first()).toContainText('No answer: the provider took too long.')
+    await expect(page.getByTestId('verdict-unanswered')).toContainText('2 calls on Groq got no answer (the provider took too long).')
   })
 
   test('say the lab is busy and that nothing was counted', async ({ page, problems }) => {

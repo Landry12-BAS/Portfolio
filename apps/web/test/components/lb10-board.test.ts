@@ -343,6 +343,8 @@ describe('LB-10\'s board', () => {
     await runIt(wrapper)
     await until(() => ended(wrapper), 'the run to end')
     expect(wrapper.findAll('[data-testid="reply-no-answer"]').map(item => item.text())).toContain('No answer: the provider failed.')
+    // The verdict that rests on them says so, with the gateway's reason.
+    expect(textOf(wrapper, '[data-testid="verdict-unanswered"]')).toBe('2 calls on Groq got no answer (the provider failed). Each counts as a failed case, so this verdict says as much about the provider as about the prompts.')
   })
 
   it('follows the run\'s trace in the Scope, and keeps the prompt out of it', async () => {

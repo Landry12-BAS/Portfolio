@@ -7,6 +7,7 @@
 import { storeToRefs } from 'pinia'
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { unansweredByProvider } from '../report'
 import { useLb10Store } from '../store'
 import type { Lb10Report } from '../schemas'
 import { useLb10Words } from '../words'
@@ -32,6 +33,7 @@ const target = computed(() => targets.value?.targets.find(item => item.pack === 
 const sample = computed(() => (target.value?.version === props.report.pack_version ? target.value.sample : undefined))
 const output = computed(() => target.value?.output ?? 'json')
 const title = computed(() => words.packTitle(props.report.pack, target.value?.name))
+const unanswered = computed(() => unansweredByProvider(props.report))
 // The title's part number, such as LB-01, kept on one line: a narrow screen would otherwise break it after its hyphen.
 const titleParts = computed(() => {
   const match = /^(LB-\d{2})\s(.+)$/.exec(title.value)
@@ -79,6 +81,7 @@ const titleParts = computed(() => {
     <DifferenceFigure
       v-if="report.comparisons.length > 0"
       :comparisons="report.comparisons"
+      :unanswered="unanswered"
     />
     <ChangedCases
       v-if="report.comparisons.length > 0"

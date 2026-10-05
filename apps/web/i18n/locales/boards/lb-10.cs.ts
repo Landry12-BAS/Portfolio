@@ -288,6 +288,11 @@ const lb10 = {
         no_detectable_difference: 'Žádný prokazatelný rozdíl',
         not_comparable: 'Nesrovnatelné',
       },
+      unanswered: {
+        one: '{count} volání u {provider} nedostalo odpověď ({reasons}). Volání bez odpovědi se počítá jako nezvládnutý případ, takže tento verdikt vypovídá o poskytovateli stejně jako o promptech.',
+        few: '{count} volání u {provider} nedostala odpověď ({reasons}). Každé se počítá jako nezvládnutý případ, takže tento verdikt vypovídá o poskytovateli stejně jako o promptech.',
+        other: '{count} volání u {provider} nedostalo odpověď ({reasons}). Každé se počítá jako nezvládnutý případ, takže tento verdikt vypovídá o poskytovateli stejně jako o promptech.',
+      },
     },
     changed: {
       title: 'Každý případ, který se změnil',
@@ -352,7 +357,7 @@ const lb10 = {
       model_not_found: 'brána takový model nemá',
       input_too_large: 'prompt s případem byly na model příliš dlouhé',
       quota_exceeded: 'vyčerpala se kvóta brány',
-      budget_exhausted: 'vyčerpal se denní rozpočet modelů',
+      budget_exhausted: 'bezplatný rozpočet modelu je teď vyčerpaný',
       upstream_rejected: 'poskytovatel požadavek odmítl',
       upstream_failed: 'poskytovatel selhal',
       upstream_timeout: 'poskytovatel odpovídal příliš dlouho',

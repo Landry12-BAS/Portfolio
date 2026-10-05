@@ -104,7 +104,7 @@ describe('the messages LB-10\'s board asks for', () => {
   })
 
   it('give every counted phrase the plural forms its words pick from', () => {
-    for (const group of ['lb10.targets.casesNote', 'lb10.editor.removedLines', 'lb10.editor.addedLines']) {
+    for (const group of ['lb10.targets.casesNote', 'lb10.editor.removedLines', 'lb10.editor.addedLines', 'lb10.report.difference.unanswered']) {
       for (const messages of [en, cs]) expect(Object.keys(follow(messages, group) as object).sort(), group).toEqual(['few', 'one', 'other'])
     }
   })

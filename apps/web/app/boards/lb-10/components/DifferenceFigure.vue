@@ -5,17 +5,21 @@
 // heavier. Beside it, the service's verdict in words: better or worse only when the whole interval is on one side of
 // zero, and "no detectable difference" whenever it includes zero, whatever the two scores say, so a lucky difference
 // is never shown as a result. The drawing is hidden from assistive technology; the sentence for each provider says the
-// same, with the cases that improved and regressed.
+// same, with the cases that improved and regressed. A verdict that rests on calls that got no answer (which the service
+// counts as failed cases: a free budget spent for the minute, an outage) says so beside it, with the gateway's reasons.
 import { LbIcon } from '@lb/icons'
 import type { IconName } from '@lb/icons'
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { differenceAt } from '../report'
+import type { Unanswered } from '../report'
 import type { Lb10Comparison } from '../schemas'
 import { useLb10Words } from '../words'
 
 const props = defineProps<{
   comparisons: readonly Lb10Comparison[]
+  /** The calls of each provider that got no answer, which the service counted as failed cases. */
+  unanswered: ReadonlyMap<string, Unanswered>
 }>()
 
 const { t } = useI18n()
@@ -27,9 +31,17 @@ const TICKS = [-1, -0.5, 0, 0.5, 1] as const
 // The icon each verdict carries, so a verdict is never told by colour alone.
 const VERDICT_ICONS: Readonly<Record<string, IconName>> = { better: 'success', worse: 'error', no_detectable_difference: 'info', not_comparable: 'close' }
 
+/** Says how many calls on a provider got no answer and why, or nothing when every call was answered. */
+function unansweredText(provider: string, name: string): string | undefined {
+  const found = props.unanswered.get(provider)
+  if (!found || found.count === 0) return undefined
+  return words.counted('lb10.report.difference.unanswered', found.count, { provider: name, reasons: found.codes.map(code => words.gatewayReason(code)).join('; ') })
+}
+
 const rows = computed(() => props.comparisons.map((comparison) => {
   const provider = words.providerName(comparison.provider)
   return {
+    unanswered: unansweredText(comparison.provider, provider),
     key: comparison.provider,
     provider,
     verdict: comparison.verdict,
@@ -169,6 +181,18 @@ const rows = computed(() => props.comparisons.map((comparison) => {
         <p class="lb10-hint">
           {{ row.sentence }}
         </p>
+        <p
+          v-if="row.unanswered"
+          class="unanswered"
+          data-testid="verdict-unanswered"
+        >
+          <LbIcon
+            name="warning"
+            :size="14"
+            tone="mono"
+          />
+          <span>{{ row.unanswered }}</span>
+        </p>
       </li>
     </ul>
   </figure>
@@ -265,6 +289,19 @@ const rows = computed(() => props.comparisons.map((comparison) => {
   gap: 6px;
   align-items: center;
   font-weight: 700;
+}
+/* A verdict swayed by calls that got no answer says so in words, with a warning sign, never by colour alone. */
+.unanswered {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.unanswered > :first-child {
+  flex: none;
+  margin-top: 2px;
 }
 @container (max-width: 520px) {
   .line {

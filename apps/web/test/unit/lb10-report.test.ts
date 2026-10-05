@@ -3,7 +3,7 @@
 // report grouped by provider, where marks go on the figures, and whether a reply holds the JSON object the graders
 // read, the way the service looks for one.
 import { describe, expect, it } from 'vitest'
-import { byProvider, differenceAt, holdsJsonObject, intervalsOverlap, isGivenBack, isMalformed, passedCount, progressOf, scoreAt, stageOf } from '~/boards/lb-10/report'
+import { byProvider, differenceAt, holdsJsonObject, intervalsOverlap, isGivenBack, isMalformed, passedCount, progressOf, scoreAt, stageOf, unansweredByProvider } from '~/boards/lb-10/report'
 import type { Lb10Outcome, Lb10Report, Lb10Run, Lb10VariantReport } from '~/boards/lb-10/schemas'
 
 /** A run as the service writes it, with what a test changes. */
@@ -93,6 +93,19 @@ describe('the report', () => {
     expect(groups[1]?.edited).toBeUndefined()
     expect(groups[1]?.comparison).toBeUndefined()
     expect(passedCount(report.variants[1]!)).toBe(1)
+  })
+
+  it('counts the calls of each provider that got no answer, of either prompt, with each of the gateway\'s codes once', () => {
+    const production = variant('groq', 'production', [true, false, false])
+    production.cases[1] = outcome('c1', false, '', 'budget_exhausted')
+    production.cases[2] = outcome('c2', false, '', 'budget_exhausted')
+    const edited = variant('groq', 'edited', [true, false])
+    edited.cases[1] = outcome('c1', false, '', 'upstream_failed')
+    const other = variant('workers-ai', 'production', [true, false])
+    const report = { variants: [production, edited, other] } as unknown as Lb10Report
+    const found = unansweredByProvider(report)
+    expect(found.get('groq')).toEqual({ count: 3, codes: ['budget_exhausted', 'upstream_failed'] })
+    expect(found.has('workers-ai')).toBe(false)
   })
 
   it('places marks on the figures as shares of their width, and tells overlapping intervals', () => {

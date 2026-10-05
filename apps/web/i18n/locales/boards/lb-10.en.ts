@@ -291,6 +291,11 @@ const lb10 = {
         no_detectable_difference: 'No detectable difference',
         not_comparable: 'Not comparable',
       },
+      unanswered: {
+        one: '{count} call on {provider} got no answer ({reasons}). A call with no answer counts as a failed case, so this verdict says as much about the provider as about the prompts.',
+        few: '{count} calls on {provider} got no answer ({reasons}). Each counts as a failed case, so this verdict says as much about the provider as about the prompts.',
+        other: '{count} calls on {provider} got no answer ({reasons}). Each counts as a failed case, so this verdict says as much about the provider as about the prompts.',
+      },
     },
     changed: {
       title: 'Every case that changed',
@@ -355,7 +360,7 @@ const lb10 = {
       model_not_found: 'the gateway has no such model',
       input_too_large: 'the prompt and the case were too long for the model',
       quota_exceeded: 'a quota of the gateway was spent',
-      budget_exhausted: 'the day\'s model budget was spent',
+      budget_exhausted: 'the model\'s free budget was spent for now',
       upstream_rejected: 'the provider refused the request',
       upstream_failed: 'the provider failed',
       upstream_timeout: 'the provider took too long',
