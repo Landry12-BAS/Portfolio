@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable, Sequence
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -214,6 +215,79 @@ def test_a_run_in_which_nothing_answered_fails_as_a_whole_naming_the_budget() ->
     with pytest.raises(RunFailedError) as failed:
         asyncio.run(pipeline.run(request(prompt=PACK.prompt.system), lambda _done, _cached: None))
     assert failed.value.failure == FAILURE_NO_ANSWERS
+
+
+class MinuteSpentError(OpenAIError):
+    """A gateway answer saying a budget is spent for now, with its Retry-After, as the client raises it."""
+
+    code = "budget_exhausted"
+
+    def __init__(self, retry_after: str) -> None:
+        """Say when to ask again, in seconds, as the gateway's Retry-After header does."""
+        super().__init__("spent for now")
+        self.response = SimpleNamespace(headers={"retry-after": retry_after})
+
+
+def refusing_first(refusals: int, retry_after: str) -> Callable[[str, Sequence[ChatMessage]], str | Exception]:
+    """Refuse the first calls for a spent budget, as the gateway does when a provider's minute is used, then answer."""
+    asked = {"calls": 0}
+
+    def answer(alias: str, messages: Sequence[ChatMessage]) -> str | Exception:
+        """Refuse while the count lasts, then answer each case rightly."""
+        asked["calls"] += 1
+        if asked["calls"] <= refusals:
+            return MinuteSpentError(retry_after)
+        return answer_by_case(alias, messages)
+
+    return answer
+
+
+def test_a_call_refused_for_a_minute_budget_waits_for_it_and_asks_again() -> None:
+    """A free tier's minute budget refuses a burst of calls: each waits the gateway's Retry-After and is answered.
+
+    Counted as failed cases, such refusals would grade the provider's budget and not the prompt: a run on Groq's
+    8,000 tokens a minute would mostly be refusals, and the visitor's prompt would be reported worse for them.
+    """
+    waits: list[float] = []
+
+    async def sleep(seconds: float) -> None:
+        """Note the wait instead of waiting."""
+        waits.append(seconds)
+
+    spans = MemorySpanWriter()
+    chat = FakeEvalChat(refusing_first(3, "2"))
+    pipeline = EvalPipeline(chat, MemoryResultStore(), Tracer(spans), run_in_thread, lambda: TODAY, sleep=sleep)
+
+    report = asyncio.run(pipeline.run(request(), lambda _done, _cached: None))
+
+    assert waits == [2.0, 2.0, 2.0]
+    assert [variant.failed_calls for variant in report.variants] == [0, 0]
+    assert [variant.score.mean for variant in report.variants] == [1.0, 1.0]
+    waited = [span.attrs.get("budget_waits") for span in spans.spans if span.name == "model call"]
+    assert sum(count for count in waited if isinstance(count, int)) == 3
+
+
+def test_a_call_refused_until_a_day_budget_comes_back_is_not_waited_for() -> None:
+    """A day's budget comes back at midnight: the call is a failed case at once, and the run never waits for it."""
+    waits: list[float] = []
+
+    async def sleep(seconds: float) -> None:
+        """Note the wait instead of waiting."""
+        waits.append(seconds)
+
+    pipeline = EvalPipeline(
+        FakeEvalChat(refusing_first(1, "36000")),
+        MemoryResultStore(),
+        Tracer(MemorySpanWriter()),
+        run_in_thread,
+        lambda: TODAY,
+        sleep=sleep,
+    )
+
+    report = asyncio.run(pipeline.run(request(), lambda _done, _cached: None))
+
+    assert waits == []
+    assert sum(variant.failed_calls for variant in report.variants) == 1
 
 
 def test_a_visitor_request_never_plans_an_openrouter_alias() -> None:

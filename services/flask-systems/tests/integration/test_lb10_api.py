@@ -284,6 +284,27 @@ def test_a_run_whose_calls_all_fail_is_failed_and_given_back(serve: Callable[...
     assert served.request("GET", "/api/lb10/quota").get_json()["remaining"] == 1
 
 
+def test_a_run_whose_every_call_fails_is_given_back_though_production_came_from_the_cache(
+    serve: Callable[..., Served],
+) -> None:
+    """The models were down for every call the run made, so it measured nothing of the visitor's prompt.
+
+    Production's results came from the cache, made by an earlier visitor's run: they are not this run's answers,
+    and must not turn a run that measured nothing into a report in which the visitor's prompt failed every case.
+    """
+    from lb_common.gateway import GatewayResponseError
+
+    served = serve()
+    earlier = served.start(session=OTHER_SESSION, prompt=PACK.prompt.system + "\nBe kind.")
+    assert served.wait_for(earlier.get_json()["run"]["run_id"], OTHER_SESSION)["state"] == "done"
+    served.chat.answer = lambda _alias, _messages: GatewayResponseError("down")
+    response = served.start()
+    assert response.status_code == 202
+    run = served.wait_for(response.get_json()["run"]["run_id"])
+    assert (run["state"], run["failure"]) == ("failed", "no_answers")
+    assert served.request("GET", "/api/lb10/quota").get_json()["remaining"] == 1
+
+
 def test_a_visitor_the_full_lab_turns_away_keeps_their_run_however_often_it_happens(
     lb10_engine: Engine, prefix: str
 ) -> None:

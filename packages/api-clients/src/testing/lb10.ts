@@ -43,6 +43,8 @@ const REFUNDED = new Set<string>([...LB10_RUN_FAILURES, 'call_limit'])
 // The gateway's codes for a call that got no answer, which a test may give some of the next run's calls.
 // They are the gateway's own codes (lb_common.gateway.GatewayCode), and the pipeline's `model_failed` for a failure with none.
 export const LB10_CALL_FAILURES = ['upstream_failed', 'upstream_timeout', 'upstream_rejected', 'quota_exceeded', 'budget_exhausted', 'input_too_large', 'model_failed'] as const
+// The codes of a spent budget or quota, as opposed to a failure (lb10/pipeline.py, BUDGET_CODES).
+const BUDGET_CODES = new Set<string>(['quota_exceeded', 'budget_exhausted'])
 
 /** One of the service's failures of a whole run. */
 export type Lb10RunFailure = (typeof LB10_RUN_FAILURES)[number]
@@ -614,6 +616,13 @@ export class Lb10Mock {
   #finish(run: Run): void {
     if (run.endsWith !== null) {
       this.#end(run, 'failed', run.endsWith, REFUNDED.has(run.endsWith))
+      return
+    }
+    // A run whose every call got no answer measured nothing, whatever the cache held (lb10/pipeline.py, require_answers).
+    const fresh = run.plan.filter(planned => !planned.cached).flatMap(planned => planned.results)
+    if (fresh.length > 0 && fresh.every(result => result.error !== null)) {
+      const spent = fresh.every(result => BUDGET_CODES.has(result.error ?? ''))
+      this.#end(run, 'failed', spent ? 'model_budget' : 'no_answers', true)
       return
     }
     for (const planned of run.plan) {

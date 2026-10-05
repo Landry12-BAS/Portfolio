@@ -194,6 +194,16 @@ describe('the mock LB-10', () => {
     expect(edited.cases[0]).toMatchObject({ passed: false, output: '', grades: [], error: 'upstream_failed' })
   })
 
+  it('fails a run whose every call got no answer, though production came from the cache, and gives it back', () => {
+    const classifier = pack('lb01-classifier')
+    expect(runToEnd(OTHER, { target: classifier.pack, prompt: `${classifier.systemPrompt}\nFirst.`, providers: ['groq'] }).state).toBe('done')
+    mock.control('fail-calls', { code: 'upstream_failed', count: 10 })
+    expect(runToEnd(SESSION, { target: classifier.pack, prompt: `${classifier.systemPrompt}\nSecond.`, providers: ['groq'] })).toMatchObject({ state: 'failed', failure: 'no_answers' })
+    expect(bodyOf(mock.quota(SESSION)).remaining).toBe(1)
+    mock.control('fail-calls', { code: 'budget_exhausted', count: 10 })
+    expect(runToEnd(SESSION, { target: classifier.pack, prompt: `${classifier.systemPrompt}\nThird.`, providers: ['groq'] })).toMatchObject({ state: 'failed', failure: 'model_budget' })
+  })
+
   it('refuses a run when the lab is busy, leaving a failed run behind that is given back, and when it has no gateway', () => {
     const classifier = pack('lb01-classifier')
     const request = { target: classifier.pack, prompt: classifier.systemPrompt, providers: ['groq'] }

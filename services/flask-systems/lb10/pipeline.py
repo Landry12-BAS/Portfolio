@@ -8,7 +8,10 @@ the prompt's text is never in a span, only its hash names the variant. The calls
 under a semaphore (docs/STACK.md): the gateway client is synchronous, so each call runs on a thread of the
 pool with a copy of the task's context, which is how the call still knows its run and its span. A reply is
 graded as it is and never repaired; a call that fails is a failed case with the gateway's code, and a run
-in which no call at all answered fails as a whole, since it measured nothing.
+in which no call it made answered fails as a whole, since it measured nothing. A call the gateway refuses
+because a provider's budget is spent for the minute (a free tier's tokens a minute: a burst of calls spends
+Groq's in a few) waits for the gateway's Retry-After and asks again, holding its place in the fan-out, so the
+run measures the prompt and not the budget; a budget that comes back only tomorrow is not waited for.
 
 Results are cached by (pack version, prompt hash, alias, case id), so the production prompt's baseline is
 computed once and every later run reads it; a visitor's own run usually spends ten calls a provider.
@@ -44,6 +47,11 @@ logger = logging.getLogger(__name__)
 BUDGET_CODES = frozenset({GatewayCode.QUOTA_EXCEEDED.value, GatewayCode.BUDGET_EXHAUSTED.value})
 # The error a result carries when the gateway failed in a way it did not name.
 UNNAMED_FAILURE = "model_failed"
+# The longest Retry-After a call refused for a spent budget waits for: a provider's minute window frees within
+# a minute, and a longer wait is a day's budget, which comes back after the run's deadline.
+BUDGET_WAIT_LIMIT_SECONDS = 65.0
+# How many times one call waits for a budget, so no call waits for ever; the run's deadline bounds them all.
+BUDGET_WAITS_PER_CALL = 5
 # Why a run failed as a whole.
 FAILURE_NO_ANSWERS = "no_answers"
 FAILURE_BUDGET = "model_budget"
@@ -118,6 +126,25 @@ def failure_code(error: OpenAIError) -> str:
     return str(code) if isinstance(code, str) and code else UNNAMED_FAILURE
 
 
+def budget_wait_seconds(error: OpenAIError) -> float | None:
+    """Say how long a call refused for a budget spent for now should wait before it asks again, or None.
+
+    Only the gateway's `budget_exhausted` with a Retry-After of at most a minute or so is waited for: that is a
+    provider's minute window. No Retry-After, or a longer one (a day's budget), means the call is a failed case.
+    """
+    if failure_code(error) != GatewayCode.BUDGET_EXHAUSTED.value:
+        return None
+    headers = getattr(getattr(error, "response", None), "headers", None)
+    value = headers.get("retry-after") if headers is not None else None
+    try:
+        seconds = float(value) if isinstance(value, str) else None
+    except ValueError:
+        return None
+    if seconds is None or not 0 < seconds <= BUDGET_WAIT_LIMIT_SECONDS:
+        return None
+    return seconds
+
+
 def messages_for(plan: VariantPlan, pack: EvalPack, case: PackCase) -> list[ChatMessage]:
     """Fill the plan's prompt and the pack's user template with the case's inputs."""
     return [
@@ -187,8 +214,12 @@ class EvalPipeline:
         concurrency: int = CONCURRENCY,
         call_timeout_seconds: float = CALL_TIMEOUT_SECONDS,
         max_calls: int = MAX_CALLS_PER_RUN,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
-        """Call models through `chat`, cache in `repository`, record spans with `tracer`, block on `offload`."""
+        """Call models through `chat`, cache in `repository`, record spans with `tracer`, block on `offload`.
+
+        `sleep` waits out a budget's Retry-After; tests give one that only notes the wait.
+        """
         self.chat = chat
         self.repository = repository
         self.tracer = tracer
@@ -197,6 +228,7 @@ class EvalPipeline:
         self.concurrency = concurrency
         self.call_timeout_seconds = call_timeout_seconds
         self.max_calls = max_calls
+        self.sleep = sleep
 
     async def run(self, request: RunRequest, progress: Progress) -> ReportOut:
         """Run one eval as one run of LB-10, and return its report; raise `RunFailedError` when it measured nothing."""
@@ -232,8 +264,8 @@ class EvalPipeline:
             raise RunFailedError(FAILURE_CALL_LIMIT)
         progress(len(cached), len(cached))
         fresh = await self.fan_out(request, misses, len(cached), progress)
+        require_answers(fresh)
         results = {**cached, **fresh}
-        require_answers(results)
         cached_ids = set(cached)
         variants = [
             variant_out(
@@ -281,6 +313,24 @@ class EvalPipeline:
             span.set("case", case.id)
             span.set("difficulty", case.difficulty)
             started = self.clock()
+            result = await self.ask_and_grade(key, pack, plan, case, span, started)
+            note_result(span, result)
+        try:
+            await self.offload(self.repository.store_result, result)
+        except Exception as error:  # noqa: BLE001 - a cache that can't be written costs a later call, never this run
+            logger.error("Could not cache a result: %s", describe_failure(error))
+        return result
+
+    async def ask_and_grade(
+        self, key: ResultKey, pack: EvalPack, plan: VariantPlan, case: PackCase, span: OpenSpan, started: datetime
+    ) -> StoredResult:
+        """Ask once, and again after a minute budget's Retry-After when the gateway refuses for one; grade the answer.
+
+        A refused call reached no provider, so the gateway counted nothing for it: asking again spends no call
+        twice. The wait holds the call's place in the fan-out, which is what slows the run to the budget's pace.
+        """
+        waits = 0
+        while True:
             try:
                 completion = await self.offload(
                     self.chat.complete,
@@ -290,20 +340,24 @@ class EvalPipeline:
                     pack.target.max_output_tokens,
                     self.call_timeout_seconds,
                 )
-                result = graded_result(key, pack, case, completion, self.clock())
+                return graded_result(key, pack, case, completion, self.clock())
             except OpenAIError as error:
-                elapsed = round((self.clock() - started).total_seconds() * 1000)
-                result = failed_result(key, failure_code(error), elapsed, self.clock())
-            note_result(span, result)
-        try:
-            await self.offload(self.repository.store_result, result)
-        except Exception as error:  # noqa: BLE001 - a cache that can't be written costs a later call, never this run
-            logger.error("Could not cache a result: %s", describe_failure(error))
-        return result
+                wait = budget_wait_seconds(error)
+                if wait is None or waits >= BUDGET_WAITS_PER_CALL:
+                    elapsed = round((self.clock() - started).total_seconds() * 1000)
+                    return failed_result(key, failure_code(error), elapsed, self.clock())
+                waits += 1
+                span.set("budget_waits", waits)
+                await self.sleep(wait)
 
 
 def require_answers(results: dict[ResultKey, StoredResult]) -> None:
-    """Fail a run in which no call answered: it measured nothing, and the visitor's place is given back."""
+    """Fail a run in which no call it made answered: it measured nothing, and the visitor's place is given back.
+
+    `results` are the calls made in this run. Results read from the cache were made by an earlier run, so they
+    never count as this run's answers: a run whose every call failed measured nothing, whatever the cache held.
+    A run that made no call at all (everything was cached) is not a failure.
+    """
     if not results or any(result.error is None for result in results.values()):
         return
     codes = {result.error for result in results.values()}
