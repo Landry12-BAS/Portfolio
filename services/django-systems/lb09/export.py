@@ -3,17 +3,35 @@
 The text export is written so a visitor can paste it into Automation Studio (LB-08) as the description of a
 process to automate: one sentence a decision, one an action with its owner and deadline. Every export is made
 from the rows, in code, and says that the speaker labels were inferred from the words, not matched to voices.
+
+The CSV is opened in a spreadsheet, and its cells of free text come from a model and from what was said into a
+microphone: a cell that begins with `=`, `+`, `-` or `@` (or a tab or a carriage return) would be read as a
+formula, so it is written with an apostrophe in front, as LB-03's exports do (docs/SECURITY.md, section 4).
 """
 
 import csv
 import io
 import json
+import unicodedata
 from collections.abc import Sequence
 
 from lb09.models import Item, Meeting, Segment
 
 # What every export says about the labels.
 LABELS_NOTE = "Speaker labels are inferred from the words, not matched to voices."
+# The characters a spreadsheet reads as the start of a formula.
+FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def safe_cell(text: str) -> str:
+    """Write a cell of free text so a spreadsheet shows it as text: one that begins like a formula gets an apostrophe.
+
+    The first character is also compared after Unicode normalisation, so a full-width equals sign is caught too.
+    """
+    leading = unicodedata.normalize("NFKC", text.lstrip())[:1]
+    if text.startswith(FORMULA_STARTS) or leading in {"=", "+", "-", "@"}:
+        return f"'{text}"
+    return text
 
 
 def item_record(item: Item) -> dict[str, object]:
@@ -56,7 +74,17 @@ def as_csv(items: Sequence[Item]) -> str:
     writer = csv.writer(buffer, lineterminator="\n")
     writer.writerow(["kind", "text", "owner", "deadline", "start_seconds", "end_seconds", "evidence"])
     for item in items:
-        writer.writerow([item.kind, item.text, item.owner, item.deadline, item.start, item.end, item.evidence])
+        writer.writerow(
+            [
+                item.kind,
+                safe_cell(item.text),
+                safe_cell(item.owner),
+                safe_cell(item.deadline),
+                item.start,
+                item.end,
+                safe_cell(item.evidence),
+            ]
+        )
     return buffer.getvalue()
 
 

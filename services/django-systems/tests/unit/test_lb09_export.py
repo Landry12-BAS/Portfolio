@@ -80,6 +80,48 @@ def test_csv_has_a_header_and_one_row_an_item() -> None:
     assert len(rows) == 4
 
 
+def test_a_csv_cell_that_begins_like_a_formula_is_written_as_text() -> None:
+    """Model output and spoken words that begin with =, +, - or @ (full-width too) open in a spreadsheet as text."""
+    full_width_equals = chr(0xFF1D)
+    hostile = Item(
+        position=0,
+        kind="action",
+        text='=HYPERLINK("http://evil.example/x","Click")',
+        owner="=Peter",
+        deadline="+1 day",
+        evidence="@SUM(A1:A9) I will order the beans by Friday.",
+        start=1.0,
+        end=2.0,
+        first_segment=0,
+        last_segment=0,
+    )
+    wide = Item(
+        position=1,
+        kind="decision",
+        text=f"{full_width_equals}1+1",
+        owner="",
+        deadline="",
+        evidence="-2 boxes, we agreed.",
+        start=3.0,
+        end=4.0,
+        first_segment=1,
+        last_segment=1,
+    )
+    rows = list(csv.reader(io.StringIO(as_csv([hostile, wide]))))
+    assert rows[1] == [
+        "action",
+        '\'=HYPERLINK("http://evil.example/x","Click")',
+        "'=Peter",
+        "'+1 day",
+        "1.0",
+        "2.0",
+        "'@SUM(A1:A9) I will order the beans by Friday.",
+    ]
+    assert rows[2][1] == f"'{full_width_equals}1+1"
+    assert rows[2][6] == "'-2 boxes, we agreed."
+    assert (rows[2][2], rows[2][3]) == ("", "")
+
+
 def test_the_text_export_describes_the_follow_up_as_a_process_for_lb_08() -> None:
     """One sentence a decision, one an action with its owner and deadline, and a name for an action nobody took."""
     text = as_text(ITEMS)

@@ -153,7 +153,7 @@ Limits, all in [`lb09/limits.py`](lb09/limits.py), and checked against `routing.
 | Limit | Value |
 |---|---|
 | Recording length | 60 s, measured from the decoded audio (datasheet); at least 0.5 s |
-| Recordings a visitor may start a day | 5 (datasheet), samples included, under the same per-visitor lock as LB-01's tickets |
+| Recordings a visitor may start a day | 5 (datasheet), samples included, under the same per-visitor lock as LB-01's tickets. A meeting the service could not finish for its own reasons (`transcriber`, `model`, `stale`, `pipeline_error`, `audio_gone`) gives its place back, as LB-06's failed incidents do; one the decoder refused or that held no speech stays counted |
 | Upload | 3 MiB of audio, as base64 in the JSON body (a minute of browser audio is about 1 MB) |
 | Audio kept | Until transcribed (datasheet): deleted in the transcription step, whatever happens there; a sweep removes any file older than an hour |
 | Transcript | 120 segments, 6,000 characters, before a model sees it |
@@ -497,7 +497,10 @@ Short notes, as the playbook asks (step 8).
   markers it cannot close, the prompts call it data, and an item is kept only when its quote is
   really in the transcript, is not spoken to an assistant, and names an owner the meeting named.
   Every model answer must fit its Pydantic schema, with one repair. The model never supplies a
-  time; the code does. The audio file's name is random and the store refuses any other.
+  time; the code does. The audio file's name is random and the store refuses any other. A cell
+  of the CSV export that begins like a spreadsheet formula (`=`, `+`, `-`, `@`, a tab or a carriage
+  return, full-width forms included) is written with an apostrophe in front, in the service's
+  export and in the board's alike.
 - **Data exposure.** Synthetic samples; a visitor's own recording goes, in fast mode, only to
   providers that do not train on inputs, and in private mode nowhere. The file is deleted when
   transcribed, on success and on failure, and the sweep removes anything older than an hour.
@@ -505,7 +508,8 @@ Short notes, as the playbook asks (step 8).
   names. The rows (words, labels, items) are deleted 24 hours after the meeting was made. A
   failure reaches the page as a code, never an error's words.
 - **Denial of service.** 5 meetings a visitor a day, counted under a per-visitor lock so that
-  simultaneous uploads cannot pass it; 3 MiB an upload, a minute of audio, 15 seconds and 1 GiB to
+  simultaneous uploads cannot pass it (a meeting the service failed for its own reasons gives its
+  place back, and the gateway's 30 calls a visitor a day still bound what such meetings cost); 3 MiB an upload, a minute of audio, 15 seconds and 1 GiB to
   decode it, 120 segments and 6,000 characters of transcript, 4 chat calls a meeting; the gateway
   adds 6 calls a run, 30 a visitor a day and 240 a day, and 60 seconds of audio a call. The queue
   drops a task unrun after 5 minutes and stops one after 150 seconds. A socket gets 2 KB frames,

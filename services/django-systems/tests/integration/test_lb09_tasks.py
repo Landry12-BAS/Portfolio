@@ -187,6 +187,33 @@ def test_a_model_that_cannot_be_repaired_fails_the_meeting_as_a_model_failure(
     meeting.refresh_from_db()
     assert (meeting.status, meeting.failure) == ("failed", "model")
     assert not rig.store.path_of(name).exists()
+    # Both answers were asked for, so both calls count, as the trace shows them.
+    assert meeting.model_calls == 2
+
+
+def test_a_failed_extraction_counts_every_chat_call_the_meeting_made(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The labeller's call and both of the extractor's are spent, so the failed meeting says three, not one."""
+    rig = Rig(tmp_path)
+    rig.chat.replies["lb-tools"] = ["nope", "nope again"]
+    monkeypatch.setattr(tasks, "worker_pipeline", lambda: rig.pipeline)
+    meeting = rig.meeting()
+    tasks.run_meeting(meeting.pk)
+    meeting.refresh_from_db()
+    assert (meeting.status, meeting.failure, meeting.model_calls) == ("failed", "model", 3)
+    assert len(rig.chat.requests) == 3
+
+
+def test_a_model_out_of_reach_counts_the_call_that_was_tried(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A provider that cannot be reached fails the meeting as `model`, and the one call made is counted."""
+    rig = Rig(tmp_path)
+    rig.chat.fails = True
+    monkeypatch.setattr(tasks, "worker_pipeline", lambda: rig.pipeline)
+    meeting = rig.meeting()
+    tasks.run_meeting(meeting.pk)
+    meeting.refresh_from_db()
+    assert (meeting.status, meeting.failure, meeting.model_calls) == ("failed", "model", 1)
 
 
 def test_a_crash_nobody_planned_for_fails_the_meeting_and_leaves_no_audio(

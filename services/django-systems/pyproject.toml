@@ -15,6 +15,7 @@ dependencies = [
     "django-ninja>=1.7.1",
     "faster-whisper>=1.2.1",
     "lb-common",
+    "numpy>=2.5.3",
     "pgvector>=0.5.0",
     "psycopg[binary]>=3.3.6",
     "pyjwt[crypto]>=2.15.1",

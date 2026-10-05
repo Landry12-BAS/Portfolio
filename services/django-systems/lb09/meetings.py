@@ -2,8 +2,12 @@
 
 A visitor may start 5 meetings a day (the datasheet), their own recordings and the curated samples alike,
 counted since midnight UTC under a per-visitor lock (core/locks.py) so that two uploads sent at once cannot
-both take the last place. A new meeting gets the run ID every gateway call it makes will carry, and is queued
-for the worker only once its row is committed.
+both take the last place. A meeting the service could not finish for a reason of its own (the transcriber or
+the models out of reach or answering nonsense twice, the worker losing it or running out of time, a step
+failing unexpectedly, the audio gone) gives its place back, as LB-06's failed incidents do: the visitor did
+nothing wrong. A recording the decoder refuses, or one that holds no speech, stays counted: sending it was the
+visitor's doing. A new meeting gets the run ID every gateway call it makes will carry, and is queued for the
+worker only once its row is committed.
 """
 
 from collections.abc import Callable
@@ -21,6 +25,16 @@ from lb_common.run import new_run_id
 
 DATABASE = "lb09"
 
+# The reasons a meeting fails that are the service's, not the visitor's: a meeting that ends with one of them
+# does not count against the visitor's day.
+GIVEN_BACK: tuple[str, ...] = (
+    Meeting.Failure.TRANSCRIBER,
+    Meeting.Failure.MODEL,
+    Meeting.Failure.STALE,
+    Meeting.Failure.PIPELINE_ERROR,
+    Meeting.Failure.AUDIO_GONE,
+)
+
 
 class MeetingLimitError(Exception):
     """The visitor has started as many meetings today as they may."""
@@ -32,8 +46,20 @@ def midnight_before(now: datetime) -> datetime:
 
 
 def started_today(session_key: str, now: datetime) -> int:
-    """Count the meetings a visitor started since midnight UTC."""
-    return Meeting.objects.filter(session_key=session_key, created_at__gte=midnight_before(now)).count()
+    """Count the meetings a visitor started since midnight UTC that count against the day.
+
+    A meeting the service failed for a reason of its own (`GIVEN_BACK`) has given its place back.
+    """
+    return (
+        Meeting.objects.filter(session_key=session_key, created_at__gte=midnight_before(now))
+        .exclude(status=Meeting.Status.FAILED, failure__in=GIVEN_BACK)
+        .count()
+    )
+
+
+def counts_against_the_day(meeting: Meeting) -> bool:
+    """Tell whether a meeting still holds one of the visitor's places for its day."""
+    return not (meeting.status == Meeting.Status.FAILED and meeting.failure in GIVEN_BACK)
 
 
 def start_meeting(
