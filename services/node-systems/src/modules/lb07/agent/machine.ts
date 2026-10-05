@@ -29,6 +29,9 @@ import type { Working } from './working.ts'
  */
 export const planAnswerSchema = lb07PlanAnswerSchema.refine(answer => answer.steps[0]?.action === 'goto', { message: 'a plan starts by going to a page of the shop', path: ['steps', 0] })
 
+/** How many times a session that cannot be opened because the runner is restarting is tried again, one wait apart. */
+const RESTART_WAITS = 10
+
 /** The injection guard, as the machine asks it. */
 export interface Guard {
   check: (text: string) => Promise<{ flagged: boolean, score: number }>
@@ -259,16 +262,27 @@ export class Agent {
     })
   }
 
-  /** Opens a session, waiting while another run holds the browser, and refusing when the wall clock is nearly spent. */
+  /**
+   * Opens a session, waiting while another run holds the browser and while the runner restarts, and refusing when the
+   * wall clock is nearly spent. A runner that has served its share of sessions refuses new ones, exits once the last has
+   * closed and is started again by the container's restart policy, which takes a few seconds: the run that follows
+   * straight after the last one finds it unreachable or exhausted, and that is no reason to fail it.
+   */
   async #open(engine: Lb07Engine, bugToken: string | null): Promise<string> {
-    for (let waited = 0; ; waited += 1) {
+    let busyWaits = 0
+    let restartWaits = 0
+    for (;;) {
       const remaining = this.#remainingMs()
       if (remaining < MIN_PASS_MS) throw new RunEnded('run_timeout', 'The run has used its browser time.')
       try {
         return await this.#deps.runner.open({ runId: this.#input.runId, engine, bugToken, wallClockMs: Math.min(remaining, LB07_LIMITS.runTimeMs) })
       }
       catch (error) {
-        if (!(error instanceof RunnerError) || error.code !== 'busy' || waited >= this.#deps.busyWaits) throw error
+        if (!(error instanceof RunnerError)) throw error
+        const restarting = error.code === 'unreachable' || error.code === 'exhausted'
+        if (error.code === 'busy' && busyWaits < this.#deps.busyWaits) busyWaits += 1
+        else if (restarting && restartWaits < RESTART_WAITS) restartWaits += 1
+        else throw error
         await wait(this.#deps.busyWaitMs)
       }
     }

@@ -202,6 +202,19 @@ describe('the machine', () => {
     await expect(run(clean, referenceModel(clean), stuck)).rejects.toMatchObject({ code: 'busy' })
   })
 
+  it('waits for a runner that is restarting, unreachable or exhausted, a bounded number of times, then gives the error to the job', async () => {
+    const runner = new FakeRunner()
+    runner.openFailures.push(new RunnerError('exhausted', 'exhausted'), new RunnerError('unreachable', 'unreachable'), new RunnerError('unreachable', 'unreachable'))
+    const observed = await run(clean, referenceModel(clean), runner)
+    expect(observed.result.verification.verdict).toBe('passing')
+    const gone = new FakeRunner()
+    for (let index = 0; index < 11; index += 1) gone.openFailures.push(new RunnerError('unreachable', 'unreachable'))
+    await expect(run(clean, referenceModel(clean), gone)).rejects.toMatchObject({ code: 'unreachable' })
+    const refusing = new FakeRunner()
+    refusing.openFailures.push(new RunnerError('refused', 'refused'))
+    await expect(run(clean, referenceModel(clean), refusing)).rejects.toMatchObject({ code: 'refused' })
+  })
+
   it('ends the run as run_timeout when the wall clock is spent, and when the runner says the session expired', async () => {
     let now = 0
     await expect(run(clean, referenceModel(clean), new FakeRunner(), { runTimeMs: 1_000, now: () => (now += 400) })).rejects.toBeInstanceOf(RunEnded)
