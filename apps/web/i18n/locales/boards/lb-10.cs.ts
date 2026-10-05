@@ -181,7 +181,7 @@ const lb10 = {
     elapsed: '{seconds} s',
     elapsedLabel: 'Čas',
     providers: 'Poskytovatelé',
-    slow: 'Tento běh trvá déle než většina. Služba každý běh ukončí po pěti minutách.',
+    slow: 'Tento běh trvá déle než většina. Bezplatný poskytovatel povolí jen omezený počet tokenů za minutu a běh na ně počká, místo aby odmítnuté volání počítal jako nezvládnutý případ. Služba každý běh ukončí po pěti minutách.',
     stopWaiting: 'Přestat čekat',
     stopHint: 'Běh ve službě pokračuje a dál se počítá; zůstane mezi vašimi dnešními běhy.',
     stopped: 'Přestali jste čekat. Běh ve službě pokračuje a je mezi vašimi dnešními běhy.',

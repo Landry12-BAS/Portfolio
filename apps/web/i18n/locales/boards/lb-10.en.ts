@@ -184,7 +184,7 @@ const lb10 = {
     elapsed: '{seconds} s',
     elapsedLabel: 'Time',
     providers: 'Providers',
-    slow: 'This run is taking longer than most. The service ends any run after five minutes.',
+    slow: 'This run is taking longer than most. A free provider allows only so many tokens a minute, and the run waits for them rather than count a refused call as a failed case. The service ends any run after five minutes.',
     stopWaiting: 'Stop waiting',
     stopHint: 'The run goes on in the service and still counts; it stays in your runs of today.',
     stopped: 'You stopped waiting. The run goes on in the service and is in your runs of today.',
