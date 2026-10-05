@@ -138,15 +138,15 @@ describe('the commands', () => {
     const first = await command('cli/migrate.ts')
     const second = await command('cli/migrate.ts')
 
-    expect(first).toMatchObject({ code: 0, stdout: 'lb08: 1 migration applied\nlb04: 1 migration applied\nlb06: 1 migration applied\n' })
-    expect(second).toMatchObject({ code: 0, stdout: 'lb08: 0 migrations applied\nlb04: 0 migrations applied\nlb06: 0 migrations applied\n' })
+    expect(first).toMatchObject({ code: 0, stdout: 'lb08: 1 migration applied\nlb04: 1 migration applied\nlb06: 1 migration applied\nlb07: 1 migration applied\n' })
+    expect(second).toMatchObject({ code: 0, stdout: 'lb08: 0 migrations applied\nlb04: 0 migrations applied\nlb06: 0 migrations applied\nlb07: 0 migrations applied\n' })
   })
 
   it('seed loads the stock list, and loads the same list again', async () => {
     const first = await command('cli/seed.ts')
     const second = await command('cli/seed.ts')
 
-    expect(first).toMatchObject({ code: 0, stdout: expect.stringMatching(/^lb08: 6 products in the stock list\nlb04: the playbook \(version \d+, 21 rules\) and 6 sample contracts, checked\nlb06: 4 curated samples from the golden set, checked\n$/) })
+    expect(first).toMatchObject({ code: 0, stdout: expect.stringMatching(/^lb08: 6 products in the stock list\nlb04: the playbook \(version \d+, 21 rules\) and 6 sample contracts, checked\nlb06: 4 curated samples from the golden set, checked\nlb07: 6 bugs and \d+ golden cases \(\d+ samples\), checked\n$/) })
     expect(second.stdout).toBe(first.stdout)
   })
 
@@ -191,7 +191,7 @@ describe('the API and the worker, as two processes', () => {
       return response?.status === 200 ? await response.json() : undefined
     })
 
-    expect(ready).toEqual({ lb08: true, lb04: true, lb06: true })
+    expect(ready).toEqual({ lb08: true, lb04: true, lb06: true, lb07: true })
     expect((await fetch(`http://127.0.0.1:${port}/api/healthz`)).status).toBe(200)
     expect((await fetch(`http://127.0.0.1:${port}/api/lb08/limits`)).status).toBe(401)
   })

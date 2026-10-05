@@ -136,8 +136,8 @@ describe('starting', () => {
     const again = await command('cli/migrate.ts', environment)
     const seeded = await command('cli/seed.ts', environment)
 
-    expect(migrated).toMatchObject({ code: 0, stdout: 'lb08: 1 migration applied\nlb04: 1 migration applied\nlb06: 1 migration applied\n' })
-    expect(again.stdout).toBe('lb08: 0 migrations applied\nlb04: 0 migrations applied\nlb06: 0 migrations applied\n')
+    expect(migrated).toMatchObject({ code: 0, stdout: 'lb08: 1 migration applied\nlb04: 1 migration applied\nlb06: 1 migration applied\nlb07: 1 migration applied\n' })
+    expect(again.stdout).toBe('lb08: 0 migrations applied\nlb04: 0 migrations applied\nlb06: 0 migrations applied\nlb07: 0 migrations applied\n')
     expect(seeded.code).toBe(0)
     expect(seeded.stdout).toContain('lb04: the playbook')
   })
@@ -168,7 +168,7 @@ describe('the API and the worker, as two processes', () => {
       return response?.status === 200 ? await response.json() : undefined
     })
 
-    expect(ready).toEqual({ lb08: true, lb04: true, lb06: true })
+    expect(ready).toEqual({ lb08: true, lb04: true, lb06: true, lb07: true })
     expect((await fetch(`http://127.0.0.1:${port}/api/lb04/limits`)).status).toBe(401)
     expect((await call('GET', '/api/lb04/samples', session)).json).toHaveLength(6)
   })
