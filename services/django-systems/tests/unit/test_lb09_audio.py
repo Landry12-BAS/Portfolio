@@ -6,9 +6,12 @@ short the child can't even start, which is how a decoder bomb is stopped.
 """
 
 import struct
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+from lb09 import decode_child
 from lb09.audio import AudioRefusedError, Container, check_upload, decode_recording, measure, sniff_container
 from lb09.limits import MAX_RECORDING_SECONDS, MAX_UPLOAD_BYTES
 from lb09.tts import audio_dir, read_manifest
@@ -95,6 +98,82 @@ def test_a_recording_at_another_rate_is_resampled_to_16_khz(tmp_path: Path) -> N
     path.write_bytes(wav_of_silence(2.0, rate=44_100))
     decoded = decode_recording(path)
     assert abs(decoded.seconds - 2.0) < 0.01
+
+
+def test_the_decoder_is_pinned_to_the_sniffed_container_and_never_probes(tmp_path: Path) -> None:
+    """A file whose first bytes say one container is decoded only with that container's demuxer.
+
+    FFmpeg's own probing would let an upload that passes the container check (mp3 here, by its ID3 tag) be
+    decoded as whatever FFmpeg detects, reaching a demuxer the gate never meant (concat, sdp, hls, dash).
+    So the child is handed the sniffed container and opens the recording only with that demuxer: the real
+    mp3 sample decodes as mp3, is refused when the demuxer is forced wrong, and an unknown container is refused.
+    """
+    sample = audio_dir() / read_manifest().meetings["grinder-repair"].file
+    output = tmp_path / "out.pcm"
+
+    def run(container: str) -> int:
+        """Run the decode child on the sample, telling it the container, and return its exit code."""
+        output.unlink(missing_ok=True)
+        command = [
+            sys.executable,
+            "-m",
+            decode_child.__name__,
+            str(sample),
+            str(output),
+            "62",
+            "10",
+            str(1024**3),
+            container,
+        ]
+        return subprocess.run(command, capture_output=True, timeout=30, check=False).returncode  # noqa: S603
+
+    assert run("mp3") in (decode_child.WHOLE, decode_child.CUT)
+    assert output.stat().st_size > 0
+    # The same bytes, told they are a WAV: the mp3 is not fed to the wav demuxer, so nothing is decoded.
+    assert run("wav") == decode_child.UNREADABLE
+    # A container the child does not know is refused before the decoder starts.
+    assert run("io.open") == decode_child.UNREADABLE
+
+
+def test_a_body_that_sniffs_as_one_container_but_holds_another_is_refused(tmp_path: Path) -> None:
+    """An ID3 tag (sniffed as mp3) in front of a real Ogg/Opus recording is refused, never silently decoded.
+
+    With FFmpeg left to probe, such a file decodes as Ogg though the gate accepted it as mp3; pinning the
+    decoder to the sniffed container refuses the mismatch, so the container the gate approved is the only
+    one the decoder will read.
+    """
+    ogg = ogg_opus_of_tone(tmp_path / "real.ogg", seconds=3.0)
+    smuggled = tmp_path / "smuggled.audio"
+    smuggled.write_bytes(b"ID3\x04\x00\x00\x00\x00\x00\x00" + ogg)
+    assert check_upload(smuggled.read_bytes()) is Container.MP3
+    with pytest.raises(AudioRefusedError) as refused:
+        decode_recording(smuggled)
+    assert refused.value.reason == "undecodable"
+
+
+def ogg_opus_of_tone(path: Path, seconds: float) -> bytes:
+    """Write a short Ogg/Opus recording of a tone and return its bytes, for a container-confusion test."""
+    import math
+    from fractions import Fraction
+
+    import av
+    import numpy
+
+    with av.open(str(path), mode="w", format="ogg") as output:
+        stream = output.add_stream("libopus", rate=48_000, layout="mono")
+        for start in range(0, int(seconds * 48_000), 960):
+            moment = (numpy.arange(start, start + 960) / 48_000).astype(numpy.float32)
+            frame = av.AudioFrame.from_ndarray(
+                (0.3 * numpy.sin(2 * math.pi * 220 * moment)).reshape(1, -1), format="flt", layout="mono"
+            )
+            frame.sample_rate = 48_000
+            frame.pts = start
+            frame.time_base = Fraction(1, 48_000)
+            for packet in stream.encode(frame):
+                output.mux(packet)
+        for packet in stream.encode(None):
+            output.mux(packet)
+    return path.read_bytes()
 
 
 def test_a_recording_over_a_minute_is_refused_from_its_decoded_length(tmp_path: Path) -> None:
