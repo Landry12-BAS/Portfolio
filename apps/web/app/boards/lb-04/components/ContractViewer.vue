@@ -45,6 +45,10 @@ const frame = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
 const status = ref<'loading' | 'ready' | 'failed'>('loading')
 const current = ref(1)
+// What the visitor is typing in the page number box until they leave it. The box shows this and not the page, because
+// Vue sets a box's value again on every redraw, and the background comparison of the texts redraws the viewer once for
+// each page it reads: without this, the digits a visitor has typed since the last redraw are taken back.
+const typed = ref<string>()
 const pageCount = ref(0)
 const drawn = shallowRef<DrawnPage>()
 // What the browser's own reading of each page came to.
@@ -163,10 +167,16 @@ function go(page: number): void {
   current.value = Math.min(Math.max(Math.trunc(page), 1), Math.max(pageCount.value, 1))
 }
 
-/** Reads the page number the visitor typed. */
+/** Remembers what the visitor has typed in the page number box so far. */
+function onTyping(event: Event): void {
+  typed.value = (event.target as HTMLInputElement).value
+}
+
+/** Reads the page number the visitor typed, once they leave the box or press Enter in it. */
 function onNumber(event: Event): void {
   const input = event.target as HTMLInputElement
   go(Number(input.value))
+  typed.value = undefined
   input.value = String(current.value)
 }
 
@@ -237,9 +247,10 @@ onBeforeUnmount(() => {
           class="control lb4-nums"
           min="1"
           :max="Math.max(pageCount, 1)"
-          :value="current"
+          :value="typed ?? current"
           :disabled="status !== 'ready'"
           data-testid="viewer-page"
+          @input="onTyping"
           @change="onNumber"
         >
         {{ t('lb04.viewer.of', { count: pageCount }) }}
