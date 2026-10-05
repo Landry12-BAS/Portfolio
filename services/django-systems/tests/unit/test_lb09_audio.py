@@ -9,6 +9,7 @@ import struct
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 from lb09 import decode_child
@@ -98,6 +99,38 @@ def test_a_recording_at_another_rate_is_resampled_to_16_khz(tmp_path: Path) -> N
     path.write_bytes(wav_of_silence(2.0, rate=44_100))
     decoded = decode_recording(path)
     assert abs(decoded.seconds - 2.0) < 0.01
+
+
+def test_the_decoder_child_gets_none_of_the_workers_secrets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The child's whole environment is its import path and three Python settings, and it still decodes from any folder.
+
+    The worker holds the database and Redis passwords and the gateway's service key in its environment. The decoder
+    child is where a visitor's bytes meet a native decoder, so a file that took it over must find none of them: the
+    test gives the parent canaries, spies on the environment the child is started with, and decodes a real file.
+    """
+    monkeypatch.setenv("LB_PG_PASSWORD_LB09", "canary-database-password")
+    monkeypatch.setenv("LB_REDIS_URL", "redis://:canary-redis-password@redis:6379/0")
+    monkeypatch.setenv("LB_GATEWAY_SERVICE_KEY", "canary-gateway-key")
+    seen: list[dict[str, str]] = []
+    real_run = subprocess.run
+
+    def spy(command: list[str], **options: Any) -> subprocess.CompletedProcess[bytes]:
+        """Remember the environment the child was started with, then start it."""
+        seen.append(options["env"])
+        return real_run(command, **options)
+
+    monkeypatch.setattr("lb09.audio.subprocess.run", spy)
+    path = tmp_path / "quiet.wav"
+    path.write_bytes(wav_of_silence(1.0))
+    # The child is imported by its module path, which has to work from a folder that is not the service's.
+    monkeypatch.chdir(tmp_path)
+
+    decoded = decode_recording(path)
+
+    assert abs(decoded.seconds - 1.0) < 0.01
+    assert len(seen) == 1
+    assert set(seen[0]) == {"PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "PYTHONNOUSERSITE", "PYTHONUTF8"}
+    assert "canary" not in " ".join(seen[0].values())
 
 
 def test_the_decoder_is_pinned_to_the_sniffed_container_and_never_probes(tmp_path: Path) -> None:

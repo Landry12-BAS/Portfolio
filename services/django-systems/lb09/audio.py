@@ -39,6 +39,9 @@ logger = logging.getLogger(__name__)
 # bytes costs nothing.
 HEAD_BYTES: Final = 64
 
+# Where the `lb09` package is imported from: the decoder child starts from here, whatever folder the worker runs in.
+SERVICE_ROOT: Final = Path(__file__).resolve().parents[1]
+
 
 class Container(StrEnum):
     """The audio containers a recording may arrive in, told apart by their first bytes."""
@@ -112,6 +115,21 @@ def seconds_of(pcm: bytes) -> float:
     return round(len(pcm) / BYTES_PER_SECOND, 3)
 
 
+def child_environment() -> dict[str, str]:
+    """Make the decoder child's whole environment: where to import its module from, and nothing the worker holds.
+
+    The worker's environment carries its secrets (the database and Redis passwords, the gateway's service key).
+    The child is the one place a visitor's bytes meet a native decoder, so if a hostile file ever took the decoder
+    over it would find nothing to read here. It needs no Django setting, no network address and no path of ours.
+    """
+    return {
+        "PYTHONPATH": str(SERVICE_ROOT),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONUTF8": "1",
+    }
+
+
 def decode_recording(
     recording: Path,
     wall_seconds: float = DECODE_WALL_SECONDS,
@@ -144,7 +162,13 @@ def decode_recording(
             str(container),
         ]
         try:
-            result = subprocess.run(command, capture_output=True, timeout=wall_seconds, check=False)  # noqa: S603 - our own module in our own interpreter, with paths of our own
+            result = subprocess.run(  # noqa: S603 - our own module in our own interpreter, with paths of our own
+                command,
+                capture_output=True,
+                timeout=wall_seconds,
+                check=False,
+                env=child_environment(),
+            )
         except subprocess.TimeoutExpired:
             raise AudioRefusedError("decode_limit") from None
         if result.returncode == decode_child.UNREADABLE:
