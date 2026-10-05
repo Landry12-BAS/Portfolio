@@ -98,9 +98,9 @@ const feedNote = computed(() => {
         </dd>
       </div>
       <div v-if="!brief">
-        <dt>{{ t('lb06.bar.state') }}</dt>
-        <dd class="lb6-mono">
-          {{ incident.origin }}{{ incident.sampleId ? `, ${incident.sampleId}` : '' }}, seed {{ incident.scenario.seed }}
+        <dt>{{ t('lb06.bar.source') }}</dt>
+        <dd data-testid="incident-source">
+          {{ t('lb06.bar.sourceValue', { origin: t(`lb06.bar.origin.${incident.origin}`), seed: incident.scenario.seed }) }}
         </dd>
       </div>
     </dl>
@@ -179,7 +179,7 @@ const feedNote = computed(() => {
 }
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
   gap: 8px 16px;
   margin: 0;
 }

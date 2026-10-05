@@ -101,7 +101,8 @@ const lb06 = {
   },
   bar: {
     label: 'The incident',
-    state: 'State',
+    source: 'Source',
+    sourceValue: '{origin}, seed\u00A0{seed}',
     clock: 'Simulated time',
     minute: 'Minute {minute}',
     calls: 'Model calls',

@@ -47,69 +47,77 @@ function burnText(value: number): string {
     <p class="lb6-hint">
       {{ t('lb06.slo.target') }}
     </p>
-    <template v-if="slo">
-      <p
-        class="status"
-        role="status"
-        data-testid="slo-status"
-        :data-status="status"
-      >
-        <LbIcon
-          :name="icon"
-          :size="18"
-          tone="mono"
-        />
-        <span>{{ t(`lb06.slo.status.${status}`) }}</span>
-      </p>
-      <figure class="gauge">
-        <svg
-          viewBox="0 0 260 34"
-          role="img"
-          :aria-labelledby="`${id}-title`"
-          focusable="false"
+    <div
+      v-if="slo"
+      class="body"
+    >
+      <div class="now">
+        <p
+          class="status"
+          role="status"
+          data-testid="slo-status"
+          :data-status="status"
         >
-          <title :id="`${id}-title`">{{ t('lb06.slo.gauge', { value: badText }) }}</title>
-          <rect
-            class="track"
-            x="1"
-            y="8"
-            width="258"
-            height="14"
+          <LbIcon
+            :name="icon"
+            :size="18"
+            tone="mono"
           />
-          <rect
-            class="fill"
-            x="1"
-            y="8"
-            :width="(258 * fill) / 100"
-            height="14"
-          />
-          <line
-            class="promise"
-            :x1="1 + (258 * promise) / 100"
-            :x2="1 + (258 * promise) / 100"
-            y1="3"
-            y2="27"
-          />
-          <text
-            class="scale"
-            x="1"
-            y="33"
-          >0</text>
-          <text
-            class="scale"
-            x="259"
-            y="33"
-            text-anchor="end"
-          >{{ GAUGE_MAX_PERCENT }} %</text>
-        </svg>
-      </figure>
-      <p data-testid="slo-bad">
-        <span class="lb6-hint">{{ t('lb06.slo.bad') }}:</span>
-        <strong>{{ t('lb06.slo.badValue', { value: badText }) }}</strong>
-      </p>
-      <p class="lb6-hint">
-        {{ t('lb06.slo.budget') }}
-      </p>
+          <span>{{ t(`lb06.slo.status.${status}`) }}</span>
+        </p>
+        <figure class="gauge">
+          <svg
+            viewBox="0 0 260 34"
+            role="img"
+            :aria-labelledby="`${id}-title`"
+            focusable="false"
+          >
+            <title :id="`${id}-title`">{{ t('lb06.slo.gauge', { value: badText }) }}</title>
+            <rect
+              class="track"
+              x="1"
+              y="8"
+              width="258"
+              height="14"
+            />
+            <rect
+              class="fill"
+              x="1"
+              y="8"
+              :width="(258 * fill) / 100"
+              height="14"
+            />
+            <line
+              class="promise"
+              :x1="1 + (258 * promise) / 100"
+              :x2="1 + (258 * promise) / 100"
+              y1="3"
+              y2="27"
+            />
+            <text
+              class="scale"
+              x="1"
+              y="33"
+            >0</text>
+            <text
+              class="scale"
+              x="259"
+              y="33"
+              text-anchor="end"
+            >{{ GAUGE_MAX_PERCENT }} %</text>
+          </svg>
+        </figure>
+        <p
+          class="bad"
+          data-testid="slo-bad"
+        >
+          <span class="lb6-hint">{{ t('lb06.slo.bad') }}:</span>
+          <strong>{{ t('lb06.slo.badValue', { value: badText }) }}</strong>
+        </p>
+        <p class="lb6-hint">
+          {{ t('lb06.slo.budget') }}
+        </p>
+      </div>
       <div
         v-if="!brief"
         class="lb6-table-wrap"
@@ -155,7 +163,7 @@ function burnText(value: number): string {
           </tbody>
         </table>
       </div>
-    </template>
+    </div>
     <p
       v-else
       class="lb6-hint"
@@ -166,6 +174,17 @@ function burnText(value: number): string {
 </template>
 
 <style scoped>
+/* The state and the gauge on one side, the burn rates on the other when there is room for both. */
+.body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px 28px;
+  align-items: start;
+}
+.now {
+  display: grid;
+  gap: 8px;
+}
 .status {
   display: flex;
   gap: 8px;
@@ -181,6 +200,12 @@ function burnText(value: number): string {
   width: 100%;
   max-width: 420px;
   height: auto;
+}
+.bad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  align-items: baseline;
 }
 .track {
   fill: var(--lb-shade);

@@ -227,10 +227,8 @@ onBeforeUnmount(() => {
       >
         <IncidentBar :brief="brief" />
         <ApprovalCard :brief="brief" />
-        <div class="pair pair--wide">
-          <ShopDashboard :brief="brief" />
-          <SloPanel :brief="brief" />
-        </div>
+        <SloPanel :brief="brief" />
+        <ShopDashboard :brief="brief" />
         <div class="pair">
           <AgentsPanel :brief="brief" />
           <HypothesesPanel :brief="brief" />
@@ -264,8 +262,5 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 20px;
   align-items: start;
-}
-.pair--wide {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
 }
 </style>

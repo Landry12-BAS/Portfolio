@@ -221,10 +221,16 @@ export const useLb06Store = defineStore('lb06', () => {
 
   // ---- An incident ----
 
+  /** Keeps the visitor's list of the day's incidents in step with the live one on the board, so a new incident is listed at once and not only after a reload. */
+  function noteMine(view: Lb06IncidentView): void {
+    mine.value = [view, ...mine.value.filter(item => item.id !== view.id)]
+  }
+
   /** Takes the service's view of the incident: where it stands, what it has cost, and what the guard said. */
   function acceptView(view: Lb06IncidentView): void {
     if (incident.value !== undefined && incident.value.id !== view.id) return
     incident.value = view
+    if (runMode.value === 'live') noteMine(view)
     wrapUpIfOver()
   }
 
@@ -298,6 +304,7 @@ export const useLb06Store = defineStore('lb06', () => {
   /** Puts a new incident on the board: its view, an empty log, the Scope on its run, and the feed. */
   function begin(view: Lb06IncidentView): void {
     incident.value = view
+    if (runMode.value === 'live') noteMine(view)
     events.value = []
     postmortem.value = undefined
     runPhase.value = isEnded(view.state) ? 'over' : 'following'

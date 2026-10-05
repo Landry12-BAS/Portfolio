@@ -100,7 +100,8 @@ const lb06 = {
   },
   bar: {
     label: 'Incident',
-    state: 'Stav',
+    source: 'Zdroj',
+    sourceValue: '{origin}, semínko\u00A0{seed}',
     clock: 'Simulovaný čas',
     minute: 'Minuta {minute}',
     calls: 'Volání modelu',

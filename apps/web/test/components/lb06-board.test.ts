@@ -101,6 +101,19 @@ describe('LB-06\'s board', () => {
     expect(wrapper.get('[data-testid="replay-sample"]').attributes('disabled')).toBeDefined()
   })
 
+  it('lists the incident the visitor starts under their incident of the day at once, and does not offer to open what is already open', async () => {
+    const { wrapper } = await openBoard()
+    expect(wrapper.get('[data-testid="my-incident"]').text()).toContain('You have not started an incident today.')
+    await runLive(wrapper)
+    const mine = wrapper.get('[data-testid="my-incident"]')
+    expect(mine.text()).not.toContain('You have not started an incident today.')
+    expect(mine.text()).toContain('Bad deploy')
+    expect(mine.get('[data-testid="open-mine"]').attributes('disabled')).toBeDefined()
+    await until(() => wrapper.find('[data-testid="approval-action"]').exists(), 'the proposal')
+    await advance(600)
+    expect(wrapper.get('[data-testid="my-incident"]').text()).toContain('Waiting for your approval')
+  })
+
   it('runs a curated incident live: the dashboards turn, the agents work, the fix waits for the visitor, and the postmortem comes after the recovery', async () => {
     const { site, wrapper } = await openBoard()
     await runLive(wrapper)

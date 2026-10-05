@@ -36,6 +36,28 @@ const icon = computed(() => (health.value === 'failing' ? 'error' : health.value
 const lines = computed(() => props.markers
   .filter(marker => marker.minute >= domain.value.fromMinute && marker.minute <= domain.value.toMinute)
   .map(marker => ({ ...marker, x: xOf(marker.minute, domain.value, FRAME) })))
+
+/** The room one landmark letter needs beside its line, in drawing units: a landmark closer than this to the one before goes a row lower. */
+const LETTER_GAP = 14
+/** How many rows the letters are spread over, and how far apart the rows are. */
+const LETTER_ROWS = 3
+const LETTER_ROW_HEIGHT = 10
+/** Where each landmark's letter goes: beside its line, a row lower than a neighbour that is too close, and turned to the left of its line near the right edge so it is never cut off. */
+const letters = computed(() => {
+  let previous: { x: number, row: number } | undefined
+  return lines.value.map((line) => {
+    const row = previous !== undefined && line.x - previous.x < LETTER_GAP ? (previous.row + 1) % LETTER_ROWS : 0
+    previous = { x: line.x, row }
+    const nearEdge = line.x > FRAME.width - FRAME.right - LETTER_GAP
+    return {
+      seq: line.seq,
+      letter: words.markerLetter(line.kind),
+      x: nearEdge ? line.x - 2 : line.x + 2,
+      y: FRAME.top + 8 + row * LETTER_ROW_HEIGHT,
+      anchor: nearEdge ? 'end' : 'start',
+    }
+  })
+})
 const title = computed(() => t('lb06.dashboard.chart', { service: words.serviceName(props.service), metric: words.metricName(props.metric) }))
 const alt = computed(() => {
   const found = facts.value
@@ -123,23 +145,23 @@ const alt = computed(() => {
         :y="FRAME.height - 6"
         text-anchor="end"
       >{{ domain.toMinute }}</text>
-      <g
+      <line
         v-for="line in lines"
         :key="line.seq"
-      >
-        <line
-          class="marker"
-          :x1="line.x"
-          :x2="line.x"
-          :y1="FRAME.top"
-          :y2="FRAME.height - FRAME.bottom"
-        />
-        <text
-          class="letter"
-          :x="line.x + 2"
-          :y="FRAME.top + 8"
-        >{{ words.markerLetter(line.kind) }}</text>
-      </g>
+        class="marker"
+        :x1="line.x"
+        :x2="line.x"
+        :y1="FRAME.top"
+        :y2="FRAME.height - FRAME.bottom"
+      />
+      <text
+        v-for="letter in letters"
+        :key="letter.seq"
+        class="letter"
+        :x="letter.x"
+        :y="letter.y"
+        :text-anchor="letter.anchor"
+      >{{ letter.letter }}</text>
       <path
         v-if="path"
         class="line"

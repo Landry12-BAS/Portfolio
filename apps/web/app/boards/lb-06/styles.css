@@ -163,6 +163,11 @@ textarea.lb6-control {
   border-collapse: collapse;
 }
 
+/* A table's caption is centred by default; the captions here are notes that read from the left like the text around them. */
+.lb6-table caption {
+  padding-bottom: 6px;
+  text-align: left;
+}
 .lb6-table th,
 .lb6-table td {
   padding: 6px 10px 6px 0;
