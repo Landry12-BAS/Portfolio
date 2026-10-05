@@ -114,7 +114,7 @@ what a service may reach before the kernel kills it.
 |---|---|---|---|
 | `flask-api` | 2048 | always | DuckDB's 1 GB limit, and LB-03's OCR worker, measured at 692 to 837 MiB |
 | `postgres` | 2048 | always | Its settings: about 640 MiB for itself (`shared_buffers` 256 MB, three autovacuum workers at `maintenance_work_mem` 128 MB), and the rest for up to 100 connections, a few MiB each and `work_mem` 8 MB for every sort |
-| `django-worker` | 1024 (was 768) | always | Two Celery processes, each recycled at 300 MB, and LB-09's private transcriber (faster-whisper, Whisper's base model in int8). Not measured: no image with the weights has been built yet (part 12) |
+| `django-worker` | 1024 (was 768) | always | Two Celery processes, each recycled at 300 MB, and LB-09's private transcriber (faster-whisper, Whisper's base model in int8). **Measured** on a development machine (x86-64, not the box's Ampere A1): the child that ran a one-minute private meeting peaked at 472 to 484 MiB and the whole worker at 638 MiB; two meetings at once reached 974 MiB, so private transcriptions take turns (a file lock, `lb09/transcribers.py`), and 1024 MiB leaves about 380 MiB beside the one that runs, for the decoder child and the tickets |
 | `node-worker` | 768 | always | LB-04's PDF threads: measured at 291 MiB for two 30-page contracts at once, about 760 MiB if hostile files take every limit they are given |
 | `django-api` | 512 | always | Not measured |
 | `redis` | 512 | always | `maxmemory` 384 MB, and room beside it |

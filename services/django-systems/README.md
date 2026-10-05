@@ -343,6 +343,17 @@ work a second of audio (0.060 over the six, three runs each; 0.093 when the mach
 the worker's transcription step took 4.1 to 5.1 seconds for a 59.5-second recording, the model's
 load included; two at once took 7.6 to 7.9 seconds each.
 
+The same runs measured the worker's memory, which the `django-worker`'s limit of 1024 MiB rests on
+(`docs/DEPLOY.md`): the Celery child that ran a one-minute private meeting peaked at 472 to 484 MiB
+(three runs), and the whole worker, its scheduler and both children, at 638 MiB for one meeting
+(proportional set size; 862 MiB if resident sizes are added). **Two meetings at once peaked at 974 MiB,
+before the decoder child is counted**, too near a limit that the kernel enforces by killing a process.
+So private transcriptions take turns: `lb09/transcribers.py` holds a file lock around the model, a
+meeting that cannot get its turn in 90 seconds fails as the transcriber's, and a lock is let go of by
+whatever ends the process that holds it. The child that ran one is above the worker's
+`--max-memory-per-child` of 300,000 KB and is replaced after the meeting, on purpose: the model
+is loaded again for the next private meeting (0.4 to 2.9 seconds), and the worker never keeps one.
+
 Search recall today, keyword search only: 1.000 at 4 when searching by the classifier's
 English query, 0.441 when searching by the customer's own words, and 0 of 14 Czech
 tickets. The hybrid numbers join the gate once `just embed` has recorded the vectors.
@@ -608,5 +619,8 @@ real decode child. **Fixed**, each with a test that failed before the fix:
   fetches the base model's. The model runs on the CPU in int8. On a development machine (x86-64,
   4 shared cores) a 59.5-second recording took 4 to 8 seconds to transcribe (above); the box, an
   Ampere A1, has not been measured, and a meeting's task keeps its 150 seconds until it is.
+- One private transcription runs at a time in the worker's container (a file lock in the temporary
+  folder, `lb09/transcribers.py`), because two at once measured 974 MiB of the worker's 1024 (above).
+  The lock is per container: a second worker container would need its own limit and a lock they share.
 - The channel layer's group for a meeting is `lb09.meeting.<id>`, under the same Redis prefix
   as LB-02's, so the Redis role needs nothing new.

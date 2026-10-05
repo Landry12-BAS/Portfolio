@@ -363,7 +363,11 @@ services:
   # Celery's worker with its scheduler: the ticket pipeline, LB-09's meeting pipeline, the
   # 24-hour sweeps, the nightly reseed. Two processes at most, and each is recycled before it
   # grows large. LB-09's private transcriber (faster-whisper, the base model in int8) runs here,
-  # which is what the memory is for.
+  # which is what the memory is for: a one-minute private meeting measured 472 to 484 MiB in its
+  # child and 638 MiB in the whole worker, and two at once 974 MiB, so they take turns (a file
+  # lock, lb09/transcribers.py) and the child is replaced after each one (it is over the 300 MB
+  # below, on purpose), so the worker never holds two models. Measured on an x86-64 development
+  # machine, not on this box (docs/DEPLOY.md, "The memory budget").
   django-worker:
     <<: *django
     command:

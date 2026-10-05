@@ -8,8 +8,13 @@ kind, which a test proves by running it with every socket refused. Either way th
 log, a span or the database; the span holds the seconds, the segment count and the model's name.
 """
 
+import fcntl
 import logging
-from collections.abc import Iterable
+import os
+import tempfile
+import time
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Protocol
 
@@ -28,9 +33,48 @@ logger = logging.getLogger(__name__)
 # What `transcriber` says when private mode ran, before the model's own name.
 PRIVATE_PREFIX = "local/faster-whisper"
 
+# One private transcription runs at a time in the worker's container. The model needs about 480 MiB while it
+# works (measured on a one-minute recording: README, "Measured"), and two at once took the whole worker to
+# 974 MiB of its 1024: past that the kernel kills a process. The lock is a file lock, which the kernel lets go
+# of when the process holding it ends, so a child that is killed mid-run never leaves the next meeting waiting.
+PRIVATE_LOCK_PATH = Path(tempfile.gettempdir()) / "lb09-private-transcription.lock"
+# How long a meeting waits for its turn: a minute of audio takes the model well under a minute on the box,
+# and a task has 150 seconds in all (lb09/limits.py), so a meeting that waited this long would have no time left.
+PRIVATE_LOCK_WAIT_SECONDS = 90.0
+# How often a waiting meeting looks again.
+PRIVATE_LOCK_POLL_SECONDS = 0.25
+
 
 class TranscriberError(Exception):
     """The transcriber could not transcribe the recording."""
+
+
+@contextmanager
+def one_private_transcription_at_a_time(
+    wait_seconds: float | None = None, poll_seconds: float | None = None
+) -> Iterator[None]:
+    """Hold the container's one place for a private transcription, waiting for it, or fail when it does not come.
+
+    The lock is on a file that is never followed through a link, and is held on the open descriptor: closing
+    it, which a dying process does too, gives the place up. The file and the waits are read when the place is
+    asked for, so a test can give it a folder and a short wait of its own.
+    """
+    wait = PRIVATE_LOCK_WAIT_SECONDS if wait_seconds is None else wait_seconds
+    poll = PRIVATE_LOCK_POLL_SECONDS if poll_seconds is None else poll_seconds
+    descriptor = os.open(PRIVATE_LOCK_PATH, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        deadline = time.monotonic() + wait
+        while True:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise TranscriberError("Another private transcription held the model for too long.") from None
+                time.sleep(poll)
+        yield
+    finally:
+        os.close(descriptor)
 
 
 class Transcriber(Protocol):
@@ -150,21 +194,23 @@ class PrivateTranscriber:
         return self._model
 
     def transcribe(self, pcm: bytes, language: str | None) -> Transcript:
-        """Run the model on the samples, with the fastest settings that keep the timestamps."""
+        """Run the model on the samples, with the fastest settings that keep the timestamps, one meeting at a time."""
         try:
-            segments, info = self.model().transcribe(
-                pcm_as_floats(pcm), language=language, beam_size=1, vad_filter=False
-            )
-            raw = [
-                RawSegment(
-                    start=float(segment.start),
-                    end=float(segment.end),
-                    text=str(segment.text),
-                    no_speech_prob=float(segment.no_speech_prob),
-                    avg_logprob=float(segment.avg_logprob),
+            with one_private_transcription_at_a_time():
+                segments, info = self.model().transcribe(
+                    pcm_as_floats(pcm), language=language, beam_size=1, vad_filter=False
                 )
-                for _, segment in zip(range(MAX_SEGMENTS * 2), segments, strict=False)
-            ]
+                # The segments are made as they are read, so the work is done here, inside the lock.
+                raw = [
+                    RawSegment(
+                        start=float(segment.start),
+                        end=float(segment.end),
+                        text=str(segment.text),
+                        no_speech_prob=float(segment.no_speech_prob),
+                        avg_logprob=float(segment.avg_logprob),
+                    )
+                    for _, segment in zip(range(MAX_SEGMENTS * 2), segments, strict=False)
+                ]
         except (RuntimeError, ValueError, OSError) as error:
             raise TranscriberError("The private model could not transcribe the recording.") from error
         return Transcript(language=str(info.language), model=f"{PRIVATE_PREFIX}/{self.model_name}", segments=clean(raw))
