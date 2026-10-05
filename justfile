@@ -179,6 +179,21 @@ eval-lb04 *args:
 eval-lb06 *args:
     pnpm --filter @lb/node-systems eval:lb06 {{args}}
 
+# Needs the gateway with provider keys and LB-07's sandbox running (`just lb07-sandbox`); at most seven calls a case, about 77 for the eleven cases; `--samples` or `--case ID` run fewer.
+# Run LB-07's golden set through the live agent, the real sandbox browser and the staging shop, and grade it by rules.
+eval-lb07 *args:
+    pnpm --filter @lb/node-systems eval:lb07 {{args}}
+
+# Needs a Chromium (LB07_BROWSER_PATH, or Playwright's own install) and LB07_SHOP_TOKEN_KEY; settings in services/node-systems/.env.
+# Run LB-07's sandbox: the staging shop (loopback) and the browser runner's API in one process, as the container runs it.
+lb07-sandbox:
+    pnpm --filter @lb/node-systems sandbox
+
+# Needs a Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE, or Playwright's own install); no model, no database.
+# Run the tests that drive LB-07's runner on a real Chromium over the real staging shop.
+test-lb07-browser:
+    pnpm --filter @lb/node-systems test:browser
+
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high
