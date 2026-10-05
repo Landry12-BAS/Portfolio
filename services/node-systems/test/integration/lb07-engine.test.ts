@@ -118,7 +118,8 @@ describe('the allowances', () => {
 describe('a run that is retried', () => {
   it('keeps the plan it paid for, runs the browser passes again, and ends done on the second attempt', async () => {
     const session = newSession()
-    harness.runner.openFailures.push(new RunnerError('unreachable', 'down'))
+    // A crash fails the attempt at once; an unreachable runner is waited for inside the attempt (a restart takes a few seconds).
+    harness.runner.openFailures.push(new RunnerError('crashed', 'the browser crashed'))
     const run = await startRun(harness.deps, session, { from: 'sample', sampleId: coupon.id })
     await drive(harness)
     const view = await readRunView(harness.deps.db, session, run.id, harness.clock.now())
@@ -130,7 +131,8 @@ describe('a run that is retried', () => {
 
   it('fails as runner_unavailable after its attempts when the browser never answers, and gives the place back', async () => {
     const session = newSession()
-    for (let index = 0; index < 4; index += 1) harness.runner.openFailures.push(new RunnerError('unreachable', 'down'))
+    // Each of the three attempts waits for the runner ten times before it gives up, and the browser never answers.
+    for (let index = 0; index < 40; index += 1) harness.runner.openFailures.push(new RunnerError('unreachable', 'down'))
     const run = await startRun(harness.deps, session, { from: 'sample', sampleId: coupon.id })
     await drive(harness)
     expect(await readRunView(harness.deps.db, session, run.id, harness.clock.now())).toMatchObject({ state: 'failed', failure: { code: 'runner_unavailable' } })

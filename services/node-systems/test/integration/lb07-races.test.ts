@@ -156,7 +156,7 @@ describe('what a run leaves behind', () => {
     // The paths that log on purpose, each with the hostile goal: a queue that refuses the job, and a browser that never answers until the attempts are spent.
     harness.scheduler.failNextEnqueue(new Error('redis is down'))
     await expect(startRun(harness.deps, newSession(), { from: 'custom', goal: HOSTILE_GOAL, bugs: [] })).rejects.toMatchObject({ code: 'queue_unavailable' })
-    harness.runner.openFailures.push(...Array.from({ length: 4 }, () => new RunnerError('unreachable', 'down')))
+    harness.runner.openFailures.push(...Array.from({ length: 40 }, () => new RunnerError('unreachable', 'down')))
     harness.runner.script = () => ({ outcome: 'expectation', findings: [{ kind: 'expectation_failed', title: 'The page does not say what was expected', detail: 'expected "x"; the page says "Zanzibar-passed at http://169.254.169.254/"', rule: null, path: '/cart' }] })
     const run = await startRun(harness.deps, newSession(), { from: 'custom', goal: HOSTILE_GOAL, bugs: ['coupon-twice'] })
     await drive(harness)

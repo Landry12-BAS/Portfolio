@@ -54,9 +54,9 @@ describe('the real queue', () => {
     expect(view).toMatchObject({ state: 'done', findings: 1 })
   })
 
-  it('retries a run whose browser could not be reached, after the backoff, and ends it done', async () => {
+  it('retries a run whose attempt failed (a browser that crashed), after the backoff, and ends it done', async () => {
     const session = `session-${randomBytes(8).toString('hex')}`
-    harness.runner.openFailures.push(new RunnerError('unreachable', 'down'))
+    harness.runner.openFailures.push(new RunnerError('crashed', 'the browser crashed'))
     const run = await startRun(harness.deps, session, { from: 'sample', sampleId: coupon.id })
     await waitFor('the run to end', async () => (await readRunView(harness.deps.db, session, run.id, new Date()))?.state === 'done', 15_000)
     const counts = await scheduler.counts()
