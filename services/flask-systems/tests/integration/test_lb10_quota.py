@@ -75,6 +75,24 @@ def test_a_refund_gives_the_place_back_a_capped_number_of_times(lb10_engine: Eng
     assert ledger.usage(SESSION).used == 1
 
 
+def test_a_run_that_never_started_hands_its_place_back_without_spending_a_refund(lb10_engine: Engine) -> None:
+    """Undoing an admission is not a refund: it works however many were given, and leaves the refunds untouched."""
+    ledger = make_ledger(lb10_engine)
+    for _ in range(MAX_REFUNDS_PER_DAY + 2):
+        ledger.release(ledger.admit(SESSION))
+    assert ledger.usage(SESSION).used == 0
+    admission = ledger.admit(SESSION)
+    assert admission.allowed
+    assert ledger.finish(admission, refund=True)
+    counted = ledger.admit(SESSION)
+    assert counted.allowed
+    ledger.finish(counted, refund=False)
+    # Releasing a request that was never admitted gives nothing back.
+    not_admitted = ledger.admit(SESSION)
+    ledger.release(not_admitted)
+    assert (not_admitted.allowed, ledger.usage(SESSION).used) == (False, 1)
+
+
 def test_requests_arriving_together_cannot_both_take_the_one_place(lb10_engine: Engine) -> None:
     """The admission is one atomic upsert: of many requests at once, exactly one is admitted."""
     ledger = make_ledger(lb10_engine)

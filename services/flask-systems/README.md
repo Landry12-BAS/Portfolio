@@ -517,7 +517,7 @@ since an exception's message can quote a visitor.
 |---|---|---|---|
 | Check | `lb10/prompt_check.py` | Holds the prompt to 8,000 characters of plain text (room above every production prompt, which is where a visitor starts; the route that starts a run takes a body of 40 KiB, so a prompt at the limit is never refused for its bytes) and to the pack's variables: a prompt that drops `{{language}}` or adds `{{today}}` is refused with a sentence naming them | 422 `invalid_prompt`, with every problem listed; nothing is counted |
 | Choose | `lb10/providers.py` | Maps each chosen provider to the pinned alias of the pack's model class. A visitor is offered Groq and Workers AI only: OpenRouter's free hosts may train on inputs, so a visitor's prompt never reaches them (and the gateway refuses it there too, `syntheticOnly`) | 422 `invalid_providers` |
-| Admit | `lb10/quota.py` (Postgres) | One run a visitor a day, one at a time, in one atomic upsert | 429 `daily_limit` with `resets_at`, or `run_running` |
+| Admit | `lb10/quota.py` (Postgres) | One run a visitor a day, one at a time, in one atomic upsert. A run the runner does not take (it is full, or closing) hands its place straight back, and spends none of the day's refunds: nothing ran | 429 `daily_limit` with `resets_at`, or `run_running`; 503 `lab_busy` when the runner is full, nothing counted |
 | Sample | `lb10/sampling.py` | The pack's fixed ten cases: drawn once per pack version with a generator seeded from it, stratified so the hard cases are always in | — |
 | Plan | `lb10/pipeline.py` | The production prompt and the edited one on every chosen alias; an unchanged prompt runs once | — |
 | Read the cache | `lb10/repository.py` | Results by (pack version, prompt hash, alias, case): the production baseline is computed once for everybody | A cache that can't be read fails the run (`interrupted`), given back |
@@ -624,7 +624,8 @@ alone, in the cache and nowhere else.
 - **On real servers** (`tests/integration/test_lb10_*.py`): the migration from an empty database,
   the ledger's atomic admission under concurrent requests, and the API end to end with the real
   runner on Postgres and Redis: a run started, polled and finished with its report and its trace,
-  the second run refused, the cache read by the next visitor, every refusal, and no token or a
+  the second run refused, the cache read by the next visitor, every refusal, a visitor the full
+  runner turns away three times who still has their run and their refunds, and no token or a
   foreign one turned away.
 
 ## Threat model, LB-03

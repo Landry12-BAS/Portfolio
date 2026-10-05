@@ -152,6 +152,22 @@ class PostgresLedger:
             connection.execute(update(QuotaUsage).where(*this_visitor_today).values(busy_until=None))
         return False
 
+    def release(self, admission: Admission) -> None:
+        """Undo an admission whose run never started, whatever the day's refunds.
+
+        A run the service turned away (its runner full or closing) made no call, so handing its place back is
+        not a refund and spends none of the day's refunds, which are kept for runs that started and failed.
+        Without this, a visitor turned away a third time would lose the run they were told was not counted.
+        """
+        if not admission.allowed:
+            return
+        with self._engine.begin() as connection:
+            connection.execute(
+                update(QuotaUsage)
+                .where(QuotaUsage.session_key == admission.session_key, QuotaUsage.day == admission.day)
+                .values(used=func.greatest(QuotaUsage.used - 1, 0), busy_until=None)
+            )
+
     def usage(self, session_key: str) -> Usage:
         """Return how many runs a visitor has started today."""
         day = self.today()

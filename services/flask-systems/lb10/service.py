@@ -155,10 +155,14 @@ class Lb10Service:
         return Started(stored, admission.remaining)
 
     def give_back(self, admission: Admission, run_id: str, failure: str) -> None:
-        """Undo an admission whose run never started: end the run row and refund the place."""
+        """Undo an admission whose run never started: end the run row and hand the place back.
+
+        The place goes back whatever the day's refunds (`PostgresLedger.release`): nothing ran, so nothing is
+        refunded, and the refunds stay for the runs that start and fail.
+        """
         try:
             self.repository.fail_run(run_id, failure)
-            self.ledger.finish(admission, refund=True)
+            self.ledger.release(admission)
         except SQLAlchemyError as error:
             logger.error("Could not give a run back: %s", describe_failure(error))
 

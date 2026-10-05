@@ -7,7 +7,7 @@ loop, the pipeline, the cache, and the run's spans going to a Redis stream.
 
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -22,7 +22,9 @@ from core.platform import Platform
 from core.registry import SystemModule, SystemRuntime
 from core.structured import ChatMessage
 from lb10.api import SYSTEM_KEY, build_blueprint
-from lb10.service import build_service
+from lb10.limits import MAX_REFUNDS_PER_DAY
+from lb10.runner import EvalRunner
+from lb10.service import Refusal, build_pipeline_factory, build_service
 from lb10.templates import render
 from lb_common.tracing import RedisSpanWriter, Span, Tracer
 from tests.lb10_support import CLASSIFIER, FakeEvalChat, classification, committed_pack, right_answer
@@ -280,6 +282,41 @@ def test_a_run_whose_calls_all_fail_is_failed_and_given_back(serve: Callable[...
     run = served.wait_for(response.get_json()["run"]["run_id"])
     assert (run["state"], run["failure"]) == ("failed", "no_answers")
     assert served.request("GET", "/api/lb10/quota").get_json()["remaining"] == 1
+
+
+def test_a_visitor_the_full_lab_turns_away_keeps_their_run_however_often_it_happens(
+    lb10_engine: Engine, prefix: str
+) -> None:
+    """A run the full runner never took costs nothing: not the day's run, nor a refund kept for runs that fail.
+
+    The answer says nothing was counted and to try again in a minute. If giving the place back spent one of the
+    day's refunds, the third visitor turned away would lose the run the answer said was not counted.
+    """
+    chat = FakeEvalChat(answer_by_case)
+    platform = Platform(
+        environment=make_environment(LB_REDIS_PREFIX=prefix, LB_WEB_TOKEN_KEY=SiteKey().public),
+        engines={"lb10": lb10_engine},
+        chat=None,
+        tracer=Tracer(MemorySpanWriter()),
+        clock=lambda: TODAY,
+    )
+    service = build_service(platform, chat=chat)
+    assert service is not None
+    full_runner = EvalRunner(
+        build_pipeline_factory(chat, service.repository, platform), service.repository, service.ledger, max_in_flight=0
+    )
+    full = replace(service, runner=full_runner)
+    try:
+        for _ in range(MAX_REFUNDS_PER_DAY + 1):
+            refused = full.start_run(SESSION, CLASSIFIER, EDITED, ["groq"])
+            assert isinstance(refused, Refusal)
+            assert (refused.status, refused.code) == (503, "lab_busy")
+    finally:
+        full_runner.close(0.0)
+    assert service.usage(SESSION).remaining == 1
+    admission = service.ledger.admit(SESSION)
+    assert admission.allowed
+    assert service.ledger.finish(admission, refund=True), "a run that fails is still given back"
 
 
 def test_a_run_with_one_wrong_answer_lists_the_changed_case(serve: Callable[..., Served]) -> None:
