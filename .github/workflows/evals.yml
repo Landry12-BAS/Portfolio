@@ -1,0 +1,165 @@
+# Eval Lab (LB-10) on GitHub Actions: the gate on every pull request, and the nightly runs.
+#
+# Both need provider keys, which the repository's secrets may or may not hold (a fork's pull
+# request never sees them). So the first job only looks whether the keys are there, and the rest
+# runs when they are, or a notice says plainly that it was skipped when they are not: the check
+# is never red because secrets are absent, and never green by silently doing nothing.
+#
+# The gateway runs here, in the job, on the runner's Redis, with a throwaway service key for
+# flask-systems and the keys from the secrets; the commands talk to it on loopback. Nothing
+# reaches the box. Until the owner adds the secrets (docs/DEPLOY.md), every run of this workflow
+# ends in the skipped notice.
+name: Evals
+
+on:
+  pull_request:
+  schedule:
+    # Nightly, at 03:17 UTC, off the hour on purpose.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  secrets:
+    name: Are the provider keys here?
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      ready: ${{ steps.look.outputs.ready }}
+    steps:
+      - name: Look, without printing anything
+        id: look
+        env:
+          GROQ: ${{ secrets.GROQ_API_KEY }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$GROQ" ] && [ -n "$CF_ACCOUNT" ] && [ -n "$CF_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  skipped:
+    name: Eval gate skipped (no provider keys)
+    needs: secrets
+    if: needs.secrets.outputs.ready != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Say so, where a reviewer looks
+        run: |
+          echo "::notice title=Eval gate skipped::The provider keys (GROQ_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN) are not set for this run, so no eval ran. This is a skip, not a pass."
+          {
+            echo "## Eval gate skipped"
+            echo
+            echo "The provider keys are not set for this run (a fork's pull request never sees them; the owner adds them under Settings, Secrets), so **no eval ran and nothing was compared with the baselines**. This is a skip, not a pass."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  gate:
+    name: Eval gate against the baselines
+    needs: secrets
+    if: needs.secrets.outputs.ready == 'true' && github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      redis:
+        image: redis:8.10-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      LB_GATEWAY_URL: http://127.0.0.1:8080
+      LB_SERVICE_NAME: flask-systems
+      LB_SERVICE_KEY_FILE: ${{ github.workspace }}/.lb-eval/flask-systems.jwk.json
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:6379/0
+      UV_LOCKED: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .mise.toml
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install uv
+        run: pipx install uv==0.12.19
+      - run: uv sync
+      - name: Start the gateway on a throwaway service key
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: infra/scripts/ci-gateway.sh start
+      - name: Compare fresh scores with the baselines
+        run: uv run --directory services/flask-systems python manage.py gate_lb10
+      - name: Stop the gateway
+        if: always()
+        run: infra/scripts/ci-gateway.sh stop
+
+  nightly:
+    name: Nightly evals and judge
+    needs: secrets
+    if: needs.secrets.outputs.ready == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      redis:
+        image: redis:8.10-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      LB_GATEWAY_URL: http://127.0.0.1:8080
+      LB_SERVICE_NAME: flask-systems
+      LB_SERVICE_KEY_FILE: ${{ github.workspace }}/.lb-eval/flask-systems.jwk.json
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:6379/0
+      UV_LOCKED: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .mise.toml
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install uv
+        run: pipx install uv==0.12.19
+      - run: uv sync
+      - name: Start the gateway on a throwaway service key
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: infra/scripts/ci-gateway.sh start
+      - name: Run every pack on every provider
+        run: uv run --directory services/flask-systems python manage.py nightly_lb10 --out "$GITHUB_WORKSPACE/evals-out"
+      - name: Judge the answers, after calibrating the judge
+        run: |
+          results="$(find "$GITHUB_WORKSPACE/evals-out" -name 'nightly-*.json' | sort | head -n 1)"
+          uv run --directory services/flask-systems python manage.py judge_lb10 --results "$results" --out "$GITHUB_WORKSPACE/evals-out"
+          uv run --directory services/flask-systems python manage.py advise_lb10 --results "$results" | tee "$GITHUB_WORKSPACE/evals-out/advice.txt"
+      - name: Stop the gateway
+        if: always()
+        run: infra/scripts/ci-gateway.sh stop
+      - name: Keep the night's results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lb10-nightly-${{ github.run_id }}
+          path: evals-out
+          retention-days: 30

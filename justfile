@@ -145,6 +145,51 @@ ocr-lb03 *args:
 sweep-lb03:
     uv run --directory services/flask-systems --env-file .env python manage.py sweep_lb03
 
+# `--check` only says whether the committed pack is current (`just check` runs it). The export refuses a pack that renders differently from production.
+# Write the eval pack Eval Lab (LB-10) runs LB-05's SQL writer on (evals/packs/lb05-sql-writer.yaml): the production prompt and golden set, materialised.
+export-pack-lb05 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py export_pack_lb05 {{args}}
+
+# `--check` only says whether the committed packs are current (`just check` runs it).
+# Write the eval packs Eval Lab (LB-10) runs LB-01's classifier and drafter on (evals/packs/lb01-*.yaml), from the production prompts, golden set and seed.
+export-packs-lb01 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py export_packs_lb01 {{args}}
+
+# `--check` only says whether the committed pack is current (`just check` runs it).
+# Write the eval pack Eval Lab (LB-10) runs LB-02's planner on (evals/packs/lb02-planner.yaml): the first turn of every graded conversation, with the tools.
+export-pack-lb02 *args:
+    uv run --directory services/django-systems --env-file .env python manage.py export_pack_lb02 {{args}}
+
+# `--check` only says whether the committed pack is current (`pnpm check` runs it).
+# Write the eval pack Eval Lab (LB-10) runs LB-08's workflow generator on (evals/packs/lb08-generator.yaml), from the production prompt and golden set.
+export-pack-lb08 *args:
+    pnpm --filter @lb/node-systems pack:lb08 {{args}}
+
+# Needs the gateway with provider keys; about 150 calls a night, most of them cached. `--out DIR` writes the results file the gate, the judge and the advisor read.
+# Run every eval pack's production prompt on every provider (OpenRouter included, synthetic cases) and store the results for Eval Lab's API.
+nightly-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py nightly_lb10 {{args}}
+
+# Needs the gateway (`lb-judge`): about a dozen calls to calibrate, then one a case. Its scores count only once it agrees with the labelled set.
+# Grade a results file's answers with the LLM judge, after calibrating it on evals/judge/calibration.yaml.
+judge-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py judge_lb10 {{args}}
+
+# `--results FILE` grades a stored run instead of running (no gateway needed); `--write-baselines` records a measured run; `--strict` fails on a missing baseline.
+# Compare fresh eval scores (every pack on Groq and Workers AI, 20 cases each) with evals/baselines and exit 1 on a regression past the baseline's margin.
+gate-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py gate_lb10 {{args}}
+
+# Advice only: it changes nothing in services/gateway/routing.yaml.
+# Say which pinned fallback aliases pass a threshold on every pack of a route, from a nightly results file.
+advise-lb10 *args:
+    uv run --directory services/flask-systems --env-file .env python manage.py advise_lb10 {{args}}
+
+# Safe to run at any time, and twice. The service sweeps the counters itself on the first run of each day.
+# Delete LB-10's quota counters of days that are over and its runs older than a week.
+sweep-lb10:
+    uv run --directory services/flask-systems --env-file .env python manage.py sweep_lb10
+
 # Run the Node systems' API (LB-08) with reload on http://127.0.0.1:8002 (settings in services/node-systems/.env).
 node-api:
     pnpm --filter @lb/node-systems dev
@@ -231,9 +276,13 @@ record-sample system sample:
 check-build:
     pnpm --filter @lb/web check:build
 
-# Fail if any generated file is stale (the CI drift check).
+# The Python pack checks need no .env: they read prompts, golden sets and seed files only.
+# Fail if any generated file is stale (the CI drift check), the eval packs included.
 check:
     pnpm check
+    cd services/django-systems && DJANGO_SETTINGS_MODULE=config.test_settings uv run python manage.py export_packs_lb01 --check
+    cd services/django-systems && DJANGO_SETTINGS_MODULE=config.test_settings uv run python manage.py export_pack_lb02 --check
+    cd services/flask-systems && FLASK_ALLOWED_HOSTS=localhost LB_DATABASE_URL=postgres://lb:lb@127.0.0.1:5432/lb LB_REDIS_URL=redis://127.0.0.1:6379/0 uv run python manage.py export_pack_lb05 --check
 
 # Regenerate the icon sprite and registry after editing packages/icons/svg.
 icons:

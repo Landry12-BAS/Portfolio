@@ -48,6 +48,9 @@ import { readLb05Seed } from './lb05-seed.ts'
 import { Lb07Mock } from './lb07.ts'
 import type { Lb07MockOptions } from './lb07.ts'
 import { readLb07Seed } from './lb07-seed.ts'
+import { Lb10Mock } from './lb10.ts'
+import type { Lb10MockOptions } from './lb10.ts'
+import { readLb10Seed } from './lb10-seed.ts'
 
 // Nothing the site sends is bigger than this; a bigger body is refused unread. Two routes take more: LB-03's upload
 // is a file, so its route may take what the real service takes (10 MB and the few bytes of a multipart form around
@@ -82,6 +85,7 @@ export interface MockBackendOptions {
   lb02?: { helloTimeoutMs?: number, idleTimeoutMs?: number, messagesPerConversation?: number, conversationsPerDay?: number, thinkMs?: number }
   // LB-03: how many polls a new document waits for a reader, and how many documents are said to be ahead of it.
   lb03?: Lb03MockOptions
+  lb10?: Lb10MockOptions
   // LB-04's review: how many times a contract is polled before it moves on to its next state.
   lb04?: Lb04MockOptions
   // LB-06's clock: how fast the simulated minutes pass, and how long an incident may live.
@@ -148,6 +152,7 @@ export interface MockBackend {
   lb07: Lb07Mock
   // LB-09's state: its meetings and the connections that follow them, and the control that makes the next one fail.
   lb09: Lb09Mock
+  lb10: Lb10Mock
   // Queues an answer to use instead of the normal one.
   script: (answer: ScriptedAnswer) => void
   // Forgets the requests, the scripts and every ticket.
@@ -212,6 +217,7 @@ class MockSite {
   readonly lb03: Lb03Mock
   readonly lb07: Lb07Mock
   readonly lb09: Lb09Mock
+  readonly lb10: Lb10Mock
   readonly #documents = new OpenApiDocuments()
   readonly #gateway: MockGateway
   readonly #verifiers = new Map<string, VisitorVerifier>()
@@ -233,7 +239,8 @@ class MockSite {
     this.lb03 = new Lb03Mock(readLb03Seed(), this.#now, options.lb03)
     this.lb07 = new Lb07Mock(readLb07Seed(), this.#now, options.lb07)
     this.lb09 = new Lb09Mock(readLb09Seed(), { ...options.lb09, now: this.#now, verify: token => this.#visitor(`Bearer ${token}`, 'lb-09')?.sessionKey })
-    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb06.spansOf(runId) ?? this.lb07.spansOf(runId) ?? this.lb09.spansOf(runId))
+    this.lb10 = new Lb10Mock(readLb10Seed(), this.#now, options.lb10)
+    this.#gateway = new MockGateway(options.webKey, this.#now, runId => this.lb01.spansOf(runId) ?? this.lb02.spansOf(runId) ?? this.lb04.spansOf(runId) ?? this.lb05.spansOf(runId) ?? this.lb08.spansOf(runId) ?? this.lb03.spansOf(runId) ?? this.lb06.spansOf(runId) ?? this.lb07.spansOf(runId) ?? this.lb09.spansOf(runId) ?? this.lb10.spansOf(runId))
   }
 
   /** Queues a scripted answer. */
@@ -255,6 +262,7 @@ class MockSite {
     this.lb03.reset()
     this.lb07.reset()
     this.lb09.reset()
+    this.lb10.reset()
   }
 
   /** Takes the first scripted answer that is for this request, if there is one. */
@@ -342,6 +350,7 @@ class MockSite {
     if (url.pathname.startsWith('/__mock/lb02/')) return this.#control(url.pathname.slice('/__mock/lb02/'.length), method, request.headers['content-type'], body, response)
     if (url.pathname.startsWith('/__mock/lb09/')) return this.#controlLb09(url.pathname.slice('/__mock/lb09/'.length), method, request.headers['content-type'], body, response)
     if (url.pathname.startsWith('/__mock/lb07/')) return this.#lb07Control(url.pathname.slice('/__mock/lb07/'.length), method, request.headers['content-type'], body, response)
+    if (url.pathname.startsWith('/__mock/lb10/')) return this.#lb10Control(url.pathname.slice('/__mock/lb10/'.length), method, request.headers['content-type'], body, response)
     const found = this.#documents.find(method, url.pathname)
     if (!found) return this.#send(response, 404, errorAnswer(404, 'not_found', 'There is nothing at this address.').body)
     const answer = await this.#answer(found.operation, found.params, url, request.headers.authorization, body, isUpload ? { raw, contentType: request.headers['content-type'] } : undefined)
@@ -401,6 +410,13 @@ class MockSite {
       case 'GET /api/lb09/meetings/{meeting_id}/transcript': return this.lb09.transcript(session, params.meeting_id ?? '')
       case 'GET /api/lb09/meetings/{meeting_id}/items': return this.lb09.items(session, params.meeting_id ?? '')
       case 'GET /api/lb09/meetings/{meeting_id}/export': return this.lb09.export(session, params.meeting_id ?? '', search.get('format'))
+      case 'GET /api/lb10/targets': return this.lb10.targets()
+      case 'POST /api/lb10/runs': return this.lb10.start(session, json as { target: string, prompt: string, providers: string[] })
+      case 'GET /api/lb10/runs/{run_id}': return this.lb10.run(session, params.run_id ?? '')
+      case 'GET /api/lb10/runs': return this.lb10.runsToday(session)
+      case 'GET /api/lb10/quota': return this.lb10.quota(session)
+      case 'GET /api/lb10/baselines': return this.lb10.baselines()
+      case 'GET /api/lb10/nightly': return this.lb10.nightly()
       default: return this.#lb03Handler(operation, params, session, json, search) ?? this.#lb04Handler(operation, params, session, json, search) ?? this.#lb06Handler(operation, params, session, json, search) ?? this.#lb07Handler(operation, params, session, json)
     }
   }
@@ -604,6 +620,25 @@ class MockSite {
     this.#send(response, answer.status, answer.body)
   }
 
+  /**
+   * The controls of a test for LB-10, at `/__mock/lb10/<action>`: the next run fails with one of the service's codes, some
+   * of its calls fail with a gateway code, the lab is busy or has no gateway, the nightly results and the baselines are
+   * stored, everything is forgotten (`Lb10Mock.control`). Like LB-07's, they take JSON only, on the loopback address alone.
+   */
+  #lb10Control(action: string, method: string, contentType: string | undefined, text: string, response: ServerResponse): void {
+    if (method !== 'POST' || !contentType?.startsWith('application/json')) return this.#send(response, 415, errorAnswer(415, 'unsupported', 'Send JSON with POST.').body)
+    let body: Record<string, unknown>
+    try {
+      const parsed: unknown = text === '' ? {} : JSON.parse(text)
+      body = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+    }
+    catch {
+      return this.#send(response, 400, errorAnswer(400, 'invalid_request', 'The body is not JSON.').body)
+    }
+    const answer = this.lb10.control(action, body)
+    this.#send(response, answer.status, answer.body)
+  }
+
   /** Makes the answer of an operation nobody wrote a handler for: an example of its first success status. */
   #example(operation: MockOperation): Answer {
     const status = this.#documents.successStatus(operation)
@@ -651,6 +686,7 @@ export async function startMockBackend(options: MockBackendOptions): Promise<Moc
     lb03: site.lb03,
     lb07: site.lb07,
     lb09: site.lb09,
+    lb10: site.lb10,
     script: answer => site.script(answer),
     reset: () => site.reset(),
     close: () => new Promise<void>((resolve) => {

@@ -186,6 +186,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lb10/baselines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the committed baselines (evals/baselines): the scores the CI gate holds every pack to. */
+        get: operations["lb10_baselines_baselines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb10/nightly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the stored results of the nightly runs: the evals on every provider and the judge's scores. */
+        get: operations["lb10_nightly_nightly_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb10/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read how many runs the visitor has left today, and the limits LB-10 enforces. */
+        get: operations["lb10_quota_quota_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb10/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the visitor's runs of today, newest first. */
+        get: operations["lb10_runs_today_runs_get"];
+        put?: never;
+        /**
+         * Start a run: the edited prompt on the target's fixed sample, on the chosen providers, against production.
+         * @description <br/>Counts against the visitor's one run a day, which the service enforces itself. A prompt that drops a<br/>variable or adds an unknown one is refused with 422 and costs nothing. The run goes on in the<br/>background; poll its state at /runs/{run_id}.
+         */
+        post: operations["lb10_start_run_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb10/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one of the visitor's runs: its progress while it goes, its report once it is done. */
+        get: operations["lb10_run_state_runs__string_run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lb10/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the targets: each pack's production prompt, variables, fixed sample and the providers offered. */
+        get: operations["lb10_targets_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/readyz": {
         parameters: {
             query?: never;
@@ -261,6 +367,38 @@ export interface components {
         /** @enum {string} */
         Band: "high" | "medium" | "low";
         /**
+         * BaselineOut
+         * @description One committed baseline: a pack's score on an alias, with its interval, as evals/baselines records it.
+         */
+        BaselineOut: {
+            /** Alias */
+            alias: string;
+            /** Cases */
+            cases: number;
+            /** High */
+            high: number;
+            /** Low */
+            low: number;
+            /** Measured On */
+            measured_on: string;
+            /** Pack */
+            pack: string;
+            /** Pack Version */
+            pack_version: string;
+            /** Score */
+            score: number;
+            /** Source */
+            source: string;
+        };
+        /**
+         * BaselinesOut
+         * @description The committed baselines the CI gate compares fresh scores with.
+         */
+        BaselinesOut: {
+            /** Baselines */
+            baselines: components["schemas"]["BaselineOut"][];
+        };
+        /**
          * BoxOut
          * @description Where a field is printed: its page (from 1), the four corners of the words, and how sure the service is.
          *
@@ -279,7 +417,54 @@ export interface components {
             /** Quad */
             quad: number[];
         };
+        /**
+         * CaseOutcomeOut
+         * @description One case under one variant: whether it passed, what the model wrote, and what each rule said.
+         */
+        CaseOutcomeOut: {
+            /** Cached */
+            cached: boolean;
+            /** Case Id */
+            case_id: string;
+            /** Error */
+            error: string | null;
+            /** Grades */
+            grades: components["schemas"]["GradeOut"][];
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model: string;
+            /** Output */
+            output: string;
+            /** Passed */
+            passed: boolean;
+        };
         CellValue: string | number | boolean | null;
+        /**
+         * ChangedCaseOut
+         * @description A case whose grade changed between production and the edited prompt, with both outputs.
+         */
+        ChangedCaseOut: {
+            /** Case Id */
+            case_id: string;
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "improved" | "regressed";
+            /** Difficulty */
+            difficulty: string;
+            edited: components["schemas"]["CaseOutcomeOut"];
+            /** Expected */
+            expected: {
+                [key: string]: unknown;
+            };
+            /** Inputs */
+            inputs: {
+                [key: string]: string;
+            };
+            production: components["schemas"]["CaseOutcomeOut"];
+        };
         /** @enum {string} */
         ChartKind: "bar" | "line" | "point";
         /**
@@ -348,6 +533,31 @@ export interface components {
             kind: components["schemas"]["ColumnKind"];
             /** Name */
             name: string;
+        };
+        /**
+         * ComparisonOut
+         * @description The edited prompt against production on one alias, on the same cases.
+         */
+        ComparisonOut: {
+            /** Alias */
+            alias: string;
+            /** Cases */
+            cases: number;
+            /** Changed */
+            changed: components["schemas"]["ChangedCaseOut"][];
+            /** Difference */
+            difference: number;
+            /** High */
+            high: number;
+            /** Improved */
+            improved: number;
+            /** Low */
+            low: number;
+            /** Provider */
+            provider: string;
+            /** Regressed */
+            regressed: number;
+            verdict: components["schemas"]["Verdict"];
         };
         /**
          * CorrectionIn
@@ -626,12 +836,50 @@ export interface components {
         };
         FieldPathText: string;
         /**
+         * GradeOut
+         * @description One grader's verdict on one case.
+         */
+        GradeOut: {
+            /** Detail */
+            detail: string;
+            /** Kind */
+            kind: string;
+            /** Passed */
+            passed: boolean;
+        };
+        /**
          * HealthOut
          * @description The liveness answer.
          */
         HealthOut: {
             /** Status */
             status: string;
+        };
+        /**
+         * IntervalOut
+         * @description A share with its confidence interval.
+         */
+        IntervalOut: {
+            /** Cases */
+            cases: number;
+            /** High */
+            high: number;
+            /** Low */
+            low: number;
+            /** Mean */
+            mean: number;
+        };
+        /**
+         * InvalidPromptOut
+         * @description The error answer for a refused prompt: the platform's shape, with every problem listed.
+         */
+        InvalidPromptOut: {
+            /** Error */
+            error: {
+                [key: string]: unknown;
+            };
+            /** Problems */
+            problems: components["schemas"]["PromptProblemOut"][];
         };
         /**
          * JoinOut
@@ -680,6 +928,44 @@ export interface components {
         /** @enum {string} */
         JournalStatus: "made" | "blocked_by_checks" | "does_not_balance";
         /**
+         * LabLimitsOut
+         * @description The limits LB-10 enforces, which are the ones its datasheet promises.
+         */
+        LabLimitsOut: {
+            /** Cases Per Run */
+            cases_per_run: number;
+            /** Concurrency */
+            concurrency: number;
+            /** Grader Kinds */
+            grader_kinds: string[];
+            /** Max Model Calls Per Run */
+            max_model_calls_per_run: number;
+            /** Max Prompt Chars */
+            max_prompt_chars: number;
+            /** Max Providers Per Run */
+            max_providers_per_run: number;
+            /** Run Deadline Seconds */
+            run_deadline_seconds: number;
+            /** Runs Per Day */
+            runs_per_day: number;
+        };
+        /**
+         * LabQuotaOut
+         * @description A visitor's runs today, and the limits.
+         */
+        LabQuotaOut: {
+            limits: components["schemas"]["LabLimitsOut"];
+            /** Remaining */
+            remaining: number;
+            /**
+             * Resets At
+             * Format: date-time
+             */
+            resets_at: string;
+            /** Used */
+            used: number;
+        };
+        /**
          * Layer
          * @description The defences a query passes through, in order. Each can stop it.
          * @enum {string}
@@ -725,11 +1011,67 @@ export interface components {
             synonyms: string[];
         };
         /**
+         * NightlyListOut
+         * @description The stored nightly results, newest first.
+         */
+        NightlyListOut: {
+            /** Results */
+            results: components["schemas"]["NightlyOut"][];
+        };
+        /**
+         * NightlyOut
+         * @description One stored nightly result.
+         */
+        NightlyOut: {
+            /** Alias */
+            alias: string;
+            /** Kind */
+            kind: string;
+            /** Pack */
+            pack: string;
+            /** Pack Version */
+            pack_version: string;
+            /** Report */
+            report: {
+                [key: string]: unknown;
+            };
+            /** Run On */
+            run_on: string;
+        };
+        /**
          * Outcome
          * @description How a question ended.
          * @enum {string}
          */
         Outcome: "answered" | "declined" | "refused" | "unavailable";
+        /**
+         * PromptProblemOut
+         * @description One reason a prompt was refused.
+         */
+        PromptProblemOut: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        PromptText: string;
+        ProviderId: string;
+        /**
+         * ProviderOut
+         * @description A provider a visitor may pin a run to, and what it does with inputs.
+         */
+        ProviderOut: {
+            /** Alias */
+            alias: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string;
+            /** Trains On Inputs */
+            trains_on_inputs: boolean;
+        };
         Question: string;
         /**
          * QuotaOut
@@ -775,6 +1117,39 @@ export interface components {
             [key: string]: boolean;
         };
         /**
+         * ReportOut
+         * @description The whole report of a finished run.
+         */
+        ReportOut: {
+            /** Case Ids */
+            case_ids: string[];
+            /** Comparisons */
+            comparisons: components["schemas"]["ComparisonOut"][];
+            /** Edited Is Production */
+            edited_is_production: boolean;
+            /** Pack */
+            pack: string;
+            /** Pack Version */
+            pack_version: string;
+            /**
+             * Sample Note
+             * @default Ten cases is a small sample: the intervals are wide on purpose, and a difference whose interval spans zero is not a difference this run can show.
+             */
+            sample_note: string;
+            /** Sample Size */
+            sample_size: number;
+            /** Total Cached Calls */
+            total_cached_calls: number;
+            /** Total Input Tokens */
+            total_input_tokens: number;
+            /** Total Model Calls */
+            total_model_calls: number;
+            /** Total Output Tokens */
+            total_output_tokens: number;
+            /** Variants */
+            variants: components["schemas"]["VariantOut"][];
+        };
+        /**
          * ResultOut
          * @description The table a query returned, and the checked SQL that produced it.
          */
@@ -802,6 +1177,47 @@ export interface components {
          * @enum {string}
          */
         Rule: "empty" | "too_long" | "invalid_characters" | "syntax_error" | "too_complex" | "multiple_statements" | "not_select" | "catalog_access" | "file_access" | "table_function" | "unknown_table" | "unknown_column" | "function_not_allowed" | "construct_not_allowed" | "join_not_allowed" | "limit_not_allowed" | "too_many_columns" | "unstable_rendering" | "check_failed" | "binder_error" | "plan_too_large" | "cross_product" | "connection_refused" | "runtime_error" | "out_of_memory" | "timeout" | "row_cap";
+        /**
+         * RunOut
+         * @description A run's state: how far it has got, and its report once it is done.
+         */
+        RunOut: {
+            /** Cached Calls */
+            cached_calls: number;
+            /** Calls Done */
+            calls_done: number;
+            /** Calls Total */
+            calls_total: number;
+            /** Failure */
+            failure: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Pack */
+            pack: string;
+            /** Pack Version */
+            pack_version: string;
+            /** Providers */
+            providers: string[];
+            report: components["schemas"]["ReportOut"] | null;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            state: components["schemas"]["RunState"];
+        };
+        /**
+         * RunsOut
+         * @description The visitor's runs of today, newest first.
+         */
+        RunsOut: {
+            /** Runs */
+            runs: components["schemas"]["RunOut"][];
+        };
+        /** @enum {string} */
+        RunState: "running" | "done" | "failed";
         /**
          * SemanticLayerOut
          * @description The semantic layer: everything the model is told about the data, and so everything a query may use.
@@ -831,6 +1247,25 @@ export interface components {
          * @enum {string}
          */
         Severity: "error" | "warning";
+        /**
+         * StartedOut
+         * @description The answer to a run that was taken: the run, and the runs the visitor has left today.
+         */
+        StartedOut: {
+            /** Remaining Runs */
+            remaining_runs: number;
+            run: components["schemas"]["RunOut"];
+        };
+        /**
+         * StartRunIn
+         * @description A visitor's request: which target, the prompt as they edited it, and the providers to run it on.
+         */
+        StartRunIn: {
+            prompt: components["schemas"]["PromptText"];
+            /** Providers */
+            providers: components["schemas"]["ProviderId"][];
+            target: components["schemas"]["TargetName"];
+        };
         /**
          * StepOut
          * @description One step of a document's run: what it was, how it ended, how long it took, and a few counts about it.
@@ -863,6 +1298,80 @@ export interface components {
             name: string;
         };
         /**
+         * TargetCaseOut
+         * @description One case of the fixed sample a run uses: its inputs, so the board can show what the model was asked.
+         */
+        TargetCaseOut: {
+            /** Difficulty */
+            difficulty: string;
+            /** Expected */
+            expected: {
+                [key: string]: unknown;
+            };
+            /** Grader Kinds */
+            grader_kinds: string[];
+            /** Id */
+            id: string;
+            /** Inputs */
+            inputs: {
+                [key: string]: string;
+            };
+        };
+        TargetName: string;
+        /**
+         * TargetOut
+         * @description One target: its pack, the production prompt, its variables, and the fixed sample.
+         */
+        TargetOut: {
+            /** Alias */
+            alias: string;
+            /** Case Count */
+            case_count: number;
+            /** Common Grader Kinds */
+            common_grader_kinds: string[];
+            /** Description */
+            description: string;
+            /** Hard Count */
+            hard_count: number;
+            /** Model Class */
+            model_class: string;
+            /** Name */
+            name: string;
+            /** Output */
+            output: string;
+            /** Pack */
+            pack: string;
+            /** Providers */
+            providers: components["schemas"]["ProviderOut"][];
+            /** Sample */
+            sample: components["schemas"]["TargetCaseOut"][];
+            /** Source */
+            source: string;
+            /** System */
+            system: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Tool Names */
+            tool_names: string[];
+            /** User Template */
+            user_template: string;
+            /** Variables */
+            variables: string[];
+            /** Version */
+            version: string;
+        };
+        /**
+         * TargetsOut
+         * @description Every target the lab offers, and the limits.
+         */
+        TargetsOut: {
+            /** Can Run */
+            can_run: boolean;
+            limits: components["schemas"]["LabLimitsOut"];
+            /** Targets */
+            targets: components["schemas"]["TargetOut"][];
+        };
+        /**
          * UploadIn
          * @description The upload: exactly one part, `file`. Nothing else is accepted next to it.
          */
@@ -873,6 +1382,38 @@ export interface components {
              */
             file: string;
         };
+        /** @enum {string} */
+        Variant: "production" | "edited";
+        /**
+         * VariantOut
+         * @description One prompt on one alias: its score, its cost and every case.
+         */
+        VariantOut: {
+            /** Alias */
+            alias: string;
+            /** Cached Calls */
+            cached_calls: number;
+            /** Cases */
+            cases: components["schemas"]["CaseOutcomeOut"][];
+            /** Failed Calls */
+            failed_calls: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Latency P50 Ms */
+            latency_p50_ms: number;
+            /** Latency P95 Ms */
+            latency_p95_ms: number;
+            /** Model Calls */
+            model_calls: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Provider */
+            provider: string;
+            score: components["schemas"]["IntervalOut"];
+            variant: components["schemas"]["Variant"];
+        };
+        /** @enum {string} */
+        Verdict: "better" | "worse" | "no_detectable_difference" | "not_comparable";
     };
     responses: never;
     parameters: never;
@@ -1529,6 +2070,368 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SemanticLayerOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_baselines_baselines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BaselinesOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_nightly_nightly_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NightlyListOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_quota_quota_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabQuotaOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_runs_today_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunsOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_start_run_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRunIn"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartedOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvalidPromptOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_run_state_runs__string_run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lb10_targets_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetsOut"];
                 };
             };
             /** @description Unauthorized */

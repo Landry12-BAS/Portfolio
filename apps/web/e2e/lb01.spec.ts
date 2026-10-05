@@ -258,11 +258,9 @@ test.describe('when something fails', () => {
     problems.errors.length = 0
   })
 
-  test('says there is no trace for a run that has none, and nothing for a part with no board', async ({ page }) => {
+  test('says there is no trace for a run that has none, and that there is no such part', async ({ page }) => {
     await page.goto('/runs/run-doesnotexist0000')
     await expect(page.getByTestId('scope')).toContainText('There is no trace for this run')
-    await page.goto('/systems/lb-10/board')
-    await expect(page.getByText('This part has no evaluation board yet')).toBeVisible()
     const unknown = await page.goto('/systems/lb-99/board')
     expect(unknown?.status()).toBe(404)
   })

@@ -3,6 +3,7 @@
     seed_lb05   (just seed-lb05)   generate the synthetic Basalt & Bean data and write it to disk
     eval_lb05   (just eval-lb05)   put the golden set (or the adversarial set) to the live pipeline and grade it
     sweep_lb05                     delete the quota counters of days that are over
+    export_pack_lb05  (just export-pack-lb05)  write the SQL writer's eval pack for Eval Lab, or check it
 
 Each is a plain function of its arguments and the platform that returns the exit status, so a test can
 call it. Output goes to standard output; nothing here prints a secret, a key or a visitor's words.
@@ -20,6 +21,7 @@ from core.platform import Platform
 from lb05.generator import SIZES, generate
 from lb05.golden import AdversarialSet, GoldenSet, read_adversarial_set, read_golden_set
 from lb05.golden_eval import AdversarialReport, EvalReport, evaluate_adversarial, evaluate_golden
+from lb05.pack import MADE_BY, PACK_FILE, SOURCE, PackMismatchError, export_pack
 from lb05.pipeline import AnalystPipeline
 from lb05.quota import PostgresLedger
 from lb05.semantic_check import load_semantic_layer
@@ -27,6 +29,7 @@ from lb05.service import warehouse_directory
 from lb05.sql_policy import SqlPolicy
 from lb05.warehouse import Warehouse, WarehouseError
 from lb05.warehouse_build import WarehouseMetaError, write_dataset
+from lb10.pack_writer import render_pack, write_or_check
 
 # The seed the shared dataset is made with unless another is asked for. Any number gives a different dataset.
 DEFAULT_SEED = 5
@@ -206,3 +209,22 @@ def eval_lb05(arguments: Sequence[str], platform: Platform) -> int:
         return 0 if every_attack_held(attack_report) else 1
     print_golden_report(evaluate_golden(golden, pipeline, chosen or None))
     return 0
+
+
+def export_pack_lb05(arguments: Sequence[str], platform: Platform) -> int:
+    """Write the SQL writer's eval pack (evals/packs/lb05-sql-writer.yaml) for Eval Lab, or with --check compare it.
+
+    The pack is built from the production prompt and the golden set, and the export refuses to write a
+    pack that renders differently from what the pipeline sends. `--check` is what `just check` runs.
+    """
+    parser = argparse.ArgumentParser(prog="manage.py export_pack_lb05", description=export_pack_lb05.__doc__)
+    parser.add_argument("--check", action="store_true", help="Only say whether the committed pack is up to date.")
+    options = parse(parser, arguments)
+    if isinstance(options, int):
+        return options
+    try:
+        content, _pack = export_pack(platform.seed_directory())
+    except (DataFileError, PackMismatchError, ValueError) as error:
+        write_line(f"The pack can't be built: {error}", error=True)
+        return 1
+    return write_or_check(PACK_FILE, render_pack(content, MADE_BY, SOURCE), options.check, MADE_BY)

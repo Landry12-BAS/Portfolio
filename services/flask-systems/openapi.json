@@ -180,6 +180,77 @@
         ],
         "type": "string"
       },
+      "BaselineOut": {
+        "description": "One committed baseline: a pack's score on an alias, with its interval, as evals/baselines records it.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "measured_on": {
+            "title": "Measured On",
+            "type": "string"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "pack_version": {
+            "title": "Pack Version",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack",
+          "pack_version",
+          "alias",
+          "score",
+          "low",
+          "high",
+          "cases",
+          "measured_on",
+          "source"
+        ],
+        "title": "BaselineOut",
+        "type": "object"
+      },
+      "BaselinesOut": {
+        "description": "The committed baselines the CI gate compares fresh scores with.",
+        "properties": {
+          "baselines": {
+            "items": {
+              "$ref": "#/components/schemas/BaselineOut"
+            },
+            "title": "Baselines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "baselines"
+        ],
+        "title": "BaselinesOut",
+        "type": "object"
+      },
       "BoxOut": {
         "description": "Where a field is printed: its page (from 1), the four corners of the words, and how sure the service is.\n\nCorners are `x, y` as a share of the page's width and height, clockwise from the top left. `confidence` is the\nwords' own certainty times how well they match the value, and `band` is that number in a word, so the board\nnever says it with colour alone.",
         "properties": {
@@ -216,6 +287,65 @@
         "title": "BoxOut",
         "type": "object"
       },
+      "CaseOutcomeOut": {
+        "description": "One case under one variant: whether it passed, what the model wrote, and what each rule said.",
+        "properties": {
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "grades": {
+            "items": {
+              "$ref": "#/components/schemas/GradeOut"
+            },
+            "title": "Grades",
+            "type": "array"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output": {
+            "title": "Output",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "passed",
+          "output",
+          "grades",
+          "error",
+          "latency_ms",
+          "model",
+          "cached"
+        ],
+        "title": "CaseOutcomeOut",
+        "type": "object"
+      },
       "CellValue": {
         "anyOf": [
           {
@@ -234,6 +364,56 @@
             "type": "null"
           }
         ]
+      },
+      "ChangedCaseOut": {
+        "description": "A case whose grade changed between production and the edited prompt, with both outputs.",
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "change": {
+            "enum": [
+              "improved",
+              "regressed"
+            ],
+            "title": "Change",
+            "type": "string"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "edited": {
+            "$ref": "#/components/schemas/CaseOutcomeOut"
+          },
+          "expected": {
+            "additionalProperties": true,
+            "title": "Expected",
+            "type": "object"
+          },
+          "inputs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Inputs",
+            "type": "object"
+          },
+          "production": {
+            "$ref": "#/components/schemas/CaseOutcomeOut"
+          }
+        },
+        "required": [
+          "case_id",
+          "difficulty",
+          "change",
+          "inputs",
+          "expected",
+          "production",
+          "edited"
+        ],
+        "title": "ChangedCaseOut",
+        "type": "object"
       },
       "ChartKind": {
         "enum": [
@@ -420,6 +600,67 @@
           "kind"
         ],
         "title": "ColumnOut",
+        "type": "object"
+      },
+      "ComparisonOut": {
+        "description": "The edited prompt against production on one alias, on the same cases.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "changed": {
+            "items": {
+              "$ref": "#/components/schemas/ChangedCaseOut"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "difference": {
+            "title": "Difference",
+            "type": "number"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "improved": {
+            "title": "Improved",
+            "type": "integer"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "regressed": {
+            "title": "Regressed",
+            "type": "integer"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          }
+        },
+        "required": [
+          "provider",
+          "alias",
+          "difference",
+          "low",
+          "high",
+          "verdict",
+          "improved",
+          "regressed",
+          "cases",
+          "changed"
+        ],
+        "title": "ComparisonOut",
         "type": "object"
       },
       "CorrectionIn": {
@@ -1164,6 +1405,30 @@
         "pattern": "^(?:[a-z_]{1,20}|(?:line_items|vat)\\.[0-9]{1,2}\\.[a-z_]{1,20})$",
         "type": "string"
       },
+      "GradeOut": {
+        "description": "One grader's verdict on one case.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "passed",
+          "detail"
+        ],
+        "title": "GradeOut",
+        "type": "object"
+      },
       "HealthOut": {
         "description": "The liveness answer.",
         "properties": {
@@ -1176,6 +1441,58 @@
           "status"
         ],
         "title": "HealthOut",
+        "type": "object"
+      },
+      "IntervalOut": {
+        "description": "A share with its confidence interval.",
+        "properties": {
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "mean": {
+            "title": "Mean",
+            "type": "number"
+          }
+        },
+        "required": [
+          "mean",
+          "low",
+          "high",
+          "cases"
+        ],
+        "title": "IntervalOut",
+        "type": "object"
+      },
+      "InvalidPromptOut": {
+        "description": "The error answer for a refused prompt: the platform's shape, with every problem listed.",
+        "properties": {
+          "error": {
+            "additionalProperties": true,
+            "title": "Error",
+            "type": "object"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/PromptProblemOut"
+            },
+            "title": "Problems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "error",
+          "problems"
+        ],
+        "title": "InvalidPromptOut",
         "type": "object"
       },
       "JoinOut": {
@@ -1281,6 +1598,87 @@
         ],
         "type": "string"
       },
+      "LabLimitsOut": {
+        "description": "The limits LB-10 enforces, which are the ones its datasheet promises.",
+        "properties": {
+          "cases_per_run": {
+            "title": "Cases Per Run",
+            "type": "integer"
+          },
+          "concurrency": {
+            "title": "Concurrency",
+            "type": "integer"
+          },
+          "grader_kinds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Grader Kinds",
+            "type": "array"
+          },
+          "max_model_calls_per_run": {
+            "title": "Max Model Calls Per Run",
+            "type": "integer"
+          },
+          "max_prompt_chars": {
+            "title": "Max Prompt Chars",
+            "type": "integer"
+          },
+          "max_providers_per_run": {
+            "title": "Max Providers Per Run",
+            "type": "integer"
+          },
+          "run_deadline_seconds": {
+            "title": "Run Deadline Seconds",
+            "type": "number"
+          },
+          "runs_per_day": {
+            "title": "Runs Per Day",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cases_per_run",
+          "runs_per_day",
+          "max_prompt_chars",
+          "max_providers_per_run",
+          "max_model_calls_per_run",
+          "concurrency",
+          "run_deadline_seconds",
+          "grader_kinds"
+        ],
+        "title": "LabLimitsOut",
+        "type": "object"
+      },
+      "LabQuotaOut": {
+        "description": "A visitor's runs today, and the limits.",
+        "properties": {
+          "limits": {
+            "$ref": "#/components/schemas/LabLimitsOut"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          },
+          "resets_at": {
+            "format": "date-time",
+            "title": "Resets At",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used",
+          "remaining",
+          "resets_at",
+          "limits"
+        ],
+        "title": "LabQuotaOut",
+        "type": "object"
+      },
       "Layer": {
         "description": "The defences a query passes through, in order. Each can stop it.",
         "enum": [
@@ -1382,6 +1780,63 @@
         "title": "MetricOut",
         "type": "object"
       },
+      "NightlyListOut": {
+        "description": "The stored nightly results, newest first.",
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/NightlyOut"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "NightlyListOut",
+        "type": "object"
+      },
+      "NightlyOut": {
+        "description": "One stored nightly result.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "pack_version": {
+            "title": "Pack Version",
+            "type": "string"
+          },
+          "report": {
+            "additionalProperties": true,
+            "title": "Report",
+            "type": "object"
+          },
+          "run_on": {
+            "title": "Run On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_on",
+          "kind",
+          "pack",
+          "pack_version",
+          "alias",
+          "report"
+        ],
+        "title": "NightlyOut",
+        "type": "object"
+      },
       "Outcome": {
         "description": "How a question ended.",
         "enum": [
@@ -1392,6 +1847,68 @@
         ],
         "title": "Outcome",
         "type": "string"
+      },
+      "PromptProblemOut": {
+        "description": "One reason a prompt was refused.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "PromptProblemOut",
+        "type": "object"
+      },
+      "PromptText": {
+        "maxLength": 9000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "ProviderId": {
+        "pattern": "^[a-z][a-z0-9-]{1,30}$",
+        "type": "string"
+      },
+      "ProviderOut": {
+        "description": "A provider a visitor may pin a run to, and what it does with inputs.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "trains_on_inputs": {
+            "title": "Trains On Inputs",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "note",
+          "trains_on_inputs",
+          "alias"
+        ],
+        "title": "ProviderOut",
+        "type": "object"
       },
       "Question": {
         "maxLength": 300,
@@ -1464,6 +1981,84 @@
         },
         "description": "The readiness answer: for each system, whether it can serve right now.",
         "title": "ReadinessOut",
+        "type": "object"
+      },
+      "ReportOut": {
+        "description": "The whole report of a finished run.",
+        "properties": {
+          "case_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Case Ids",
+            "type": "array"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonOut"
+            },
+            "title": "Comparisons",
+            "type": "array"
+          },
+          "edited_is_production": {
+            "title": "Edited Is Production",
+            "type": "boolean"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "pack_version": {
+            "title": "Pack Version",
+            "type": "string"
+          },
+          "sample_note": {
+            "default": "Ten cases is a small sample: the intervals are wide on purpose, and a difference whose interval spans zero is not a difference this run can show.",
+            "title": "Sample Note",
+            "type": "string"
+          },
+          "sample_size": {
+            "title": "Sample Size",
+            "type": "integer"
+          },
+          "total_cached_calls": {
+            "title": "Total Cached Calls",
+            "type": "integer"
+          },
+          "total_input_tokens": {
+            "title": "Total Input Tokens",
+            "type": "integer"
+          },
+          "total_model_calls": {
+            "title": "Total Model Calls",
+            "type": "integer"
+          },
+          "total_output_tokens": {
+            "title": "Total Output Tokens",
+            "type": "integer"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/VariantOut"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pack",
+          "pack_version",
+          "sample_size",
+          "case_ids",
+          "edited_is_production",
+          "variants",
+          "comparisons",
+          "total_model_calls",
+          "total_cached_calls",
+          "total_input_tokens",
+          "total_output_tokens"
+        ],
+        "title": "ReportOut",
         "type": "object"
       },
       "ResultOut": {
@@ -1561,6 +2156,124 @@
         "title": "Rule",
         "type": "string"
       },
+      "RunOut": {
+        "description": "A run's state: how far it has got, and its report once it is done.",
+        "properties": {
+          "cached_calls": {
+            "title": "Cached Calls",
+            "type": "integer"
+          },
+          "calls_done": {
+            "title": "Calls Done",
+            "type": "integer"
+          },
+          "calls_total": {
+            "title": "Calls Total",
+            "type": "integer"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "pack_version": {
+            "title": "Pack Version",
+            "type": "string"
+          },
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunState"
+          }
+        },
+        "required": [
+          "run_id",
+          "state",
+          "pack",
+          "pack_version",
+          "providers",
+          "calls_done",
+          "calls_total",
+          "cached_calls",
+          "started_at",
+          "finished_at",
+          "failure",
+          "report"
+        ],
+        "title": "RunOut",
+        "type": "object"
+      },
+      "RunState": {
+        "enum": [
+          "running",
+          "done",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "RunsOut": {
+        "description": "The visitor's runs of today, newest first.",
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunOut"
+            },
+            "title": "Runs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "runs"
+        ],
+        "title": "RunsOut",
+        "type": "object"
+      },
       "SemanticLayerOut": {
         "description": "The semantic layer: everything the model is told about the data, and so everything a query may use.",
         "properties": {
@@ -1629,6 +2342,52 @@
         ],
         "title": "Severity",
         "type": "string"
+      },
+      "StartRunIn": {
+        "additionalProperties": false,
+        "description": "A visitor's request: which target, the prompt as they edited it, and the providers to run it on.",
+        "properties": {
+          "prompt": {
+            "$ref": "#/components/schemas/PromptText"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderId"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Providers",
+            "type": "array"
+          },
+          "target": {
+            "$ref": "#/components/schemas/TargetName"
+          }
+        },
+        "required": [
+          "target",
+          "prompt",
+          "providers"
+        ],
+        "title": "StartRunIn",
+        "type": "object"
+      },
+      "StartedOut": {
+        "description": "The answer to a run that was taken: the run, and the runs the visitor has left today.",
+        "properties": {
+          "remaining_runs": {
+            "title": "Remaining Runs",
+            "type": "integer"
+          },
+          "run": {
+            "$ref": "#/components/schemas/RunOut"
+          }
+        },
+        "required": [
+          "run",
+          "remaining_runs"
+        ],
+        "title": "StartedOut",
+        "type": "object"
       },
       "StepOut": {
         "description": "One step of a document's run: what it was, how it ended, how long it took, and a few counts about it.",
@@ -1707,6 +2466,192 @@
         "title": "TableOut",
         "type": "object"
       },
+      "TargetCaseOut": {
+        "description": "One case of the fixed sample a run uses: its inputs, so the board can show what the model was asked.",
+        "properties": {
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "expected": {
+            "additionalProperties": true,
+            "title": "Expected",
+            "type": "object"
+          },
+          "grader_kinds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Grader Kinds",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Inputs",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "difficulty",
+          "inputs",
+          "expected",
+          "grader_kinds"
+        ],
+        "title": "TargetCaseOut",
+        "type": "object"
+      },
+      "TargetName": {
+        "maxLength": 80,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "TargetOut": {
+        "description": "One target: its pack, the production prompt, its variables, and the fixed sample.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "common_grader_kinds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Common Grader Kinds",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hard_count": {
+            "title": "Hard Count",
+            "type": "integer"
+          },
+          "model_class": {
+            "title": "Model Class",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output": {
+            "title": "Output",
+            "type": "string"
+          },
+          "pack": {
+            "title": "Pack",
+            "type": "string"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderOut"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "sample": {
+            "items": {
+              "$ref": "#/components/schemas/TargetCaseOut"
+            },
+            "title": "Sample",
+            "type": "array"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "system": {
+            "title": "System",
+            "type": "string"
+          },
+          "system_prompt": {
+            "title": "System Prompt",
+            "type": "string"
+          },
+          "tool_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tool Names",
+            "type": "array"
+          },
+          "user_template": {
+            "title": "User Template",
+            "type": "string"
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variables",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack",
+          "version",
+          "system",
+          "name",
+          "description",
+          "source",
+          "alias",
+          "model_class",
+          "output",
+          "system_prompt",
+          "user_template",
+          "variables",
+          "tool_names",
+          "case_count",
+          "hard_count",
+          "common_grader_kinds",
+          "sample",
+          "providers"
+        ],
+        "title": "TargetOut",
+        "type": "object"
+      },
+      "TargetsOut": {
+        "description": "Every target the lab offers, and the limits.",
+        "properties": {
+          "can_run": {
+            "title": "Can Run",
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LabLimitsOut"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/TargetOut"
+            },
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "targets",
+          "limits",
+          "can_run"
+        ],
+        "title": "TargetsOut",
+        "type": "object"
+      },
       "UploadIn": {
         "additionalProperties": false,
         "description": "The upload: exactly one part, `file`. Nothing else is accepted next to it.",
@@ -1722,6 +2667,92 @@
         ],
         "title": "UploadIn",
         "type": "object"
+      },
+      "Variant": {
+        "enum": [
+          "production",
+          "edited"
+        ],
+        "type": "string"
+      },
+      "VariantOut": {
+        "description": "One prompt on one alias: its score, its cost and every case.",
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "cached_calls": {
+            "title": "Cached Calls",
+            "type": "integer"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/CaseOutcomeOut"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "failed_calls": {
+            "title": "Failed Calls",
+            "type": "integer"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "latency_p50_ms": {
+            "title": "Latency P50 Ms",
+            "type": "integer"
+          },
+          "latency_p95_ms": {
+            "title": "Latency P95 Ms",
+            "type": "integer"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "score": {
+            "$ref": "#/components/schemas/IntervalOut"
+          },
+          "variant": {
+            "$ref": "#/components/schemas/Variant"
+          }
+        },
+        "required": [
+          "variant",
+          "provider",
+          "alias",
+          "score",
+          "latency_p50_ms",
+          "latency_p95_ms",
+          "input_tokens",
+          "output_tokens",
+          "model_calls",
+          "cached_calls",
+          "failed_calls",
+          "cases"
+        ],
+        "title": "VariantOut",
+        "type": "object"
+      },
+      "Verdict": {
+        "enum": [
+          "better",
+          "worse",
+          "no_detectable_difference",
+          "not_comparable"
+        ],
+        "type": "string"
       }
     },
     "securitySchemes": {
@@ -2612,6 +3643,449 @@
         ]
       }
     },
+    "/api/lb10/baselines": {
+      "get": {
+        "operationId": "lb10_baselines_baselines_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaselinesOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read the committed baselines (evals/baselines): the scores the CI gate holds every pack to.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
+    "/api/lb10/nightly": {
+      "get": {
+        "operationId": "lb10_nightly_nightly_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightlyListOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read the stored results of the nightly runs: the evals on every provider and the judge's scores.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
+    "/api/lb10/quota": {
+      "get": {
+        "operationId": "lb10_quota_quota_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabQuotaOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read how many runs the visitor has left today, and the limits LB-10 enforces.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
+    "/api/lb10/runs": {
+      "get": {
+        "operationId": "lb10_runs_today_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "List the visitor's runs of today, newest first.",
+        "tags": [
+          "lb-10"
+        ]
+      },
+      "post": {
+        "description": "<br/>Counts against the visitor's one run a day, which the service enforces itself. A prompt that drops a<br/>variable or adds an unknown one is refused with 422 and costs nothing. The run goes on in the<br/>background; poll its state at /runs/{run_id}.",
+        "operationId": "lb10_start_run_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartedOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidPromptOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Start a run: the edited prompt on the target's fixed sample, on the chosen providers, against production.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
+    "/api/lb10/runs/{run_id}": {
+      "get": {
+        "operationId": "lb10_run_state_runs__string_run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "Read one of the visitor's runs: its progress while it goes, its report once it is done.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
+    "/api/lb10/targets": {
+      "get": {
+        "operationId": "lb10_targets_targets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "visitor": []
+          }
+        ],
+        "summary": "List the targets: each pack's production prompt, variables, fixed sample and the providers offered.",
+        "tags": [
+          "lb-10"
+        ]
+      }
+    },
     "/api/readyz": {
       "get": {
         "operationId": "platform_ready_readyz_get",
@@ -2660,6 +4134,9 @@
     },
     {
       "name": "lb-03"
+    },
+    {
+      "name": "lb-10"
     },
     {
       "name": "health"

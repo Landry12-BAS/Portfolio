@@ -91,12 +91,17 @@ export function cookieProblem(): ApiProblem {
   return new ApiProblem(403, 'cookie_not_kept', 'The browser did not keep the session cookie that holds the result of the check.')
 }
 
-/** Reads a failed answer's body as a platform error. A body of any other shape is just its status. */
+/**
+ * Reads a failed answer's body as a platform error. A body of any other shape is just its status. The problems
+ * a system lists beside the error rather than in it (LB-10's refused prompt) are about the request as a whole,
+ * so they carry no path.
+ */
 export function problemFromAnswer(status: number, body: unknown): ApiProblem {
   const parsed = platformErrorSchema.safeParse(body)
   if (!parsed.success) return new ApiProblem(status, 'error', 'The request did not work.')
   const { code, message, resets_at: resetsAt, problems } = parsed.data.error
-  return new ApiProblem(status, code, message, resetsAt ?? undefined, problems ?? [])
+  const beside = (parsed.data.problems ?? []).map(problem => ({ code: problem.code, path: '', message: problem.message }))
+  return new ApiProblem(status, code, message, resetsAt ?? undefined, problems ?? beside)
 }
 
 /** Tells whether a thrown value is an `ApiProblem`, so a handler can tell it from a bug. */

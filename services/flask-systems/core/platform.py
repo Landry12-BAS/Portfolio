@@ -57,6 +57,11 @@ class Platform:
         configured = self.environment.seed_dir
         return Path(configured) if configured else REPOSITORY_ROOT / "data" / "seed"
 
+    def evals_directory(self) -> Path:
+        """Return where the eval packs and baselines live: LB_EVALS_DIR, else the repository's evals."""
+        configured = self.environment.evals_dir
+        return Path(configured) if configured else REPOSITORY_ROOT / "evals"
+
 
 def connect_gateway(environment: Environment) -> Gateway | None:
     """Connect to the AI gateway the environment describes, or return None when it describes none.
@@ -96,7 +101,11 @@ def connect_platform(environment: Environment) -> Platform:
     tracer = Tracer(span_writer)
     engines = system_engines(
         environment.database_url,
-        {"lb05": environment.lb05_database_url, "lb03": environment.lb03_database_url},
+        {
+            "lb05": environment.lb05_database_url,
+            "lb03": environment.lb03_database_url,
+            "lb10": environment.lb10_database_url,
+        },
     )
     return Platform(
         environment=environment,

@@ -1,8 +1,8 @@
-# Flask systems · LB-03 Invoice Reader and LB-05 Data Analyst
+# Flask systems · LB-03 Invoice Reader, LB-05 Data Analyst and LB-10 Eval Lab
 
-One Flask app for the systems that suit Flask best: LB-03 Invoice Reader and LB-05 Data
-Analyst today, then LB-10 Eval Lab. Each system keeps its data in a Postgres schema of its
-own and calls models only through the AI gateway.
+One Flask app for the systems that suit Flask best: LB-03 Invoice Reader, LB-05 Data
+Analyst and LB-10 Eval Lab. Each system keeps its data in a Postgres schema of its own and
+calls models only through the AI gateway.
 
 LB-03 reads a supplier invoice, a credit note or a till receipt, as a PDF or a photograph. It
 finds each field and the words on the page that print it, checks the arithmetic in code, and
@@ -15,17 +15,25 @@ A visitor is invited to make it delete data, and sees which layer stopped them. 
 built this way: [`docs/STACK.md`](../../docs/STACK.md), Flask systems. Platform security:
 [`docs/SECURITY.md`](../../docs/SECURITY.md).
 
+LB-10 measures the prompts behind the other systems. A visitor picks a target (LB-01's
+classifier or drafter, LB-02's planner, LB-05's SQL writer, LB-08's workflow generator), edits
+its production prompt, and runs it on ten golden cases across the free providers, graded by
+rules, against the production prompt's cached result on the same cases, with confidence
+intervals and a plain verdict. Nightly, an LLM judge grades more, once it has agreed with a
+hand-labelled set; in CI, a gate compares every pack with its baseline.
+
 ## At a glance
 
 | Parameter | Value |
 |---|---|
-| API | Flask 3.1 with flask-openapi3 (OpenAPI 3.1) under `/api/`: LB-03 at `/api/lb03/`, LB-05 at `/api/lb05/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's database). Schema: [`openapi.json`](openapi.json), which a test keeps current |
+| API | Flask 3.1 with flask-openapi3 (OpenAPI 3.1) under `/api/`: LB-03 at `/api/lb03/`, LB-05 at `/api/lb05/`, LB-10 at `/api/lb10/`, plus `/api/healthz` (liveness) and `/api/readyz` (each system's database). Schema: [`openapi.json`](openapi.json), which a test keeps current |
 | Callers | The site's server, with a short-lived Ed25519 visitor token scoped to one system ([`core/visitors.py`](core/visitors.py)). No accounts |
-| Data | PostgreSQL 17, one schema per system (Alembic migrations). `lb03`: the documents of the hour, their readings and corrections, and the daily counters. `lb05`: the daily question counters. LB-03's files (the upload and a picture of each page) are in a file store, local disk or an S3-compatible bucket (Cloudflare R2), for an hour. The sales data is synthetic, made by this service, and queried in-process from a read-only DuckDB file |
-| Model calls | Through the gateway only, with [`lb-common`](../../python/lb-common/README.md). LB-03: `lb-guard` (the injection check), `lb-fast` (extraction from the text) or `lb-vision` (extraction from the picture, for a photograph). LB-05: `lb-reason` writes the SQL and `lb-fast` explains the result. All are labelled with the run |
+| Data | PostgreSQL 17, one schema per system (Alembic migrations). `lb03`: the documents of the hour, their readings and corrections, and the daily counters. `lb05`: the daily question counters. `lb10`: the result cache (by pack version, prompt hash, alias and case), each visitor's runs for a week, the nightly results and the daily run counters. LB-03's files (the upload and a picture of each page) are in a file store, local disk or an S3-compatible bucket (Cloudflare R2), for an hour. The sales data is synthetic, made by this service, and queried in-process from a read-only DuckDB file |
+| Model calls | Through the gateway only, with [`lb-common`](../../python/lb-common/README.md). LB-03: `lb-guard` (the injection check), `lb-fast` (extraction from the text) or `lb-vision` (extraction from the picture, for a photograph). LB-05: `lb-reason` writes the SQL and `lb-fast` explains the result. LB-10: the pinned `lb-eval-*` aliases (one model each, no fallback) and `lb-judge` for the nightly judge. All are labelled with the run |
 | Runtime | Python 3.13, gunicorn `gthread` (one worker of eight threads), bound to `127.0.0.1:8102`; the reverse proxy is the only way in. LB-03's documents are read on an asyncio loop of their own (one per worker), and its OCR runs in a caged child process |
 | Operating limits, LB-03 | 10 documents per visitor per day, two being read at a time · 10 MB and 5 pages a file (the site passes 4 MB on to the service, see below) · files kept 1 hour · 2 to 5 model calls a document · 240 s a document at the outside |
 | Operating limits, LB-05 | 25 questions per visitor per day · 5 s query timeout · 1,000-row cap · 2 to 4 model calls a question (5 at most) · 90 s a question |
+| Operating limits, LB-10 | 1 run per visitor per day · 10 cases a run · a prompt of 8,000 characters at most (the longest production prompt, LB-05's, is 7,266) · 1 or 2 providers · about 20 model calls a run (40 at the outside, when the production baseline is not cached yet) · 4 calls in flight · 300 s a run |
 
 ## Run it
 
@@ -503,6 +511,123 @@ since an exception's message can quote a visitor.
   mock back end's copy of it (`packages/api-clients/src/testing/lb05-chart.ts`) are held to the
   same cases, [`evals/lb05/chart-cases.json`](../../evals/lb05/chart-cases.json), by a test on each side.
 
+## LB-10: from an edited prompt to a verdict
+
+| Step | Who | What it does | When it can't |
+|---|---|---|---|
+| Check | `lb10/prompt_check.py` | Holds the prompt to 8,000 characters of plain text (room above every production prompt, which is where a visitor starts; the route that starts a run takes a body of 40 KiB, so a prompt at the limit is never refused for its bytes) and to the pack's variables: a prompt that drops `{{language}}` or adds `{{today}}` is refused with a sentence naming them | 422 `invalid_prompt`, with every problem listed; nothing is counted |
+| Choose | `lb10/providers.py` | Maps each chosen provider to the pinned alias of the pack's model class. A visitor is offered Groq and Workers AI only: OpenRouter's free hosts may train on inputs, so a visitor's prompt never reaches them (and the gateway refuses it there too, `syntheticOnly`) | 422 `invalid_providers` |
+| Admit | `lb10/quota.py` (Postgres) | One run a visitor a day, one at a time, in one atomic upsert. A run the runner does not take (it is full, or closing) hands its place straight back, and spends none of the day's refunds: nothing ran | 429 `daily_limit` with `resets_at`, or `run_running`; 503 `lab_busy` when the runner is full, nothing counted |
+| Sample | `lb10/sampling.py` | The pack's fixed ten cases: drawn once per pack version with a generator seeded from it, stratified so the hard cases are always in | — |
+| Plan | `lb10/pipeline.py` | The production prompt and the edited one on every chosen alias; an unchanged prompt runs once | — |
+| Read the cache | `lb10/repository.py` | Results by (pack version, prompt hash, alias, case): the production baseline is computed once for everybody | A cache that can't be read fails the run (`interrupted`), given back |
+| Fan out | `lb10/pipeline.py`, `lb10/chat.py` | The misses, four at a time, through the gateway on an event loop of their own (`lb10/runner.py`); each call is a span with its alias, case, latency, tokens and grade, never the prompt. A call the gateway refuses because a provider's budget is spent for the minute (Groq's free 8,000 tokens a minute last a few calls) waits for its Retry-After and asks again, holding its place, so a run measures the prompt and not the budget; a day's budget is not waited for | A failed call is a failed case naming the gateway's code; a run whose every call got no answer fails (`model_budget` or `no_answers`) and is given back, though production's results came from the cache: those are an earlier run's answers, not this one's |
+| Grade | `lb10/graders.py` | The pack's rules on the reply as it is, never repaired: a malformed reply is a failed case | — |
+| Report | `lb10/report.py`, `lb10/stats.py` | Each variant's score with a seeded bootstrap interval (1,000 resamples), latency percentiles, tokens and cached calls; the paired difference with production and its verdict, `no_detectable_difference` when the interval spans zero; the cases that changed, with both outputs; a sentence saying ten cases is a small sample | — |
+| Finish | `lb10/runner.py` | The report is written on the run, the visitor's place settled: given back when the service failed (`model_budget`, `no_answers`, `time_limit`, `interrupted`), kept otherwise, two refunds a day at most | A run past its deadline is ended as `time_limit`; a worker that dies leaves a run the next read ends as `interrupted` |
+
+**Model calls.** The edited prompt costs ten calls a provider. The production prompt costs ten more a
+provider the first time anyone runs that pack version on that alias, and none afterwards: so about 20 a
+run, 40 at the outside, which is `maxCallsPerRun` in `routing.yaml`. No reply is ever repaired, so no
+call is spent twice.
+
+**Why the same prompts as production.** The lab never copies a prompt. Each system exports an eval
+pack from its own prompt module and golden set (`just export-pack-lb05`, `export-packs-lb01`,
+`export-pack-lb02`, `export-pack-lb08`), and the export refuses to write a pack whose templates, filled
+with a case's inputs, differ from the messages the system's own pipeline builds. `just check` fails
+while a pack is stale. The pack format is below.
+
+## The eval packs
+
+A pack ([`evals/packs/*.yaml`](../../evals/packs), read by [`lb10/packs.py`](lb10/packs.py)) holds:
+
+- the target: its name, the module its prompt lives in, the production alias and model class, the
+  reply's kind (`json`, `text` or `tool_calls`) and output cap;
+- the prompt as two templates, system and user, with `{{name}}` placeholders ([`lb10/templates.py`](lb10/templates.py));
+  the `variables` are the system template's placeholders, which an edited prompt must keep;
+- the tools, for a tool-calling prompt (LB-02's planner), as production defines them;
+- fully materialised cases, each with its inputs (so a case never needs a database or a search),
+  what the golden set expects, a difficulty, and its graders; `common_graders` apply to every case.
+
+The graders are a closed set of eleven pure functions ([`lb10/graders.py`](lb10/graders.py)): exact
+match, contains all, contains none, JSON Schema, JSON field equals, JSON field one of, JSON path
+contains all, number within a tolerance, length bounds, citation present, and a sqlglot structural
+comparison of SQL (the same tables and aggregates, or the same normalised tree). No regular
+expression is built from a string, and no model grades anything on the visitor path.
+
+What each pack grades, and what it cannot: LB-01's classifier is graded on the category, the order
+number and the senior-agent matter; the drafter on its citations and forbidden text (the numbers a
+draft must mention are left to production's eval, whose reading of numbers forgives formatting; the
+drafter is shown the passages the golden set expects rather than everything production's search
+finds). LB-02's planner is graded on its first turn only, the one turn a fresh conversation makes
+without the state machine. LB-05's SQL writer is graded on the shape of its query, since the lab
+holds no copy of the data; production grades by execution, which is stricter. LB-08's generator is
+graded on the workflow schema, the trigger, the connectors and the words an injection asked for.
+
+## The LB-10 API
+
+Every route needs a visitor token minted for `lb-10`.
+
+| Route | What it does | Answers |
+|---|---|---|
+| `GET /api/lb10/targets` | The packs: production prompt, variables, tools, the fixed ten cases with their inputs, the providers a visitor may pick, the limits, and whether the lab can run (it has a gateway) | 200 |
+| `POST /api/lb10/runs` | Start a run: `{target, prompt, providers}`. Checks the prompt and the providers, admits the run, hands it to the runner | 202 with the run and the runs left today; 404 `unknown_target`; 422 `invalid_prompt` (with `problems`) or `invalid_providers`; 429 `daily_limit` or `run_running`; 503 `unavailable` or `lab_busy` |
+| `GET /api/lb10/runs/{run_id}` | The visitor's run: `calls_done` of `calls_total` while it goes; `report` once done; `failure` when failed | 200; 404 for another visitor's run |
+| `GET /api/lb10/runs` | The visitor's runs of today | 200 |
+| `GET /api/lb10/quota` | Runs used and left today, and the limits | 200 |
+| `GET /api/lb10/baselines` | The committed baselines ([`evals/baselines`](../../evals/baselines)) the gate holds every pack to | 200 |
+| `GET /api/lb10/nightly` | The stored results of the nightly runs and the judge | 200 |
+
+## Evals, LB-10
+
+- **The nightly** (`just nightly-lb10 --out DIR`) runs every pack's production prompt on every
+  provider, OpenRouter included, since the cases are synthetic: about 150 calls, most of them
+  cached. It stores a row per pack and alias for the API and writes a results file.
+- **The judge** (`just judge-lb10 --results FILE`) grades the night's answers with `lb-judge`, but
+  first grades [`evals/judge/calibration.yaml`](../../evals/judge/calibration.yaml), a hand-labelled
+  synthetic set balanced between passes and fails. Its scores count only when it matches eight
+  labels in ten with a Cohen's kappa of 0.6 or more ([`lb10/judge.py`](lb10/judge.py)); the report
+  says so either way. The visitor path never uses it.
+- **The gate** (`just gate-lb10`, and the `Evals` workflow on every pull request) runs every pack on
+  Groq and Workers AI, 20 cases each, and fails when a score falls below its baseline's lower bound:
+  the baseline's own confidence margin is what a score may fall by. A pack with no baseline is
+  reported, never passed or failed; `--write-baselines` records a measured run; `--results FILE`
+  grades a stored run offline, which is how the tests run it with a fake model. In the workflow the
+  job runs when the provider secrets exist and otherwise a notice says it was skipped: never red
+  because secrets are absent, never green by doing nothing.
+- **The advisor** (`just advise-lb10 --results FILE`) prints which pinned fallbacks pass a threshold
+  on every pack of a route. It advises; `routing.yaml` stays the owner's decision.
+
+None of these has been run live: no provider key exists in this environment, and no baseline is
+committed until one is measured.
+
+## What a LB-10 run leaves behind
+
+One trace: `eval run` (the root, with the pack, its version, the counts and the outcome), `read
+cache` (wanted and found), and one `model call` a call with its alias, variant (`production` or
+`edited`), case, difficulty, latency, tokens, whether it passed and the gateway's code when it
+failed. No span holds a prompt, an answer or a session: a visitor's prompt is named by its hash
+alone, in the cache and nowhere else.
+
+## Tests, LB-10
+
+- **The format.** The pack reader's rules, every grader, the sampler, and that every committed pack
+  is what its exporter writes today (`tests/unit/test_lb10_packs.py`, `_graders`, `_templates`).
+- **The statistics.** Reproducible intervals, a paired verdict that calls one changed case in ten
+  no difference, percentiles (`test_lb10_stats.py`).
+- **The rules.** The prompt check, and that no visitor path can name a synthetic-only alias, checked
+  against `routing.yaml` itself (`test_lb10_prompt_check.py`).
+- **The pipeline.** On fakes: the cache, the fan-out, grades, the changed cases, a malformed reply,
+  a failed call, a run in which nothing answered, and the spans (`test_lb10_pipeline.py`).
+- **The commands.** The nightly, the gate (offline and live on a fake), the judge's calibration and
+  the advisor (`test_lb10_evals.py`, `test_lb10_judge.py`).
+- **On real servers** (`tests/integration/test_lb10_*.py`): the migration from an empty database,
+  the ledger's atomic admission under concurrent requests, and the API end to end with the real
+  runner on Postgres and Redis: a run started, polled and finished with its report and its trace,
+  the second run refused, the cache read by the next visitor, every refusal, a visitor the full
+  runner turns away three times who still has their run and their refunds, and no token or a
+  foreign one turned away.
+
 ## Threat model, LB-03
 
 **What is protected.** The machine (CPU, memory, disk and network are shared with the other systems, and a decoder
@@ -559,6 +684,27 @@ its reply is untrusted input however it is written.
 | Leaks through logs, spans and errors | Spans hold counts and codes only; errors are logged by type and place; 4xx and 5xx never echo the request; the access log has method, path, status and seconds, no address or query string | |
 | Host header, oversized bodies, framing, caching | Trusted hosts, an 8 KiB body limit (LB-03's upload route raises it for itself alone), the security headers of `docs/SECURITY.md` on every response including errors | |
 | Supply chain: sqlglot and DuckDB upgrades | Versions are locked and audited (`uv audit` in CI); a new function or node is refused until it is listed | An upgrade can change what a listed function does: the offline adversarial set and the layer tests are the alarm |
+
+## Threat model, LB-10
+
+**What is protected.** The providers' free capacity (a visitor could try to spend it), the other
+systems' prompts (which are public here by design: a visitor reads and edits them), the gateway's
+service token, and the visitors' own prompts (visitor content).
+
+**Who attacks.** A visitor who wants to spend quota, read another visitor's run or prompt, send
+their prompt to a provider that trains on it, or make the service spend calls it should not.
+
+| Threat | Defence | What is left |
+|---|---|---|
+| Spoofing | A visitor token minted for `lb-10` on every route; a run is read by its ID and the visitor's session together, so another visitor's ID is not found | The site's key, as for every system |
+| Tampering | The prompt is checked at the boundary (length, plain text, exactly the pack's variables); the providers are checked against the offered set; the pack's templates, not the visitor's text, carry the case inputs; outputs are graded by rules and stored as text to be shown as text | A visitor can write any instruction into their prompt: it reaches a model as visitor content, graded as it is; it never reaches another system |
+| Data exposure | A visitor's prompt is stored by hash only and never written to a span, a log or the cache; outputs cached are the model's on synthetic cases; a visitor's prompt goes only to Groq and Workers AI, which do not train on inputs, and the gateway refuses it on OpenRouter too | The cached outputs of a visitor's edited prompt are keyed by its hash and readable by a visitor who writes the same prompt, which is the point of the cache |
+| Denial of service | One run a visitor a day in an atomic upsert; at most 40 calls a run and 4 in flight; a run deadline; the runner takes 8 runs a worker and says `lab_busy` beyond; the gateway's own `sessionDailyCalls` behind all of it; a refused prompt costs nothing | The daily budget is shared by every visitor: twelve runs a day spend it (`dailyCalls` 600 in `routing.yaml`), after which runs fail as `model_budget` and are given back |
+| Privilege escalation | The service calls the gateway as `flask-systems` on aliases listed for `lb-10` alone; it writes only its own schema; the nightly commands run outside the web process | The commands that run OpenRouter are the owner's to run, with the keys they need |
+
+**Known gaps.** The paired comparison is on ten cases, so most differences are undetectable by
+design; the board says so. The LB-05 pack grades the shape of a query, not its result. The judge
+and the gate have never been run live here, and no baseline is committed.
 
 ## Measured, and not
 
@@ -628,10 +774,14 @@ lb03/          LB-03: api, service, pipeline, runner, sweeper, checks, money, bo
                prompts, extraction, storage, quota, repository, models, migrations/, golden and golden_eval, measure,
                commands, ocr/ (the cage, the decoders, the worker and its pool), synthetic/ (the seed's generator)
 lb05/          LB-05: api, service, pipeline, prompts, resolve, chart, quota, models, migrations/,
-               sql_policy and warehouse (the safety layers), generator, golden and golden_eval, commands
+               sql_policy and warehouse (the safety layers), generator, golden and golden_eval, commands, pack
+lb10/          LB-10: packs and templates (the eval pack format), graders, sampling, stats, prompt_check, providers,
+               chat, pipeline, runner, report, repository, quota, baselines, judge, evals (the commands), api,
+               service, models, migrations/, spans
 tests/         unit/ and integration/
 manage.py      python manage.py <command>: seed_lb03, ocr_lb03, eval_lb03, sweep_lb03, seed_lb05, eval_lb05,
-               sweep_lb05, migrate, export_openapi
+               sweep_lb05, export_pack_lb05, nightly_lb10, judge_lb10, gate_lb10, advise_lb10, sweep_lb10,
+               migrate, export_openapi
 wsgi.py        the gunicorn entry point: gunicorn --config gunicorn.conf.py wsgi:app
 ```
 

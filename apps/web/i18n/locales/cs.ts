@@ -14,6 +14,7 @@ import lb04 from './boards/lb-04.cs'
 import lb06 from './boards/lb-06.cs'
 import lb07 from './boards/lb-07.cs'
 import lb09 from './boards/lb-09.cs'
+import lb10 from './boards/lb-10.cs'
 import type { Messages } from './en'
 
 const cs = {
@@ -168,6 +169,7 @@ const cs = {
   lb06,
   lb07,
   lb09,
+  lb10,
   error: {
     code: 'Chyba {code}',
     notFound: 'Díl nenalezen',

@@ -208,6 +208,16 @@ jobs:
         run: uv run python manage.py makemigrations --check --dry-run
       - name: Django systems unit and integration tests
         run: uv run --directory services/django-systems pytest
+      - name: Eval packs match the production prompts and golden sets (LB-01, LB-02, LB-05)
+        env:
+          DJANGO_SETTINGS_MODULE: config.test_settings
+          LB_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+          FLASK_ALLOWED_HOSTS: localhost
+          LB_REDIS_URL: redis://127.0.0.1:6379/0
+        run: |
+          uv run --directory services/django-systems python manage.py export_packs_lb01 --check
+          uv run --directory services/django-systems python manage.py export_pack_lb02 --check
+          uv run --directory services/flask-systems python manage.py export_pack_lb05 --check
       - name: Flask systems unit and integration tests
         run: uv run --directory services/flask-systems pytest
 

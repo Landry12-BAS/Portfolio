@@ -20,6 +20,7 @@ import { runLb04Sample } from './lb04.ts'
 import { runLb06Sample } from './lb06.ts'
 import { runLb07Sample } from './lb07.ts'
 import { runLb09Sample } from './lb09.ts'
+import { runLb10Sample } from './lb10.ts'
 
 /** What a system's runner hands back: the language of the sample, what the board asked and was told, and the run's ID. */
 export interface RecordedRun {
@@ -44,6 +45,7 @@ const RUNNERS: Readonly<Record<string, SampleRunner>> = {
   'lb-06': runLb06Sample,
   'lb-07': runLb07Sample,
   'lb-09': runLb09Sample,
+  'lb-10': runLb10Sample,
 }
 
 // How long to wait for the gateway to have the whole trace once the run is over.

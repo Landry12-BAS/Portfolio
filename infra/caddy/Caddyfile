@@ -91,10 +91,10 @@
 		path /api/lb09/meetings
 	}
 
-	# The Flask systems (LB-03 and LB-05) and the Node systems (LB-08, LB-04, LB-06 and LB-07): one API
+	# The Flask systems (LB-03, LB-05 and LB-10) and the Node systems (LB-08, LB-04, LB-06 and LB-07): one API
 	# prefix each, and LB-06's WebSocket, which the visitor's browser opens straight from the site's
 	# origin. LB-07's browser sandbox has no route: only the Node worker reaches it.
-	@flask path /api/lb03/* /api/lb05/*
+	@flask path /api/lb03/* /api/lb05/* /api/lb10/*
 	@node path /api/lb08/* /api/lb04/* /api/lb06/* /api/lb07/* /ws/lb06/*
 
 	# One of the two routes that take a file: LB-04's contract upload, a PDF of up to 2 MB sent as

@@ -61,6 +61,11 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // a task). The newsletter draft is left without a recording on purpose, so the tests can see a sample
   // that has none and run it live.
   'lb-09': ['monday-roasting-plan', 'weekend-staffing'],
+  // The drafter's word limit (one lucky case won back, which the paired interval calls no detectable difference), the
+  // classifier without its JSON rule on both providers (prose back on every case, a verdict of worse) and the SQL writer
+  // unchanged (production's prompt alone, run once). The planner's and the generator's edits have no recording on purpose,
+  // so the tests can see a prepared edit that has none.
+  'lb-10': ['drafter-word-limit', 'classifier-without-json', 'sql-writer-unchanged'],
 }
 
 // The moment LB-02's mock stands still at.
@@ -147,8 +152,8 @@ async function recordOnOneMock(system: string, samples: readonly string[], folde
   }
 }
 
-// The systems that let a visitor start one or two things a day (LB-06's incident, LB-07's runs) get a fresh mock for each sample, as a fresh day.
-const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06', 'lb-07'])
+// The systems that let a visitor start one or two things a day (LB-06's incident, LB-07's runs, LB-10's run) get a fresh mock for each sample, as a fresh day.
+const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06', 'lb-07', 'lb-10'])
 
 /** Records a system's samples on a mock of its own, or on one mock for each when the system allows one a day, and writes them under the folder. */
 async function recordSystem(system: string, samples: readonly string[], folder: string): Promise<void> {
