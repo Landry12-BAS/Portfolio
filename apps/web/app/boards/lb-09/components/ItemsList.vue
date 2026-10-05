@@ -3,9 +3,10 @@
 // deadline when one was said, the words it rests on quoted verbatim, and the seconds it was said in.
 // Every item is a button that jumps the player to its evidence and plays it: the proof is the
 // recording, not the summary. The list also says how many items the checks dropped, because a
-// model proposed them with evidence that was not in the transcript.
+// model proposed them with evidence that was not in the transcript. Its heading can take the
+// keyboard's focus, for the board to give the focus a place when the control that held it is gone.
 import { LbIcon } from '@lb/icons'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { clockTime } from '../format'
@@ -18,6 +19,15 @@ const props = defineProps<{
 const emit = defineEmits<{ play: [seconds: number] }>()
 
 const { t } = useI18n()
+
+const title = ref<HTMLHeadingElement>()
+
+/** Puts the keyboard's focus on the list's heading. */
+function focusTitle(): void {
+  title.value?.focus()
+}
+
+defineExpose({ focusTitle })
 
 const decisions = computed(() => props.items.items.filter(item => item.kind === 'decision'))
 const actions = computed(() => props.items.items.filter(item => item.kind === 'action'))
@@ -36,7 +46,9 @@ function spanOf(item: Item): string {
   >
     <h2
       id="lb09-items-title"
+      ref="title"
       class="lb-label"
+      tabindex="-1"
     >
       {{ t('lb09.items.title') }}
     </h2>

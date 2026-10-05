@@ -14,7 +14,7 @@ Whatever fails, the meeting is marked failed with a reason the page can explain,
 """
 
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -22,7 +22,15 @@ from django.db import transaction
 from openai import OpenAIError
 from redis import Redis
 
-from core.structured import ChatModels, GatewayChat, StructuredAnswer, StructuredOutputError, ask_for_json
+from core.structured import (
+    ChatMessage,
+    ChatModels,
+    Completion,
+    GatewayChat,
+    StructuredAnswer,
+    StructuredOutputError,
+    ask_for_json,
+)
 from lb09.audio import AudioRefusedError, decode_recording
 from lb09.extraction import check_items
 from lb09.labelling import label_segments
@@ -50,12 +58,17 @@ type StructuredExtract = StructuredAnswer[ExtractAnswer]
 
 
 class MeetingFailedError(Exception):
-    """A step could not finish, for a reason the page can explain (one of `Meeting.Failure`)."""
+    """A step could not finish, for a reason the page can explain (one of `Meeting.Failure`).
 
-    def __init__(self, reason: str) -> None:
-        """Keep the reason."""
+    `model_calls` is how many chat calls the meeting had made when it failed, when a chat step is what failed:
+    those calls were spent all the same, and the page counts them.
+    """
+
+    def __init__(self, reason: str, model_calls: int | None = None) -> None:
+        """Keep the reason, and the chat calls spent when they are known."""
         super().__init__(reason)
         self.reason = reason
+        self.model_calls = model_calls
 
 
 @dataclass
@@ -64,6 +77,24 @@ class Analysis:
 
     result: MeetingResult
     calls: int
+
+
+class CountedChat:
+    """The chat models, counting every call made through them, whether it was answered or not.
+
+    A step that fails (an answer that never fitted its schema, a provider out of reach) has spent its calls all
+    the same, so a failed meeting's count comes from here rather than from the answers that arrived.
+    """
+
+    def __init__(self, chat: ChatModels) -> None:
+        """Count the calls made through `chat`, from none."""
+        self.chat = chat
+        self.calls = 0
+
+    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
+        """Count the call, then make it."""
+        self.calls += 1
+        return self.chat.complete(alias, messages, max_tokens)
 
 
 class MeetingPipeline:
@@ -98,7 +129,7 @@ class MeetingPipeline:
             except MeetingFailedError as failed:
                 span.set("status", Meeting.Status.FAILED)
                 span.set("reason", failed.reason)
-                mark_failed(meeting, failed.reason, self.report)
+                mark_failed(meeting, failed.reason, self.report, model_calls=failed.model_calls)
                 return
             span.set("status", Meeting.Status.DONE)
             span.set("items", len(analysis.result.items))
@@ -110,10 +141,11 @@ class MeetingPipeline:
         transcript = self.hear(meeting)
         if not transcript.segments:
             raise MeetingFailedError(Meeting.Failure.NO_SPEECH)
+        chat = CountedChat(self.chat)
         try:
-            return self.analyse(transcript.segments, meeting)
+            return self.analyse(transcript.segments, meeting, chat)
         except (OpenAIError, StructuredOutputError):
-            raise MeetingFailedError(Meeting.Failure.MODEL) from None
+            raise MeetingFailedError(Meeting.Failure.MODEL, model_calls=chat.calls) from None
 
     def hear(self, meeting: Meeting) -> Transcript:
         """Decode the audio and transcribe it, deleting the file whatever happens, and record what was heard."""
@@ -154,41 +186,47 @@ class MeetingPipeline:
         meeting.heard_language = transcript.language[:40]
         return transcript
 
-    def analyse(self, segments: list[Segment], meeting: Meeting | None = None) -> Analysis:
-        """Label the speakers, extract the items and align the evidence: the text-only part, which the eval runs too."""
+    def analyse(
+        self, segments: list[Segment], meeting: Meeting | None = None, chat: ChatModels | None = None
+    ) -> Analysis:
+        """Label the speakers, extract the items and align the evidence: the text-only part, which the eval runs too.
+
+        `chat` is what the calls go through, the pipeline's own models when it is not given.
+        """
+        models = chat or self.chat
         calls = 0
         if meeting is not None:
             self.report(
                 meeting, Meeting.Stage.LABELLING, transcriber=meeting.transcriber, heard_language=meeting.heard_language
             )
-        labelled, attempts = self.label(segments)
+        labelled, attempts = self.label(segments, models)
         calls += attempts
         if meeting is not None:
             self.report(meeting, Meeting.Stage.EXTRACTING, model_calls=calls)
-        answer = self.extract(labelled)
+        answer = self.extract(labelled, models)
         calls += answer.attempts
         if meeting is not None:
             self.report(meeting, Meeting.Stage.ALIGNING, model_calls=calls)
         result = self.align(labelled, answer.value)
         return Analysis(result=result, calls=calls)
 
-    def label(self, segments: list[Segment]) -> tuple[list[LabelledSegment], int]:
+    def label(self, segments: list[Segment], chat: ChatModels) -> tuple[list[LabelledSegment], int]:
         """Ask the labeller which segments each voice said, and keep only the names the code can verify."""
         with self.tracer.span("label speakers") as span:
-            answer = ask_for_json(self.chat, LABEL_ALIAS, label_messages(segments), LabelAnswer, LABEL_MAX_TOKENS)
+            answer = ask_for_json(chat, LABEL_ALIAS, label_messages(segments), LabelAnswer, LABEL_MAX_TOKENS)
             labelled = label_segments(segments, answer.value)
             span.set("speakers", len({segment.speaker for segment in labelled}))
             span.set("named", len({segment.label for segment in labelled if not segment.label.startswith("Speaker ")}))
             span.set("attempts", answer.attempts)
         return labelled, answer.attempts
 
-    def extract(self, labelled: list[LabelledSegment]) -> "StructuredExtract":
+    def extract(self, labelled: list[LabelledSegment], chat: ChatModels) -> "StructuredExtract":
         """Ask the extractor for the decisions and actions, each with its verbatim evidence."""
         with self.tracer.span("extract items") as span:
             labels = [segment.label for segment in labelled]
             segments = [Segment(s.position, s.start, s.end, s.text) for s in labelled]
             answer = ask_for_json(
-                self.chat, EXTRACT_ALIAS, extract_messages(segments, labels), ExtractAnswer, EXTRACT_MAX_TOKENS
+                chat, EXTRACT_ALIAS, extract_messages(segments, labels), ExtractAnswer, EXTRACT_MAX_TOKENS
             )
             span.set("decisions", len(answer.value.decisions))
             span.set("actions", len(answer.value.actions))
@@ -204,10 +242,13 @@ class MeetingPipeline:
         return MeetingResult(segments=labelled, items=checked.items, dropped=checked.dropped)
 
 
-def mark_failed(meeting: Meeting, reason: str, report: Callable[..., None] = record_stage) -> None:
-    """Record that a meeting failed, and why, and tell its group."""
+def mark_failed(
+    meeting: Meeting, reason: str, report: Callable[..., None] = record_stage, model_calls: int | None = None
+) -> None:
+    """Record that a meeting failed, and why, with the chat calls it spent when they are known; tell its group."""
     meeting.status = Meeting.Status.FAILED
-    report(meeting, Meeting.Stage.FAILED, status=Meeting.Status.FAILED, failure=reason, audio_name="")
+    spent = {} if model_calls is None else {"model_calls": model_calls}
+    report(meeting, Meeting.Stage.FAILED, status=Meeting.Status.FAILED, failure=reason, audio_name="", **spent)
 
 
 def save_result(meeting: Meeting, analysis: Analysis, report: Callable[..., None] = record_stage) -> None:

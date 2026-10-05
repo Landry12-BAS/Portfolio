@@ -189,7 +189,7 @@ export const systemsCs = {
     function: 'Z nahrané schůzky vytáhne rozhodnutí, odpovědné osoby a termíny a každé z nich propojí s vteřinou, kdy zaznělo.',
     visitorAction: 'Nahraje minutu a kliknutím na úkol si ho poslechne',
     problem: 'Úkoly se po schůzkách ztrácejí a mnoho firem nechce posílat zvuk ze schůzek do cloudové služby.',
-    tryIt: 'Nahrajte až 60 sekund, nebo si pusťte ukázkovou pondělní poradu o plánu pražení. Zvolte rychlý, nebo soukromý režim a přečtěte si přepis s označením mluvčích. Kliknutím na úkol uslyšíte okamžik, kdy byl dohodnut, a pak zkopírujte zadání pro Studio automatizací.',
+    tryIt: 'Nahrajte až 60 sekund, vyberte vlastní zvukový soubor, nebo si pusťte ukázkovou pondělní poradu o plánu pražení. Zvolte rychlý, nebo soukromý režim a přečtěte si přepis s označením mluvčích. Kliknutím na úkol uslyšíte okamžik, kdy byl dohodnut, a pak zkopírujte zadání pro Studio automatizací.',
     proves: 'Zpracování zvuku, lokální modely a ochranu soukromí už od návrhu.',
     tags: ['Hlas', 'Lokální model', 'Strukturovaný výstup'],
     chain: ['přepis, rychlý nebo soukromý', 'označení mluvčích', 'vytažení úkolů', 'zarovnání časových značek', 'export pro LB-08'],

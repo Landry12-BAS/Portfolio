@@ -52,16 +52,22 @@ export function accessibility(): void {
           await expectNoViolations(page)
         })
 
-        test('meets WCAG 2.2 AA while a live run waits in the queue, while it runs, once it is done and in the Brief reading', async ({ page }) => {
-          let letGo = await holdRunAt(page, 'queued')
-          await control(page, 'occupy', { runs: 1, ms: 3_000 })
+        // Each moment of a live run is its own test: held at one, the board shows the run there for as long as the
+        // check takes, so the checks need not race a run that goes on beneath them (a slow machine once let it
+        // finish while the queued page was still being scanned).
+        test('meets WCAG 2.2 AA while a live run waits in the queue', async ({ page }) => {
+          const letGo = await holdRunAt(page, 'queued')
+          await control(page, 'occupy', { runs: 1, ms: 60_000 })
           await runLive(page, 'coupon-double-discount')
           await expectState(page, 'queued')
           await expect(page.getByTestId('queue')).toBeVisible()
           await expectNoViolations(page)
           await letGo()
+        })
 
-          letGo = await holdRunAt(page, 'running')
+        test('meets WCAG 2.2 AA while a live run goes, once it is done and in the Brief reading', async ({ page }) => {
+          const letGo = await holdRunAt(page, 'running')
+          await runLive(page, 'coupon-double-discount')
           await expect(page.locator('[data-testid="step"][data-status="passed"]').first()).toBeVisible({ timeout: 30_000 })
           await expectState(page, 'running')
           await expectNoViolations(page)

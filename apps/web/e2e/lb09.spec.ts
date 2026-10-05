@@ -1,8 +1,10 @@
 // End-to-end journeys of LB-09's evaluation board, in a real browser against the test build of the
 // site and the mock back end: a recorded meeting replayed in both languages with no request made, a
-// curated meeting run live and followed over the WebSocket to its items and exports, a meeting the
-// worker fails, the fallback to reading the meeting when the socket is dropped, and the keyboard. The
-// recorder's own journeys, which need a browser launched with a fake microphone, are in
+// curated meeting run live and followed over the WebSocket to its items and exports, a jump to the
+// second an item was said, the visitor's meetings listed after a reload and opened again, a meeting
+// the worker fails (and one that gives its place back), the fallback to reading the meeting when the
+// socket is dropped, and the keyboard with its focus. The recorder's own journeys, which need a
+// browser launched with a fake microphone, and the visitor's own files are in
 // lb09-recorder.spec.ts. Every test also fails on a CSP or Trusted Types violation, a page error or a
 // console error (e2e/fixtures.ts). The Turnstile check is the test build's stand-in; the real widget
 // needs Cloudflare.
@@ -60,7 +62,9 @@ test.describe('replays', () => {
       await expect(page.getByTestId('announcement')).toHaveText(language.done)
       await expect(page.getByTestId('decisions').getByRole('listitem')).toHaveCount(2)
       await expect(page.getByTestId('actions').getByRole('listitem')).toHaveCount(3)
-      await expect(page.getByTestId('audio-player')).toHaveAttribute('src', '/lb09/monday-roasting-plan.mp3')
+      // The sample's file is fetched from the site and played from the page's memory, so it can be sought.
+      await expect(page.getByTestId('audio-player')).toHaveAttribute('data-source', '/lb09/monday-roasting-plan.mp3')
+      await expect(page.getByTestId('audio-player')).toHaveAttribute('src', /^blob:/)
       await expect(page.getByTestId('quota')).toContainText(language.counted)
       expect(writes).toEqual([])
     })
@@ -86,14 +90,46 @@ test.describe('live meetings', () => {
     await expect(page.getByTestId('scope')).toBeVisible()
   })
 
-  test('jump the player to an item\'s evidence', async ({ page }) => {
+  test('jump the player to an item\'s evidence, at the second it was said', async ({ page }) => {
     await openBoard(page)
     await page.getByRole('button', { name: 'Replay this meeting' }).click()
     await expectResult(page)
+    // The first action, the order of bags, is said from 20.1 s of the sample's recording.
     await page.getByTestId('actions').getByRole('button').first().click()
-    const at = await page.getByTestId('audio-player').evaluate((audio: HTMLAudioElement) => audio.currentTime)
-    expect(at).toBeGreaterThan(0)
-    await expect(page.getByTestId('transcript').locator('[aria-current="true"]')).toHaveCount(1)
+    const player = page.getByTestId('playback').getByTestId('audio-player')
+    await expect.poll(() => player.evaluate((audio: HTMLAudioElement) => audio.currentTime), { timeout: 10_000 }).toBeGreaterThanOrEqual(20)
+    expect(await player.evaluate((audio: HTMLAudioElement) => audio.currentTime)).toBeLessThan(23)
+    await expect(page.getByTestId('transcript').locator('[aria-current="true"]')).toContainText('two thousand')
+  })
+
+  test('list the visitor\'s meetings after a reload, and open one again without spending another', async ({ page }) => {
+    await openBoard(page)
+    await chooseSample(page, 2)
+    await page.getByTestId('run-sample').click()
+    await expectResult(page)
+    await expect(page.getByTestId('quota')).toContainText('4 of 5')
+    const writes = watchWrites(page)
+    await page.reload()
+    await expect(page.getByTestId('quota')).toContainText('4 of 5')
+    await expect(page.getByTestId('my-meeting')).toHaveCount(1)
+    await expect(page.getByTestId('my-meeting')).toContainText('Newsletter draft')
+    await expect(page.getByTestId('my-meeting')).toContainText('done')
+    await page.getByTestId('open-meeting').click()
+    await expectResult(page)
+    await expect(page.getByTestId('my-meetings')).toContainText('On the board now')
+    await expect(page.getByTestId('quota')).toContainText('4 of 5')
+    expect(writes.filter(write => write === 'POST /api/lb09/meetings')).toEqual([])
+  })
+
+  test('give the day\'s place back when the service could not finish the meeting', async ({ page }) => {
+    await openBoard(page)
+    await control(page, 'fail', { reason: 'model' })
+    await page.getByTestId('run-sample').click()
+    await expect(page.getByTestId('progress')).toHaveAttribute('data-status', 'failed', { timeout: 20_000 })
+    await expect(page.locator('[data-stage="labelling"]')).toHaveAttribute('data-mark', 'failed')
+    await expect(page.getByTestId('progress-failure')).toContainText('could not be reached')
+    await expect(page.getByTestId('progress-given-back')).toContainText('does not count')
+    await expect(page.getByTestId('quota')).toContainText('5 of 5')
   })
 
   test('show the worker\'s failure with its reason', async ({ page }) => {
@@ -125,5 +161,18 @@ test.describe('live meetings', () => {
     await expect(page.getByRole('button', { name: 'Replay this meeting' })).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByTestId('replay-banner')).toBeVisible()
+  })
+
+  test('the keyboard\'s focus follows a live meeting from its button to the progress, then to the result', async ({ page }) => {
+    await openBoard(page)
+    await chooseSample(page, 2)
+    await page.getByTestId('run-sample').focus()
+    await page.keyboard.press('Enter')
+    // The run button is switched off while the meeting runs, so the focus goes to the progress rather than nowhere.
+    await expect(page.locator('#lb09-progress-title')).toBeFocused()
+    await expectResult(page)
+    await expect(page.locator('#lb09-items-title')).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByTestId('items').getByRole('button').first()).toBeFocused()
   })
 })

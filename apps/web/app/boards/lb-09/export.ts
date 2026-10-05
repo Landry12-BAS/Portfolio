@@ -2,7 +2,9 @@
 // CSV for a spreadsheet, and the plain-English follow-up a visitor pastes into Automation Studio
 // (LB-08). They mirror the API's own exports (services/django-systems/lb09/export.py) field for field,
 // so a replay, which never calls the back end, exports the same thing a live run does. Every export
-// says that the speaker labels were inferred from the words, not matched to voices.
+// says that the speaker labels were inferred from the words, not matched to voices. The CSV's cells
+// of free text come from a model and from what was said into a microphone, so a cell that a
+// spreadsheet would read as a formula is written with an apostrophe in front, as the service does.
 import type { Item, Meeting, Segment } from './schemas.ts'
 
 /** The three formats. */

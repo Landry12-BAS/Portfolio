@@ -51,10 +51,12 @@ exports, and the infrastructure (its role, the shared audio volume, the upload r
 weights in the image), and its board at `/systems/lb-09/board` (a sample meeting or the visitor's
 own minute from the microphone, fast or private mode, the stages over the WebSocket with a polling
 fallback, the transcript with labels inferred from the words, the items that jump the player to
-their evidence, and the exports, with the two board pages alone allowing the microphone and
-`blob:` media; see the web README); next come its recorded sample runs (`just record-sample lb-09
-<sample>`) and its live eval and word-error-rate runs (`just eval-lb09`, `just wer-lb09`, which
-need a model). Also in build:
+their evidence, a file picker and the visitor's own meetings of the day, and the exports, with the two
+board pages alone allowing the microphone and `blob:` media; see the web README); private mode's word
+error rate has been measured on a development machine (0.106 over the six scripted meetings) and its
+transcriptions take turns, one at a time, because two at once measured 974 MiB of the worker's 1024;
+next come its recorded sample runs (`just record-sample lb-09 <sample>`), its live eval and fast
+mode's word error rate (`just eval-lb09`, `just wer-lb09`, which need a model). Also in build:
 `services/flask-systems`, the Flask monolith, with LB-05 Data Analyst's back end so far:
 synthetic Parquet and DuckDB data, the semantic layer, six layers of SQL safety, the
 question pipeline, the visitor API with its 25-a-day quota, and the golden, adversarial

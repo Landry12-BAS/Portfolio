@@ -299,9 +299,12 @@ function tokens(row: TimelineRow): string {
   border: 1px solid var(--lb-rule);
 }
 
+/* As wide as its content, and no narrower than its frame: squeezed into a phone's width, the one column that may
+   wrap (the step's name) took all the squeeze and broke model names in the middle of a word. The frame scrolls
+   sideways instead, and the name and the time still come first. */
 table {
-  width: 100%;
-  min-width: 560px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
   line-height: 1.35;
@@ -328,12 +331,20 @@ tbody td {
   border-bottom: 1px solid var(--lb-rule);
 }
 
-/* A long name wraps instead of pushing the time out of a phone's first screen: the step and its
+/* A very long name wraps instead of pushing the time out of a phone's first screen: the step and its
    time come first, and the rest (kind, model, tokens) is a swipe away. */
 tbody th {
   min-width: 150px;
   max-width: 260px;
   overflow-wrap: anywhere;
+}
+
+/* On a phone the name gets less, so that the time is on the first screen beside it; a name still breaks at its
+   hyphens and slashes first. */
+@media (max-width: 640px) {
+  tbody th {
+    max-width: 12.5rem;
+  }
 }
 
 tbody td {

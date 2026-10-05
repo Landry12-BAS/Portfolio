@@ -114,7 +114,7 @@ what a service may reach before the kernel kills it.
 |---|---|---|---|
 | `flask-api` | 2048 | always | DuckDB's 1 GB limit, and LB-03's OCR worker, measured at 692 to 837 MiB |
 | `postgres` | 2048 | always | Its settings: about 640 MiB for itself (`shared_buffers` 256 MB, three autovacuum workers at `maintenance_work_mem` 128 MB), and the rest for up to 100 connections, a few MiB each and `work_mem` 8 MB for every sort |
-| `django-worker` | 1024 (was 768) | always | Two Celery processes, each recycled at 300 MB, and LB-09's private transcriber (faster-whisper, Whisper's base model in int8). Not measured: no image with the weights has been built yet (part 12) |
+| `django-worker` | 1024 (was 768) | always | Two Celery processes, each recycled at 300 MB, and LB-09's private transcriber (faster-whisper, Whisper's base model in int8). **Measured** on a development machine (x86-64, not the box's Ampere A1): the child that ran a one-minute private meeting peaked at 472 to 484 MiB and the whole worker at 638 MiB; two meetings at once reached 974 MiB, so private transcriptions take turns (a file lock, `lb09/transcribers.py`), and 1024 MiB leaves about 380 MiB beside the one that runs, for the decoder child and the tickets |
 | `node-worker` | 768 | always | LB-04's PDF threads: measured at 291 MiB for two 30-page contracts at once, about 760 MiB if hostile files take every limit they are given |
 | `django-api` | 512 | always | Not measured |
 | `redis` | 512 | always | `maxmemory` 384 MB, and room beside it |
@@ -879,12 +879,15 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   95 seconds the proxy allows LB-05, LB-08 and LB-04.
 - Real provider traffic: no provider key was available.
 - LB-09's image with the Whisper weights: the build fetches them from Hugging Face
-  (`infra/docker/django-systems.Dockerfile`), which this environment could not reach, so the
-  step has not run, no image with them has been built, and private mode has never transcribed
-  a real recording. Fast mode's route exists in the gateway and is tested with fake providers;
-  it has never been called with a provider key either. The shared `lb09-audio` volume and the
-  5 MB upload route through Caddy are checked by the Compose rules and `infra/caddy/test.sh`,
-  not by a deployed stack.
+  (`infra/docker/django-systems.Dockerfile`, with `faster_whisper.utils.download_model`). The
+  same call was run in the development session, which reached Hugging Face through its proxy, and
+  private mode then transcribed the six committed recordings with those weights (word error rate
+  0.106, measured on an x86-64 development machine: `services/django-systems/README.md`); no image
+  with them was built there; GitHub's image job built it (the `django-systems` image of the CI run on 1852093 passed, weights step included). Nothing was measured on the box's
+  Ampere A1. Fast mode's route exists in the gateway and is tested with fake providers; it has
+  never been called with a provider key. The shared `lb09-audio` volume and the 5 MB upload route
+  through Caddy are checked by the Compose rules and `infra/caddy/test.sh`, not by a deployed
+  stack.
 
 ## 13. Day to day
 
@@ -1149,7 +1152,9 @@ LB-09 (the Django systems) needs two things no other system does, both in the fi
   only: a running container never downloads anything. The build host must reach
   `huggingface.co` (GitHub's runners do; a sandbox without a route fails the build, on purpose).
   To change the model, change the name in the Dockerfile and the folder in `docker-compose.yml`
-  together; the worker's 1 GiB limit fits the base model in int8 with room for the decoder.
+  together. The worker's 1 GiB limit was measured with the base model in int8: one private
+  meeting takes 638 MiB of it, two at once 974 MiB, which is why private transcriptions take
+  turns (`lb09/transcribers.py`); a different model needs the measurement made again.
 - **Its role and secrets.** `lb09` is in `infra/postgres/systems.txt`, so the provision job makes
   the role; `LB_PG_PASSWORD_LB09` is new in `postgres-roles.example.env`, so `just secrets-edit
   postgres-roles` must be given a value with `just secret-token` before the next deploy, or the

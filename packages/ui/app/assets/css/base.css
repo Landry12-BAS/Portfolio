@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+/* The toolbar sticks to the top of every page, so what scrolls into view because it took the focus (moving up with
+   Shift+Tab, or a player after a result) or because a link names it must stop below the toolbar, not under it
+   (WCAG 2.2, 2.4.11 Focus Not Obscured). The boards' own `scroll-margin-top` of 72px is the same measure. */
+html {
+  scroll-padding-top: calc(72px + env(safe-area-inset-top, 0px));
+}
+
 body {
   margin: 0;
   background: var(--lb-desk);

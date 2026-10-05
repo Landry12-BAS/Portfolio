@@ -261,7 +261,7 @@ export const systems = [
     phase: 3,
     size: 'M',
     problem: 'Action items get lost after meetings, and many companies won’t send meeting audio to a cloud service.',
-    tryIt: 'Record up to 60 seconds or play the sample Monday roasting-plan meeting. Choose fast mode or private mode, then read the transcript with speaker labels. Click an action item to hear the moment it was agreed, then copy the follow-up for Automation Studio.',
+    tryIt: 'Record up to 60 seconds, choose an audio file of your own, or play the sample Monday roasting-plan meeting. Choose fast mode or private mode, then read the transcript with speaker labels. Click an action item to hear the moment it was agreed, then copy the follow-up for Automation Studio.',
     proves: 'Audio pipelines, local models, and privacy by design.',
     tags: ['Voice', 'Local model', 'Structured output'],
     chain: ['transcribe, fast or private', 'label speakers', 'extract actions', 'align timestamps', 'export for LB-08'],

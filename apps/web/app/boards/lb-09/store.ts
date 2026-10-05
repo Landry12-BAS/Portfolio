@@ -1,15 +1,19 @@
 // LB-09's board state: the meeting on the board (a curated sample run live, the visitor's own
-// recording, or a replay from a recording), its progress stage by stage, the transcript and the
-// items once it is done, the visitor's recordings left today, and the limits the back end enforces.
-// A live meeting is started with one request, followed over the API's WebSocket while the worker
-// goes through it (the socket only listens: when it drops, the board reads the meeting every
-// second or two instead, and says which of the two it is doing), and read in full when it is over:
-// the meeting, then its transcript and its items. The Scope follows the run as soon as a state
-// names it. Every answer and every socket event is checked with its schema before the board uses it.
+// recording, one of the visitor's meetings opened again, or a replay from a recording), its progress
+// stage by stage, the transcript and the items once it is done, the visitor's meetings of the last
+// 24 hours, the recordings left today, and the limits the back end enforces. A live meeting is
+// started with one request, followed over the API's WebSocket while the worker goes through it (the
+// socket only listens: when it drops, the board reads the meeting every second or two instead, and
+// says which of the two it is doing), and read in full when it is over: the meeting, then its
+// transcript and its items. A reload loses nothing: the meeting stays in the visitor's list, from
+// which it opens again where it stands. The Scope follows the run as soon as a state names it, and a
+// Scope that stopped looking (a meeting longer than its patience) looks again when the meeting ends.
+// Every answer and every socket event is checked with its schema before the board uses it.
 import type { Exchange, Recording as ReplayRecording } from '@lb/contracts'
 import { defineStore } from 'pinia'
 import { ref, shallowRef, watch } from 'vue'
 
+import { LB09_SAMPLES } from '#shared/data/samples/lb09'
 import { socketGrantSchema } from '#shared/schema/session'
 
 import { apiClients, callApi, postJson } from '~/board-kit/api'
@@ -22,7 +26,7 @@ import { useSessionStore } from '~/stores/session'
 
 import { toBase64 } from './audio'
 import type { Recording } from './audio'
-import { isOver, itemsSchema, limitsSchema, MAX_UPLOAD_BYTES, meetingSchema, RECORDINGS_PER_DAY, transcriptSchema } from './schemas'
+import { isOver, itemsSchema, limitsSchema, MAX_UPLOAD_BYTES, meetingListSchema, meetingSchema, RECORDINGS_PER_DAY, transcriptSchema } from './schemas'
 import type { Items, Limits, Meeting, MeetingRequest, Mode, Stage, Transcript } from './schemas'
 import { ProgressSocket } from './socket'
 import type { EndReason, Grant } from './socket'
@@ -33,10 +37,14 @@ const MEETINGS_PATH = '/api/lb09/meetings'
 
 // A run's first span appears a moment after the worker takes the meeting, so "no trace yet" is not an error for this long.
 const SCOPE_GRACE_MS = 8_000
+// How long a Scope that had stopped looking for the trace looks again after the meeting ends: the root span is written as it ends.
+const SCOPE_END_GRACE_MS = 6_000
 // How often the meeting is read when the socket is not there to say.
 const POLL_EVERY_MS = 1_500
 // How long the board waits for a meeting to end before it gives up on it. The worker gives up at three minutes.
 const MEETING_PATIENCE_MS = 240_000
+// The stages after the transcription, when the meeting's row knows the transcriber, the language and the length.
+const HEARD_STAGES: ReadonlySet<string> = new Set(['labelling', 'extracting', 'aligning'])
 
 /** What the board holds without a count from the back end: the datasheet's limits. */
 export const DEFAULT_LIMITS: Limits = {
@@ -63,6 +71,9 @@ export type RunPhase = 'idle' | 'starting' | 'working' | 'done' | 'failed'
 
 /** How the board hears about progress: over the socket, by reading the meeting, or not at all (a replay). */
 export type ProgressFeed = 'none' | 'socket' | 'polling'
+
+/** Where the list of the visitor's meetings stands. */
+export type MineStatus = 'idle' | 'loading' | 'ready' | 'failed'
 
 /** The audio the player plays: a curated sample's file on the site, or the visitor's own recording held in the browser. */
 export interface Playback {
@@ -106,6 +117,18 @@ function revoke(playback: Playback | undefined): void {
   if (playback?.own && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(playback.url)
 }
 
+/** The audio of a curated sample, as the site serves it. */
+function samplePlayback(file: string): Playback {
+  return { url: `/lb09/${file}`, own: false }
+}
+
+/** Where a meeting came from and what can play it, for a meeting opened from the visitor's list: a sample's file, or nothing for their own recording, which only the page that sent it held. */
+function sourceOf(meeting: Meeting): { source: MeetingSource, playback: Playback | undefined } {
+  const sample = LB09_SAMPLES.find(candidate => candidate.id === meeting.sample)
+  if (sample) return { source: { kind: 'sample', sampleId: sample.id }, playback: samplePlayback(sample.file) }
+  return { source: { kind: 'upload' }, playback: undefined }
+}
+
 /** LB-09's board. */
 export const useLb09Store = defineStore('lb09', () => {
   const session = useSessionStore()
@@ -128,6 +151,11 @@ export const useLb09Store = defineStore('lb09', () => {
   const problem = shallowRef<ApiProblem>()
   // When the live meeting was started, in Unix milliseconds, for the time the board counts while it waits.
   const startedAt = ref<number>()
+  // The visitor's meetings of the last 24 hours, newest first, so a reload or another tab finds them again.
+  const mine = shallowRef<readonly Meeting[]>([])
+  const mineStatus = ref<MineStatus>('idle')
+  // The board stopped waiting for a meeting that had not ended: the service may still finish it, and it stays in the list.
+  const gaveUp = ref(false)
 
   // The recorded transcript and items, held back until the replayed trace has played out.
   let recordedTranscript: Transcript | undefined
@@ -139,6 +167,8 @@ export const useLb09Store = defineStore('lb09', () => {
   let patience: ReturnType<typeof setTimeout> | undefined
   // Whether the end of the meeting is being read, so a socket event and a poll do not both read it.
   let finishing = false
+  // Whether the facts the socket leaves out have been read for the meeting on the board.
+  let factsRead = false
 
   /** Reads the visitor's recordings left today and the limits the back end enforces. */
   async function loadLimits(): Promise<void> {
@@ -152,6 +182,23 @@ export const useLb09Store = defineStore('lb09', () => {
     }
   }
 
+  /** Reads the visitor's meetings of the last 24 hours, newest first. */
+  async function loadMine(): Promise<void> {
+    mineStatus.value = 'loading'
+    try {
+      mine.value = await callApi(apiClients().django.GET('/api/lb09/meetings'), meetingListSchema)
+      mineStatus.value = 'ready'
+    }
+    catch {
+      mineStatus.value = 'failed'
+    }
+  }
+
+  /** Keeps the visitor's list in step with the meeting on the board, so a new or finished meeting shows at once. */
+  function noteMine(seen: Meeting): void {
+    mine.value = [seen, ...mine.value.filter(item => item.id !== seen.id)].slice(0, 20)
+  }
+
   /** Stops the socket, the polling and the patience of the meeting in progress, its replay and its trace reading. */
   function stopRun(): void {
     generation += 1
@@ -162,6 +209,7 @@ export const useLb09Store = defineStore('lb09', () => {
     if (patience !== undefined) clearTimeout(patience)
     patience = undefined
     finishing = false
+    factsRead = false
     replay.stop()
     scope.stop()
   }
@@ -183,6 +231,7 @@ export const useLb09Store = defineStore('lb09', () => {
     items.value = undefined
     problem.value = undefined
     startedAt.value = undefined
+    gaveUp.value = false
     recordedTranscript = undefined
     recordedItems = undefined
   }
@@ -214,9 +263,32 @@ export const useLb09Store = defineStore('lb09', () => {
     const current = meeting.value
     if (!current) return
     const hadRun = current.run_id !== ''
-    meeting.value = { ...current, ...state }
+    const merged = { ...current, ...state }
+    meeting.value = merged
+    noteMine(merged)
     reach(state.stage)
     if (!hadRun && state.run_id !== '' && runMode.value === 'live') scope.follow(state.run_id, { notFoundGraceMs: SCOPE_GRACE_MS })
+    if (HEARD_STAGES.has(state.stage) && merged.transcriber === '' && !factsRead) void readFacts()
+  }
+
+  /**
+   * Reads the meeting once its transcription is over, for what the socket's states leave out: the transcriber that ran,
+   * the language it heard and the length it measured, which the facts show while the rest of the work goes on.
+   */
+  async function readFacts(): Promise<void> {
+    factsRead = true
+    const reading = generation
+    const id = meeting.value?.id
+    if (id === undefined) return
+    try {
+      const fresh = await callApi(apiClients().django.GET('/api/lb09/meetings/{meeting_id}', { params: { path: { meeting_id: id } } }), meetingSchema)
+      const current = meeting.value
+      if (reading !== generation || !current || isOver(current)) return
+      meeting.value = { ...current, transcriber: fresh.transcriber, heard_language: fresh.heard_language, duration_seconds: fresh.duration_seconds }
+    }
+    catch {
+      // The facts wait for the end of the meeting, which reads it whole.
+    }
   }
 
   /** Shows why a live meeting has no result: a problem of the site's, not of the meeting's. */
@@ -226,6 +298,19 @@ export const useLb09Store = defineStore('lb09', () => {
     feed.value = 'none'
     problem.value = isApiProblem(reason) ? reason : unavailableProblem()
     if (problem.value.code === 'daily_limit') useUp(problem.value.resetsAt)
+  }
+
+  /**
+   * Has the Scope read the trace to its end. The root span is written as the meeting ends, and a meeting longer than the
+   * Scope's patience (a slow transcription, slow providers, the worker's time limit) outlasts it: a Scope that had stopped
+   * looking (nothing found, stalled, failed) looks again for a few seconds, keeping what it has.
+   */
+  function lookAgainAtTheEnd(runId: string): void {
+    if (runMode.value !== 'live') return
+    if (runId !== '' && (scope.phase === 'missing' || scope.phase === 'stalled' || scope.phase === 'failed' || scope.phase === 'idle')) {
+      scope.follow(runId, { keepSpans: scope.runId === runId, notFoundGraceMs: SCOPE_END_GRACE_MS })
+    }
+    scope.settle()
   }
 
   /** Reads the meeting in full once it is over, and its transcript and items when it ended well. */
@@ -245,6 +330,7 @@ export const useLb09Store = defineStore('lb09', () => {
       const whole = await callApi(apiClients().django.GET('/api/lb09/meetings/{meeting_id}', { params: { path: { meeting_id: id } } }), meetingSchema)
       if (reading !== generation) return
       meeting.value = whole
+      noteMine(whole)
       reach(whole.stage)
       if (whole.status === 'done') {
         const [words, found] = await Promise.all([
@@ -260,7 +346,9 @@ export const useLb09Store = defineStore('lb09', () => {
         phase.value = 'failed'
       }
       feed.value = 'none'
-      scope.settle()
+      lookAgainAtTheEnd(whole.run_id)
+      // A meeting the service could not finish gives its place back, so the day is read again rather than guessed.
+      void loadLimits()
     }
     catch (error) {
       if (reading !== generation) return
@@ -318,22 +406,34 @@ export const useLb09Store = defineStore('lb09', () => {
     startPolling()
   }
 
-  /** Follows a meeting the back end took: over the socket first, and with patience for the whole run. */
+  /**
+   * Stops waiting for a meeting that has not ended in the board's patience. The service may still finish it (a worker that
+   * was down takes it when it is back, or gives up on it and gives its place back), so the board says so and lists it.
+   */
+  function stopWaiting(): void {
+    stopRun()
+    scope.clear()
+    phase.value = 'failed'
+    feed.value = 'none'
+    gaveUp.value = true
+    void loadMine()
+    void loadLimits()
+  }
+
+  /** Follows a meeting the back end took, or one of the visitor's opened again: over the socket first, and with patience for the whole run. */
   function follow(taken: Meeting): void {
     const reading = generation
     meeting.value = taken
+    noteMine(taken)
     stages.value = []
     reach(taken.stage)
     phase.value = 'working'
     feed.value = 'socket'
-    spendOne()
     scope.wait()
     if (taken.run_id !== '') scope.follow(taken.run_id, { notFoundGraceMs: SCOPE_GRACE_MS })
     patience = setTimeout(() => {
       if (reading !== generation || phase.value !== 'working') return
-      stopRun()
-      scope.clear()
-      fail(new ApiProblem(504, 'upstream_timeout', 'The system behind this demo took too long to finish the meeting.'))
+      stopWaiting()
     }, MEETING_PATIENCE_MS)
     if (isOver(taken)) {
       void finish()
@@ -400,6 +500,7 @@ export const useLb09Store = defineStore('lb09', () => {
     try {
       const taken = await send(request)
       if (reading !== generation) return
+      spendOne()
       follow(taken)
     }
     catch (error) {
@@ -408,19 +509,51 @@ export const useLb09Store = defineStore('lb09', () => {
     }
   }
 
-  /** Runs a curated sample live, in the mode the visitor chose. */
-  function startSample(sampleId: string, file: string, language: 'en' | 'cs'): Promise<void> {
-    return start({ source: 'sample', sample: sampleId, mode: mode.value, language }, { kind: 'sample', sampleId }, { url: `/lb09/${file}`, own: false })
+  /**
+   * Opens one of the visitor's own meetings again, as it stands: a finished one is read whole, one still going is
+   * followed. A sample's audio plays from the site; the visitor's own recording was held only by the page that sent it,
+   * and the service deleted it once transcribed, so there is nothing to play.
+   */
+  async function openMeeting(id: string): Promise<void> {
+    if (runMode.value === 'live' && (phase.value === 'starting' || phase.value === 'working')) return
+    reset()
+    runMode.value = 'live'
+    phase.value = 'starting'
+    const reading = generation
+    scope.wait()
+    try {
+      const found = await callApi(apiClients().django.GET('/api/lb09/meetings/{meeting_id}', { params: { path: { meeting_id: id } } }), meetingSchema)
+      if (reading !== generation) return
+      const { source: from, playback: audio } = sourceOf(found)
+      source.value = from
+      playback.value = audio
+      follow(found)
+    }
+    catch (error) {
+      if (reading !== generation) return
+      fail(error)
+      if (isApiProblem(error) && error.status === 404) void loadMine()
+    }
   }
 
-  /** Sends the visitor's own recording, held in the browser until now, in the mode the visitor chose. */
-  function startUpload(recording: Recording, url: string, language: 'en' | 'cs'): Promise<void> {
+  /** Runs a curated sample live, in the mode the visitor chose. */
+  function startSample(sampleId: string, file: string, language: 'en' | 'cs'): Promise<void> {
+    return start({ source: 'sample', sample: sampleId, mode: mode.value, language }, { kind: 'sample', sampleId }, samplePlayback(file))
+  }
+
+  /**
+   * Sends the visitor's own recording, held in the browser until now, in the mode the visitor chose. No language is
+   * asked for: the transcriber works out the one the visitor speaks, where the page's language would be a guess, and a
+   * wrong one makes Whisper write nonsense in it (an English meeting asked for in Czech came back as Czech words that
+   * were never said, and took twelve times as long).
+   */
+  function startUpload(recording: Recording, url: string): Promise<void> {
     if (recording.bytes.length > limits.value.max_upload_bytes) {
       reset()
       fail(new ApiProblem(413, 'audio_too_big', 'The recording is bigger than the service takes.'))
       return Promise.resolve()
     }
-    return start({ source: 'upload', audio: toBase64(recording.bytes), mode: mode.value, language }, { kind: 'upload' }, { url, own: true })
+    return start({ source: 'upload', audio: toBase64(recording.bytes), mode: mode.value }, { kind: 'upload' }, { url, own: true })
   }
 
   /** Applies a recorded answer as the API's own: the meeting as it was started and as it moved, and the transcript and items held back for the end. */
@@ -491,7 +624,7 @@ export const useLb09Store = defineStore('lb09', () => {
     phase.value = 'working'
     feed.value = 'none'
     source.value = { kind: 'sample', sampleId }
-    playback.value = { url: `/lb09/${file}`, own: false }
+    playback.value = samplePlayback(file)
     replay.start(recording, (_, exchange) => applyExchange(exchange))
   }
 
@@ -520,7 +653,12 @@ export const useLb09Store = defineStore('lb09', () => {
     playback,
     problem,
     startedAt,
+    mine,
+    mineStatus,
+    gaveUp,
     loadLimits,
+    loadMine,
+    openMeeting,
     startSample,
     startUpload,
     replayRecording,

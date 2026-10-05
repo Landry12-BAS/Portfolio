@@ -21,7 +21,6 @@ from lb09.models import Item, Meeting, Segment
 
 # What every export says about the labels.
 LABELS_NOTE = "Speaker labels are inferred from the words, not matched to voices."
-
 # The characters a spreadsheet reads as the start of a formula.
 FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 
