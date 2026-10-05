@@ -33,8 +33,12 @@ function toneWav(seconds: number, rate = 16_000): Buffer {
   return Buffer.concat([header, data])
 }
 
-// Playwright replaces the launch options whole, so the executable the configuration names is repeated here.
-test.use({ launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined, args: ['--use-fake-device-for-media-stream'] } })
+// Playwright replaces the launch options whole, so the executable the configuration names is repeated here. Without one,
+// the journeys ask for the full Chromium in its new headless mode: the headless shell that Playwright runs tests in by
+// default has no media capture at all (getUserMedia answers NotSupportedError even with the fake device), and
+// `playwright install chromium` puts the full build beside it.
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined
+test.use({ launchOptions: { executablePath, channel: executablePath === undefined ? 'chromium' : undefined, args: ['--use-fake-device-for-media-stream'] } })
 
 /** Opens the board and waits until it has read the session and counted the day's recordings. */
 async function openBoard(page: Page): Promise<void> {
