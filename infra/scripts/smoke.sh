@@ -15,8 +15,11 @@
 #      a raw connection to a public address and a public DNS lookup both fail, and the
 #      proxy refuses a host that is not on its list. (Skipped where the proxies aren't
 #      running, as in a local stack.)
-#   4. No service was refused anything by Redis's ACL.
-#   5. With --public (the deploy passes it on the box): one request through the API's own
+#   4. LB-07's browser sandbox: the worker reaches its runner and not its shop, and from inside
+#      the sandbox the shop answers on the loopback interface while a public address, a public
+#      name, Postgres and the host's own address all stay out of reach.
+#   5. No service was refused anything by Redis's ACL.
+#   6. With --public (the deploy passes it on the box): one request through the API's own
 #      public hostname, the way a visitor's browser comes in, which proves the tunnel and
 #      Cloudflare's side as well. It must be answered with the 401 that asks for a token.
 #
@@ -79,6 +82,7 @@ expect_status "LB-05's API is reached, and asks for a visitor token" 401 "$api_h
 expect_status "LB-08's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb08/limits
 expect_status "LB-04's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb04/limits
 expect_status "LB-06's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb06/limits
+expect_status "LB-07's API is reached, and asks for a visitor token" 401 "$api_host" /api/lb07/limits
 
 # LB-02's WebSocket, the way the site opens it: the upgrade must be accepted (101) through
 # Caddy, which asks for the site's origin. The probe runs in the Django container, on the
@@ -161,6 +165,51 @@ print(direct, lookup, proxied)"
     fi
 else
     echo "  skip  the egress proxies are not running in this stack"
+fi
+
+echo "LB-07's browser sandbox"
+# From the worker, the one other member of the sandbox network: the runner's API answers, and the
+# shop does not, since it listens on the sandbox's own loopback interface.
+worker_probe="
+const net = require('node:net');
+const runner = fetch('http://lb07-sandbox:8008/healthz', { signal: AbortSignal.timeout(4000) })
+  .then(response => response.json()).then(body => (body.ok ? 'runner' : 'runner-not-ok'), () => 'no-runner');
+const shop = new Promise(resolve => {
+  const socket = net.connect({ host: 'lb07-sandbox', port: 8007, timeout: 3000 });
+  socket.on('connect', () => { socket.destroy(); resolve('shop-open'); });
+  socket.on('error', () => resolve('shop-closed'));
+  socket.on('timeout', () => { socket.destroy(); resolve('shop-closed'); });
+});
+Promise.all([runner, shop]).then(results => console.log(results.join(' ')));"
+answer="$("$compose" exec -T node-worker /nodejs/bin/node -e "$worker_probe" 2>&1 | tail -1)"
+if [ "$answer" = "runner shop-closed" ]; then
+    pass "node-worker reaches the sandbox's runner, and not its shop"
+else
+    fail "node-worker: expected 'runner shop-closed', got '$answer'"
+fi
+# From the sandbox itself, by address, so a name that does not resolve proves nothing: Postgres's
+# address on the data network, and the host's on Docker's default bridge. A refused connection
+# would mean the address was reached, so only no route at all (or no answer) counts as blocked.
+postgres_address="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$("$compose" ps -q postgres)" | awk '{print $1}')"
+host_address="$(docker network inspect bridge -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || true)"
+sandbox_probe="
+const net = require('node:net');
+const dns = require('node:dns').promises;
+const tcp = (host, port) => new Promise(resolve => {
+  if (!host) return resolve('no-address');
+  const socket = net.connect({ host, port, timeout: 3000 });
+  socket.on('connect', () => { socket.destroy(); resolve('connected'); });
+  socket.on('error', error => resolve(error.code === 'ECONNREFUSED' ? 'refused' : 'blocked'));
+  socket.on('timeout', () => { socket.destroy(); resolve('blocked'); });
+});
+const shop = fetch('http://127.0.0.1:8007/', { signal: AbortSignal.timeout(4000) }).then(response => (response.status === 200 ? 'shop' : 'no-shop'), () => 'no-shop');
+const lookup = dns.lookup('example.com').then(() => 'resolved', () => 'blocked');
+Promise.all([shop, tcp('1.1.1.1', 443), lookup, tcp(process.argv[1], 5432), tcp(process.argv[2], 22)]).then(results => console.log(results.join(' ')));"
+answer="$("$compose" exec -T lb07-sandbox /nodejs/bin/node -e "$sandbox_probe" "$postgres_address" "$host_address" 2>&1 | tail -1)"
+if [ "$answer" = "shop blocked blocked blocked blocked" ]; then
+    pass "lb07-sandbox: its shop answers on the loopback; no public address, no public name, no Postgres, no host"
+else
+    fail "lb07-sandbox: expected 'shop blocked blocked blocked blocked', got '$answer'"
 fi
 
 echo "Redis"

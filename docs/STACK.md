@@ -298,8 +298,11 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   [`services/node-systems/README.md`](../services/node-systems/README.md).
 - **LB-04:** pdf.js (`pdfjs-dist`) on the server and in the browser uses the same
   text layer, so quote positions line up exactly.
-- **LB-07:** Playwright and axe-core in a separate worker container with concurrency
-  1, on a Docker network that can only reach the staging shop.
+- **LB-07:** Playwright (`playwright-core`, with the Chrome Headless Shell build it pins)
+  and axe-core in a container of its own, `lb07-sandbox`, one run at a time. The staging
+  shop runs in the same process, on the container's loopback interface; the container's
+  one network reaches nothing but the Node worker that calls its runner, and it starts
+  afresh after every 20 browser sessions (`docs/SECURITY.md`, section 6).
 
 ## Data
 
@@ -335,8 +338,12 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
     at the limit.
   - **Two cores.** CPU-heavy jobs (LB-07 browser runs, LB-09 private transcription,
     LB-03 OCR) run one at a time from their queues, and replay mode covers bursts.
-    12 GB of RAM holds every service with headroom, and each container has a memory
-    limit.
+    Each container has a memory limit, and the limits are budgeted to the last MiB of
+    the 12 GB (the host keeps 1): 8 GiB for what runs all the time, among them LB-07's
+    browser sandbox at 384 MiB (measured at about 270 MiB under that limit for its
+    heaviest plan), and 11 GiB with a deploy's jobs and the nightly backup. The table, with what
+    each number rests on, and the owner's decision for the next system that needs
+    memory are in `docs/DEPLOY.md`, part 2.
   - **Staying free.** Oracle reclaims an Always Free VM only when CPU, network and
     memory all stay under 20% for 7 days. With every service resident, memory stays
     well above 20%, and the launch checklist confirms it in the OCI metrics. The
@@ -433,10 +440,10 @@ short:
 ```text
 apps/web/                 Nuxt site and every demo UI (Vue single-file components)
 services/gateway/         AI gateway (TypeScript, Fastify) + routing.yaml
-services/node-systems/    LB-04, LB-06, LB-07, LB-08 (+ worker entry point)
+services/node-systems/    LB-04, LB-06, LB-07, LB-08 (+ worker entry point, and LB-07's
+                          sandbox entry point with its deliberately buggy staging shop)
 services/django-systems/  LB-01, LB-02, LB-09 (+ Celery worker)
 services/flask-systems/   LB-03, LB-05, LB-10
-services/staging-shop/    Deliberately buggy shop for LB-07 (Vite + Vue)
 packages/ui/              Design system: tokens, Reka UI components, Storybook
 packages/icons/           LB icon set: SVG sources, sprite, Vue component
 brand/                    The LB mark, light and dark

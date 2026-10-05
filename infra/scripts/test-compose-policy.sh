@@ -16,11 +16,29 @@ fail() {
     failures=$((failures + 1))
 }
 
-# A configuration that follows every rule: five services on the networks they belong on.
+# A configuration that follows every rule: seven services on the networks they belong on.
 read -r -d '' good <<'JSON' || true
 {
-  "networks": {"app": {"internal": true}, "data": {"internal": true}, "outbound": {}},
+  "networks": {
+    "app": {"internal": true}, "data": {"internal": true}, "outbound": {},
+    "sandbox": {"internal": true, "driver_opts": {"com.docker.network.bridge.inhibit_ipv4": "true"}}
+  },
   "services": {
+    "lb07-sandbox": {
+      "read_only": true, "cap_drop": ["ALL"], "security_opt": ["no-new-privileges:true"],
+      "mem_limit": "134217728", "cpus": 0.5, "pids_limit": 64, "restart": "unless-stopped",
+      "healthcheck": {"test": ["CMD", "true"]},
+      "logging": {"driver": "json-file", "options": {"max-size": "10m"}},
+      "environment": {"LB07_SHOP_TOKEN_KEY": "00", "LB07_RUNS_PER_LIFE": "20"},
+      "networks": {"sandbox": null}
+    },
+    "node-worker": {
+      "read_only": true, "cap_drop": ["ALL"], "security_opt": ["no-new-privileges:true"],
+      "mem_limit": "134217728", "cpus": 0.5, "pids_limit": 64, "restart": "unless-stopped",
+      "healthcheck": {"test": ["CMD", "true"]},
+      "logging": {"driver": "json-file", "options": {"max-size": "10m"}},
+      "networks": {"app": null, "data": null, "sandbox": null}
+    },
     "web": {
       "read_only": true, "cap_drop": ["ALL"], "security_opt": ["no-new-privileges:true"],
       "mem_limit": "134217728", "cpus": 0.5, "pids_limit": 64, "restart": "unless-stopped",
@@ -109,8 +127,13 @@ expect_rule "a network with a route out" '.networks.data.internal = false' "netw
 expect_rule "a service that joins outbound" '.services.web.networks.outbound = null' "web: joins the outbound network, which only the egress proxies and the tunnel may"
 expect_rule "Postgres on another network" '.services.postgres.networks.app = null' "postgres: is on networks other than data"
 expect_rule "Redis on another network" '.services.redis.networks = {"app": null}' "redis: is on networks other than data"
-expect_rule "memory limits that add up to more than the box has" '.services.web.mem_limit = "12582912000"' "the memory limits add up to 12512 MiB, over the 11264 MiB the box has to give (12 GiB less 1 for the host)"
-expect_rule "services that run all the time and leave no room for what is to come" '.services.web.mem_limit = "8598323200"' "the services that run all the time have 8712 MiB of memory limits, over the budget of 8192 MiB that leaves room for what is still to come"
+expect_rule "a browser network that gives the host an address" 'del(.networks.sandbox.driver_opts)' "network sandbox gives the host an address: LB-07's browser could reach the box's own services"
+expect_rule "a browser network with a route out" '.networks.sandbox.internal = false' "network sandbox is not internal: a container on it could reach the internet"
+expect_rule "another service on the browser's network" '.services.web.networks.sandbox = null' "web: joins the sandbox network, which only LB-07's browser sandbox and the Node worker may"
+expect_rule "the browser sandbox on another network" '.services["lb07-sandbox"].networks.data = null' "lb07-sandbox: is on networks other than sandbox"
+expect_rule "the browser sandbox given another service's secret" '.services["lb07-sandbox"].environment.LB_SERVICE_KEY_JWK_B64 = "a2V5"' "lb07-sandbox: is given settings that are not its own (LB07_*): LB_SERVICE_KEY_JWK_B64"
+expect_rule "memory limits that add up to more than the box has" '.services.web.mem_limit = "12582912000"' "the memory limits add up to 12768 MiB, over the 11264 MiB the box has to give (12 GiB less 1 for the host)"
+expect_rule "services that run all the time beyond their share of the box" '.services.web.mem_limit = "8598323200"' "the services that run all the time have 8968 MiB of memory limits, over the 8192 MiB planned for them"
 expect_rule "the local stack publishing on every address" '.services.web.ports = [{"published": "8180", "host_ip": "0.0.0.0"}]' "web: publishes port 8180 on 0.0.0.0, not on 127.0.0.1" true
 
 expect_clean "the local stack publishing on 127.0.0.1 passes" "$(jq '.services.web.ports = [{"published": "8180", "host_ip": "127.0.0.1"}]' <<<"$good")" true

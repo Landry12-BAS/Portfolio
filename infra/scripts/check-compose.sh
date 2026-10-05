@@ -44,7 +44,10 @@ check_stack() {
 }
 
 LB_SECRETS_DIR="$scratch/secrets" "$here/dev-secrets.sh" > /dev/null
-check_stack "the production stack" false LB_SECRETS_DIR="$scratch/secrets" LB_TAG=policy-check
+# The production stack with the nightly backup, which is behind a profile: it is held to the same
+# rules, and its memory counts in the box's budget, since it can run beside a deploy's jobs. The
+# local stack's backup writes to a folder on the laptop by design, so that check leaves it out.
+check_stack "the production stack, with the nightly backup" false LB_SECRETS_DIR="$scratch/secrets" LB_TAG=policy-check COMPOSE_PROFILES=backup
 check_stack "the local stack" true LB_SECRETS_DIR="$scratch/secrets" LB_TAG=policy-check LB_STACK=dev
 
 echo

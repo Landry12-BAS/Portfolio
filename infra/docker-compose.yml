@@ -16,6 +16,10 @@
 #                    <-> their proxy. Internal. (The Node systems reach no outside host:
 #                    their model calls go through the gateway, and so do the Flask API's.
 #                    LB-05's data job has no network at all.)
+#   sandbox          LB-07's browser sandbox <-> the Node worker, which calls its runner, and
+#                    nothing else. Internal, and its bridge has no address on the host either,
+#                    so the browser's container reaches neither the internet nor the box's own
+#                    services (the shop it tests is on its own loopback interface).
 #   outbound         the only network with a route to the internet: cloudflared (the
 #                    tunnel to Cloudflare) and the two egress proxies (Squid, each with its
 #                    own host allowlist). An internal network resolves no outside name and
@@ -26,17 +30,26 @@
 #   and they rarely peak together. Memory is capped without swap. compose-policy.jq holds the
 #   two budgets below and fails the checks (`just infra-check`) when a change breaks them.
 #
-#   Memory of what runs all the time, in MiB: postgres 2048, flask-api 2048, django-worker
-#   768, node-worker 768, django-api 512, redis 512, gateway 384, node-api 384, caddy 128,
-#   cloudflared 128, the two egress proxies 128 each = 7936 (7.75 GiB). The budget is 8192:
-#   of the 12 GiB the host keeps 1 and about 0.25 stays free for what is still to come (the
-#   Playwright sandbox, Whisper, the other systems).
+#   Memory of what runs all the time, in MiB: flask-api 2048, postgres 1920, django-worker
+#   768, node-worker 768, django-api 512, redis 512, gateway 384, node-api 384, lb07-sandbox
+#   384, caddy 128, cloudflared 128, the two egress proxies 128 each = 8192 (8 GiB). The
+#   budget is 8192: of the 12 GiB the host keeps 1, and the quarter GiB that was kept for
+#   what was still to come went to LB-07's sandbox. Nothing is left over: Whisper (LB-09) and
+#   the systems after it need a decision first (docs/DEPLOY.md, "Owner decision: the memory
+#   budget").
 #   Memory of the jobs a deploy runs beside them, which wait for Postgres and for each other
 #   and so rarely overlap: flask-seed 1280, django-migrate 384, flask-migrate, node-migrate
-#   and node-seed 256 each, postgres-provision 128, and the nightly backup 768 = 3328. All
+#   and node-seed 256 each, postgres-provision 128, and the nightly backup 512 = 3072. All
 #   that can run at once, 11264 (11 GiB), is exactly the 11 GiB the box has to give: the
 #   next system that needs memory needs a decision (a smaller limit elsewhere, or a job that
 #   waits for another), not a bigger number.
+#   LB-07's sandbox was such a decision, and it is the owner's to revisit: its 384 came from
+#   postgres (2048 to 1920) and the nightly backup (768 to 512), the trims that risk least;
+#   the reasons and the other options are in docs/DEPLOY.md, "Owner decision: the memory
+#   budget". The sandbox's own number is measured: Chromium and the runner peaked at 263 to
+#   271 MiB under that limit over five runs in a row of the heaviest golden plan (three
+#   measurements, the kernel's count with page cache), and at 327 to 332 MiB with no limit at all
+#   (Chrome Headless Shell 153, x86-64; infra/sandbox/test.sh repeats the runs).
 #   Where the numbers come from: on a local stack the same services idle at about 0.7 GiB
 #   (without cloudflared and the proxies). LB-05's data job peaks at 923 MB when it makes the
 #   full dataset, and the service's warehouse code at 452 MB while it answers the 100
@@ -54,13 +67,15 @@
 #   Node worker gets 768: it opens LB-04's PDFs in threads of their own (two at a time, each
 #   limited to 192 MB of old and 32 MB of young heap), which measured 291 MB at the peak for two
 #   30-page contracts at once, and up to about 760 MB if hostile files took all the limits allow.
-#   CPU limits cap a service at that many cores. They add up to 10 for the services and 15
+#   CPU limits cap a service at that many cores. They add up to 11 for the services and 16
 #   with the jobs, on 2 cores, on purpose: services rarely use their cap together, and when
 #   they contend, cpu_shares decides: 1536 for the request path (the databases, the gateway,
-#   the APIs and the edge) against 1024 for the workers, the tunnel and the jobs.
-#   Process limits (a runaway service cannot fill the process table) add up to 1644 for the
+#   the APIs and the edge) against 1024 for the workers, LB-07's browser, the tunnel and the
+#   jobs.
+#   Process limits (a runaway service cannot fill the process table) add up to 1836 for the
 #   services and 448 for the jobs. A Node process has about 12 threads when idle, and a
-#   Python one under ten, so the limits leave a wide margin.
+#   Python one under ten, so the limits leave a wide margin; LB-07's browser sandbox, Node and
+#   Chromium's processes, peaked at 83.
 #
 # --- Adding a service ---------------------------------------------------------------------
 #   One block here (and one for each job it needs: a migration, a seed), one route in
@@ -170,8 +185,12 @@ services:
       start_period: 30s
     # A fast shutdown (the image's SIGINT) with time to checkpoint.
     stop_grace_period: 60s
-    mem_limit: 2g
-    memswap_limit: 2g
+    # What postgresql.conf lets it hold for itself is about 640 MiB (shared_buffers, and three
+    # autovacuum workers with maintenance_work_mem each); the rest is per connection, a few MiB
+    # each and work_mem for every sort. 1920 leaves 1280 MiB of that for connections: the
+    # 128 MiB under the 2048 it had went to LB-07's sandbox (the header, Resources).
+    mem_limit: 1920m
+    memswap_limit: 1920m
     cpus: 1.5
     cpu_shares: 1536
     pids_limit: 300
@@ -487,10 +506,10 @@ services:
     cpu_shares: 1536
     pids_limit: 128
 
-  # LB-08, LB-04 and LB-06 (the Node systems). Their migrations and their seeds are two jobs, because
-  # the image has no shell to chain them with, and each system logs in as its own role, which
-  # owns its own schema (lb08, lb04, lb06) and can reach nothing else. The Redis URL they must have
-  # goes nowhere.
+  # LB-08, LB-04, LB-06 and LB-07 (the Node systems). Their migrations and their seeds are two jobs,
+  # because the image has no shell to chain them with, and each system logs in as its own role,
+  # which owns its own schema (lb08, lb04, lb06, lb07) and can reach nothing else. The Redis URL
+  # they must have goes nowhere. LB-07's browser runs in a container of its own, lb07-sandbox, below.
   node-migrate:
     <<: *node
     restart: "no"
@@ -500,6 +519,7 @@ services:
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04:?LB_PG_PASSWORD_LB04 is not set}@postgres:5432/lb
       LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06:?LB_PG_PASSWORD_LB06 is not set}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07:?LB_PG_PASSWORD_LB07 is not set}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       postgres-provision:
@@ -519,6 +539,7 @@ services:
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
       LB_REDIS_URL: redis://127.0.0.1:1/0
     depends_on:
       node-migrate:
@@ -536,13 +557,15 @@ services:
     environment:
       LB_NODE_HOST: 0.0.0.0
       LB_NODE_PORT: "8002"
-      # LB-08 logs in as the lb08 role, LB-04 as the lb04 role and LB-06 as the lb06 role, each of
-      # which owns its own schema and can reach nothing else. The shared URL is LB-08's login, so a
-      # system that forgets its own fails closed.
+      # LB-08 logs in as the lb08 role, LB-04 as the lb04 role, LB-06 as the lb06 role and LB-07 as
+      # the lb07 role, each of which owns its own schema and can reach nothing else. The shared URL
+      # is LB-08's login, so a system that forgets its own fails closed. The API only queues LB-07's
+      # runs: it has no way to the browser sandbox and no key for its shop.
       LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS:?LB_REDIS_PASSWORD_NODE_SYSTEMS is not set}@redis:6379/0
       LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
       LB_GATEWAY_URL: http://gateway:8080
@@ -576,9 +599,10 @@ services:
     pids_limit: 128
 
   # BullMQ's workers with their sweeps: one job per LB-08 workflow step, one per LB-04
-  # contract under review, and one per LB-06 incident for its whole life (a few minutes: the
-  # simulated clock ticks every two seconds, and the agents' calls run beside it). It serves no
-  # HTTP, but a review and an incident make model calls, so it has the gateway and the service's key, as the API has, and
+  # contract under review, one per LB-06 incident for its whole life (a few minutes: the
+  # simulated clock ticks every two seconds, and the agents' calls run beside it), and one per
+  # LB-07 test run, one at a time, which drives the browser in lb07-sandbox. It serves no
+  # HTTP, but a review, an incident and a test run make model calls, so it has the gateway and the service's key, as the API has, and
   # starts with neither missing. Its health check reads a heartbeat file that the entrypoint
   # renews while the event loop turns.
   node-worker:
@@ -591,16 +615,25 @@ services:
       LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
       LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
       LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
       LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS}@redis:6379/0
       LB_GATEWAY_URL: http://gateway:8080
       LB_SERVICE_NAME: node-systems
       LB_HEARTBEAT_FILE: /tmp/lb-heartbeat
+      # LB-07's browser runner, on the sandbox network, and the key the worker signs each run's
+      # bug token with (lb07-sandbox.env; the sandbox's shop verifies with the same one). The
+      # shop's origin is where the sandbox serves it, inside its own container: a generated
+      # test names it, and it must match the sandbox's LB07_SHOP_PORT.
+      LB07_RUNNER_URL: http://lb07-sandbox:8008
+      LB07_SHOP_ORIGIN: http://127.0.0.1:8007
+      LB07_SHOP_TOKEN_KEY: ${LB07_SHOP_TOKEN_KEY:?LB07_SHOP_TOKEN_KEY is not set}
     tmpfs:
       - /tmp:size=16m,uid=65532,gid=65532,mode=1777
       # Where the entrypoint writes the service's private key, readable by this user only.
       - /run/lb:size=1m,uid=65532,gid=65532,mode=0700
-    # The gateway is on the app network, and so is the way to it.
-    networks: [app, data]
+    # The gateway is on the app network, and so is the way to it. The sandbox network is the
+    # one way to LB-07's browser runner, and nothing on it can reach this container's other two.
+    networks: [app, data, sandbox]
     depends_on:
       node-seed:
         condition: service_completed_successfully
@@ -616,7 +649,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    # Workers finish the step they are on, then exit.
+    # Workers finish the step they are on, then exit. A test run of LB-07's that is cut short is
+    # run again from its plan by the next worker.
     stop_grace_period: 45s
     # A contract's PDF is opened in a thread of its own, limited to 192 MB of old and 32 MB of
     # young heap and a 4 MB stack, and a worker reviews two contracts at once. Measured on a
@@ -628,11 +662,60 @@ services:
     # own limit fails only its file. LB-06 adds no container and no limit: an incident's tick
     # rebuilds its shop from the seed in about 15 to 20 ms every two seconds (under 1% of a core
     # each, eight at once at most) and keeps a few kilobytes beside its log in Postgres, so it
-    # lives inside this limit and the API's.
+    # lives inside this limit and the API's. LB-07 adds a test run's bookkeeping and its HTTP
+    # calls to the runner, one run at a time: the browser itself is in lb07-sandbox.
     mem_limit: 768m
     memswap_limit: 768m
     cpus: 1.0
     pids_limit: 128
+
+  # LB-07's browser sandbox (infra/docker/lb07-sandbox.Dockerfile): one Node process that holds the
+  # staging shop on its loopback interface, the one place its headless Chromium may go, and the
+  # runner's API on the sandbox network, which only node-worker joins. The datasheet's first idea,
+  # a container per run, would need the Docker socket, which nothing on the box is given. What
+  # stands in for it (docs/SECURITY.md, section 6):
+  #   - a container with no secret but the shop's key, no capability, no writable root, no
+  #     package manager, no shell, and no network but the sandbox one, which reaches neither the
+  #     internet nor the host;
+  #   - a fresh browser context (cookies, storage, cache) for every pass of a run, closed when it
+  #     ends, with every request for another origin than the shop's aborted;
+  #   - a fresh process: after LB07_RUNS_PER_LIFE browser sessions (a test run opens up to three:
+  #     its plan, the second engine, the green pass) the runner refuses new ones, exits once the
+  #     last has closed, and Docker starts it again, so the session in flight is never cut short.
+  # Chromium's own sandbox needs user namespaces, which a container without capabilities is not
+  # given, so it runs with --no-sandbox and this container is its sandbox. It keeps its shared
+  # memory in /tmp (--disable-dev-shm-usage), so /dev/shm holds nothing.
+  lb07-sandbox:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-lb07-sandbox:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # The key the shop verifies bug tokens with (lb07-sandbox.env): read once and taken out of
+      # the process's environment. The worker signs with the same one.
+      LB07_SHOP_TOKEN_KEY: ${LB07_SHOP_TOKEN_KEY:?LB07_SHOP_TOKEN_KEY is not set}
+      LB07_RUNS_PER_LIFE: "20"
+    tmpfs:
+      # Chromium's profile and shared memory, and fontconfig's cache: 27 MiB at the peak of the
+      # heaviest golden plan (measured).
+      - /tmp:size=128m,uid=65532,gid=65532,mode=1777
+    shm_size: 16m
+    networks: [sandbox]
+    healthcheck:
+      # Both servers answer from inside the container: the runner's API on the container's
+      # address, the shop on its loopback interface (infra/docker/lb07-sandbox-healthcheck.mjs).
+      test: ["CMD", "/nodejs/bin/node", "/usr/local/lib/lb/healthcheck.mjs"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    # The runner closes the browser and both servers on SIGTERM.
+    stop_grace_period: 15s
+    # Five runs in a row of the heaviest golden plan peaked at about 270 MiB under this limit
+    # and at about 330 MiB with none (the header, Resources).
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    # 83 tasks at the peak: Node's threads and Chromium's processes and theirs.
+    pids_limit: 192
 
   # ------------------------------------------------------------------------------------
   # Edge
@@ -771,9 +854,10 @@ services:
       PGUSER: lbbackup
       PGPASSWORD: ${LB_PG_PASSWORD_LBBACKUP:-}
       HTTPS_PROXY: http://egress-systems:3128
-    # The encrypted dump is written here, in memory, and uploaded from here.
+    # The encrypted dump is written here, in memory, and uploaded from here. Its size is under
+    # the memory limit below, so a dump that outgrows it fails as a full disk, not as a kill.
     tmpfs:
-      - /tmp:size=512m,uid=10002,gid=10002,mode=0700
+      - /tmp:size=256m,uid=10002,gid=10002,mode=0700
     networks: [data, egress-systems]
     depends_on:
       postgres:
@@ -782,8 +866,11 @@ services:
         condition: service_healthy
         # A local stack backs up to a folder and runs without the proxies.
         required: false
-    mem_limit: 768m
-    memswap_limit: 768m
+    # pg_dump, age and rclone, and the encrypted dump in /tmp: the database holds synthetic data
+    # and none of the visitors' rows (backup/excluded-data.txt), a few MiB. 256 MiB under the 768
+    # it had went to LB-07's sandbox (the header, Resources).
+    mem_limit: 512m
+    memswap_limit: 512m
     cpus: 1.0
     pids_limit: 64
 
@@ -799,6 +886,14 @@ networks:
     internal: true
   egress-systems:
     internal: true
+  # LB-07's browser sandbox and the Node worker. Internal, like the others, and its bridge is
+  # given no address on the host: an internal network's gateway address is the host's own, and
+  # through it a container reaches whatever the host listens on with every address it has
+  # (infra/sandbox/test.sh checks that the sandbox reaches neither).
+  sandbox:
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.inhibit_ipv4: "true"
 
 volumes:
   postgres-data:

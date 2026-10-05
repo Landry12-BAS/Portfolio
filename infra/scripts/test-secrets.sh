@@ -84,6 +84,8 @@ tar -C "$repo" --exclude=infra/.dev --exclude='*.enc.env' -cf - infra .sops.yaml
 sed '/^[[:space:]]*-[[:space:]]*age1[a-z0-9]\{58\}/d' "$repo/.sops.yaml" > "$work/repo/.sops.yaml"
 
 secrets="$work/repo/infra/scripts/secrets.sh"
+# One encrypted file for each template: the counts below follow the templates.
+templates="$(find "$work/repo/infra/secrets" -maxdepth 1 -name '*.example.env' | wc -l | tr -d ' ')"
 checker="$work/repo/infra/scripts/check-secret-file.sh"
 decrypt="$work/repo/infra/scripts/decrypt-secrets.sh"
 owner_key="$work/keys/owner.txt"
@@ -204,6 +206,12 @@ expect_refused "making a file that exists is refused" "already exists" "$secrets
 
 expect_ok "postgres" "$secrets" new postgres
 expect_ok "postgres-roles" "$secrets" new postgres-roles
+expect_ok "lb07-sandbox" "$secrets" new lb07-sandbox
+if sops decrypt "$work/repo/infra/secrets/lb07-sandbox.enc.env" | grep -q '^LB07_SHOP_TOKEN_KEY=[0-9a-f]\{64\}$'; then
+    pass "LB-07's shop key is 32 random bytes as 64 hex digits, as the service demands"
+else
+    fail "LB-07's shop key is not 64 hex digits"
+fi
 echo "  (the gateway's values are the owner's own: an editor that fills nothing leaves it unfinished)"
 expect_refused "gateway is made, and named as unfinished" "LB_SERVICE_KEYS is empty" env EDITOR=true "$secrets" new gateway
 run "$secrets" check
@@ -218,8 +226,8 @@ for name in compose cloudflared backup django-systems flask-systems node-systems
 done
 expect_equal "the Django secret key is long enough (Django needs 50 characters)" "64" \
     "$(sops decrypt "$work/repo/infra/secrets/django-systems.enc.env" | sed -n 's/^DJANGO_SECRET_KEY=//p' | tr -d '\n' | wc -c | tr -d ' ')"
-expect_ok "check passes when all ten files are complete" "$secrets" check
-expect_equal "and it says so for every one of them" "10" "$(grep -c '^  ok ' <<<"$output")"
+expect_ok "check passes when every file is complete" "$secrets" check
+expect_equal "and it says so for every one of them" "$templates" "$(grep -c '^  ok ' <<<"$output")"
 
 expect_refused "a misspelled variable fails the check" "GROQ_API_KEI is not a variable of the template" \
     env EDITOR="$work/sed-editor.sh s/^GROQ_API_KEY=/GROQ_API_KEI=/" "$secrets" edit gateway
@@ -256,7 +264,7 @@ expect_ok "the box's key is added" "$secrets" add-recipient box "$box_public"
 if opens "$box_key"; then pass "the box's key now opens the files"; else fail "the box's key does not open the files"; fi
 if opens "$owner_key"; then pass "and the owner's key still does"; else fail "the owner's key stopped working"; fi
 if opens "$stranger_key"; then fail "a stranger's key opened a file"; else pass "a stranger's key still opens nothing"; fi
-expect_equal "every file lists both recipients" "20" "$(cat "$work"/repo/infra/secrets/*.enc.env | grep -c '^sops_age__list_[01]__map_recipient=')"
+expect_equal "every file lists both recipients" "$((templates * 2))" "$(cat "$work"/repo/infra/secrets/*.enc.env | grep -c '^sops_age__list_[01]__map_recipient=')"
 expect_refused "listing a key twice is refused" "already listed" "$secrets" add-recipient again "$box_public"
 expect_equal ".sops.yaml says whose key is whose" "2" "$(grep -c -E '# (owner|box)$' "$work/repo/.sops.yaml")"
 
@@ -283,8 +291,8 @@ else
     }
 
     expect_ok "the box's key decrypts every file into memory" decrypt_with "$work/keys/box-key-for-decrypt.txt"
-    expect_equal "one file per template" "10" "$(find "$live" -maxdepth 1 -name '*.env' | wc -l | tr -d ' ')"
-    expect_equal "each one is readable by its owner only" "10" "$(find "$live" -maxdepth 1 -name '*.env' -perm 600 | wc -l | tr -d ' ')"
+    expect_equal "one file per template" "$templates" "$(find "$live" -maxdepth 1 -name '*.env' | wc -l | tr -d ' ')"
+    expect_equal "each one is readable by its owner only" "$templates" "$(find "$live" -maxdepth 1 -name '*.env' -perm 600 | wc -l | tr -d ' ')"
     expect_equal "the folder is private too" "700" "$(stat -c %a "$live")"
     expect_equal "no staging folder is left behind" "0" "$(find "$live" -mindepth 1 -type d | wc -l | tr -d ' ')"
     if grep -q '^LB_REDIS_PASSWORD_GATEWAY=[0-9a-f]\{48\}$' "$live/redis.env"; then pass "the files are the plain dotenv Compose reads"; else fail "redis.env is not as expected"; fi
