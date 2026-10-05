@@ -259,6 +259,27 @@ def test_the_sixth_meeting_of_the_day_is_refused_and_its_audio_removed(
     assert post(visitor(web_signing_key, DAN), "/api/lb09/meetings", upload())[0] == 202
 
 
+@pytest.mark.usefixtures("queued")
+def test_a_meeting_the_service_failed_gives_its_place_back_and_one_the_visitor_sent_wrong_does_not(
+    web_signing_key: Ed25519PrivateKey,
+) -> None:
+    """A transcriber, model, worker or crash failure frees the place; a refused recording or no speech keeps it."""
+    client = visitor(web_signing_key)
+    for _ in range(RECORDINGS_PER_VISITOR_PER_DAY):
+        assert post(client, "/api/lb09/meetings", upload())[0] == 202
+    assert post(client, "/api/lb09/meetings", upload())[0] == 429
+    meetings = list(Meeting.objects.filter(session_key=JANA).order_by("pk"))
+    for meeting, failure in zip(meetings, ("model", "too_long", "no_speech"), strict=False):
+        Meeting.objects.filter(pk=meeting.pk).update(status="failed", stage="failed", failure=failure)
+    _, limits = get(client, "/api/lb09/limits")
+    assert (limits["used_today"], limits["left_today"]) == (4, 1)
+    assert post(client, "/api/lb09/meetings", upload())[0] == 202
+    assert post(client, "/api/lb09/meetings", upload())[0] == 429
+    for failure in ("transcriber", "stale", "pipeline_error", "audio_gone"):
+        Meeting.objects.filter(pk=meetings[3].pk).update(status="failed", stage="failed", failure=failure)
+        assert get(client, "/api/lb09/limits")[1]["left_today"] == 1
+
+
 @pytest.mark.django_db(databases=["lb09"], transaction=True)
 def test_eight_uploads_at_once_still_give_five(store: AudioStore) -> None:
     """The per-visitor lock makes simultaneous starts take turns: exactly five pass, three are refused."""

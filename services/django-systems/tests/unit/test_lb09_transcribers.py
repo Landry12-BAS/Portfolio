@@ -6,11 +6,11 @@ folder only.
 """
 
 import socket
-from array import array
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pytest
 from lb09.transcribers import (
     PRIVATE_PREFIX,
@@ -94,18 +94,26 @@ class StubInfo:
 
 
 class StubWhisper:
-    """Stands in for a faster-whisper model: yields a fixed transcript, and remembers what it was given."""
+    """Stands in for a faster-whisper model: yields a fixed transcript, and remembers what it was given.
+
+    It takes the audio as the real model does: faster-whisper decodes anything that is not a numpy array as a
+    file (`transcribe` calls `decode_audio` on it), so samples handed over any other way never reach the model.
+    """
 
     def __init__(self, fails: bool = False) -> None:
         """Start with nothing heard."""
         self.fails = fails
-        self.audio: list[array[float]] = []
+        self.audio: list[np.ndarray] = []
         self.options: list[dict[str, object]] = []
 
     def transcribe(
-        self, audio: array[float], language: str | None, beam_size: int, vad_filter: bool
+        self, audio: np.ndarray, language: str | None, beam_size: int, vad_filter: bool
     ) -> tuple[Iterable[StubSegment], StubInfo]:
-        """Yield two segments, lazily, as the real model does."""
+        """Yield two segments, lazily, as the real model does, from samples given the way it takes them."""
+        if not isinstance(audio, np.ndarray):
+            raise TypeError("faster-whisper would open this as a file to decode, not read it as samples")
+        assert audio.dtype == np.float32
+        assert audio.ndim == 1
         self.audio.append(audio)
         self.options.append({"language": language, "beam_size": beam_size, "vad_filter": vad_filter})
         if self.fails:

@@ -1,7 +1,8 @@
 // End-to-end accessibility checks of LB-09's evaluation board: axe finds no WCAG 2.2 AA violation in
 // any state a visitor can reach (the meetings before anything is started, the recorder with its
-// explanation, a replayed meeting with its transcript, items and exports, and a meeting the worker
-// failed), in both languages and both themes. Every test also fails on a CSP violation or a console
+// explanation, a file the recorder refuses, a replayed meeting with its transcript, items and
+// exports, and a meeting the worker failed, listed with the visitor's meetings), in both languages
+// and both themes. Every test also fails on a CSP violation or a console
 // error (e2e/fixtures.ts).
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
@@ -44,6 +45,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
       test('meets WCAG 2.2 AA with the recorder open', async ({ page }) => {
         await page.getByRole('button', { name: language.record }).click()
         await expect(page.getByTestId('recorder')).toBeVisible()
+        await expectNoViolations(page)
+      })
+
+      test('meets WCAG 2.2 AA with a file the recorder refuses', async ({ page }) => {
+        await page.getByRole('button', { name: language.record }).click()
+        await page.getByTestId('file-input').setInputFiles({ name: 'page.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('<html>not audio</html>') })
+        await expect(page.getByTestId('file-problem')).toBeVisible()
+        await expect(page.getByTestId('file-input')).toHaveAttribute('aria-invalid', 'true')
         await expectNoViolations(page)
       })
 

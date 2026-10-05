@@ -8,8 +8,12 @@
 // evidence: a click on any of them jumps the player to the second it was said. The audio plays from
 // the browser (the sample's file on the site, or the visitor's recording held in the page), because
 // the back end deletes it once transcribed. The export panel writes the result as JSON, CSV or the
-// plain-English follow-up for Automation Studio (LB-08). The two board pages are the only ones
+// plain-English follow-up for Automation Studio (LB-08). The visitor's meetings of the last 24 hours
+// are listed beside the board, so a reload or another tab opens them again. A live region says each
+// stage as the worker reaches it, and the keyboard's focus is never left nowhere: when the control
+// that held it gives way, the progress or the result takes it. The two board pages are the only ones
 // whose Permissions-Policy allows the microphone (docs/SECURITY.md, section 3).
+import { LbIcon } from '@lb/icons'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -29,12 +33,14 @@ import AudioPlayer from './components/AudioPlayer.vue'
 import ExportPanel from './components/ExportPanel.vue'
 import ItemsList from './components/ItemsList.vue'
 import MeetingFacts from './components/MeetingFacts.vue'
+import MyMeetings from './components/MyMeetings.vue'
 import ProgressSteps from './components/ProgressSteps.vue'
 import RecorderPanel from './components/RecorderPanel.vue'
 import SamplePanel from './components/SamplePanel.vue'
 import type { SampleFacts } from './components/SamplePanel.vue'
 import TranscriptView from './components/TranscriptView.vue'
-import { MODES } from './schemas'
+import { MODES, WORK_STAGES } from './schemas'
+import type { Stage } from './schemas'
 import { useLb09Store } from './store'
 
 const props = defineProps<{
@@ -59,7 +65,7 @@ const scope = useScopeStore()
 const replay = useReplayStore()
 const store = useLb09Store()
 const { mode: reading } = storeToRefs(useReadingStore())
-const { quota, source: meetingSource, mode, runMode, phase, feed, meeting, stages, transcript, items, playback, problem, startedAt } = storeToRefs(store)
+const { quota, source: meetingSource, mode, runMode, phase, feed, meeting, stages, transcript, items, playback, problem, startedAt, gaveUp } = storeToRefs(store)
 
 const code = computed(() => (isLocaleCode(locale.value) ? locale.value : 'en'))
 const system = computed(() => findSystemIn(SYSTEM, code.value))
@@ -108,12 +114,28 @@ const player = ref<InstanceType<typeof AudioPlayer>>()
 const currentTime = ref(0)
 const playerLabel = computed(() => (meetingSource.value?.kind === 'upload' ? t('lb09.player.own') : t('lb09.player.sample')))
 
-// A persistent live region, so the work and the result are announced to a screen reader in turn.
+// The visitor's own recording, opened again from the list: only the page that sent it held its audio, and the
+// service deleted it once transcribed, so there is nothing to play.
+const audioGone = computed(() => meetingSource.value?.kind === 'upload' && playback.value === undefined && meeting.value !== undefined)
+
+/** Says the stage a meeting is at, as the live region announces it: the stage and that it runs, or that it waits for the worker. */
+function stageWords(stage: Stage, status: string): string {
+  if (status === 'received') return t('lb09.progress.queued')
+  const work = WORK_STAGES.find(candidate => candidate === stage)
+  return work === undefined ? t('lb09.progress.title') : t('lb09.progress.now', { stage: t(`lb09.progress.stages.${work}`) })
+}
+
+// A persistent live region, so the work and the result are announced to a screen reader in turn: every stage the
+// worker reaches, in words, then the outcome.
 const announcement = computed(() => {
   if (phase.value === 'starting') return t('lb09.progress.checking')
-  if (phase.value === 'working') return runMode.value === 'replay' ? t('lb09.progress.replaying') : t('lb09.progress.title')
+  if (phase.value === 'working') {
+    if (runMode.value === 'replay') return t('lb09.progress.replaying')
+    return meeting.value ? stageWords(meeting.value.stage, meeting.value.status) : t('lb09.progress.title')
+  }
   if (done.value) return t('lb09.progress.done')
   if (meetingFailed.value) return t('lb09.progress.failedTitle')
+  if (gaveUp.value) return t('lb09.progress.gaveUp')
   return ''
 })
 
@@ -121,8 +143,9 @@ const announcement = computed(() => {
 const lastRequest = ref<() => void>()
 
 /**
- * Scrolls a part of the board into view if it is below the fold. It scrolls and nothing else: focus stays
- * where the visitor put it, and a visitor who prefers reduced motion gets no animation.
+ * Scrolls a part of the board into view if it is below the fold. It scrolls and nothing else (the focus moves
+ * only when the control that held it gave way, in keepFocus), and a visitor who prefers reduced motion gets no
+ * animation.
  */
 async function bringIntoView(id: string): Promise<void> {
   await nextTick()
@@ -149,7 +172,7 @@ function runSample(id: string): void {
 /** Sends the visitor's recording. */
 function sendRecording(recording: Recording, url: string): void {
   lastRequest.value = undefined
-  void store.startUpload(recording, url, code.value)
+  void store.startUpload(recording, url)
   void bringIntoView(RUN_ID)
 }
 
@@ -191,6 +214,30 @@ function seek(seconds: number, play: boolean): void {
   player.value?.seekTo(seconds, play)
 }
 
+// The progress and the result, whose headings take the keyboard's focus when the control that held it gave way.
+const progressSteps = ref<InstanceType<typeof ProgressSteps>>()
+const itemsList = ref<InstanceType<typeof ItemsList>>()
+
+/** Whether the keyboard's focus was lost: the control that held it was taken off the page or switched off. */
+function focusLost(): boolean {
+  const active = document.activeElement
+  if (active === null || active === document.body) return true
+  return active instanceof HTMLButtonElement && active.disabled
+}
+
+/**
+ * Gives the keyboard's focus a place in the run when the control that held it gave way as the run moved on: the
+ * run button switched off while the meeting runs, the recording sent and its panel gone, a meeting opened from the
+ * list, the progress replaced by the result. The progress's heading takes it while the meeting is worked on or when
+ * it failed, the result's when it is done; focus the visitor put anywhere else stays where it is.
+ */
+async function keepFocus(): Promise<void> {
+  await nextTick()
+  if (!focusLost()) return
+  if (done.value) itemsList.value?.focusTitle()
+  else progressSteps.value?.focusTitle()
+}
+
 // A live meeting is shown once it has been sent: before that the check that the visitor is a person may
 // still open and close above it, and the page would be scrolled to where the meeting was a moment ago.
 watch(startedAt, (sent) => {
@@ -200,6 +247,10 @@ watch(startedAt, (sent) => {
 watch(phase, (next) => {
   if (next === 'done') void bringIntoView('lb09-result')
   else if (next === 'failed') void bringIntoView(RUN_ID)
+  void keepFocus()
+})
+watch(done, (now) => {
+  if (now) void keepFocus()
 })
 // The player starts over with each meeting.
 watch(playback, () => {
@@ -209,7 +260,10 @@ watch(playback, () => {
 /** Reads the session, and what a board needs from the back end once the session says there is one. */
 async function connect(): Promise<void> {
   await session.load()
-  if (session.available) void store.loadLimits()
+  if (session.available) {
+    void store.loadLimits()
+    void store.loadMine()
+  }
 }
 
 onMounted(async () => {
@@ -333,15 +387,35 @@ onBeforeUnmount(() => {
 
       <ProgressSteps
         v-if="meeting && (working || meetingFailed)"
+        ref="progressSteps"
         :stages="stages"
         :current="meeting.stage"
         :status="meeting.status"
         :failure="meeting.failure"
+        :mode="meeting.mode"
         :feed="feed"
         :replaying="runMode === 'replay'"
         :started-at="startedAt"
         :now="now"
       />
+
+      <div
+        v-if="gaveUp"
+        class="gave-up"
+        data-testid="gave-up"
+        role="note"
+      >
+        <LbIcon
+          name="clock"
+          :size="18"
+        />
+        <div>
+          <p class="gave-up-title">
+            {{ t('lb09.progress.gaveUp') }}
+          </p>
+          <p>{{ t('lb09.progress.gaveUpNote') }}</p>
+        </div>
+      </div>
 
       <div
         v-if="playback && (working || done || meetingFailed)"
@@ -358,6 +432,13 @@ onBeforeUnmount(() => {
           @time="currentTime = $event"
         />
       </div>
+      <p
+        v-else-if="audioGone && (working || done)"
+        class="audio-gone"
+        data-testid="audio-gone"
+      >
+        {{ t('lb09.player.gone') }}
+      </p>
 
       <div
         v-if="done && transcript && items && meeting"
@@ -365,6 +446,7 @@ onBeforeUnmount(() => {
         class="result"
       >
         <ItemsList
+          ref="itemsList"
           :items="items"
           @play="seek($event, true)"
         />
@@ -394,6 +476,7 @@ onBeforeUnmount(() => {
         :meeting="meeting"
         :brief="brief"
       />
+      <MyMeetings v-if="available" />
     </template>
 
     <template #scope>
@@ -447,6 +530,24 @@ onBeforeUnmount(() => {
 .playback {
   display: grid;
   gap: 6px;
+}
+
+.gave-up {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  border: 1px solid var(--lb-rule);
+}
+
+.gave-up-title {
+  font-weight: 700;
+}
+
+.audio-gone {
+  max-width: 64ch;
+  font-size: 13px;
+  color: var(--lb-graphite);
 }
 
 .result {

@@ -86,4 +86,14 @@ describe('the exports', () => {
     expect(exportMeeting('csv', meeting, segments, items)).toMatchObject({ filename: 'meeting-abcdefghijklmnop.csv', contentType: 'text/csv' })
     expect(exportMeeting('text', meeting, segments, items)).toMatchObject({ filename: 'meeting-abcdefghijklmnop.txt', contentType: 'text/plain' })
   })
+
+  it('write a CSV cell that a spreadsheet would read as a formula as text, as the service does', () => {
+    const hostile: Item = { position: 0, kind: 'action', text: '=HYPERLINK("http://evil.example/x","Click")', owner: '=Peter', deadline: '+1 day', evidence: '@SUM(A1:A9) I will order the beans by Friday.', start: 1, end: 2, first_segment: 0, last_segment: 0 }
+    const wide: Item = { position: 1, kind: 'decision', text: `${String.fromCharCode(0xFF1D)}1+1`, owner: null, deadline: null, evidence: '-2 boxes, we agreed.', start: 3, end: 4, first_segment: 1, last_segment: 1 }
+    const rows = exportCsv([hostile, wide]).trim().split('\n')
+    expect(rows[1]).toBe('"action","\'=HYPERLINK(""http://evil.example/x"",""Click"")","\'=Peter","\'+1 day","1","2","\'@SUM(A1:A9) I will order the beans by Friday."')
+    expect(rows[2]).toBe(`"decision","'${String.fromCharCode(0xFF1D)}1+1","","","3","4","'-2 boxes, we agreed."`)
+    expect(safeCell('Peter')).toBe('Peter')
+    expect(safeCell('\tx')).toBe('\'\tx')
+  })
 })

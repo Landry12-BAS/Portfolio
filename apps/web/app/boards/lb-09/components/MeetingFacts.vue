@@ -1,12 +1,15 @@
 <script setup lang="ts">
 // <MeetingFacts>: what the board knows about the meeting, in the side column: which mode ran and
-// what that meant for the audio, which transcriber heard it, the language it heard, the length
-// measured from the decoded audio, the model calls so far and the items the checks dropped, and that
-// the audio was deleted once transcribed. The Brief reading keeps the mode and the audio's fate and
-// leaves out the counts.
+// what that meant for the audio (held until it is transcribed, then deleted), which transcriber heard
+// it, the language it heard, the length measured from the decoded audio, the chat calls so far (the
+// transcription in fast mode is a model call of its own, which the Scope counts with them) and the
+// items the checks dropped. What is not known yet says so while the meeting runs, and says "none" once
+// it is over. The Brief reading keeps the mode and the audio's fate and leaves out the counts.
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { decimalSeconds, languageName } from '../format'
+import { isOver } from '../schemas'
 import type { Meeting } from '../schemas'
 
 const props = defineProps<{
@@ -18,26 +21,28 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 
-/** Names a language from its code in the visitor's language, or gives the code back. */
-function languageName(code: string): string {
-  if (code === '') return t('lb09.facts.unknown')
-  try {
-    return new Intl.DisplayNames(locale.value, { type: 'language' }).of(code) ?? code.toUpperCase()
-  }
-  catch {
-    return code.toUpperCase()
-  }
+// The stages before the audio has been transcribed, while it still waits in the service.
+const BEFORE_TRANSCRIBED = new Set(['received', 'decoding', 'transcribing'])
+
+/** Says what is known of a value: the value, "not yet known" while the meeting runs, or "none" once it is over. */
+function known(value: string, over: boolean): string {
+  if (value !== '') return value
+  return over ? t('lb09.facts.noValue') : t('lb09.facts.unknown')
 }
 
 const rows = computed(() => {
   const meeting = props.meeting
   if (!meeting) return []
+  const over = isOver(meeting)
+  const held = !over && BEFORE_TRANSCRIBED.has(meeting.stage)
+  const length = meeting.duration_seconds > 0 ? t('lb09.facts.seconds', { seconds: decimalSeconds(meeting.duration_seconds, locale.value) }) : ''
+  const language = meeting.heard_language.trim() === '' ? '' : languageName(meeting.heard_language, locale.value)
   const all = [
     { key: 'mode', label: t('lb09.facts.mode'), value: t(`lb09.facts.modes.${meeting.mode}`) },
-    { key: 'audio', label: t('lb09.facts.audio'), value: t('lb09.facts.audioValue') },
-    { key: 'transcriber', label: t('lb09.facts.transcriber'), value: meeting.transcriber === '' ? t('lb09.facts.unknown') : meeting.transcriber },
-    { key: 'language', label: t('lb09.facts.language'), value: languageName(meeting.heard_language) },
-    { key: 'duration', label: t('lb09.facts.duration'), value: t('lb09.facts.seconds', { seconds: meeting.duration_seconds.toFixed(1) }) },
+    { key: 'audio', label: t('lb09.facts.audio'), value: held ? t('lb09.facts.audioHeld') : t('lb09.facts.audioValue') },
+    { key: 'transcriber', label: t('lb09.facts.transcriber'), value: known(meeting.transcriber, over) },
+    { key: 'language', label: t('lb09.facts.language'), value: known(language, over) },
+    { key: 'duration', label: t('lb09.facts.duration'), value: known(length, over) },
     { key: 'calls', label: t('lb09.facts.modelCalls'), value: String(meeting.model_calls) },
     { key: 'dropped', label: t('lb09.facts.dropped'), value: String(meeting.dropped_items) },
   ]

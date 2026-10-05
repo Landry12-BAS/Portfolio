@@ -3,7 +3,7 @@
   "system": "lb-09",
   "sample": "weekend-staffing",
   "origin": "mock",
-  "recordedAt": "2026-10-04T20:08:02.381Z",
+  "recordedAt": "2026-10-05T18:02:14.987Z",
   "language": "en",
   "exchanges": [
     {
@@ -20,13 +20,13 @@
       "response": {
         "status": 202,
         "body": {
-          "id": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
           "sample": "weekend-staffing",
           "mode": "fast",
           "status": "received",
           "stage": "received",
           "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
           "language": "en",
           "heard_language": "",
           "transcriber": "",
@@ -35,27 +35,27 @@
           "model_calls": 0,
           "dropped_items": 0,
           "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:07:57.381Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:09.987Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
         }
       }
     },
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
           "sample": "weekend-staffing",
           "mode": "fast",
           "status": "processing",
           "stage": "decoding",
           "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
           "language": "en",
           "heard_language": "",
           "transcriber": "",
@@ -64,27 +64,27 @@
           "model_calls": 0,
           "dropped_items": 0,
           "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:07:58.081Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:10.687Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
         }
       }
     },
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
           "sample": "weekend-staffing",
           "mode": "fast",
           "status": "processing",
           "stage": "transcribing",
           "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
           "language": "en",
           "heard_language": "",
           "transcriber": "",
@@ -93,27 +93,27 @@
           "model_calls": 0,
           "dropped_items": 0,
           "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:07:58.781Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:11.387Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
         }
       }
     },
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
           "sample": "weekend-staffing",
           "mode": "fast",
           "status": "processing",
           "stage": "extracting",
           "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
           "language": "en",
           "heard_language": "en",
           "transcriber": "lb-stt",
@@ -122,56 +122,27 @@
           "model_calls": 1,
           "dropped_items": 0,
           "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:08:00.181Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:12.787Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
         }
       }
     },
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo"
       },
       "response": {
         "status": 200,
         "body": {
-          "id": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
           "sample": "weekend-staffing",
           "mode": "fast",
           "status": "processing",
           "stage": "aligning",
           "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
-          "language": "en",
-          "heard_language": "en",
-          "transcriber": "lb-stt",
-          "duration_seconds": 19.891,
-          "source_bytes": 79564,
-          "model_calls": 1,
-          "dropped_items": 0,
-          "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:08:00.881Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
-        }
-      }
-    },
-    {
-      "request": {
-        "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh"
-      },
-      "response": {
-        "status": 200,
-        "body": {
-          "id": "ZyjMqDjac34v8Qkh",
-          "sample": "weekend-staffing",
-          "mode": "fast",
-          "status": "done",
-          "stage": "done",
-          "failure": null,
-          "run_id": "lb09-QS4Zts1YNK_I3CKd",
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
           "language": "en",
           "heard_language": "en",
           "transcriber": "lb-stt",
@@ -180,21 +151,50 @@
           "model_calls": 2,
           "dropped_items": 0,
           "labels_inferred_from_text": true,
-          "created_at": "2026-10-04T20:07:57.381Z",
-          "updated_at": "2026-10-04T20:08:01.581Z",
-          "expires_at": "2026-10-05T20:07:57.381Z"
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:13.487Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
         }
       }
     },
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh/transcript"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo"
       },
       "response": {
         "status": 200,
         "body": {
-          "meeting": "ZyjMqDjac34v8Qkh",
+          "id": "DKTQQ7If2ydkw7Uo",
+          "sample": "weekend-staffing",
+          "mode": "fast",
+          "status": "done",
+          "stage": "done",
+          "failure": null,
+          "run_id": "lb09-ZG48tlYQkKJGhy6E",
+          "language": "en",
+          "heard_language": "en",
+          "transcriber": "lb-stt",
+          "duration_seconds": 19.891,
+          "source_bytes": 79564,
+          "model_calls": 2,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-05T18:02:09.987Z",
+          "updated_at": "2026-10-05T18:02:14.187Z",
+          "expires_at": "2026-10-06T18:02:09.987Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo/transcript"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "meeting": "DKTQQ7If2ydkw7Uo",
           "labels_note": "Speaker labels are inferred from the words, not matched to voices.",
           "segments": [
             {
@@ -244,12 +244,12 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/lb09/meetings/ZyjMqDjac34v8Qkh/items"
+        "path": "/api/lb09/meetings/DKTQQ7If2ydkw7Uo/items"
       },
       "response": {
         "status": 200,
         "body": {
-          "meeting": "ZyjMqDjac34v8Qkh",
+          "meeting": "DKTQQ7If2ydkw7Uo",
           "dropped": 0,
           "items": [
             {
@@ -270,19 +270,19 @@
     }
   ],
   "trace": {
-    "runId": "lb09-QS4Zts1YNK_I3CKd",
+    "runId": "lb09-ZG48tlYQkKJGhy6E",
     "spans": [
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "8fd6064f35e79f0f",
-        "parentId": "d7a0aa6f6ff7f6a4",
+        "spanId": "f7934dc153d8cde7",
+        "parentId": "50f0b5975d0453f4",
         "kind": "system.step",
         "name": "decode audio",
         "status": "ok",
-        "startMs": 1791144477386,
-        "endMs": 1791144478081,
+        "startMs": 1791223329992,
+        "endMs": 1791223330687,
         "attrs": {
           "bytes": 318256,
           "seconds": 19.891
@@ -290,15 +290,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "6cd7977245597314",
-        "parentId": "d7a0aa6f6ff7f6a4",
+        "spanId": "f47d52392bb6c62d",
+        "parentId": "50f0b5975d0453f4",
         "kind": "system.step",
         "name": "transcribe",
         "status": "ok",
-        "startMs": 1791144478086,
-        "endMs": 1791144478781,
+        "startMs": 1791223330692,
+        "endMs": 1791223331387,
         "attrs": {
           "mode": "fast",
           "seconds": 19.891,
@@ -308,15 +308,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "03e8c7c57557d8be",
-        "parentId": "6cd7977245597314",
+        "spanId": "b7cada6dbcbd2d6b",
+        "parentId": "f47d52392bb6c62d",
         "kind": "gateway.call",
         "name": "lb-stt",
         "status": "ok",
-        "startMs": 1791144478091,
-        "endMs": 1791144478776,
+        "startMs": 1791223330697,
+        "endMs": 1791223331382,
         "attrs": {
           "alias": "lb-stt",
           "dataClass": "synthetic",
@@ -331,15 +331,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "47d180bf8eb1b2d4",
-        "parentId": "03e8c7c57557d8be",
+        "spanId": "92d00db6250cbd71",
+        "parentId": "b7cada6dbcbd2d6b",
         "kind": "gateway.attempt",
         "name": "groq/whisper-large-v3-turbo",
         "status": "ok",
-        "startMs": 1791144478093,
-        "endMs": 1791144478774,
+        "startMs": 1791223330699,
+        "endMs": 1791223331380,
         "attrs": {
           "provider": "groq",
           "model": "groq/whisper-large-v3-turbo",
@@ -349,15 +349,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "c317e33e7a7a5e29",
-        "parentId": "d7a0aa6f6ff7f6a4",
+        "spanId": "ccd32f1779322e32",
+        "parentId": "50f0b5975d0453f4",
         "kind": "system.step",
         "name": "label speakers",
         "status": "ok",
-        "startMs": 1791144478786,
-        "endMs": 1791144479481,
+        "startMs": 1791223331392,
+        "endMs": 1791223332087,
         "attrs": {
           "speakers": 3,
           "named": 0,
@@ -366,15 +366,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "c77056d2fa47d250",
-        "parentId": "c317e33e7a7a5e29",
+        "spanId": "5acc43c52b10430b",
+        "parentId": "ccd32f1779322e32",
         "kind": "gateway.call",
         "name": "lb-fast",
         "status": "ok",
-        "startMs": 1791144478791,
-        "endMs": 1791144479476,
+        "startMs": 1791223331397,
+        "endMs": 1791223332082,
         "attrs": {
           "alias": "lb-fast",
           "dataClass": "synthetic",
@@ -389,15 +389,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "9690f9a4e755cc46",
-        "parentId": "c77056d2fa47d250",
+        "spanId": "afdba77ee42ff4d1",
+        "parentId": "5acc43c52b10430b",
         "kind": "gateway.attempt",
         "name": "groq/gpt-oss-20b",
         "status": "ok",
-        "startMs": 1791144478793,
-        "endMs": 1791144479474,
+        "startMs": 1791223331399,
+        "endMs": 1791223332080,
         "attrs": {
           "provider": "groq",
           "model": "groq/gpt-oss-20b",
@@ -407,15 +407,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "e6f2376bb2ef32d9",
-        "parentId": "d7a0aa6f6ff7f6a4",
+        "spanId": "913cdfdf57660cbc",
+        "parentId": "50f0b5975d0453f4",
         "kind": "system.step",
         "name": "extract items",
         "status": "ok",
-        "startMs": 1791144479486,
-        "endMs": 1791144480181,
+        "startMs": 1791223332092,
+        "endMs": 1791223332787,
         "attrs": {
           "decisions": 0,
           "actions": 1,
@@ -424,15 +424,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "1538d4acc27ec8fe",
-        "parentId": "e6f2376bb2ef32d9",
+        "spanId": "b48e35076c332d97",
+        "parentId": "913cdfdf57660cbc",
         "kind": "gateway.call",
         "name": "lb-tools",
         "status": "ok",
-        "startMs": 1791144479491,
-        "endMs": 1791144480176,
+        "startMs": 1791223332097,
+        "endMs": 1791223332782,
         "attrs": {
           "alias": "lb-tools",
           "dataClass": "synthetic",
@@ -447,15 +447,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "c1bca38ea0f34c8f",
-        "parentId": "1538d4acc27ec8fe",
+        "spanId": "7b165af9de46fc26",
+        "parentId": "b48e35076c332d97",
         "kind": "gateway.attempt",
         "name": "groq/gpt-oss-120b",
         "status": "ok",
-        "startMs": 1791144479493,
-        "endMs": 1791144480174,
+        "startMs": 1791223332099,
+        "endMs": 1791223332780,
         "attrs": {
           "provider": "groq",
           "model": "groq/gpt-oss-120b",
@@ -465,15 +465,15 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "abf8622c849d6e25",
-        "parentId": "d7a0aa6f6ff7f6a4",
+        "spanId": "8460b1329e545c23",
+        "parentId": "50f0b5975d0453f4",
         "kind": "system.step",
         "name": "align evidence",
         "status": "ok",
-        "startMs": 1791144480186,
-        "endMs": 1791144480881,
+        "startMs": 1791223332792,
+        "endMs": 1791223333487,
         "attrs": {
           "kept": 1,
           "dropped": 0
@@ -481,14 +481,14 @@
       },
       {
         "v": 1,
-        "runId": "lb09-QS4Zts1YNK_I3CKd",
+        "runId": "lb09-ZG48tlYQkKJGhy6E",
         "system": "lb-09",
-        "spanId": "d7a0aa6f6ff7f6a4",
+        "spanId": "50f0b5975d0453f4",
         "kind": "system.run",
         "name": "meeting recording",
         "status": "ok",
-        "startMs": 1791144477381,
-        "endMs": 1791144481581,
+        "startMs": 1791223329987,
+        "endMs": 1791223334187,
         "attrs": {
           "mode": "fast",
           "status": "done",

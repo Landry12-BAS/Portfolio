@@ -8,14 +8,14 @@ kind, which a test proves by running it with every socket refused. Either way th
 log, a span or the database; the span holds the seconds, the segment count and the model's name.
 """
 
-import array
 import logging
-import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Protocol
 
+import numpy as np
 from django.conf import settings
+from numpy.typing import NDArray
 from openai import OpenAIError
 
 from lb09.limits import MAX_SEGMENTS
@@ -124,9 +124,12 @@ class WhisperModelLike(Protocol):
     """What the adapter asks of a faster-whisper model, so a test can give it a stub."""
 
     def transcribe(
-        self, audio: "array.array[float]", language: str | None, beam_size: int, vad_filter: bool
+        self, audio: NDArray[np.float32], language: str | None, beam_size: int, vad_filter: bool
     ) -> tuple[Iterable[WhisperSegmentLike], WhisperInfoLike]:
-        """Transcribe samples as floats from -1 to 1 at 16 kHz."""
+        """Transcribe samples as floats from -1 to 1 at 16 kHz.
+
+        The samples must be a numpy array: faster-whisper takes anything else for a file to open and decode.
+        """
         ...
 
 
@@ -167,13 +170,10 @@ class PrivateTranscriber:
         return Transcript(language=str(info.language), model=f"{PRIVATE_PREFIX}/{self.model_name}", segments=clean(raw))
 
 
-def pcm_as_floats(pcm: bytes) -> "array.array[float]":
-    """Read 16-bit PCM as the floats from -1 to 1 the model takes."""
-    samples: array.array[int] = array.array("h")
-    samples.frombytes(pcm)
-    if sys.byteorder == "big":
-        samples.byteswap()
-    return array.array("f", (sample / 32_768.0 for sample in samples))
+def pcm_as_floats(pcm: bytes) -> NDArray[np.float32]:
+    """Read 16-bit little-endian PCM as the floats from -1 to 1 the model takes, in the numpy array it insists on."""
+    samples = np.frombuffer(pcm, dtype="<i2")
+    return samples.astype(np.float32) / np.float32(32_768.0)
 
 
 def whisper_dir() -> Path:

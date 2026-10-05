@@ -1,22 +1,34 @@
 <script setup lang="ts">
-// <RecorderPanel>: the visitor's own recording, up to a minute. Before anything is asked of the
-// browser the panel says what will happen: the browser will ask for the microphone, the audio stays
-// in this page until the visitor sends it, a recording is a minute at most, and the back end deletes
-// the audio once it is transcribed. Pressing record asks for the microphone; while recording the
-// panel counts down the seconds and draws the sound level (not for a visitor who prefers reduced
-// motion). When the recording stops the visitor can listen back, send it, or discard it. A browser
-// that cannot record, a microphone that was refused, and a microphone that could not be read each get
-// their own words, and none of them is treated as the site failing.
+// <RecorderPanel>: the visitor's own recording, up to a minute, from the microphone or from a file on
+// their device. Before anything is asked of the browser the panel says what will happen: the browser
+// will ask for the microphone, the audio stays in this page until the visitor sends it, a recording is
+// a minute at most, and the back end deletes the audio once it is transcribed. Pressing record asks for
+// the microphone; while recording the panel counts down the seconds and draws the sound level (not for
+// a visitor who prefers reduced motion). A file is checked here before it can be sent, as the service
+// will check it again: one of the containers it takes, at most 3 MiB, and no longer than a minute when
+// the browser can tell its length, so a file the service would refuse does not spend one of the day's
+// recordings. Either way the visitor can listen back, send it, or discard it. One button records and
+// stops, so the keyboard's focus stays on it, and goes back to it when a recording is discarded. A
+// browser that cannot record, a microphone that was refused, and a microphone that could not be read
+// each get their own words, and none of them is treated as the site failing.
 import { LbIcon } from '@lb/icons'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { readRecording } from '../audio'
+import { durationOf, readRecording } from '../audio'
 import type { Recording } from '../audio'
 import { browserRecorderDeps, MicrophoneRecorder } from '../recorder'
 import type { RecorderFailure, RecorderState } from '../recorder'
-import { MAX_RECORDING_SECONDS } from '../schemas'
+import { MAX_RECORDING_SECONDS, MAX_UPLOAD_BYTES } from '../schemas'
 import AudioPlayer from './AudioPlayer.vue'
+
+/** Why a chosen file cannot be sent. */
+type FileProblem = 'too_big' | 'unreadable' | 'too_long'
+
+/** The audio files the picker offers: the containers the service takes. */
+const ACCEPTED_FILES = '.webm,.ogg,.oga,.opus,.m4a,.mp4,.wav,.mp3,audio/webm,audio/ogg,audio/mp4,audio/wav,audio/x-wav,audio/mpeg'
+// A file a little over the minute is still a minute to a person; the service measures it from the decoded samples.
+const LENGTH_SLACK_SECONDS = 0.5
 
 const props = defineProps<{
   /** A meeting is being worked on: the recording can be made but not sent yet. */
@@ -39,6 +51,16 @@ const recorded = ref<Recording>()
 const url = ref<string>()
 // The recording's container is not one the service takes: said here instead of after an upload.
 const unreadable = ref(false)
+// A file the visitor chose, by its name on their device (shown, never sent), and its length when the browser could tell it.
+const chosenName = ref<string>()
+const chosenSeconds = ref<number>()
+const fileProblem = ref<FileProblem>()
+const reading = ref(false)
+// The picker itself: it shows the chosen file's name, as the words below it do, until the file is let go of.
+const fileInput = ref<HTMLInputElement>()
+const recordButton = ref<HTMLButtonElement>()
+// The level meter is drawn only while it moves: a visitor who prefers reduced motion gets the countdown alone.
+const showLevels = ref(false)
 
 /** Whether the visitor's system asks for less motion, in which case the level meter is left out. */
 function prefersReducedMotion(): boolean {
@@ -87,27 +109,84 @@ async function takeRecording(blob: Blob): Promise<void> {
   url.value = urlFor(blob)
 }
 
+/** Forgets a file chosen before and what was said about it, and empties the picker, so the same file can be chosen again. */
+function forgetFile(): void {
+  chosenName.value = undefined
+  chosenSeconds.value = undefined
+  fileProblem.value = undefined
+  if (fileInput.value) fileInput.value.value = ''
+}
+
 /** Starts recording, with the level meter unless the visitor prefers reduced motion. */
 function record(): void {
   forgetUrl()
+  forgetFile()
   recorded.value = undefined
   unreadable.value = false
   elapsed.value = 0
-  void recorder.start({ levels: !prefersReducedMotion() })
+  showLevels.value = !prefersReducedMotion()
+  void recorder.start({ levels: showLevels.value })
 }
 
-/** Stops the recording. */
-function stop(): void {
-  recorder.stop()
-}
-
-/** Forgets the recording. */
-function discard(): void {
+/** Takes a file the visitor chose, after the checks the service would make, so a file it would refuse is not sent. */
+async function choose(event: Event): Promise<void> {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
   forgetUrl()
+  recorded.value = undefined
+  unreadable.value = false
+  recorder.discard()
+  elapsed.value = 0
+  chosenName.value = file.name
+  chosenSeconds.value = undefined
+  fileProblem.value = undefined
+  if (file.size > MAX_UPLOAD_BYTES) {
+    fileProblem.value = 'too_big'
+    return
+  }
+  reading.value = true
+  try {
+    const recording = await readRecording(file)
+    if (!recording) {
+      fileProblem.value = 'unreadable'
+      return
+    }
+    const playable = urlFor(file)
+    const seconds = playable === undefined ? undefined : await durationOf(playable)
+    if (seconds !== undefined && seconds > MAX_RECORDING_SECONDS + LENGTH_SLACK_SECONDS) {
+      if (playable !== undefined && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(playable)
+      chosenSeconds.value = Math.round(seconds)
+      fileProblem.value = 'too_long'
+      return
+    }
+    chosenSeconds.value = seconds === undefined ? undefined : Math.round(seconds)
+    recorded.value = recording
+    url.value = playable
+  }
+  finally {
+    reading.value = false
+  }
+}
+
+/**
+ * Records, or stops the recording, from the one button that does both. While the browser asks for the microphone
+ * the button says no to a press rather than being switched off, which would take the keyboard's focus away from it.
+ */
+function recordOrStop(): void {
+  if (state.value === 'recording') recorder.stop()
+  else if (state.value !== 'asking') record()
+}
+
+/** Forgets the recording, and gives the keyboard's focus back to the record button, since the buttons it was on are gone. */
+async function discard(): Promise<void> {
+  forgetUrl()
+  forgetFile()
   recorded.value = undefined
   unreadable.value = false
   elapsed.value = 0
   recorder.discard()
+  await nextTick()
+  recordButton.value?.focus()
 }
 
 /** Hands the recording to the board, with the URL to play it from, and starts afresh. */
@@ -119,6 +198,7 @@ function send(): void {
   url.value = undefined
   recorded.value = undefined
   elapsed.value = 0
+  forgetFile()
   recorder.discard()
   emit('send', recording, playback)
 }
@@ -134,12 +214,25 @@ const left = computed(() => Math.max(MAX_RECORDING_SECONDS - elapsed.value, 0))
 const share = computed(() => Math.round(level.value * 100))
 const hasRecording = computed(() => recorded.value !== undefined)
 const canSend = computed(() => hasRecording.value && props.canRunLive && !props.busy)
+// The record button's words: stop while recording, record again after a recording from the microphone, record otherwise.
+const recordLabel = computed(() => {
+  if (recording.value) return t('lb09.recorder.stop')
+  return hasRecording.value && chosenName.value === undefined ? t('lb09.recorder.again') : t('lb09.recorder.record')
+})
 const failureText = computed(() => (failure.value ? t(`lb09.recorder.failed.${failure.value}`) : t('lb09.recorder.failed.recorder')))
+// What was chosen, said back: the file's name and its length when the browser could tell it.
+const chosenText = computed(() => {
+  if (chosenName.value === undefined) return ''
+  return chosenSeconds.value === undefined ? t('lb09.recorder.file.chosen', { name: chosenName.value }) : t('lb09.recorder.file.chosenLength', { name: chosenName.value, seconds: chosenSeconds.value })
+})
+const fileProblemText = computed(() => (fileProblem.value ? t(`lb09.recorder.file.problems.${fileProblem.value}`, { seconds: chosenSeconds.value ?? 0, max: MAX_RECORDING_SECONDS }) : ''))
 // What a screen reader hears as the recorder moves: the states that are not spoken by a button already.
 const announcement = computed(() => {
   if (asking.value) return t('lb09.recorder.asking')
   if (recording.value) return t('lb09.recorder.recordingStarted')
   if (state.value === 'recorded') return t('lb09.recorder.recorded', { seconds: elapsed.value })
+  if (fileProblem.value) return fileProblemText.value
+  if (hasRecording.value && chosenName.value !== undefined) return chosenText.value
   return ''
 })
 </script>
@@ -162,6 +255,7 @@ const announcement = computed(() => {
       <li>{{ t('lb09.recorder.explain.stays') }}</li>
       <li>{{ t('lb09.recorder.explain.minute', { seconds: MAX_RECORDING_SECONDS }) }}</li>
       <li>{{ t('lb09.recorder.explain.deleted') }}</li>
+      <li>{{ t('lb09.recorder.explain.language') }}</li>
     </ul>
 
     <p
@@ -226,6 +320,7 @@ const announcement = computed(() => {
         <span>{{ t('lb09.recorder.countdown', { left, max: MAX_RECORDING_SECONDS }) }}</span>
       </p>
       <div
+        v-if="showLevels"
         class="meter"
         role="img"
         :aria-label="t('lb09.recorder.level')"
@@ -239,24 +334,17 @@ const announcement = computed(() => {
     </div>
 
     <div class="buttons">
+      <!-- One button records and stops, so the keyboard's focus stays on it from one to the other. -->
       <button
-        v-if="!recording"
+        ref="recordButton"
         type="button"
         class="button button--primary"
-        data-testid="record"
-        :disabled="asking || busy"
-        @click="record"
+        :data-testid="recording ? 'stop-recording' : 'record'"
+        :disabled="busy && !recording"
+        :aria-disabled="asking ? 'true' : undefined"
+        @click="recordOrStop"
       >
-        {{ hasRecording ? t('lb09.recorder.again') : t('lb09.recorder.record') }}
-      </button>
-      <button
-        v-else
-        type="button"
-        class="button button--primary"
-        data-testid="stop-recording"
-        @click="stop"
-      >
-        {{ t('lb09.recorder.stop') }}
+        {{ recordLabel }}
       </button>
     </div>
 
@@ -268,6 +356,40 @@ const announcement = computed(() => {
       {{ t('lb09.recorder.unreadable') }}
     </p>
 
+    <div class="file">
+      <label
+        for="lb09-file"
+        class="file-label"
+      >{{ t('lb09.recorder.file.label') }}</label>
+      <input
+        id="lb09-file"
+        ref="fileInput"
+        type="file"
+        class="file-input"
+        :accept="ACCEPTED_FILES"
+        :disabled="recording || asking || reading"
+        :aria-describedby="fileProblem ? 'lb09-file-hint lb09-file-problem' : 'lb09-file-hint'"
+        :aria-invalid="fileProblem !== undefined"
+        data-testid="file-input"
+        @change="choose"
+      >
+      <p
+        id="lb09-file-hint"
+        class="small"
+      >
+        {{ t('lb09.recorder.file.hint', { max: MAX_RECORDING_SECONDS }) }}
+      </p>
+      <p
+        v-if="fileProblem"
+        id="lb09-file-problem"
+        class="state state--off"
+        data-testid="file-problem"
+        :data-problem="fileProblem"
+      >
+        {{ fileProblemText }}
+      </p>
+    </div>
+
     <div
       v-if="hasRecording"
       class="made"
@@ -275,6 +397,13 @@ const announcement = computed(() => {
     >
       <p class="lb-label">
         {{ t('lb09.recorder.listen') }}
+      </p>
+      <p
+        v-if="chosenName !== undefined"
+        class="small"
+        data-testid="file-chosen"
+      >
+        {{ chosenText }}
       </p>
       <AudioPlayer
         :src="url"
@@ -438,5 +567,38 @@ const announcement = computed(() => {
 .privacy {
   font-size: 13px;
   color: var(--lb-graphite);
+}
+
+.file {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.file-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.file-input {
+  max-width: 100%;
+  font: 13.5px var(--lb-font-sans);
+  color: var(--lb-ink);
+}
+
+.file-input::file-selector-button {
+  padding: 7px 14px;
+  margin-right: 10px;
+  font: 600 13px/1 var(--lb-font-sans);
+  color: var(--lb-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.file-input:disabled::file-selector-button {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 </style>
