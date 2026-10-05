@@ -26,9 +26,19 @@ export function readReply<Value>(reply: ModelReply, schema: ZodType<Value>): { v
   return { problems: parsed.error.issues.map(issue => `${issue.path.join('.') || '(reply)'}: ${issue.message}`) }
 }
 
+/** Writes a JSON reply back as text, or a note when it cannot be: JSON.stringify recurses, and a reply nested deeper than the stack would throw. */
+function jsonText(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? ''
+  }
+  catch {
+    return '(an answer too deeply nested to repeat)'
+  }
+}
+
 /** Writes the refused reply as text for the repair request, cut to its limit. */
 function echoOf(reply: ModelReply): string {
-  const text = reply.kind === 'json' ? JSON.stringify(reply.value) : reply.text
+  const text = reply.kind === 'json' ? jsonText(reply.value) : reply.text
   return text.length > MAX_ECHO_CHARS ? `${text.slice(0, MAX_ECHO_CHARS)}…` : text
 }
 

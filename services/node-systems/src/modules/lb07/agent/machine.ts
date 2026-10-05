@@ -23,6 +23,12 @@ import { checkReports, FindingLedger, isBugFinding, verdictOf } from './report.t
 import { generateTest } from './testgen.ts'
 import type { Working } from './working.ts'
 
+/**
+ * What the planner must answer: the contract's plan answer, held also to the rule the contract's plan has and the
+ * planner is told, that a plan starts by going to a page of the shop (a re-plan, which continues a pass, need not).
+ */
+export const planAnswerSchema = lb07PlanAnswerSchema.refine(answer => answer.steps[0]?.action === 'goto', { message: 'a plan starts by going to a page of the shop', path: ['steps', 0] })
+
 /** The injection guard, as the machine asks it. */
 export interface Guard {
   check: (text: string) => Promise<{ flagged: boolean, score: number }>
@@ -243,7 +249,7 @@ export class Agent {
     if (this.#working.plan) return this.#working.plan
     await this.#hooks.onState('planning')
     return this.#deps.tracer.span('plan the test', async (span) => {
-      const answer = await askForJson(this.#deps.model, planMessages(this.#input.goal), lb07PlanAnswerSchema)
+      const answer = await askForJson(this.#deps.model, planMessages(this.#input.goal), planAnswerSchema)
       span.set('attempts', answer.calls)
       span.set('steps', answer.value.steps.length)
       this.#working.plan = answer.value.steps
