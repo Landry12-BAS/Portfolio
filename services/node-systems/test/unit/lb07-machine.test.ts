@@ -171,7 +171,9 @@ describe('the machine', () => {
   it('ends the run as run_timeout when the wall clock is spent, and when the runner says the session expired', async () => {
     let now = 0
     await expect(run(clean, referenceModel(clean), new FakeRunner(), { runTimeMs: 1_000, now: () => (now += 400) })).rejects.toBeInstanceOf(RunEnded)
-    const expiring = new FakeRunner(() => { throw new RunnerError('expired', 'expired') })
+    const expiring = new FakeRunner(() => {
+      throw new RunnerError('expired', 'expired')
+    })
     await expect(run(clean, referenceModel(clean), expiring)).rejects.toMatchObject({ code: 'run_timeout' })
   })
 })
