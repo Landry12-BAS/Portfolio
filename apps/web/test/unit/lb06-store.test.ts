@@ -62,6 +62,19 @@ describe('LB-06\'s store', () => {
     vi.unstubAllGlobals()
   })
 
+  it('looks for the trace again when the incident ends if the Scope had given up: an incident that reuses an earlier run\'s answers writes only its root span, after the end', async () => {
+    const { site, store, scope } = await begin()
+    site.hideTraceUntilEnd = true
+    await store.start({ from: 'sample', sampleId: 'bad-deploy' })
+    await until(() => scope.phase === 'missing', 'the Scope to give up looking', 20_000)
+    expect(scope.spans).toHaveLength(0)
+    await until(() => store.pending !== undefined, 'the proposal')
+    await store.decide('approve')
+    await until(() => store.runPhase === 'over', 'the incident to end', 60_000)
+    await until(() => scope.phase === 'finished', 'the Scope to find the trace', 20_000)
+    expect(scope.spans.length).toBeGreaterThan(0)
+  })
+
   it('starts a curated incident live, follows it over the socket, and draws its minutes as they come', async () => {
     const { site, store, scope } = await begin()
     await store.start({ from: 'sample', sampleId: 'bad-deploy' })
@@ -183,6 +196,8 @@ describe('LB-06\'s store', () => {
     await until(() => store.ended, 'the incident to end')
     expect(store.state).toBe('failed')
     await until(() => store.incident?.endReason === 'agents_unavailable', 'the view to say why')
+    // Models out of reach are not the visitor's doing: the day's incident is given back, and the board says so by counting it again.
+    await until(() => store.quota?.remaining === 1, 'the day\'s incident to be given back')
   })
 
   it('reads the log by polling when the network will not carry a WebSocket, and still gets every event once', async () => {

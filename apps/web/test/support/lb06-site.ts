@@ -147,6 +147,8 @@ export class FakeLb06Site {
   readonly sockets: FakeWebSocket[] = []
   // When set, every new socket fails to open, as it does with the network down.
   refuseConnections = false
+  // When set, an incident's trace is not there until the incident has ended, as it is for an incident whose agents' answers came from an earlier run: the root span is all it writes, and it writes it last.
+  hideTraceUntilEnd = false
   readonly #scripted: Scripted[] = []
 
   /** Starts a fake site and a mock LB-06 with no incidents. */
@@ -237,10 +239,16 @@ export class FakeLb06Site {
     return { status: 200, body: { system: 'lb-06', token: PASS, expiresAt: new Date(Date.now() + 300_000).toISOString(), socketUrl: SOCKET_URL } }
   }
 
+  /** Tells whether the incident a run belongs to has ended. */
+  #hasEnded(runId: string): boolean {
+    const view = this.lb06.get(SESSION, runId).body as { state?: string }
+    return ['closed', 'aborted', 'failed'].includes(view.state ?? '')
+  }
+
   /** Answers a read of an incident's trace with the spans after the cursor; it is finished once the root span is there. */
   #spans(runId: string, search: URLSearchParams): Answer {
     const spans: MockSpan[] | undefined = this.lb06.spansOf(runId)
-    if (!spans) return failure(404, 'run_not_found', 'There is no trace for that run: its ID is unknown, or its trace has expired.')
+    if (!spans || (this.hideTraceUntilEnd && !this.#hasEnded(runId))) return failure(404, 'run_not_found', 'There is no trace for that run: its ID is unknown, or its trace has expired.')
     const seen = Number(search.get('after')?.split('-')[0] ?? 0)
     return { status: 200, body: { runId, spans: spans.slice(seen), cursor: `${spans.length}-${spans.length}`, more: false, finished: spans.some(span => span.kind === 'system.run') } }
   }

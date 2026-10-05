@@ -4,14 +4,17 @@
 // recover and the second proposal, the daily allowance and the global cap, the cache that spares a
 // second run of the same sample its calls, the wall-clock cap, the step cap, the agents unreachable,
 // the abort, and the sweep that finds a job that died.
+import { GatewayCallError } from '@lb/common'
 import { LB06_LIMITS } from '@lb/contracts'
 import type { Lb06Event } from '@lb/contracts'
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest'
 
+import type { JsonModel } from '../../src/modules/lb06/agents/model.ts'
 import { ReferenceAgents } from '../../src/modules/lb06/golden/reference.ts'
 import { abortIncident, decide, startIncident } from '../../src/modules/lb06/engine/service.ts'
 import { readEvents, readIncident } from '../../src/modules/lb06/engine/store.ts'
 import { sweep } from '../../src/modules/lb06/engine/sweep.ts'
+import { usedToday } from '../../src/modules/lb06/engine/usage.ts'
 import { createLb06Harness, VISITOR_A, VISITOR_B } from '../support/lb06-engine.ts'
 import type { HarnessOptions, Lb06Harness } from '../support/lb06-engine.ts'
 import { goldenCase, replies } from '../support/lb06.ts'
@@ -199,6 +202,30 @@ describe('the cache, the caps and the ends', () => {
     expect(await readIncident(failed.deps.db, other.id, failed.clock.now())).toMatchObject({ state: 'failed', endReason: 'agents_unavailable' })
     expect(failed.spans.spans.find(span => span.kind === 'system.run')?.status).toBe('error')
   }, 30_000)
+
+  it('gives the visitor\'s incident of the day back when the agents cannot run it, once, and keeps it spent when the agents reached the step cap', async () => {
+    const down: JsonModel = { ask: () => Promise.reject(new GatewayCallError('unreachable', undefined, undefined)) }
+    const outage = await harness({ models: { reason: down, tools: down } })
+    const started = await startSample(outage)
+    expect(await usedToday(outage.deps.db, VISITOR_A, outage.clock.now())).toBe(1)
+    await outage.drive()
+    expect(await readIncident(outage.deps.db, started.id, outage.clock.now())).toMatchObject({ state: 'failed', endReason: 'agents_unavailable' })
+    expect(await usedToday(outage.deps.db, VISITOR_A, outage.clock.now())).toBe(0)
+    await expect(startSample(outage)).resolves.toMatchObject({ state: expect.any(String) as string })
+
+    const nonsense = replies({ kind: 'text', text: 'no' }, { kind: 'text', text: 'still no' })
+    const garbled = await harness({ models: { reason: nonsense, tools: nonsense } })
+    await startSample(garbled)
+    await garbled.drive()
+    expect(await usedToday(garbled.deps.db, VISITOR_A, garbled.clock.now())).toBe(0)
+
+    const spent = await harness()
+    const capped = await startSample(spent)
+    await spent.database.db.execute(`update incidents set model_calls = ${LB06_LIMITS.stepCap}` as never)
+    await spent.drive()
+    expect(await readIncident(spent.deps.db, capped.id, spent.clock.now())).toMatchObject({ state: 'aborted', endReason: 'step_cap' })
+    expect(await usedToday(spent.deps.db, VISITOR_A, spent.clock.now())).toBe(1)
+  }, 40_000)
 
   it('lets the visitor abort, once, and screens the visitor\'s words before the incident starts', async () => {
     const h = await harness()

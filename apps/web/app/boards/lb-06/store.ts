@@ -38,6 +38,8 @@ export const POLL_MS = 1_500
 export const VIEW_REFRESH_MS = 250
 /** How long a trace that is not there yet is taken to mean "not yet": the incident's first span appears a moment after it starts. */
 const SCOPE_GRACE_MS = 8_000
+/** How long a Scope that had stopped looking for the trace looks again after the incident ends: the root span is written a moment after the end. */
+const SCOPE_END_GRACE_MS = 6_000
 /** How many reads of the log may fail in a row before the board gives up on following the incident. */
 const READ_FAILURES_ALLOWED = 3
 /** The events after which the incident's own view is read again, since the view says what the log cannot (the cost, the guard's verdict, the cache). */
@@ -279,6 +281,10 @@ export const useLb06Store = defineStore('lb06', () => {
     pollTimer = undefined
     feed.value = 'idle'
     if (runMode.value !== 'live') return
+    // An incident whose agents' answers came from an earlier run writes no span while it goes, only its root span, after the end;
+    // and a visitor who took minutes to answer outlasted the Scope's patience. A Scope that had stopped looking looks again.
+    const runId = incident.value?.runId
+    if (runId !== undefined && (scope.phase === 'missing' || scope.phase === 'stalled' || scope.phase === 'failed')) scope.follow(runId, { keepSpans: true, notFoundGraceMs: SCOPE_END_GRACE_MS })
     scope.settle()
     // The last events change what the view says (the calls spent, why it ended), so read it at once instead of after the usual wait.
     if (refreshTimer !== undefined) clearTimeout(refreshTimer)

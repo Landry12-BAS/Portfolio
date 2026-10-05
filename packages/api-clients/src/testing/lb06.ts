@@ -306,6 +306,12 @@ export class Lb06Mock {
     return { scenario, origin: 'custom', sampleId: null }
   }
 
+  /** Gives a visitor's incident of the day back. */
+  #release(session: string): void {
+    const key = this.#dayKey(session)
+    this.#usage.set(key, Math.max(0, (this.#usage.get(key) ?? 0) - 1))
+  }
+
   /** Ends an incident, stops its clock and writes its root span. */
   #end(incident: MockIncident, state: 'closed' | 'aborted' | 'failed', reason: Lb06IncidentView['endReason']): void {
     if (incident.ended) return
@@ -373,7 +379,12 @@ export class Lb06Mock {
       const kind = work
       incident.working = runScope(incident.run(), () => spanScope(rootSpanId(incident.id), () => this.#work(incident, kind))).catch((error: unknown) => {
         if (error instanceof StepCapReached) this.#end(incident, 'aborted', 'step_cap')
-        else if (error instanceof ModelOutputInvalid || (error instanceof Error && error.name === 'AgentsDown')) this.#end(incident, 'failed', 'agents_unavailable')
+        else if (error instanceof ModelOutputInvalid || (error instanceof Error && error.name === 'AgentsDown')) {
+          // An incident the agents could not run is not the visitor's doing: the day's incident is given back, once, as the real service does.
+          const running = !incident.ended
+          this.#end(incident, 'failed', 'agents_unavailable')
+          if (running) this.#release(incident.session)
+        }
         else throw error
       }).finally(() => {
         incident.working = undefined

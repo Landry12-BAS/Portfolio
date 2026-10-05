@@ -101,29 +101,33 @@ export function pendingProposalOf(events: readonly Lb06Event[]): Lb06PendingProp
   return undefined
 }
 
-/** One step an agent took, with the minute and number of the event that recorded it. */
-export type AgentRow = Lb06EventOf<'agent.step'>['data'] & { seq: number, minute: number }
+/**
+ * One step an agent took, with the minute and number of the event that recorded it, and the model calls
+ * spent when it was taken. That count is the step's own number once a model call has been made in the
+ * incident, and zero before: an incident whose agents' answers came from an earlier run replays its
+ * steps stamped with the smallest step the contract allows and no model call, and it has spent none.
+ */
+export type AgentRow = Lb06EventOf<'agent.step'>['data'] & { seq: number, minute: number, spent: number }
 
 /** The agents' steps in the order they were taken. */
 export function agentRows(events: readonly Lb06Event[]): AgentRow[] {
   const rows: AgentRow[] = []
+  let calledAModel = false
   for (const event of events) {
-    if (event.kind === 'agent.step') rows.push({ ...event.data, seq: event.seq, minute: event.minute })
+    if (event.kind !== 'agent.step') continue
+    if (event.data.modelCall) calledAModel = true
+    rows.push({ ...event.data, seq: event.seq, minute: event.minute, spent: calledAModel ? event.data.step : 0 })
   }
   return rows
 }
 
 /**
- * How many model calls the log shows were spent: the highest step number, since each step carries the
- * count of calls spent when it was taken. A tool call the server ran costs none itself, but the model
- * call that chose it is counted, so the steps' own flags would count too few.
+ * How many model calls the log shows were spent: the most any step says was spent when it was taken. A
+ * tool call the server ran costs none itself, but the model call that chose it is counted, so the steps'
+ * own flags would count too few.
  */
 export function modelCallsOf(events: readonly Lb06Event[]): number {
-  let calls = 0
-  for (const event of events) {
-    if (event.kind === 'agent.step') calls = Math.max(calls, event.data.step)
-  }
-  return calls
+  return agentRows(events).reduce((most, row) => Math.max(most, row.spent), 0)
 }
 
 /** How many pieces of evidence the server threw away because the log did not hold them, over the whole incident. */

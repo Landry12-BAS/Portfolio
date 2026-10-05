@@ -80,6 +80,29 @@ describe('what the agents did', () => {
     expect(modelCallsOf(incident.events)).toBeLessThanOrEqual(LB06_LIMITS.stepCap)
   })
 
+  it('counts no model call for an incident whose agents\' answers came from an earlier run: its steps are stamped 1 and none cost a call', () => {
+    const replayed = incident.events.map((event): Lb06Event => event.kind === 'agent.step' ? { ...event, data: { ...event.data, step: 1, modelCall: false } } : event)
+    expect(modelCallsOf(replayed)).toBe(0)
+    expect(modelCallsOf(replayed.slice(0, 3))).toBe(0)
+    expect(agentRows(replayed).length).toBe(agentRows(incident.events).length)
+    expect(agentRows(replayed).every(row => row.spent === 0)).toBe(true)
+  })
+
+  it('says for each step of a live incident how many calls had been spent when it was taken', () => {
+    const rows = agentRows(incident.events)
+    expect(rows.every(row => row.spent === row.step)).toBe(true)
+    expect(rows[0]).toMatchObject({ kind: 'plan', spent: 1 })
+  })
+
+  it('counts the one call a replayed incident does make, such as the postmortem\'s', () => {
+    const lastStep = incident.events.filter(event => event.kind === 'agent.step').at(-1)
+    const replayed = incident.events.map((event): Lb06Event => {
+      if (event.kind !== 'agent.step') return event
+      return { ...event, data: { ...event.data, step: 1, modelCall: event === lastStep } }
+    })
+    expect(modelCallsOf(replayed)).toBe(1)
+  })
+
   it('flags a tool call the server ran as free, while the calls spent so far keep counting the call that chose it', () => {
     const rows = agentRows(incident.events)
     const toolCalls = rows.filter(row => row.kind === 'tool_call')

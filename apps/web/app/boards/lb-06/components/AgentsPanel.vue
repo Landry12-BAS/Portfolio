@@ -67,7 +67,8 @@ function argsText(args: Record<string, string | number | boolean>): string {
         v-for="row in steps"
         :key="row.seq"
         class="step"
-        :data-testid="`agent-step-${row.step}`"
+        data-testid="agent-step"
+        :data-spent="row.spent"
         :data-agent="row.agent"
       >
         <p class="line">
@@ -126,7 +127,7 @@ function argsText(args: Record<string, string | number | boolean>): string {
           v-if="!brief"
           class="lb6-hint"
         >
-          {{ t('lb06.agents.technicalStep', { seq: row.seq, minute: row.minute, step: row.step }) }}
+          {{ t('lb06.agents.technicalStep', { seq: row.seq, minute: row.minute, step: row.spent }) }}
         </p>
       </li>
     </ol>

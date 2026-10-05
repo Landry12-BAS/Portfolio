@@ -9,7 +9,7 @@ import { mintVisitorToken } from '@lb/common/visitors'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { WebSocket } from 'ws'
 
-import { lb06EventSchema, lb06EventsPageSchema, lb06IncidentViewSchema, lb06PostmortemViewSchema } from '../../contracts/src/index.ts'
+import { lb06EventSchema, lb06EventsPageSchema, lb06IncidentViewSchema, lb06LimitsViewSchema, lb06PostmortemViewSchema } from '../../contracts/src/index.ts'
 import type { Lb06Event, Lb06IncidentView } from '../../contracts/src/index.ts'
 import { startMockBackend } from '../src/testing/index.ts'
 import type { MockBackend } from '../src/testing/index.ts'
@@ -109,6 +109,8 @@ describe('an incident over HTTP', () => {
     mock.lb06.misbehave('agents_down')
     const down = lb06IncidentViewSchema.parse((await call('POST', '/incidents', 'session-dana-000000000000', { from: 'sample', sampleId: 'cache-stampede' })).json)
     expect(await untilState('session-dana-000000000000', down.id, 'failed')).toMatchObject({ endReason: 'agents_unavailable' })
+    // The gateway being out of reach is not the visitor's doing, so the day's incident is given back.
+    expect(lb06LimitsViewSchema.parse((await call('GET', '/limits', 'session-dana-000000000000')).json).incidents).toMatchObject({ used: 0, remaining: 1 })
     mock.lb06.misbehave('step_cap')
     const capped = lb06IncidentViewSchema.parse((await call('POST', '/incidents', 'session-eva-0000000000000', { from: 'sample', sampleId: 'slow-payment' })).json)
     expect(await untilState('session-eva-0000000000000', capped.id, 'aborted')).toMatchObject({ endReason: 'step_cap' })
@@ -117,7 +119,7 @@ describe('an incident over HTTP', () => {
 
 describe('the WebSocket', () => {
   /** Opens a socket to the mock's LB-06 and collects its frames. */
-  async function connect(): Promise<{ socket: WebSocket, frames: unknown[], closed: Promise<number>, next: (match: (frame: { type?: string, event?: Lb06Event }) => boolean) => Promise<{ type?: string, event?: Lb06Event, events?: Lb06Event[], incident?: Lb06IncidentView, code?: string }> }> {
+  async function connect(): Promise<{ socket: WebSocket, frames: { type?: string, event?: Lb06Event }[], closed: Promise<number>, next: (match: (frame: { type?: string, event?: Lb06Event }) => boolean) => Promise<{ type?: string, event?: Lb06Event, events?: Lb06Event[], incident?: Lb06IncidentView, code?: string }> }> {
     const socket = new WebSocket(`${mock.url.replace('http', 'ws')}/ws/lb06/`)
     const frames: { type?: string, event?: Lb06Event }[] = []
     socket.on('message', data => frames.push(JSON.parse(data.toString()) as { type?: string }))
@@ -140,9 +142,13 @@ describe('the WebSocket', () => {
     const ready = await client.next(frame => frame.type === 'ready')
     expect(ready.incident?.id).toBe(incident.id)
     expect(ready.events?.[0]?.kind).toBe('incident.started')
-    const alert = await client.next(frame => frame.type === 'event' && frame.event?.kind === 'alert.fired')
-    expect(lb06EventSchema.parse(alert.event).kind).toBe('alert.fired')
-    await client.next(frame => frame.type === 'event' && frame.event?.kind === 'proposal.made')
+    // An event that happened before the hello was read arrives in `ready`, not as a live frame: a slow machine can put the alert there.
+    const inReady = (kind: Lb06Event['kind']): boolean => (ready.events ?? []).some(event => event.kind === kind)
+    if (!inReady('alert.fired')) {
+      const alert = await client.next(frame => frame.type === 'event' && frame.event?.kind === 'alert.fired')
+      expect(lb06EventSchema.parse(alert.event).kind).toBe('alert.fired')
+    }
+    if (!inReady('proposal.made')) await client.next(frame => frame.type === 'event' && frame.event?.kind === 'proposal.made')
     await call('POST', `/incidents/${incident.id}/proposals/p1/decision`, 'session-fiona-00000000000', { decision: 'approve' })
     await client.next(frame => frame.type === 'event' && frame.event?.kind === 'incident.closed')
     const seqs = [...(ready.events ?? []).map(event => event.seq), ...client.frames.flatMap(frame => (frame.type === 'event' && frame.event ? [frame.event.seq] : []))]

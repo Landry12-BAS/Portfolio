@@ -96,7 +96,7 @@ const lb06 = {
     timed_out: 'It ran out of time.',
     step_cap: 'The agents used all their steps.',
     proposals_spent: 'Every proposal was used and the shop had not recovered.',
-    agents_unavailable: 'The models behind the agents were out of reach.',
+    agents_unavailable: 'The agents could not finish: the models behind them were out of reach or gave no usable answer. It does not count as your incident of the day.',
     lost: 'The incident was lost.',
   },
   bar: {
@@ -224,7 +224,7 @@ const lb06 = {
     noFindings: 'It found nothing worth reporting.',
     evidence: 'Evidence',
     discarded: 'The server threw away {count} pieces of evidence that the log does not hold.',
-    technicalStep: 'Event {seq}, minute {minute}, {step} model calls spent so far',
+    technicalStep: 'Event {seq}, minute {minute}. Model calls spent so far: {step}.',
   },
   hypotheses: {
     title: 'Hypotheses',
@@ -309,7 +309,7 @@ const lb06 = {
     actionItems: 'Action items',
     references: 'Events it rests on',
     noProse: 'No model-written prose could be trusted for this incident, so only the timeline from the log is shown.',
-    cost: 'It took {calls} model calls and {proposals} proposals, and the shop recovered at minute {minute}.',
+    cost: 'Model calls used: {calls}. Proposals made: {proposals}. The shop recovered at minute {minute}.',
     unavailable: 'The postmortem could not be read. The timeline of what happened is above.',
     none: 'An incident that ends early has no postmortem.',
   },

@@ -572,7 +572,7 @@ whose socket drops reconnects with the last number it holds and polls the events
 
 | Limit | Value | Where it lives |
 |---|---|---|
-| Incidents per visitor per day | 1 | `usage_counters`, one atomic statement in the transaction that stores the incident |
+| Incidents per visitor per day (an incident the agents could not run, `failed`, is given back, once; one ended early or at the step cap stays spent) | 1 | `usage_counters`, one atomic statement in the transaction that stores the incident |
 | Incidents running at once, across visitors | 8 | the same transaction; also the worker's concurrency |
 | Model calls per incident | 15, the orchestrator's cap; the gateway caps the run at 15 and the visitor at 15 a day | `agents/orchestrator.ts`, `routing.yaml` |
 | Proposals per incident | 3 | `engine/job.ts`, `engine/service.ts` |

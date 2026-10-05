@@ -95,7 +95,7 @@ const lb06 = {
     timed_out: 'Vypršel mu čas.',
     step_cap: 'Agenti vyčerpali všechny kroky.',
     proposals_spent: 'Všechny návrhy byly použity a obchod se nezotavil.',
-    agents_unavailable: 'Modely za agenty byly nedostupné.',
+    agents_unavailable: 'Agenti incident nedokončili: modely za nimi byly nedostupné nebo nedaly použitelnou odpověď. Nepočítá se do vašeho dnešního incidentu.',
     lost: 'Incident byl ztracen.',
   },
   bar: {

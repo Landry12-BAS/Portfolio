@@ -110,7 +110,7 @@ test.describe('running an incident live', () => {
       await expect(page.getByTestId('chart-cart')).toHaveAttribute('data-health', 'failing')
       await expect(page.getByTestId('approval-blast')).toBeVisible()
       await expect(page.getByTestId('hypothesis-1')).toBeVisible()
-      await expect(page.getByTestId('agent-step-1')).toBeVisible()
+      await expect(page.getByTestId('agent-step').first()).toBeVisible()
       await expect(page.locator('[data-testid^="timeline-"]').first()).toBeVisible()
       // Nothing is applied while the proposal waits: the log holds no applied fix.
       await expect(page.getByTestId('timeline-remediation.applied')).toHaveCount(0)

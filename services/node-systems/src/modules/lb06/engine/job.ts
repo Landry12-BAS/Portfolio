@@ -24,6 +24,7 @@ import { endIncident, publish, recordEnd } from './service.ts'
 import { ENDED_STATES, appendEvents, countAttempt, eventKinds, lockIncident, patchIncident, readEvents, readIncident, scenarioOf } from './store.ts'
 import type { IncidentRow } from './store.ts'
 import { rootSpanIdOf, runOf } from './trace.ts'
+import { release } from './usage.ts'
 
 /** The most starts an incident's job may have before it is ended rather than tried for ever. */
 const MAX_STARTS = 6
@@ -246,6 +247,9 @@ async function endForAgents(deps: Lb06Deps, incidentId: string, error: unknown):
     const row = await lockIncident(tx, incidentId)
     if (!row || ENDED_STATES.includes(row.state)) return undefined
     const events = await endIncident(deps, tx, row, state, reason, moment)
+    // An incident the agents could not run (the models were out of reach, or answered nonsense twice) is not the visitor's doing:
+    // the day's incident is given back, once, in the transaction that ended this one. One that reached the step cap did run, and stays spent.
+    if (state === 'failed') await release(tx, row.sessionKey, row.createdAt)
     return { events, row }
   })
   if (!outcome) return

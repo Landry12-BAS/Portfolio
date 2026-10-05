@@ -124,7 +124,7 @@ describe('LB-06\'s board', () => {
     expect(wrapper.get('[data-testid="approval-action"]').text()).toBe('The commander proposes: roll back Cart to version 2.13.4.')
     expect(wrapper.get('[data-testid="approval-blast"]').text()).toContain('Puts Cart back on version 2.13.4')
     expect(wrapper.get('[data-testid="hypothesis-1"]').text()).toContain('Cart: a bad deploy')
-    expect(wrapper.get('[data-testid="agent-step-1"]').text()).toContain('Commander')
+    expect(wrapper.findAll('[data-testid="agent-step"]')[0]?.text()).toContain('Commander')
     expect(wrapper.get('[data-testid="health-cart"]').text()).toContain('Failing')
     expect(wrapper.get('[data-testid="chart-cart"]').attributes('data-health')).toBe('failing')
     expect(wrapper.get('[data-testid="slo-status"]').text()).toBe('Alert firing')
@@ -267,6 +267,18 @@ describe('LB-06\'s board', () => {
     expect(wrapper.find('[data-testid="incident-bar"]').exists()).toBe(false)
   })
 
+  it('says that an incident the agents could not run does not count, and counts it again so the visitor can try once more', async () => {
+    const { site, wrapper } = await openBoard()
+    site.lb06.misbehave('agents_down')
+    await runLive(wrapper)
+    await until(() => wrapper.find('[data-testid="end-reason"]').exists(), 'the incident to fail')
+    expect(wrapper.get('[data-testid="incident-state"]').attributes('data-state')).toBe('failed')
+    expect(wrapper.get('[data-testid="end-reason"]').text()).toContain('does not count as your incident of the day')
+    await until(() => wrapper.get('[data-testid="quota"]').text().includes('1 of 1'), 'the day\'s incident to be counted again')
+    expect(wrapper.get('[data-testid="live-sample"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('[data-testid="allowance-used"]').exists()).toBe(false)
+  })
+
   it('shows the kit\'s notice when the day\'s incident is already used, with the time it starts again', async () => {
     const { site, wrapper } = await openBoard()
     site.lb06.start(SESSION, { from: 'sample', sampleId: 'cache-stampede' })
@@ -280,11 +292,11 @@ describe('LB-06\'s board', () => {
     await runLive(wrapper)
     await until(() => wrapper.find('[data-testid="approval-action"]').exists(), 'the proposal')
     expect(wrapper.find('[data-testid="burn-table"]').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('model calls spent so far')
+    expect(wrapper.text()).not.toContain('Model calls spent so far')
     useReadingStore().mode = 'technical'
     await flushPromises()
     expect(wrapper.find('[data-testid="burn-table"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('model calls spent so far')
+    expect(wrapper.text()).toContain('Model calls spent so far')
   })
 
   it('is in Czech in the Czech language, and the Czech text has the same parts', async () => {
