@@ -413,6 +413,34 @@ end. One thing to know when running the whole file there: every journey leaves a
 service runs at most eight at once, so after about eight the service answers 503 (`too_many_incidents`) until
 the oldest have ended (eight minutes at most). That is the service doing what it should.
 
+LB-07 adds the one process that drives a browser: run the real sandbox (`node src/sandbox.ts` in
+`services/node-systems`, with `LB07_SHOP_TOKEN_KEY`, `LB07_BROWSER_PATH` pointing at a Chromium, and its two
+ports, the shop's and the runner's, moved to free ones), and give the API and the worker `LB07_RUNNER_URL`, the
+same token key and `LB07_SHOP_ORIGIN`. The routing table is `routing.lb07.yaml`, with its timeouts raised. The
+provider tells the planner, the re-planner and the writer of the bug reports apart by the first words of the
+system prompt, finds the goal between the `<goal>` markers, plans a golden case's goal with the case's reference
+plan and its scripted re-plans (and any other goal by rules, as the mock does), writes one report for each
+finding it is shown, and answers the guard by whether the goal gives orders. A run takes from a few seconds to
+about twenty on the real browser. What running the board there showed:
+
+- the curated runs, the visitor's own goal, the re-plan (a goal that is the golden set's re-plan case, word for
+  word), the hostile goal (the plan stayed in the shop), the link out of the shop (a step and a finding "stopped
+  at the sandbox", the test not verified), the day's two runs, five visitors at once (four runs taken, "3 runs are
+  ahead of yours" for the fourth, the fifth refused as busy), a run deleted, a reload that opens the run again,
+  Czech on a phone, and the model down (the run failed, given back, the Scope showing the two failed attempts)
+  all behaved as on the mock; the screenshots are the real browser's (1024 pixels wide, about 55 kB) and came
+  through the picture route as checked PNGs;
+- the page's tree comes from the service as **one long line**: its trimming takes a line break for a control
+  character, so the tree's lines and indentation are lost. On the board that line widened the whole page to
+  thousands of pixels (the mock showed it first, since it trims with the service's own function); every panel
+  now keeps to the board's width and the tree wraps. The trimming itself is the service's to fix;
+- a goal that gives the agent orders is screened (the Scope shows the guard's call) and the run goes on with the
+  goal as data; the service says nothing to the visitor about the screen, so the board cannot either.
+
+Twenty-two of the journeys of `e2e/lb07.spec.ts`, those that need none of the mock's controls but its reset, ran
+against it with a stand-in for the reset; the re-plan and keyboard journeys need the mock's re-planned sample,
+and the queue, busy and failure journeys its controls.
+
 ## Decisions worth knowing
 
 - **The test build** is the production build with two differences, both decided at build time by the flag
@@ -604,3 +632,9 @@ the oldest have ended (eight minutes at most). That is the service doing what it
   under the verdict's table, so "red in the second engine" is never read as a Firefox result. The table shows the
   three passes as the service ran them: the second engine's pass is red when a step of the test failed there,
   even when the finding behind it was made in Chromium already (its count of bug findings is then 0).
+- **LB-07's board ran against the real Node service** (see "Against the real services"): the API, the worker and
+  the sandbox with a real Chromium and the real staging shop, the real gateway in front of a provider that plans
+  as the golden set does. Not run: a real model (so how well a real planner writes plans and re-plans is
+  unmeasured), a real Turnstile site key and challenge, a recording made on a live back end (the three in
+  `e2e/fixtures` are the mock's and say so), a run that uses its three minutes of browser time on the real
+  service, and the box's two ARM cores.
