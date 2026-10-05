@@ -115,10 +115,7 @@ case " $* " in
         if [ -e "$BEHAVIOUR/slow-up" ]; then sleep 3; fi
         if [ -e "$BEHAVIOUR/fail-up-$release" ]; then exit 1; fi
         ;;
-    *" run "*)
-        if [ -e "$BEHAVIOUR/slow-run" ]; then sleep 3; fi
-        echo "compose $release run finished" >> "$CALLS"
-        ;;
+    *" run "*) if [ -e "$BEHAVIOUR/slow-run" ]; then sleep 3; fi ;;
 esac
 exit 0
 STUB
@@ -442,9 +439,9 @@ fi
 
 : > "$CALLS"
 # A deploy that holds the lock for three seconds, and a backup that waits for it one second.
-( exec 8> "$LB_ROOT/deploy.lock"; flock -x 8; sleep 3 ) &
+( exec 8> "$LB_ROOT/deploy.lock"; flock -x 8; echo "a deploy holds the lock" >> "$CALLS"; sleep 3 ) &
 holder=$!
-sleep 1
+wait_for_call "a deploy holds the lock" || fail "the stand-in deploy never took the lock"
 backup 1
 wait "$holder"
 expect_equal "a backup that cannot get the lock in its time fails" "1" "$backup_status"
