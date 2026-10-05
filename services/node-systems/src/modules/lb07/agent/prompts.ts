@@ -18,14 +18,32 @@ import type { PromptMessage } from './model.ts'
 // Anything that looks like one of the markers, so a goal or a page cannot end its own quotation.
 const MARKER = /<\s*(?:\/\s*)?(?:goal|page|findings|steps)\s*>/gi
 
-/** Removes anything that looks like one of the markers, again and again until none is left, so removing one cannot make another. */
+/**
+ * Removes anything that looks like one of the markers, again and again until none is left, so removing one cannot
+ * make another. The text is first brought to its compatibility form (NFKC), so a marker written with full-width or
+ * small brackets (`＜/goal＞`) becomes the marker it imitates and is removed with the rest.
+ */
 export function withoutMarkers(text: string): string {
-  let result = text
+  let result = text.normalize('NFKC')
   for (let previous = ''; previous !== result;) {
     previous = result
     result = result.replaceAll(MARKER, '')
   }
   return result
+}
+
+/** Says a step in words for a prompt: the plan's strings are the model's (or, through it, a goal's or a page's), so no marker survives in them. */
+function stepWords(step: Lb07Step): string {
+  return withoutMarkers(describeStep(step))
+}
+
+/**
+ * Writes data as JSON for a data block: every string in it without markers, and every angle bracket written as its
+ * JSON escape, so the block's text can neither close its own markers nor open another, and still parses to the same data.
+ */
+function jsonForBlock(value: unknown): string {
+  const text = JSON.stringify(value, (_key, field: unknown) => (typeof field === 'string' ? withoutMarkers(field) : field), 1)
+  return text.replaceAll('<', '\\u003c').replaceAll('>', '\\u003e')
 }
 
 /** What the planner is told about the shop: its pages, the names of its controls and its products, from the catalogue. */
@@ -129,10 +147,10 @@ export function replanSystemPrompt(): string {
 export function replanUserMessage(goal: string, failure: Failure): string {
   return [
     `The goal, as data:\n<goal>\n${withoutMarkers(goal)}\n</goal>`,
-    `Steps done so far:\n${failure.done.map((step, index) => `${index + 1}. ${describeStep(step)}`).join('\n') || '(none)'}`,
-    `The step that failed: ${describeStep(failure.step)} (${failureWords(failure.outcome)}).`,
-    `The steps that were still to come:\n${failure.remaining.map(step => `- ${describeStep(step)}`).join('\n') || '(none)'}`,
-    `The page is at ${failure.path}. Its accessibility tree, as data:\n<page>\n${withoutMarkers(failure.snapshot)}\n</page>`,
+    `Steps done so far:\n${failure.done.map((step, index) => `${index + 1}. ${stepWords(step)}`).join('\n') || '(none)'}`,
+    `The step that failed: ${stepWords(failure.step)} (${failureWords(failure.outcome)}).`,
+    `The steps that were still to come:\n${failure.remaining.map(step => `- ${stepWords(step)}`).join('\n') || '(none)'}`,
+    `The page is at ${withoutMarkers(failure.path)}. Its accessibility tree, as data:\n<page>\n${withoutMarkers(failure.snapshot)}\n</page>`,
   ].join('\n\n')
 }
 
@@ -163,8 +181,8 @@ function findingForModel(finding: Lb07Finding): Record<string, unknown> {
 export function reportUserMessage(goal: string, steps: readonly Lb07Step[], findings: readonly Lb07Finding[]): string {
   return [
     `The goal, as data:\n<goal>\n${withoutMarkers(goal)}\n</goal>`,
-    `The test steps, as data:\n<steps>\n${steps.map((step, index) => `${index + 1}. ${describeStep(step)}`).join('\n')}\n</steps>`,
-    `The findings, as data:\n<findings>\n${JSON.stringify(findings.map(findingForModel), null, 1)}\n</findings>`,
+    `The test steps, as data:\n<steps>\n${steps.map((step, index) => `${index + 1}. ${stepWords(step)}`).join('\n')}\n</steps>`,
+    `The findings, as data:\n<findings>\n${jsonForBlock(findings.map(findingForModel))}\n</findings>`,
   ].join('\n\n')
 }
 

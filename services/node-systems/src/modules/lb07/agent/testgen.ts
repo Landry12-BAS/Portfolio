@@ -17,9 +17,21 @@ export interface TestInput {
   shopOrigin: string
 }
 
-/** Writes a value as a JSON string literal, which is also a valid TypeScript string literal. */
+// The line and paragraph separators: JSON leaves them as they are, and JavaScript and TypeScript read either as the end of
+// a line, which would end a `//` comment (and the TypeScript compiler refuses one inside a string literal).
+const LINE_ENDINGS_JSON_KEEPS = /[\u{2028}\u{2029}]/gu
+
+/** Writes one of the two separators as its six-character escape: a backslash, `u`, and its code point in hex (2028 or 2029). */
+function escapeSeparator(character: string): string {
+  return `\\u${(character.codePointAt(0) ?? 0).toString(16)}`
+}
+
+/**
+ * Writes a value as a JSON string literal, which is also a valid TypeScript string literal, with the two line
+ * separators JSON keeps raw written as escapes: so the literal, and a comment made of it, stays on its one line.
+ */
 function literal(value: string): string {
-  return JSON.stringify(value)
+  return JSON.stringify(value).replaceAll(LINE_ENDINGS_JSON_KEEPS, escapeSeparator)
 }
 
 /** One comment line, with the text made safe for a line comment: no line breaks (JSON escapes them). */
