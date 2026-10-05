@@ -89,7 +89,9 @@ in the answer, and the board shows them. Only an unreadable file, a hostile one,
 reached and a run that took too long are `failed`, each with a code from a fixed list
 ([`states.py`](lb03/states.py)). When the service itself fails a document (the models are down, the day's
 capacity is used, a worker died) the visitor's place is given back, but only three times a day: almost any such
-failure can be caused on purpose.
+failure can be caused on purpose. A document turned away at the door (the readers full or closing, a store or a
+database that failed before a reader had it) is given back every time and spends none of the three: nothing was read,
+and nothing the visitor did made it happen.
 
 **Everything a model says is untrusted.** The reply is validated against a schema, the arithmetic is owned by
 code that never asks the model, a value the model gives that is not printed on the page is flagged, and the
@@ -257,7 +259,7 @@ correction are to be shown as text and never as markup.
 **The daily quota** is LB-05's pattern ([`quota.py`](lb03/quota.py)): one SQL statement admits a document by an upsert
 that raises the visitor's counter only while it is below 10 and fewer than two of their documents are in the pipeline,
 so two uploads that arrive together can't both take the last place. Refunds for the service's own failures are capped at
-three a day. A visitor is known only by the hash of their session. The first upload each day deletes the counters of
+three a day; a document that never reached a reader gives its place back without one (`release_unstarted`). A visitor is known only by the hash of their session. The first upload each day deletes the counters of
 days that are over.
 
 ## What a run leaves behind

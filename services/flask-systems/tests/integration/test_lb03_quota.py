@@ -141,6 +141,19 @@ def test_a_failure_of_the_service_gives_the_place_back(lb03_engine: Engine) -> N
     assert ledger.usage(SAM).remaining == limits.DOCUMENTS_PER_DAY
 
 
+def test_a_document_turned_away_at_the_door_gives_its_place_back_without_spending_a_refund(lb03_engine: Engine) -> None:
+    """The readers being full is not the visitor's doing: any number of such refusals leave their day as it was."""
+    ledger = make_ledger(lb03_engine)
+
+    for _ in range(limits.MAX_REFUNDS_PER_DAY + 2):
+        admission = ledger.admit(SAM)
+        assert admission.allowed
+        ledger.release_unstarted(SAM, admission.day)
+
+    assert row_of(lb03_engine, SAM) == (0, 0, 0)
+    assert ledger.usage(SAM).remaining == limits.DOCUMENTS_PER_DAY
+
+
 def test_places_given_back_are_capped_so_a_failure_made_on_purpose_stays_bounded(lb03_engine: Engine) -> None:
     """After three refunds a day the fourth failure frees its worker slot but costs the visitor the place."""
     ledger = make_ledger(lb03_engine)

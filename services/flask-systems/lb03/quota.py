@@ -144,6 +144,22 @@ class PostgresLedger:
             )
         return False
 
+    def release_unstarted(self, session_key: str, day: date) -> None:
+        """Give back the place of a document that never reached a reader, whatever the day's refunds.
+
+        A refusal at the door (the readers full or closing, a store or a database that failed) was nothing the
+        visitor made happen, and nothing was read, so the place goes back without spending one of the refunds:
+        those are kept for documents that were read and failed, which a visitor can cause on purpose. Without
+        this, a visitor turned away a fourth time in a day would lose the place they were told was not counted.
+        """
+        this_visitor_today = (QuotaUsage.session_key == session_key, QuotaUsage.day == day)
+        with self._engine.begin() as connection:
+            connection.execute(
+                update(QuotaUsage)
+                .where(*this_visitor_today)
+                .values(used=func.greatest(QuotaUsage.used - 1, 0), active=func.greatest(QuotaUsage.active - 1, 0))
+            )
+
     def usage(self, session_key: str) -> Usage:
         """Return how many documents a visitor has uploaded today, and how many are being read."""
         day = self.today()

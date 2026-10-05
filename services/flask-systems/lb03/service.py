@@ -326,14 +326,18 @@ class Lb03Service:
         return Refusal(429, "daily_limit", DAILY_LIMIT_MESSAGE, resets_at=midnight_after(admission.day).isoformat())
 
     def _take_back(self, session_key: str, admission: Admission, document_id: str) -> None:
-        """Undo an upload that could not be handed to the readers: its files, its row, and the visitor's place."""
+        """Undo an upload that could not be handed to the readers: its files, its row, and the visitor's place.
+
+        The place goes back whatever the day's refunds (`release_unstarted`): nothing was read, so nothing is
+        refunded, and the refunds stay for the documents that were read and failed.
+        """
         try:
             self._store.delete_prefix(document_prefix(document_id))
         except StorageError as error:
             logger.error("Could not delete the files of a refused upload: %s", describe_failure(error))
         try:
             self._repository.delete(document_id, session_key)
-            self._ledger.release(session_key, admission.day, refund=True)
+            self._ledger.release_unstarted(session_key, admission.day)
         except SQLAlchemyError as error:
             logger.error("Could not settle a refused upload: %s", describe_failure(error))
 
