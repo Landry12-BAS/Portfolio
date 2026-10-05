@@ -1,0 +1,32 @@
+# A planning chat where people talk over each other.
+#
+# A turn with `overlap` starts that many seconds before the turn before it ends, so the audio
+# mixes the two voices. A transcriber cannot pull apart words spoken at once: it gives one stretch
+# of text for them, and one speaker label cannot be right for it. The golden set names the two
+# turns an overlapping item may come from. See monday-roasting-plan.yaml for how scripts work.
+key: tasting-notes-overlap
+title: Tasting notes, with overlap
+language: en
+about: >-
+  Preparing Thursday's tasting, with two people answering at the same time.
+speakers:
+  - id: hannah
+    name: Hannah
+    voice: slt
+  - id: peter
+    name: Peter
+    voice: rms
+  - id: david
+    name: David
+    voice: awb
+turns:
+  - speaker: hannah
+    text: "For the tasting on Thursday we need the notes printed. Peter, can you do that?"
+  - speaker: peter
+    text: "Yes, I'll print the tasting notes on Wednesday."
+    overlap: 1.2
+  - speaker: david
+    text: "I can bring the cups on Thursday morning."
+    overlap: 1.0
+  - speaker: hannah
+    text: "Thanks David. Then the tasting stays at three o'clock."

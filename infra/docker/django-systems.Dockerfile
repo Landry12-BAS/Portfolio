@@ -1,7 +1,16 @@
-# The Django systems image (services/django-systems): the API (uvicorn: HTTP for LB-01 and
-# LB-02, and LB-02's WebSocket), the Celery worker with its scheduler, and the release step
-# that migrates and seeds. One image, three commands (infra/docker-compose.yml). Build
-# context: the repository root.
+# The Django systems image (services/django-systems): the API (uvicorn: HTTP for LB-01,
+# LB-02 and LB-09, and LB-02's and LB-09's WebSockets), the Celery worker with its scheduler,
+# and the release step that migrates and seeds. One image, three commands
+# (infra/docker-compose.yml). Build context: the repository root.
+#
+# LB-09 adds two things to the image. PyAV, the decoder its audio goes through, brings its own
+# FFmpeg libraries in its wheel (about 100 MB), so no system package is installed; and private
+# mode's faster-whisper (CTranslate2 and the tokenizer, about 60 MB) with the weights of
+# Whisper's base model (about 145 MB), fetched at build time from Hugging Face so that nothing
+# is downloaded at run time: the service loads them from LB09_WHISPER_DIR with local files
+# only. Together they grow the image by roughly 300 MB. A build without a route to the model
+# host fails here, on purpose: an image without the weights would run private mode as a
+# failure (docs/DEPLOY.md, LB-09).
 #
 # The build stage installs the production dependencies from uv.lock into a virtualenv; the
 # runtime stage copies that virtualenv and the code into a slim Python image and runs as an
@@ -30,10 +39,13 @@ COPY services/django-systems services/django-systems
 # keeps it valid whatever the file timestamps become after the stage copy.
 RUN uv sync --frozen --no-editable --package django-systems \
  && python -m compileall -q --invalidation-mode unchecked-hash services/django-systems
+# The private transcriber's weights: Whisper's base model, converted for CTranslate2 (the
+# Systran/faster-whisper-base repository). int8 is applied when the model is loaded.
+RUN /app/.venv/bin/python -c "from faster_whisper.utils import download_model; download_model('base', output_dir='/repo/whisper/base')"
 
 FROM python:3.13.15-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS runtime
 LABEL org.opencontainers.image.title="lb-django-systems" \
-      org.opencontainers.image.description="The Django systems (LB-01 and LB-02, then LB-09): API, Celery worker and release step." \
+      org.opencontainers.image.description="The Django systems (LB-01, LB-02 and LB-09): API, Celery worker and release step." \
       org.opencontainers.image.source="https://github.com/Landry12-BAS/Portfolio"
 # An unprivileged user with no home and no shell. The numeric id is what docker-compose.yml
 # gives the tmpfs mounts, so the two must agree.
@@ -44,6 +56,7 @@ RUN groupadd --system --gid 10001 lb \
 COPY --from=build /app/.venv /app/.venv
 COPY --from=build /repo/services/django-systems /app/services/django-systems
 COPY data/seed /app/data/seed
+COPY --from=build /repo/whisper /app/whisper
 COPY --chmod=0555 infra/docker/python-entrypoint.sh /usr/local/bin/lb-entrypoint
 COPY --chmod=0555 infra/docker/python-healthcheck.py /usr/local/bin/lb-healthcheck
 ENV PATH="/app/.venv/bin:${PATH}" \

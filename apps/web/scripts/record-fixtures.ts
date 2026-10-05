@@ -57,14 +57,19 @@ const SAMPLES: Readonly<Record<string, readonly string[]>> = {
   // a re-plan, and the link out of the shop that the sandbox stops (nothing to verify). The other five samples have no
   // recording on purpose, so the tests can run them live.
   'lb-07': ['coupon-double-discount', 'cart-count', 'partner-link'],
+  // The roasting plan (four speakers, five items) and the staffing meeting (a joke that must not become
+  // a task). The newsletter draft is left without a recording on purpose, so the tests can see a sample
+  // that has none and run it live.
+  'lb-09': ['monday-roasting-plan', 'weekend-staffing'],
 }
 
 // The moment LB-02's mock stands still at.
 const LB02_NOW = Date.parse('2026-10-02T09:30:00.000Z')
 
 // The systems whose mock moves on with time (LB-08's retry waits for its backoff, LB-07's run is worked out
-// beat by beat) need a clock that the recorder moves by waiting; the others move on as they are read and never wait.
-const TIMED = new Set(['lb-08', 'lb-07'])
+// beat by beat, a meeting's stages take their time) need a clock that the recorder moves by waiting; the others move on
+// as they are read and never wait.
+const TIMED = new Set(['lb-08', 'lb-07', 'lb-09'])
 // The systems whose mock runs on a timer of its own (LB-06's shop ticks every few milliseconds) are read on the wall clock.
 const REAL_TIME = new Set(['lb-06'])
 

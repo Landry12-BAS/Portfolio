@@ -480,6 +480,35 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "ExportOut": {
+        "description": "An export: its format, a file name to save it as, and its content.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "filename",
+          "content_type",
+          "content"
+        ],
+        "title": "ExportOut",
+        "type": "object"
+      },
       "HandoffOut": {
         "description": "A conversation handed to a person: why, what was collected, and every line said.",
         "properties": {
@@ -550,6 +579,146 @@
         "title": "HoldOut",
         "type": "object"
       },
+      "ItemOut": {
+        "description": "A decision or an action item, with its verbatim evidence and the seconds it was said in.",
+        "properties": {
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline"
+          },
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "first_segment": {
+            "title": "First Segment",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_segment": {
+            "title": "Last Segment",
+            "type": "integer"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "kind",
+          "text",
+          "owner",
+          "deadline",
+          "evidence",
+          "start",
+          "end",
+          "first_segment",
+          "last_segment"
+        ],
+        "title": "ItemOut",
+        "type": "object"
+      },
+      "ItemsOut": {
+        "description": "A finished meeting's items, and how many the checks dropped.",
+        "properties": {
+          "dropped": {
+            "title": "Dropped",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meeting": {
+            "title": "Meeting",
+            "type": "string"
+          }
+        },
+        "required": [
+          "meeting",
+          "dropped",
+          "items"
+        ],
+        "title": "ItemsOut",
+        "type": "object"
+      },
+      "LimitsOut": {
+        "description": "What is left of the visitor's day, and the datasheet's limits the service enforces.",
+        "properties": {
+          "left_today": {
+            "title": "Left Today",
+            "type": "integer"
+          },
+          "max_recording_seconds": {
+            "title": "Max Recording Seconds",
+            "type": "number"
+          },
+          "max_upload_bytes": {
+            "title": "Max Upload Bytes",
+            "type": "integer"
+          },
+          "recordings_per_day": {
+            "title": "Recordings Per Day",
+            "type": "integer"
+          },
+          "resets_at": {
+            "format": "date-time",
+            "title": "Resets At",
+            "type": "string"
+          },
+          "used_today": {
+            "title": "Used Today",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recordings_per_day",
+          "used_today",
+          "left_today",
+          "resets_at",
+          "max_recording_seconds",
+          "max_upload_bytes"
+        ],
+        "title": "LimitsOut",
+        "type": "object"
+      },
       "LineOut": {
         "description": "One line of a transcript.",
         "properties": {
@@ -602,6 +771,198 @@
           "cs"
         ],
         "title": "LocalizedOut",
+        "type": "object"
+      },
+      "MeetingIn": {
+        "description": "A meeting to start: a visitor's own recording, or a curated sample, in fast or private mode.",
+        "properties": {
+          "audio": {
+            "anyOf": [
+              {
+                "maxLength": 4198400,
+                "minLength": 4,
+                "pattern": "^[A-Za-z0-9+/=\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "en",
+                  "cs"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "mode": {
+            "enum": [
+              "fast",
+              "private"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample"
+          },
+          "source": {
+            "enum": [
+              "upload",
+              "sample"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "mode"
+        ],
+        "title": "MeetingIn",
+        "type": "object"
+      },
+      "MeetingOut": {
+        "description": "A meeting: where it stands, what was measured, which model ran, and the counters the page shows.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dropped_items": {
+            "title": "Dropped Items",
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "title": "Duration Seconds",
+            "type": "number"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "heard_language": {
+            "title": "Heard Language",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "labels_inferred_from_text": {
+            "title": "Labels Inferred From Text",
+            "type": "boolean"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample"
+          },
+          "source_bytes": {
+            "title": "Source Bytes",
+            "type": "integer"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "transcriber": {
+            "title": "Transcriber",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sample",
+          "mode",
+          "status",
+          "stage",
+          "failure",
+          "run_id",
+          "language",
+          "heard_language",
+          "transcriber",
+          "duration_seconds",
+          "source_bytes",
+          "model_calls",
+          "dropped_items",
+          "labels_inferred_from_text",
+          "created_at",
+          "updated_at",
+          "expires_at"
+        ],
+        "title": "MeetingOut",
         "type": "object"
       },
       "OfferingOut": {
@@ -679,6 +1040,84 @@
           "ends_at"
         ],
         "title": "OptionOut",
+        "type": "object"
+      },
+      "SampleOut": {
+        "description": "A curated sample meeting the demo opens on, and the committed audio file the page plays.",
+        "properties": {
+          "about": {
+            "title": "About",
+            "type": "string"
+          },
+          "file": {
+            "title": "File",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "number"
+          },
+          "speakers": {
+            "title": "Speakers",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "about",
+          "file",
+          "seconds",
+          "speakers"
+        ],
+        "title": "SampleOut",
+        "type": "object"
+      },
+      "SegmentOut": {
+        "description": "One stretch of speech, with the speaker the words suggest.",
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "speaker": {
+            "title": "Speaker",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "start",
+          "end",
+          "text",
+          "speaker",
+          "label"
+        ],
+        "title": "SegmentOut",
         "type": "object"
       },
       "SentenceOut": {
@@ -1019,6 +1458,33 @@
           "created_at"
         ],
         "title": "TicketSummary",
+        "type": "object"
+      },
+      "TranscriptOut": {
+        "description": "A finished meeting's transcript, segment by segment, and the note about its labels.",
+        "properties": {
+          "labels_note": {
+            "title": "Labels Note",
+            "type": "string"
+          },
+          "meeting": {
+            "title": "Meeting",
+            "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentOut"
+            },
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "meeting",
+          "labels_note",
+          "segments"
+        ],
+        "title": "TranscriptOut",
         "type": "object"
       }
     },
@@ -1509,6 +1975,410 @@
         "summary": "List Offerings",
         "tags": [
           "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb09/limits": {
+      "get": {
+        "description": "Say how many meetings the visitor may still start today, and the limits every recording is held to.",
+        "operationId": "lb09_api_limits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Limits",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings": {
+      "get": {
+        "description": "List the visitor's own meetings, newest first.",
+        "operationId": "lb09_api_list_meetings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MeetingOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Meetings",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      },
+      "post": {
+        "description": "Start a meeting from the visitor's recording or a sample, and queue it for the worker.",
+        "operationId": "lb09_api_start",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Start",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}": {
+      "get": {
+        "description": "Show where one of the visitor's meetings stands: the polling fallback for the WebSocket.",
+        "operationId": "lb09_api_get_meeting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Meeting",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/export": {
+      "get": {
+        "description": "Export a finished meeting as JSON, CSV, or the plain-English follow-up for Automation Studio (LB-08).",
+        "operationId": "lb09_api_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "enum": [
+                "json",
+                "csv",
+                "text"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Export",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/items": {
+      "get": {
+        "description": "Show a finished meeting's decisions and action items, each with its evidence and its seconds.",
+        "operationId": "lb09_api_get_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Items",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/transcript": {
+      "get": {
+        "description": "Show a finished meeting's transcript with its inferred speaker labels.",
+        "operationId": "lb09_api_get_transcript",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Transcript",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/samples": {
+      "get": {
+        "description": "List the curated sample meetings, with the audio file the page plays for each.",
+        "operationId": "lb09_api_list_samples",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SampleOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Samples",
+        "tags": [
+          "LB-09 Meeting Recorder"
         ]
       }
     },

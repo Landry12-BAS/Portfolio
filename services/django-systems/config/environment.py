@@ -24,10 +24,13 @@ VARIABLES = {
     "LB_DATABASE_URL": "database_url",
     "LB01_DATABASE_URL": "lb01_database_url",
     "LB02_DATABASE_URL": "lb02_database_url",
+    "LB09_DATABASE_URL": "lb09_database_url",
     "LB_REDIS_URL": "redis_url",
     "LB_REDIS_PREFIX": "redis_prefix",
     "LB_SEED_DIR": "seed_dir",
     "LB_WEB_TOKEN_KEY": "web_token_key",
+    "LB09_AUDIO_DIR": "lb09_audio_dir",
+    "LB09_WHISPER_DIR": "lb09_whisper_dir",
 }
 
 
@@ -40,6 +43,10 @@ class Environment(BaseModel):
     without it, the repository's data/seed.
     `web_token_key` is the site's Ed25519 public key, which visitor tokens are checked
     against (core/visitors.py); without it, every visitor call is refused.
+    `lb09_audio_dir` is the folder LB-09's recordings wait in between the API and the
+    worker (a memory-backed volume on the box; without it, a folder under the temporary
+    directory), and `lb09_whisper_dir` is where the private transcriber's weights are;
+    without it, private mode reports that it has no model.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -50,12 +57,15 @@ class Environment(BaseModel):
     database_url: str
     lb01_database_url: str | None = None
     lb02_database_url: str | None = None
+    lb09_database_url: str | None = None
     redis_url: str
     redis_prefix: str = "lb:"
     seed_dir: str | None = None
     web_token_key: str | None = None
+    lb09_audio_dir: str | None = None
+    lb09_whisper_dir: str | None = None
 
-    @field_validator("database_url", "lb01_database_url", "lb02_database_url")
+    @field_validator("database_url", "lb01_database_url", "lb02_database_url", "lb09_database_url")
     @classmethod
     def _check_database_url(cls, url: str | None) -> str | None:
         """Accept only Postgres URLs."""

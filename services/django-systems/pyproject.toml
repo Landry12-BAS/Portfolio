@@ -7,12 +7,15 @@ version = "0.1.0"
 description = "The LB systems built on Django: one project, one Postgres schema per system."
 requires-python = ">=3.13"
 dependencies = [
+    "av>=19.0.0",
     "celery[redis]>=5.6.3",
     "channels>=4.3.2",
     "channels-redis>=4.3.0",
     "django>=5.2.17,<5.3",
     "django-ninja>=1.7.1",
+    "faster-whisper>=1.2.1",
     "lb-common",
+    "numpy>=2.5.3",
     "pgvector>=0.5.0",
     "psycopg[binary]>=3.3.6",
     "pyjwt[crypto]>=2.15.1",
@@ -44,8 +47,8 @@ plugins = ["pydantic.mypy", "mypy_django_plugin.main"]
 exclude = ["migrations/"]
 
 [[tool.mypy.overrides]]
-# Testcontainers, pgvector, Channels and its Redis layer ship no type information.
-module = ["testcontainers.*", "pgvector.*", "channels.*", "channels_redis.*"]
+# Testcontainers, pgvector, Channels and its Redis layer, and faster-whisper ship no type information.
+module = ["testcontainers.*", "pgvector.*", "channels.*", "channels_redis.*", "faster_whisper.*"]
 ignore_missing_imports = true
 
 [tool.django-stubs]

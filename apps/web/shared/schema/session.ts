@@ -22,9 +22,9 @@ export const verifyRequestSchema = z.strictObject({
   token: z.string().min(1).max(2_048),
 })
 
-/** A short-lived token for the one thing the browser does directly: LB-02's WebSocket. */
+/** A short-lived token for the one thing the browser does directly: LB-02's and LB-09's WebSockets. */
 export const socketGrantSchema = z.strictObject({
-  system: z.enum(['lb-02', 'lb-06']),
+  system: z.enum(['lb-02', 'lb-06', 'lb-09']),
   // Goes in the connection's first frame, never in the address.
   token: z.string().min(1).max(1_024),
   expiresAt: z.iso.datetime(),
@@ -34,5 +34,5 @@ export const socketGrantSchema = z.strictObject({
 
 /** The visitor's session, as the browser is told of it. */
 export type SessionState = z.infer<typeof sessionStateSchema>
-/** The token for LB-02's WebSocket, and where to open it. */
+/** The token for a system's WebSocket, and where to open it. */
 export type SocketGrant = z.infer<typeof socketGrantSchema>

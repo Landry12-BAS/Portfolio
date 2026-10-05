@@ -3,7 +3,7 @@
 // matcher and the site agree.
 
 /** A demo system the site calls on a visitor's behalf, named as a visitor token's audience. */
-export type SystemName = 'lb-01' | 'lb-02' | 'lb-05' | 'lb-08' | 'lb-03' | 'lb-04' | 'lb-06' | 'lb-07'
+export type SystemName = 'lb-01' | 'lb-02' | 'lb-05' | 'lb-08' | 'lb-03' | 'lb-04' | 'lb-06' | 'lb-07' | 'lb-09'
 
 /** The back end that serves a system: the OpenAPI document its route came from. */
 export type ServiceName = 'django' | 'flask' | 'node'

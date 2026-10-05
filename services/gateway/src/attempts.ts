@@ -11,7 +11,9 @@ import { ClientGoneError } from './call.ts'
 import type { Attempt, AttemptResult, GatewayContext, ModelCall, Served } from './call.ts'
 import type { TokenEstimate } from './budget/estimate.ts'
 import type { Model } from './routing/load.ts'
-import { classifyStatus, readCapped, ResponseTooLargeError, sendUpstream } from './upstream/client.ts'
+import { transcriptionForm, transcriptionRunBody } from './upstream/audio.ts'
+import type { Recording } from './upstream/audio.ts'
+import { classifyStatus, readCapped, ResponseTooLargeError, sendUpstream, sendUpstreamForm } from './upstream/client.ts'
 import type { Endpoint, FailureReason } from './upstream/client.ts'
 import { sseData } from './upstream/sse.ts'
 import { readUsage } from './upstream/usage.ts'
@@ -119,6 +121,30 @@ async function underAttemptClock<T>(
 }
 
 /**
+ * Reads a provider's complete JSON answer with `read`. An HTTP failure comes back as a
+ * failed result, and so does an answer that is not JSON, is an error payload or that
+ * `read` refuses; a network error or an abort is thrown.
+ */
+async function readJsonAnswer<T>(
+  model: Model,
+  response: Response,
+  read: AnswerReader<T>,
+  maxBytes: number,
+  now: () => number,
+): Promise<AttemptResult<JsonAnswer<T>>> {
+  if (!response.ok) {
+    const text = await readCapped(response, ERROR_BODY_LIMIT).catch(() => '')
+    return { ok: false, failure: classifyStatus(response.status, response.headers, text, now()) }
+  }
+  const text = await readCapped(response, maxBytes)
+  const json = parseJson(text)
+  if (json === undefined || isErrorPayload(json)) return retry('bad_response', response.status)
+  const parsed = read(json, model)
+  if (parsed === undefined) return retry('bad_response', response.status)
+  return { ok: true, value: { text, parsed } }
+}
+
+/**
  * Sends one JSON request and reads the complete answer with `read`. An HTTP failure
  * comes back as a failed result; network errors and aborts are thrown.
  */
@@ -132,16 +158,7 @@ async function sendJson<T>(
   now: () => number,
 ): Promise<AttemptResult<JsonAnswer<T>>> {
   const response = await sendUpstream(model, endpoint, body, false, signal)
-  if (!response.ok) {
-    const text = await readCapped(response, ERROR_BODY_LIMIT).catch(() => '')
-    return { ok: false, failure: classifyStatus(response.status, response.headers, text, now()) }
-  }
-  const text = await readCapped(response, maxBytes)
-  const json = parseJson(text)
-  if (json === undefined || isErrorPayload(json)) return retry('bad_response', response.status)
-  const parsed = read(json, model)
-  if (parsed === undefined) return retry('bad_response', response.status)
-  return { ok: true, value: { text, parsed } }
+  return readJsonAnswer(model, response, read, maxBytes, now)
 }
 
 /**
@@ -157,6 +174,26 @@ export function jsonAttempt<T>(
   now: () => number,
 ): Attempt<JsonAnswer<T>> {
   return (model, timeoutMs) => underAttemptClock(clientGone, timeoutMs, signal => sendJson(model, endpoint, body(model), read, maxBytes, signal, now))
+}
+
+/**
+ * Makes an attempt that sends a recording to a speech-to-text model, the way that model's
+ * API takes it (multipart for an OpenAI-compatible one, JSON for Workers AI's own), and
+ * waits for the answer, which `read` must accept before it counts as a success.
+ */
+export function audioAttempt<T>(
+  recording: Recording,
+  read: AnswerReader<T>,
+  maxBytes: number,
+  clientGone: AbortSignal,
+  now: () => number,
+): Attempt<JsonAnswer<T>> {
+  return (model, timeoutMs) => underAttemptClock(clientGone, timeoutMs, async (signal) => {
+    const response = model.api === 'run'
+      ? await sendUpstream(model, 'run', transcriptionRunBody(recording), false, signal)
+      : await sendUpstreamForm(model, transcriptionForm(model, recording), signal)
+    return readJsonAnswer(model, response, read, maxBytes, now)
+  })
 }
 
 /**

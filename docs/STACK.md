@@ -135,7 +135,9 @@ set in Eval Lab before it serves visitors. The exact provider model IDs, context
 capabilities and limits live in `services/gateway/routing.yaml`, which CI validates.
 `lb-rerank` and `lb-guard` joined the gateway for LB-01, each with an endpoint of its
 own (`/v1/rerank` for scores from 0 to 1, `/v1/guard` for a normalised verdict);
-`lb-stt` joins with LB-09. Llama Guard 3 is no fallback for the guard: it scores
+`lb-stt` joined with LB-09: it uses the OpenAI transcription endpoint on Groq and Workers AI's own
+`/ai/run` for the fallback, takes a 16 kHz mono WAV, and counts seconds of audio, not tokens
+([`services/gateway/README.md`](../services/gateway/README.md), Speech to text). Llama Guard 3 is no fallback for the guard: it scores
 content safety (hazard categories S1 to S14), not injection, and Workers AI offers no
 injection classifier.
 
@@ -249,7 +251,9 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
   correctness. LB-01 stores embeddings in pgvector and combines them with Postgres
   full-text search for hybrid retrieval.
 - **Speech (LB-09).** Groq Whisper in fast mode, faster-whisper on the box in private
-  mode.
+  mode. The recording is decoded by PyAV (FFmpeg in a wheel) in a child process the kernel
+  bounds, to the 16 kHz mono WAV the gateway measures; the private model is Whisper's base
+  model in int8 on the CPU, with weights baked into the image at build time.
 
 ### Flask systems (LB-03 Invoice Reader, LB-05 Data Analyst, LB-10 Eval Lab)
 
@@ -338,12 +342,13 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
     at the limit.
   - **Two cores.** CPU-heavy jobs (LB-07 browser runs, LB-09 private transcription,
     LB-03 OCR) run one at a time from their queues, and replay mode covers bursts.
-    Each container has a memory limit, and the limits are budgeted to the last MiB of
-    the 12 GB (the host keeps 1): 8 GiB for what runs all the time, among them LB-07's
-    browser sandbox at 384 MiB (measured at about 270 MiB under that limit for its
-    heaviest plan), and 11 GiB with a deploy's jobs and the nightly backup. The table, with what
-    each number rests on, and the owner's decision for the next system that needs
-    memory are in `docs/DEPLOY.md`, part 2.
+    Each container has a memory limit, and the limits are budgeted against the 12 GB
+    (the host keeps 1), counted as they run: what runs all the time (8576 MiB, LB-07's
+    browser sandbox among it at 384, measured at about 270 MiB under that limit for its
+    heaviest plan), plus the larger of a deploy's biggest wave of jobs (1536 MiB) and the
+    nightly backup (768), which never run together, must fit in 11 GiB. At the peak that
+    is 10112 MiB, about 1.1 GiB to spare. The table, with what each number rests on, and
+    the decision behind the way of counting are in `docs/DEPLOY.md`, part 2.
   - **Staying free.** Oracle reclaims an Always Free VM only when CPU, network and
     memory all stay under 20% for 7 days. With every service resident, memory stays
     well above 20%, and the launch checklist confirms it in the OCI metrics. The

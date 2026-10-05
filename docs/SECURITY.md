@@ -240,6 +240,18 @@ how a Vercel preview runs.
   limit on relayed traffic belongs where the visitor's address is visible, on the site
   (Vercel's Firewall), not on the API hostname behind it; the site's own server has no limiter
   of its own on purpose, since one per serverless instance would not see all requests.
+- **LB-09's board records with the microphone and follows a meeting over the API's
+  WebSocket.** Only its two board pages (English and Czech) differ from the rest of the site,
+  and each addition is the smallest that works (`apps/web/server/lib/lb09-policy.ts`, tested
+  in `apps/web/e2e/security.spec.ts`): `connect-src` gains the API's `ws(s)://host` (no
+  wildcard), the grant coming from `POST /api/tokens/lb-09` exactly as LB-02's does;
+  `media-src` is `'self' blob:`, because the visitor's own recording is played back from the
+  browser's memory and never from the back end, which deletes the audio once transcribed
+  (`blob:` is a media source only: scripts, workers and frames keep the site's policy); and
+  the `Permissions-Policy` allows `microphone=(self)` on these two pages alone, with every
+  other device API still denied and every other page keeping `microphone=()`. The page asks
+  for the microphone only when the visitor presses record, after saying what will happen, and
+  the audio stays in the page until the visitor sends it.
 - **The real Turnstile widget has been run under this policy only with Cloudflare's test
   keys.** The production build, in a real browser, loaded the widget's script through the
   Trusted Types policy, rendered its frame, got a token and had the server's check with
@@ -262,8 +274,9 @@ how a Vercel preview runs.
   Trusted Types policy allowed is `vue`, which Vue creates for its own compiled
   markup; the evaluation boards' pages alone add `lb-turnstile` (see "What the site's
   server does") and Cloudflare's frame, LB-02's two board pages add `lb-service-worker`,
-  `worker-src 'self'` and the API's WebSocket origin to `connect-src`, and LB-04's two board
-  pages add `lb-pdf-worker` and `worker-src 'self'` (both in the same section), and
+  `worker-src 'self'` and the API's WebSocket origin to `connect-src`, LB-04's two board
+  pages add `lb-pdf-worker` and `worker-src 'self'`, and LB-09's two add the WebSocket origin
+  and `media-src 'self' blob:` (all in the same section), and
   nothing else changes. Zod is told not to build
   its parsers with `new Function` (`apps/web/app/plugins/00.zod-jitless.ts`): the policy
   would report each probe as a violation.
@@ -271,7 +284,8 @@ how a Vercel preview runs.
   `Cross-Origin-Resource-Policy: same-origin`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`,
   and a `Permissions-Policy` that denies every device API except the microphone on
-  the LB-09 page.
+  LB-09's two board pages, which also allow `blob:` media and the API's WebSocket (see
+  "What the site's server does").
 - **CSRF:** `SameSite=Strict` cookies plus an `Origin` check on every state-changing
   request.
 - **Input and output:** Zod or Pydantic at every boundary. Vue escapes everything a

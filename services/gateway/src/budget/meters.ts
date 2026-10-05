@@ -1,10 +1,11 @@
 // Meters: the counters behind every budget and quota. A meter counts one unit
-// (requests, tokens or Neurons) for one scope (a provider, a model, a system, a visitor
-// session or a run) over one window:
+// (requests, tokens, Neurons or seconds of audio) for one scope (a provider, a model, a
+// system, a visitor session or a run) over one window:
 //
-// - minute: a sliding window. The previous minute counts in proportion to how much of
-//   it still overlaps the last 60 seconds, so traffic can't double up across the
-//   boundary the way it can with fixed windows.
+// - minute and hour: a sliding window. The previous bucket counts in proportion to how
+//   much of it still overlaps the last minute (or hour), so traffic can't double up
+//   across the boundary the way it can with fixed windows. Groq limits audio per hour,
+//   and does not say whether its hour slides, so the sliding window is the safe reading.
 // - day: a fixed UTC day, the way Workers AI and OpenRouter reset their free tiers.
 // - run: one counter for the whole run, kept for a day.
 //
@@ -15,7 +16,7 @@ import type { Unit } from '../routing/schema.ts'
 import type { TokenEstimate } from './estimate.ts'
 
 /** The time window a meter counts over. */
-export type Window = 'minute' | 'day' | 'run'
+export type Window = 'minute' | 'hour' | 'day' | 'run'
 
 /** One counter a call must fit under, and what the call would add to it. */
 export interface Meter {
@@ -44,6 +45,7 @@ export interface MeterChange {
 }
 
 const MINUTE_MS = 60_000
+const HOUR_MS = 3_600_000
 const DAY_MS = 86_400_000
 
 /**
@@ -63,6 +65,19 @@ export function createMeter(prefix: string, scope: string, window: Window, unit:
       // Long enough to still read this bucket as "the previous minute".
       ttlSeconds: 150,
       resetAtMs: (bucket + 1) * MINUTE_MS,
+    }
+  }
+  if (window === 'hour') {
+    const bucket = Math.floor(nowMs / HOUR_MS)
+    const elapsed = nowMs - bucket * HOUR_MS
+    return {
+      scope, window, unit, limit, amount,
+      key: `${base}:h:${bucket}`,
+      previousKey: `${base}:h:${bucket - 1}`,
+      previousWeight: 1 - elapsed / HOUR_MS,
+      // Long enough to still read this bucket as "the previous hour".
+      ttlSeconds: 7_500,
+      resetAtMs: (bucket + 1) * HOUR_MS,
     }
   }
   if (window === 'day') {
@@ -87,20 +102,25 @@ export function createMeter(prefix: string, scope: string, window: Window, unit:
   }
 }
 
-/** Converts tokens to Workers AI Neurons at the model's published rates (per 1,000 tokens). */
+/**
+ * Converts a call's usage to Workers AI Neurons at the model's published rates: per 1,000
+ * tokens for a language model, per minute of audio for a speech-to-text model.
+ */
 export function neuronsFor(model: Model, tokens: TokenEstimate): number {
-  if (!model.neurons) return 0
-  return (tokens.input * model.neurons.input + tokens.output * model.neurons.output) / 1000
+  const audio = model.neuronsPerAudioMinute === undefined ? 0 : (tokens.audioSeconds ?? 0) / 60 * model.neuronsPerAudioMinute
+  if (!model.neurons) return audio
+  return audio + (tokens.input * model.neurons.input + tokens.output * model.neurons.output) / 1000
 }
 
-/** What one call adds to a meter of this unit: its requests, its tokens, or its Neurons. */
+/** What one call adds to a meter of this unit: its requests, tokens, Neurons or seconds of audio. */
 function amountFor(unit: Unit, model: Model, tokens: TokenEstimate): number {
   if (unit === 'requests') return tokens.requests ?? 1
   if (unit === 'tokens') return tokens.input + tokens.output
+  if (unit === 'audioSeconds') return tokens.audioSeconds ?? 0
   return neuronsFor(model, tokens)
 }
 
-/** The share of each provider limit the gateway lets traffic use, per window. */
+/** The share of each provider limit the gateway lets traffic use, per window (the hour takes the minute's). */
 export interface Ceilings {
   minuteCeiling: number
   dayCeiling: number
@@ -118,10 +138,10 @@ export function modelMeters(routing: Routing, model: Model, estimate: TokenEstim
     { scope: `provider:${model.provider.key}`, limits: model.provider.limits },
   ]
   for (const { scope, limits } of scopes) {
-    for (const window of ['minute', 'day'] as const) {
+    for (const window of ['minute', 'hour', 'day'] as const) {
       const windowLimits = limits?.[window]
       if (!windowLimits) continue
-      const ceiling = window === 'minute' ? ceilings.minuteCeiling : ceilings.dayCeiling
+      const ceiling = window === 'day' ? ceilings.dayCeiling : ceilings.minuteCeiling
       for (const unit of units) {
         const limit = windowLimits[unit]
         if (limit !== undefined) meters.push(createMeter(prefix, scope, window, unit, limit * ceiling, amountFor(unit, model, estimate), nowMs))

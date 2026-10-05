@@ -22,6 +22,18 @@ describe('windows', () => {
     expect(meter.resetAtMs).toBe((minute + 1) * 60_000)
   })
 
+  it('slides an hour window the same way, over hour buckets', () => {
+    const meter = createMeter('lb:', 'model:groq/whisper-large-v3-turbo', 'hour', 'audioSeconds', 6480, 60, noon)
+    const hour = Math.floor(noon / 3_600_000)
+    expect(meter.key).toBe(`lb:gw:meter:model:groq/whisper-large-v3-turbo:audioSeconds:h:${hour}`)
+    expect(meter.previousKey).toBe(`lb:gw:meter:model:groq/whisper-large-v3-turbo:audioSeconds:h:${hour - 1}`)
+    // Fifteen seconds into the hour, nearly all of the previous one still counts.
+    expect(meter.previousWeight).toBeCloseTo(1 - 15 / 3600)
+    expect(meter.resetAtMs).toBe((hour + 1) * 3_600_000)
+    // The previous bucket must outlive the hour it is read in.
+    expect(meter.ttlSeconds).toBeGreaterThan(2 * 3600)
+  })
+
   it('resets a day window at 00:00 UTC', () => {
     const lateEvening = createMeter('lb:', 'provider:workers-ai', 'day', 'neurons', 9500, 10, Date.UTC(2026, 8, 28, 23, 59, 59))
     const justAfter = createMeter('lb:', 'provider:workers-ai', 'day', 'neurons', 9500, 10, Date.UTC(2026, 8, 29, 0, 0, 1))
@@ -47,6 +59,26 @@ describe('what a call reserves', () => {
       ['day', 'requests', 950, 1],
       ['day', 'tokens', 190_000, 1500],
     ])
+  })
+
+  it('reserves seconds of audio on Groq\'s Whisper, per hour and per day, and counts a short recording as ten seconds', () => {
+    const model = routing.models.get('groq/whisper-large-v3-turbo')!
+    const meters = modelMeters(routing, model, { input: 0, output: 0, audioSeconds: 10 }, 'lb:', noon)
+    expect(meters.map(meter => [meter.window, meter.unit, meter.limit, meter.amount])).toEqual([
+      ['minute', 'requests', 18, 1],
+      ['hour', 'audioSeconds', 6480, 10],
+      ['day', 'requests', 1900, 1],
+      ['day', 'audioSeconds', 27_360, 10],
+    ])
+  })
+
+  it('reserves Neurons for audio by the minute on Workers AI, and none for a call without audio', () => {
+    const model = routing.models.get('workers-ai/whisper-large-v3-turbo')!
+    const neurons = modelMeters(routing, model, { input: 0, output: 0, audioSeconds: 90 }, 'lb:', noon).find(meter => meter.unit === 'neurons')!
+    expect(neurons.scope).toBe('provider:workers-ai')
+    expect(neurons.amount).toBeCloseTo(1.5 * 46.63)
+    const none = modelMeters(routing, model, { input: 0, output: 0 }, 'lb:', noon).find(meter => meter.unit === 'neurons')!
+    expect(none.amount).toBe(0)
   })
 
   it('reserves one request per segment when a guard check sends several', () => {

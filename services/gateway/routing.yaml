@@ -82,6 +82,20 @@ providers:
         limits:
           minute: { requests: 30, tokens: 15000 }
           day: { requests: 14400, tokens: 500000 }
+      # Speech to text (LB-09's fast mode), on Groq's OpenAI-compatible transcription
+      # endpoint. Groq limits audio in seconds, not tokens: the free tier allows 20 requests
+      # a minute and 2,000 a day, 7,200 seconds of audio an hour and 28,800 a day (the
+      # 480 minutes of docs/STACK.md), checked against console.groq.com/docs/rate-limits on
+      # 2 Oct 2026. A request is billed at least 10 seconds, which the gateway counts too.
+      # `context` is Whisper's decoder window, kept for the record: no check uses it.
+      whisper-large-v3-turbo:
+        id: whisper-large-v3-turbo
+        context: 448
+        capabilities: [transcription]
+        limits:
+          minute: { requests: 20 }
+          hour: { audioSeconds: 7200 }
+          day: { requests: 2000, audioSeconds: 28800 }
 
   workers-ai:
     name: Cloudflare Workers AI
@@ -135,6 +149,18 @@ providers:
         capabilities: [rerank]
         neurons: { input: 0.283, output: 0 }
         scores: logits
+      # Speech to text, the fallback behind Groq. Cloudflare prices it at 46.63 Neurons a
+      # minute of audio ($0.0005, developers.cloudflare.com/workers-ai/platform/pricing,
+      # checked 2 Oct 2026), so a minute-long recording costs about half a percent of the
+      # day's 10,000. It has no OpenAI-compatible transcription endpoint: it is called on
+      # `runUrl`, with the audio in base64, and answers with segments that the gateway reads
+      # into the same shape Groq's answer takes.
+      whisper-large-v3-turbo:
+        id: '@cf/openai/whisper-large-v3-turbo'
+        context: 448
+        capabilities: [transcription]
+        api: run
+        neuronsPerAudioMinute: 46.63
 
   openrouter:
     name: OpenRouter
@@ -292,6 +318,22 @@ aliases:
       - groq/llama-prompt-guard-2-86m
       - groq/llama-prompt-guard-2-22m
 
+  lb-stt:
+    description: Speech to text for a recording of up to a minute (LB-09's fast mode)
+    kind: transcription
+    # Measured from the recording's own bytes (the route takes only 16-bit mono 16 kHz WAV,
+    # so a second is exactly 32,000 bytes), never from what the caller says about it. LB-09
+    # refuses anything longer on its own, from the audio it decoded, so this is the second line.
+    maxAudioSeconds: 60
+    # Groq transcribes a minute in about a second; Workers AI takes longer, and the first
+    # attempt must leave it time inside the call's deadline.
+    timeouts: { responseMs: 25000 }
+    # Private mode (faster-whisper on our own server) is not a route here: it never calls the
+    # gateway, so the audio never leaves the box.
+    chain:
+      - groq/whisper-large-v3-turbo
+      - workers-ai/whisper-large-v3-turbo
+
 # The systems allowed to spend model calls, the service that calls for each, and
 # their quotas. A system joins this list in the same change that builds it
 # (docs/PLAYBOOK.md, Building one system, step 4).
@@ -411,6 +453,24 @@ systems:
     # 1,900 of its 10,000 daily Neurons, so five of them spend the pool and the route answers
     # `budget_exhausted` (the demo then says so, and the samples go on working).
     dailyCalls: 160
+  lb-09:
+    name: Meeting Recorder
+    service: django-systems
+    aliases: [lb-stt, lb-fast, lb-tools]
+    # A meeting costs the transcription (fast mode only; private mode never calls the gateway)
+    # and two chat calls: the speaker labels on lb-fast and the extraction on lb-tools, plus
+    # one repair of each answer that doesn't fit its schema. The alignment of every item with
+    # the transcript is the service's own code, with no model call. The service stops itself
+    # at four chat calls (lb09/limits.py), so the cap sits one call above it and the gateway
+    # never refuses a meeting halfway.
+    maxCallsPerRun: 6
+    # 5 recordings per visitor per day (the LB-09 datasheet) at up to 5 calls each, with a
+    # little room for a repair on each.
+    sessionDailyCalls: 30
+    # 40 visitor meetings a day at up to 5 calls each (200), plus one full pass of the golden
+    # set (6 cases at up to 4 chat calls) when a prompt changes, and the word-error-rate run on
+    # the six committed recordings. Rebalanced as each system ships (docs/STACK.md, Capacity).
+    dailyCalls: 240
 
   lb-06:
     name: Incident Commander
@@ -460,4 +520,4 @@ systems:
 traceReaders:
   web:
     name: The site's server (the Scope)
-    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-06, lb-07]
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-06, lb-07, lb-09]

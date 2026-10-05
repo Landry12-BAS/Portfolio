@@ -41,6 +41,8 @@ const MIB = 1_024 * KIB
  * - LB-07 takes a goal of 300 characters and a list of six bugs. A run is queued at once and read by polling, so every call
  *   is short; the largest answer is a screenshot of at most 400,000 bytes as base64 in JSON (about 534 KB), which the
  *   image route reads to answer it as a picture.
+ * - LB-09 takes a recording of up to 3 MiB as base64 in a JSON body (4 MiB and a little; services/django-systems/lb09/limits.py),
+ *   which the edge lets through on that one route; its other calls are reads and polls.
  */
 export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-01': { maxBodyBytes: 8 * KIB, timeoutMs: 25_000, maxResponseBytes: 256 * KIB },
@@ -51,6 +53,7 @@ export const SYSTEM_POLICIES: Readonly<Record<SystemName, SystemPolicy>> = {
   'lb-04': { maxBodyBytes: 3 * MIB, timeoutMs: 60_000, maxResponseBytes: 4 * MIB },
   'lb-06': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
   'lb-07': { maxBodyBytes: 4 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
+  'lb-09': { maxBodyBytes: 4_300 * KIB, timeoutMs: 25_000, maxResponseBytes: MIB },
 }
 
 /** The most a trace page from the gateway may weigh: the gateway cuts its pages at 256 KB, and this leaves room for the envelope. */

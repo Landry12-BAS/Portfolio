@@ -24,9 +24,10 @@ export const SERVER_ROUTES: readonly ServerRoute[] = [
   // The visitor's anonymous session, and the Turnstile check that lifts it to one that may spend quota.
   { route: '/api/session', method: 'get', handler: 'handlers/session.ts' },
   { route: '/api/session/verify', method: 'post', handler: 'handlers/verify.ts' },
-  // The tokens for LB-02's and LB-06's WebSockets, the one thing the browser does directly.
+  // The tokens for LB-02's, LB-06's and LB-09's WebSockets, the one thing the browser does directly.
   { route: '/api/tokens/lb-02', method: 'post', handler: 'handlers/token.ts' },
   { route: '/api/tokens/lb-06', method: 'post', handler: 'handlers/token-lb06.ts' },
+  { route: '/api/tokens/lb-09', method: 'post', handler: 'handlers/token-lb09.ts' },
   // The Scope: a run's trace, read from the gateway.
   { route: '/api/runs/:runId/spans', method: 'get', handler: 'handlers/spans.ts' },
   // The recordings the demos replay.
@@ -44,6 +45,7 @@ export const SERVER_ROUTES: readonly ServerRoute[] = [
   // than LB-07's proxy route below, which forwards everything else of LB-07's.
   { route: '/api/lb07/runs/:runId/evidence/:evidenceId/image', method: 'get', handler: 'handlers/lb07-evidence-image.ts' },
   { route: '/api/lb07/**', handler: 'handlers/proxy.ts' },
+  { route: '/api/lb09/**', handler: 'handlers/proxy.ts' },
   // Anything else under /api/, and the bare prefix, which the pattern below does not cover. The router answers
   // `/api/` with the route `/api`, so it needs no entry of its own; it had one, and Nitro's Vercel preset, which
   // makes a function for each route and gave both the name `api`, stopped the build there with EEXIST

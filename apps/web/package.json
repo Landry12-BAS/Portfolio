@@ -18,8 +18,8 @@
     "typecheck": "nuxt typecheck && tsc -p tsconfig.tools.json",
     "test": "vitest run",
     "e2e": "playwright test",
-    "samples": "node scripts/samples.ts && node scripts/generate-lb02.ts && node scripts/samples-lb08.ts && node scripts/samples-lb03.ts && node scripts/samples-lb04.ts && node scripts/samples-lb06.ts && node scripts/samples-lb07.ts",
-    "check": "node scripts/samples.ts --check && node scripts/generate-lb02.ts --check && node scripts/samples-lb08.ts --check && node scripts/samples-lb03.ts --check && node scripts/samples-lb04.ts --check && node scripts/samples-lb06.ts --check && node scripts/samples-lb07.ts --check",
+    "samples": "node scripts/samples.ts && node scripts/generate-lb02.ts && node scripts/samples-lb08.ts && node scripts/samples-lb03.ts && node scripts/samples-lb04.ts && node scripts/samples-lb06.ts && node scripts/samples-lb07.ts && node scripts/samples-lb09.ts",
+    "check": "node scripts/samples.ts --check && node scripts/generate-lb02.ts --check && node scripts/samples-lb08.ts --check && node scripts/samples-lb03.ts --check && node scripts/samples-lb04.ts --check && node scripts/samples-lb06.ts --check && node scripts/samples-lb07.ts --check && node scripts/samples-lb09.ts --check",
     "record-sample": "node scripts/record-sample.ts",
     "record:fixtures": "node scripts/record-fixtures.ts",
     "check:build": "node scripts/check-production-build.ts"

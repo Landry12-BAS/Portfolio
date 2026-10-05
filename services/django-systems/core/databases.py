@@ -17,7 +17,7 @@ from psycopg import sql
 
 # The systems with data of their own. A system's app label, database alias and schema
 # all share its part-number name.
-SYSTEM_SCHEMAS: tuple[str, ...] = ("lb01", "lb02")
+SYSTEM_SCHEMAS: tuple[str, ...] = ("lb01", "lb02", "lb09")
 # Where database extensions such as pgvector and btree_gist live, readable by every system.
 EXTENSIONS_SCHEMA = "extensions"
 # The only URL parameters passed on to Postgres.

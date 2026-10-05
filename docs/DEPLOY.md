@@ -101,59 +101,78 @@ allowance since Oracle's June 2026 cut (`STACK.md`, Infrastructure and hosting).
    ```
 
 **The memory budget.** Every container has a memory limit (`infra/docker-compose.yml`,
-Resources), and the limits are budgeted against the box's 12 GiB: the host keeps 1, what runs all
-the time may hold 8 GiB of limits, and everything that can run at once (the jobs of a deploy and
-the nightly backup included) 11 GiB. `just infra-check` fails a change that breaks either sum. A
-limit is a ceiling, not a reservation: it is what a service may reach before the kernel kills it.
+Resources), and the limits are budgeted against the box's 12 GiB, of which the host keeps 1. They
+are counted as they run, in one rule: what runs all the time counts in full, and beside it the
+largest group of one-shot jobs that can run at the same moment, which is a deploy's biggest wave or
+the nightly backup, since the two never meet; the sum must fit in 11 GiB (11264 MiB).
+`just infra-check` fails a change that breaks it, prints the sums when it passes, and refuses
+what would make the count wrong: a job that could run beside a job of an earlier wave (it names
+the two), and a one-shot job that is in no group. A limit is a ceiling, not a reservation: it is
+what a service may reach before the kernel kills it.
 
 | Service | Limit, MiB | Runs | What the number rests on |
 |---|---|---|---|
 | `flask-api` | 2048 | always | DuckDB's 1 GB limit, and LB-03's OCR worker, measured at 692 to 837 MiB |
-| `postgres` | 1920 (was 2048) | always | Its settings: about 640 MiB for itself (`shared_buffers` 256 MB, three autovacuum workers at `maintenance_work_mem` 128 MB), and the rest for up to 100 connections, a few MiB each and `work_mem` 8 MB for every sort |
-| `django-worker` | 768 | always | Two Celery processes, each recycled at 300 MB |
+| `postgres` | 2048 | always | Its settings: about 640 MiB for itself (`shared_buffers` 256 MB, three autovacuum workers at `maintenance_work_mem` 128 MB), and the rest for up to 100 connections, a few MiB each and `work_mem` 8 MB for every sort |
+| `django-worker` | 1024 (was 768) | always | Two Celery processes, each recycled at 300 MB, and LB-09's private transcriber (faster-whisper, Whisper's base model in int8). **Measured** on a development machine (x86-64, not the box's Ampere A1): the child that ran a one-minute private meeting peaked at 472 to 484 MiB and the whole worker at 638 MiB; two meetings at once reached 974 MiB, so private transcriptions take turns (a file lock, `lb09/transcribers.py`), and 1024 MiB leaves about 380 MiB beside the one that runs, for the decoder child and the tickets |
 | `node-worker` | 768 | always | LB-04's PDF threads: measured at 291 MiB for two 30-page contracts at once, about 760 MiB if hostile files take every limit they are given |
 | `django-api` | 512 | always | Not measured |
 | `redis` | 512 | always | `maxmemory` 384 MB, and room beside it |
 | `gateway`, `node-api` | 384 each | always | V8's default heap (259 MB), and room beside it |
-| **`lb07-sandbox`** | **384** | always | **Measured:** the runner and Chromium over five runs in a row of the heaviest golden plan peaked at 263 to 271 MiB under this limit (three measurements, the kernel's count with page cache) and at 327 to 332 MiB with none; idle, 96 to 127 MiB (x86-64; `just test-lb07-sandbox` repeats the runs) |
+| `lb07-sandbox` | 384 | always | **Measured:** the runner and Chromium over five runs in a row of the heaviest golden plan peaked at 263 to 271 MiB under this limit (three measurements, the kernel's count with page cache) and at 327 to 332 MiB with none; idle, 96 to 127 MiB (x86-64; `just test-lb07-sandbox` repeats the runs) |
 | `caddy`, `cloudflared`, the two egress proxies | 128 each | always | Not measured |
-| **What runs all the time** | **8192** | | The budget is 8192: nothing is left over |
-| `flask-seed` | 1280 | a deploy, when the data must be made | Measured at 923 MB; DuckDB's limit is 1 GB |
-| `django-migrate` | 384 | a deploy | Not measured |
-| `flask-migrate` | 256 | a deploy | Not measured |
-| `node-migrate`, `node-seed` | 256 each | a deploy | Measured: 215 and 209 MiB resident (the four Node systems, x86-64) |
-| `postgres-provision` | 128 | a deploy | `psql` |
-| `backup` | 512 (was 768) | 02:30 | `pg_dump`, `age` and `rclone`, and the encrypted dump in a 256 MB tmpfs (was 512): the database holds synthetic data and none of the visitors' rows, a few MiB |
-| **Everything at once** | **11264** | | The budget is 11264: nothing is left over |
+| **What runs all the time** | **8576** | | Counted in full |
+| `postgres-provision` | 128 | a deploy, wave 1 | `psql` |
+| `django-migrate` | 384 | a deploy, wave 2 | Not measured |
+| `flask-migrate` | 256 | a deploy, wave 2 | Not measured |
+| `node-migrate` | 256 | a deploy, wave 2 | Measured: 215 MiB resident (the four Node systems, x86-64) |
+| `flask-seed` | 1280 | a deploy, wave 3 (it makes the data only when it must) | Measured at 923 MB; DuckDB's limit is 1 GB |
+| `node-seed` | 256 | a deploy, wave 3 | Measured: 209 MiB resident (the four Node systems, x86-64) |
+| **A deploy's waves** | **128, 896, 1536** | | Each job waits for every job of the waves before it to finish, so the waves never overlap, and the biggest counts: wave 3 |
+| `backup` | 768 | 02:30, under the deploy's lock | `pg_dump`, `age` and `rclone`, and the encrypted dump in a 512 MB tmpfs: the database holds synthetic data and none of the visitors' rows, a few MiB |
+| **At the peak** | **10112** | | 8576 and wave 3's 1536 (more than the backup's 768): 1152 MiB, about 1.1 GiB, under the 11264 |
 
-**Owner decision: the memory budget.** LB-07's sandbox is the first system to need memory
-since the budget filled up: the quarter GiB kept for "what is still to come" is less than a
-browser takes (about 270 MiB at its peak under a 384 MiB limit, about 330 MiB with no limit, measured). To
-keep `just infra-check` green, the change that added the sandbox took what it judged the least
-harmful way, and says so here: the sandbox gets 384 MiB, **Postgres goes from 2048 to 1920 MiB,
-and the nightly backup from 768 to 512 MiB** (its tmpfs from 512 to 256 MB, so that a dump that
-outgrows it fails as a full disk, not as a kill). Why those two: they are the ceilings furthest
-above any use measured or expected here. Postgres keeps 1280 MiB for its connections, enough for
-more than 80 of them sorting at once on a box with two cores; the backup holds a few MiB of
-synthetic data. Every other ceiling is a measured peak with a margin, or a service nobody has
-measured. The options, for the owner to choose:
+**The decision: count the jobs as they run.** LB-09's private transcriber took `django-worker`
+from 768 to 1024 MiB when the budget was already full: LB-07's sandbox had taken its last quarter
+GiB by trimming Postgres (2048 to 1920 MiB) and the nightly backup (768 to 512 MiB, its tmpfs from
+512 to 256 MB). The rule then had two sums, every limit added up and what runs all the time apart,
+and both failed (11520 of 11264, and 8448 of 8192). Of the four options that were open, **the lead
+engineer chose the third, in the owner's place; the owner can still revisit it.** Why: the old
+sums counted every job as if all of them ran at once. They mostly did not, but nothing kept them
+apart either (`flask-seed` waited for nothing and ran beside the provision and the migrations, and
+`node-seed` waited for one migration of three). Now the order is enforced and the count follows
+it: a deploy runs its jobs in three waves that never
+overlap (`flask-seed` and `node-seed` wait for all three migrations), the backup takes the deploy's
+lock, and the policy proves both. One budget is then enough, and the separate one for what runs all
+the time is gone: it protected nothing the single rule does not, and two budgets that are really
+one are how the last decision went wrong, by filling one of them to the last MiB. Postgres and the
+backup have their old ceilings back (2048, and 768 with a 512 MB tmpfs).
 
-1. **Keep this.** If Postgres ever reaches 1920 MiB, the kernel kills one of its processes and
-   Postgres restarts its connections: every system fails for a few seconds. A backup that
-   outgrows 256 MB fails and uploads nothing, and `systemctl status lb-backup` shows it failed.
-2. **Give Postgres and the backup their old ceilings back, and raise both budgets** (the two
-   numbers in `infra/scripts/compose-policy.jq`) to 8320 and 11648. The limits then add up to
-   more than the box has: if everything peaked at once, the kernel would choose what to kill.
-3. **Count the jobs as they run, not as a sum**: make `flask-seed` wait for the migrations, let
-   the backup take the deploy's lock, and change the policy to add only the largest group of
-   jobs (`flask-seed`'s 1280) to what runs all the time. Postgres and the backup could then have
-   their old ceilings back (the running budget raised by 128, to 8320), and everything at once
-   would be 9600 MiB, which leaves about 1.6 GiB for Whisper (LB-09) and the systems after it.
-   It needs a change in the deploy (the jobs' order, a lock the backup shares) and in the
-   policy's formula.
-4. **Run the sandbox only while LB-07 is used.** It would save 384 MiB most of the day, but it
-   needs something that starts containers, which the platform does not have on purpose (no
-   container is given the Docker socket).
+What it costs:
+
+- **A deploy waits for the migrations before it seeds.** LB-05's data job used to start at once;
+  now it starts after the three migrations. On a first deploy that adds its tens of seconds to the
+  wait; later deploys find the warehouse in place and skip it in seconds.
+- **A deploy that starts while the backup runs is refused**, for the few minutes the backup takes
+  after 02:30 UTC (part 13, Deploying): it changes nothing and says `another deploy or the nightly
+  backup is running on this box`; re-run it a few minutes later.
+- **The backup waits for a deploy that is running**, 20 minutes at most; past that it fails without
+  a dump, `systemctl status lb-backup` shows it, and the next night tries again.
+- The backup's unit changed (it runs under `flock`): install it again from the release that brings
+  this change (part 9, step 5).
+
+**The room left** is 1152 MiB (about 1.1 GiB) under the 11264. LB-10 needs no new container, so
+the room stays for what comes after; a system that needs more needs a decision again (a smaller
+limit elsewhere, or a heavy job given a wave of its own), not a bigger number.
+
+The roads not taken:
+
+- **Option 1, keep the trims** (Postgres at 1920 MiB, the backup at 512) and find LB-09's 256 MiB
+  by trimming a third service, though every other ceiling is a measured peak with its margin, or unmeasured.
+- **Option 2, give the ceilings back and raise both budgets** to fit (to 8576 and 11904 MiB): the
+  limits would then add up to more than the box has, and at a peak the kernel would choose what to kill.
+- **Option 4, run the sandbox only while LB-07 is used**: it would save 384 MiB most of the day, but
+  needs something that starts containers, which nothing on the box may (none gets the Docker socket).
 
 ## 3. The box: Tailscale, then close SSH
 
@@ -581,10 +600,12 @@ change and the box.
    runs `deploy.sh`. It decrypts the secrets, pulls, checks the signatures, starts
    everything, waits for every health check, runs the smoke test (through the public
    hostname too), and marks the release current. The first one takes several minutes:
-   Postgres initialises, the roles and schemas are provisioned, the Django, Flask and Node
-   systems' tables are migrated and their synthetic data seeded, and LB-05's warehouse
-   (about two million orders) is generated into its volume, which takes some tens of
-   seconds. Later deploys find the warehouse there and skip it.
+   Postgres initialises, then the deploy's jobs run in three waves (part 2, The memory
+   budget): the roles and schemas are provisioned; the Django, Flask and Node systems'
+   tables are migrated (the Django systems' data seeded with them); then the Node systems'
+   data is seeded and LB-05's warehouse (about two million orders) is generated into its
+   volume, which takes some tens of seconds. Later deploys find the warehouse there and
+   skip it.
 5. **Install the units**, once, from the release that is now live:
 
    ```sh
@@ -742,6 +763,9 @@ On the box (`tailscale ssh deploy@lb-box`; `compose` below is
       prints `error ENETUNREACH`, never `CONNECTED`. (`smoke.sh` checks this too.)
 - [ ] `systemctl list-timers lb-backup.timer` shows the next run, and the test backup from
       part 9 is in the bucket.
+- [ ] The installed backup unit takes the deploy's lock: `systemctl cat lb-backup.service`
+      shows `ExecStart=/usr/bin/flock --verbose --wait 1200 /opt/lb/deploy.lock ...`, and
+      `journalctl -u lb-backup.service` has `flock: getting lock took ...` for the test backup.
 - [ ] A backup restores (part 13, Backups) into a scratch database, with the row counts
       you expect.
 - [ ] `cosign verify --certificate-identity-regexp '^https://github\.com/<owner>/<repo>/\.github/workflows/(images|deploy)\.yml@refs/heads/main$' --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/<owner>/lb-gateway:<commit>`
@@ -756,9 +780,10 @@ read-only filesystem, no capabilities, limits); the Compose stack comes up throu
 with real visitor tokens, the real database roles and the egress proxies, and LB-01, LB-02
 (its calls and a WebSocket conversation through the Redis channel layer), LB-05 (from the
 read-only warehouse) and LB-08 (a workflow run through BullMQ to its worker) answer
-through it; every Compose service passes the security rules and the memory budgets
-(`infra/scripts/check-compose.sh`, which also has tests that show each rule can fail); the
-Postgres roles cannot reach each other's schemas, for every pair of the systems
+through it; every Compose service passes the security rules and the memory budget, a deploy's
+jobs wait for each other in waves that never overlap, and every one-shot job is in a group the
+budget counts (`infra/scripts/check-compose.sh`, which also has tests that show each rule can
+fail); the Postgres roles cannot reach each other's schemas, for every pair of the systems
 (`infra/postgres/test-roles.sh`); the Redis ACL passes the gateway's, lb-common's, LB-02's
 consumer, the Flask systems' integration (LB-03's and LB-05's) and the Node systems' unit and
 integration suites (LB-08's, LB-04's, LB-06's and LB-07's) and a Celery worker's, with an empty ACL log
@@ -766,7 +791,9 @@ integration suites (LB-08's, LB-04's, LB-06's and LB-07's) and a Celery worker's
 of LB-03 and LB-04, a quiet WebSocket (LB-02's and LB-06's) and bypass attempts (`infra/caddy/test.sh`); a backup is encrypted,
 restores into a scratch database and over the live one, and a wrong key cannot open it; the
 secrets tooling with the real `sops` and `age` (`infra/scripts/test-secrets.sh`); the deploy
-script's order, signature check, rollback and clean-up with stand-ins for Docker and cosign
+script's order, signature check, rollback and clean-up, and the lock it shares with the backup
+unit's own command (a deploy is refused while the backup runs, and the backup waits for a deploy
+and gives up in its time), with stand-ins for Docker and cosign
 (`infra/scripts/test-deploy.sh`); image pinning against the real registries; `docker compose
 config`, hadolint, shellcheck and actionlint. LB-07's browser sandbox image was built (amd64)
 and started by Compose from the real file, with every flag of the policy: Chromium ran golden
@@ -801,8 +828,9 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   by a client that calls the runner as the worker does.
 - Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
   list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
-  limits of what runs all the time add up to 8192 MiB (8 GiB; the sums are at the top of
-  `infra/docker-compose.yml`, and the table is in part 2); idle, the stack used about 0.7 GiB here (without `cloudflared`
+  limits of what runs all the time add up to 8576 MiB, and to 10112 at the peak with a
+  deploy's biggest wave of jobs (the sums are at the top of `infra/docker-compose.yml`, and
+  the table is in part 2); idle, the stack used about 0.7 GiB here (without `cloudflared`
   and the proxies), LB-05's data job peaked at 923 MB, and the service's warehouse code at
   452 MB while it answered the 100 reference questions on the full dataset, and LB-03's OCR
   worker at 692 to 837 MiB (a three-page PDF, five pages, the biggest image it accepts), on a
@@ -820,6 +848,10 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   against a local folder).
 - **Tailscale**: the OAuth client, the tags and policy, `tailscale ssh` from a runner,
   the `ping` wait before it.
+- **The deploy's waves and the backup's lock on the box**: the waves were checked in the
+  resolved Compose file, not timed in a real deploy, so how much longer a deploy takes now
+  that it seeds after the migrations is not measured; and the backup unit's command was run
+  beside `deploy.sh` with stand-ins, not by systemd with the unit's own sandboxing.
 - **GitHub**: the workflows have been linted (actionlint) but never run. That includes
   pushing to GHCR, the Trivy scan, cosign's keyless signing, and above all the
   **certificate identity**: `deploy.sh` and `images.yml` both expect the signer to be
@@ -846,6 +878,13 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   and offer the live run. Not checked either: whether the Vercel plan lets a function wait the
   95 seconds the proxy allows LB-05, LB-08 and LB-04.
 - Real provider traffic: no provider key was available.
+- LB-09's image with the Whisper weights: the build fetches them from Hugging Face
+  (`infra/docker/django-systems.Dockerfile`), which this environment could not reach, so the
+  step has not run, no image with them has been built, and private mode has never transcribed
+  a real recording. Fast mode's route exists in the gateway and is tested with fake providers;
+  it has never been called with a provider key either. The shared `lb09-audio` volume and the
+  5 MB upload route through Caddy are checked by the Compose rules and `infra/caddy/test.sh`,
+  not by a deployed stack.
 
 ## 13. Day to day
 
@@ -860,6 +899,15 @@ re-run the Deploy workflow from the Actions page.
 refused or did not come up, and the previous release is running again (or was never
 touched); **2** the rollback failed too and the box needs you. The log of the last
 deploys is `/opt/lb/deploys.log`; the full output is in the Actions run.
+
+A deploy and the nightly backup take turns: both hold `/opt/lb/deploy.lock` while they work,
+so the backup never runs beside a deploy's jobs (part 2, The memory budget). A deploy that
+starts while the backup runs, from 02:30 UTC for a few minutes, is refused before it changes
+anything, with `deploy: another deploy or the nightly backup is running on this box (it holds
+/opt/lb/deploy.lock); try again in a few minutes.`: re-run the Deploy workflow a little later.
+The backup, the other way round, waits for a deploy that is running. Inside a deploy, Compose
+runs the jobs in three waves, each after the one before has finished: the provision, then the
+three migrations, then the two seeds.
 
 Every release runs from a folder of its own, so a deploy recreates the three containers
 that bind-mount files from it (Postgres, Redis, Caddy): expect a few seconds of errors
@@ -908,10 +956,14 @@ compose exec redis sh -c 'REDISCLI_AUTH="$LB_REDIS_PASSWORD_ADMIN" redis-cli --u
 **LB-05's data.** The warehouse (Parquet and a DuckDB file, about 80 MB) is generated, not
 backed up: it lives in the `lb05-warehouse` volume, which only `flask-seed` can write. To
 make it again with today as its last day, for example after the months have made "last
-quarter" look old, make it on purpose and restart the API:
+quarter" look old, make it on purpose and restart the API. The job runs under the deploy's
+lock, so that it never runs beside a deploy's jobs or the backup (`-n`: it is refused at once
+if one is running), and with `--no-deps`, because in a deploy it waits for the three
+migrations, which `run` would otherwise run first. `flock` starts a program, not the alias, so
+the script is named in full:
 
 ```sh
-compose run --rm flask-seed python seed_warehouse.py --force
+flock -n /opt/lb/deploy.lock /opt/lb/current/infra/scripts/compose.sh run --rm --no-deps flask-seed python seed_warehouse.py --force
 compose up -d --force-recreate flask-api
 ```
 
@@ -919,7 +971,10 @@ compose up -d --force-recreate flask-api
 
 A systemd timer runs the `backup` job at 02:30 UTC: `pg_dump` is piped straight into
 `age`, so the dump never exists unencrypted, and only the encrypted file is uploaded to
-`r2:lb-backups/postgres`. A failed dump uploads nothing. The dump leaves out the rows of
+`r2:lb-backups/postgres`. A failed dump uploads nothing. The job runs under the deploy's
+lock (`flock` on `/opt/lb/deploy.lock`, in `infra/systemd/lb-backup.service`): if a deploy
+is running, it waits for it, 20 minutes at most, and then fails without a dump and tries
+again the next night; the journal says how long it waited. The dump leaves out the rows of
 the tables that hold what visitors upload (`infra/backup/excluded-data.txt`: LB-04's
 contracts, their files, their text, their reports and their redlines; LB-06's incidents, their
 logs and the scenario cache; LB-07's test runs, their steps, findings, evidence and reports),
@@ -1005,10 +1060,14 @@ R2 token and its egress); a new runtime needs all of them. The order that works:
    ${LB_SECRETS_DIR:-/run/lb/secrets}/<name>.env` for the service that holds a secret and
    nobody else, the networks it needs (`app` for an API, `data` for Postgres and Redis,
    `egress-systems` only if it calls out, none for a job that needs no network), a health
-   check, and memory, CPU and process limits. The memory budgets at the top of the file are
-   enforced: `just infra-check` fails when the new limits make the sums too big, and the
+   check, and memory, CPU and process limits. The memory budget at the top of the file is
+   enforced: `just infra-check` fails when the new limits make the peak too big, and the
    fix is a decision about the box, not an edit of the budget (the table and the last such
-   decision are in part 2). Add the build blocks to
+   decision are in part 2). A new job waits, with `condition: service_completed_successfully`,
+   for every job of the waves before its own (a seed for all three migrations), or the check
+   names the job it could run beside; a job the host starts by itself goes behind a profile,
+   runs under the deploy's lock as the backup does, and carries the
+   `lb.runs-under-deploy-lock` label. Add the build blocks to
    `infra/docker-compose.dev.yml`, and give Caddy's `depends_on` the new API. The `sandbox`
    network is LB-07's browser and its worker's alone: the policy refuses any other member.
 3. **Caddy.** In `infra/caddy/Caddyfile`, a system on an existing runtime adds its prefix
@@ -1060,8 +1119,8 @@ up to three: its plan, the plan behind Firefox's user agent, and the green pass 
 off). After `LB07_RUNS_PER_LIFE` sessions (20, set in its Compose block) the runner refuses new
 ones, waits for the last to close, and exits, and Docker's `unless-stopped` starts a fresh
 process with a fresh browser in a second or two. A session in flight is never cut short by it. A
-run whose next pass asks for a session during those seconds fails its attempt and is run again
-from its plan by the queue, as for any runner that cannot be reached. So `compose ps` shows
+run whose next pass asks for a session during those seconds waits for the new process (ten tries,
+two seconds apart) instead of failing. So `compose ps` shows
 `lb07-sandbox` restarting now and then, and its log says why:
 
 ```sh
@@ -1073,6 +1132,29 @@ A restart that is not one of those (an out-of-memory kill: `docker inspect -f
 '{{.State.OOMKilled}}'`, or `dmesg | grep -i oom`) means a run needed more than its 384 MiB: see
 part 2, The memory budget. To prove the container again after a change (Docker on any machine,
 about five minutes): `just test-lb07-sandbox`.
+
+### LB-09's audio and model
+
+LB-09 (the Django systems) needs two things no other system does, both in the files above:
+
+- **A place for recordings between the API and the worker.** `django-api` writes a visitor's
+  recording to the `lb09-audio` volume, a tmpfs of 64 MiB mounted at `/var/lib/lb/audio` in
+  `django-api` and `django-worker` only (`LB09_AUDIO_DIR`), and the worker deletes it once it is
+  transcribed, on success and on failure. Nothing reaches the disk; a restart empties it, which
+  only fails the meetings in flight (their rows say `stale` after the worker's sweep). Caddy lets
+  the one upload route, `POST /api/lb09/meetings`, carry 5 MB; everything else keeps the 1 MB cap.
+- **The private transcriber's weights.** `infra/docker/django-systems.Dockerfile` downloads
+  Whisper's base model, converted for CTranslate2, from Hugging Face at build time into
+  `/app/whisper/base`, which `LB09_WHISPER_DIR` names, and the service loads it with local files
+  only: a running container never downloads anything. The build host must reach
+  `huggingface.co` (GitHub's runners do; a sandbox without a route fails the build, on purpose).
+  To change the model, change the name in the Dockerfile and the folder in `docker-compose.yml`
+  together; the worker's 1 GiB limit fits the base model in int8 with room for the decoder.
+- **Its role and secrets.** `lb09` is in `infra/postgres/systems.txt`, so the provision job makes
+  the role; `LB_PG_PASSWORD_LB09` is new in `postgres-roles.example.env`, so `just secrets-edit
+  postgres-roles` must be given a value with `just secret-token` before the next deploy, or the
+  secrets check refuses the release. `routing.yaml` ties `lb-09` to the `django-systems` service
+  key that already exists; nothing new is needed at the gateway, and the Redis role is unchanged.
 
 ### Upgrading images and tools
 
@@ -1112,7 +1194,8 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | `docker compose pull` says `denied` | The GHCR packages are private and the box is not logged in (part 9, step 3) |
 | A container is `unhealthy` in `compose ps` | `compose logs <service>`. For Redis, `acl log` shows what the ACL refused |
 | `502` or `503` from the API | A back-end container is unhealthy or restarting; Caddy answers 5xx while it is |
-| `flask-api` is `unhealthy`, and its log says the data isn't ready | The warehouse volume is empty or from another generator version: `compose logs flask-seed`, then `compose run --rm flask-seed python seed_warehouse.py --force` and recreate `flask-api` |
+| `deploy: another deploy or the nightly backup is running on this box` | A deploy, or the backup that starts at 02:30 UTC, holds `/opt/lb/deploy.lock`: nothing was changed. `journalctl -u lb-backup.service -n 5` shows whether the backup is running; re-run the Deploy workflow when it is done |
+| `flask-api` is `unhealthy`, and its log says the data isn't ready | The warehouse volume is empty or from another generator version: `compose logs flask-seed`, then make the data again as part 13 says (LB-05's data: `flock -n /opt/lb/deploy.lock /opt/lb/current/infra/scripts/compose.sh run --rm --no-deps flask-seed python seed_warehouse.py --force`) and recreate `flask-api` |
 | `node-worker` is `unhealthy` | Its heartbeat file is older than 30 seconds: the worker's event loop is stuck or it is crash-looping. `compose logs node-worker`; Redis's `acl log` shows a command its user may not run |
 | `lb07-sandbox` restarts now and then | Expected: it starts afresh after every 20 browser sessions, and its log says "has served its share of runs" (part 13, LB-07's browser sandbox). Anything else in its log before a restart is a crash |
 | Every LB-07 test run ends `runner_unavailable` | The worker cannot reach the runner: `compose ps lb07-sandbox` (is it healthy?), and the worker's `LB07_RUNNER_URL` and network (`sandbox`). A worker started without `LB07_RUNNER_URL` or the shop key logs "no browser runner is configured" at start |
@@ -1120,8 +1203,8 @@ first), re-run **Deploy**, and restore the latest backup (Backups, above).
 | A WebSocket to LB-02 is refused with `403` | The `Origin` is not `LB_SITE_ORIGIN` (Caddy checks it); with `1009` or a drop, a frame was over 8192 bytes (`--ws-max-size`) |
 | A WebSocket to LB-02 gets `too_many_connections` and closes with `1013` | The visitor already holds four connections to this server process: two tabs, the installed app, and one the network cut that the server has not noticed yet (it goes when uvicorn's ping times out, about 40 seconds). Closing a tab frees a place; the page retries by itself |
 | `cloudflared` keeps restarting | The `TUNNEL_TOKEN` is wrong or was refreshed in Cloudflare |
-| Backups stop appearing | `journalctl -u lb-backup.service`; usually `LB_EGRESS_SYSTEMS_ALLOW` lacks the R2 host, or the R2 token changed |
-| The box is slow or killed processes | `docker stats --no-stream`, then `dmesg \| grep -i oom`: a container hit its memory limit; raise it in the Compose file and the budget at its top |
+| Backups stop appearing | `journalctl -u lb-backup.service`; usually `LB_EGRESS_SYSTEMS_ALLOW` lacks the R2 host, or the R2 token changed. `flock: timeout while waiting to get lock` means a deploy held the lock for the 20 minutes the backup waits: it tries again the next night, or now with `sudo systemctl start lb-backup.service` |
+| The box is slow or killed processes | `docker stats --no-stream`, then `dmesg \| grep -i oom`: a container hit its memory limit; raise it in the Compose file, within the budget at its top (part 2, The memory budget) |
 | Every LB-03 upload ends `failed` with `ocr_failed` | With `LB_LB03_REQUIRE_LANDLOCK=true` a box with no Landlock reads nothing: take the line out of `compose` and upload again, and the trace's `read pages` span shows `landlock_abi` 0; then check the kernel (`uname -r`, 5.13 or later) and Docker's seccomp profile. Otherwise the worker was probably killed for memory (`dmesg`), which is what its OOM score is for |
 | LB-03's upload is `503` `unavailable` | The file store can't be reached: the R2 host is missing from `LB_EGRESS_SYSTEMS_ALLOW` (the same fix as for backups), or the `lb-uploads` token or bucket name is wrong; `compose logs flask-api` names the problem by type, never by value |
 | Files stay in the bucket past their hour | The service sweeps every minute and says nothing when it finds none: run `compose exec flask-api python manage.py sweep_lb03` and read its counts; the bucket's one-day rule is only the backstop |

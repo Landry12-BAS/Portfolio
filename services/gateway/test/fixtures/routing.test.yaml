@@ -56,6 +56,30 @@ providers:
         id: alpha/guard-small-model
         context: 512
         capabilities: [guard]
+      # Speech to text, limited in seconds of audio. 600 x 0.95 is 570 a day, and an hour holds
+      # 120 x 0.9 = 108.
+      whisper:
+        id: alpha/whisper-model
+        context: 448
+        capabilities: [transcription]
+        limits:
+          minute: { requests: 20 }
+          hour: { audioSeconds: 120 }
+          day: { requests: 100, audioSeconds: 600 }
+      # 22 x 0.95 leaves room for two recordings a day: each is billed at least 10 seconds.
+      whisper-day:
+        id: alpha/whisper-day-model
+        context: 448
+        capabilities: [transcription]
+        limits:
+          day: { audioSeconds: 22 }
+      # 25 x 0.9 leaves room for two recordings an hour, however the day goes.
+      whisper-hour:
+        id: alpha/whisper-hour-model
+        context: 448
+        capabilities: [transcription]
+        limits:
+          hour: { audioSeconds: 25 }
 
   beta:
     name: Beta
@@ -94,6 +118,12 @@ providers:
         capabilities: [rerank]
         neurons: { input: 1, output: 0 }
         scores: logits
+      whisper:
+        id: '@beta/whisper-model'
+        context: 448
+        capabilities: [transcription]
+        api: run
+        neuronsPerAudioMinute: 30
 
   gamma:
     name: Gamma
@@ -111,6 +141,10 @@ providers:
         id: gamma/big-model:free
         context: 65536
         capabilities: [chat, tools, vision]
+      whisper:
+        id: gamma/whisper-model:free
+        context: 448
+        capabilities: [transcription]
 
   delta:
     name: Delta
@@ -172,6 +206,25 @@ aliases:
     threshold: 0.9
     chain: [alpha/guard, alpha/guard-small]
 
+  # The model that trains on inputs is first, so only the data class keeps visitors off it.
+  lb-stt:
+    description: Speech to text
+    kind: transcription
+    maxAudioSeconds: 30
+    chain: [gamma/whisper, alpha/whisper, beta/whisper]
+
+  lb-stt-day:
+    description: Speech to text, two recordings a day
+    kind: transcription
+    maxAudioSeconds: 15
+    chain: [alpha/whisper-day]
+
+  lb-stt-hour:
+    description: Speech to text, two recordings an hour
+    kind: transcription
+    maxAudioSeconds: 15
+    chain: [alpha/whisper-hour]
+
 systems:
   lb-01:
     name: Support Desk Agent
@@ -187,6 +240,13 @@ systems:
     maxCallsPerRun: 4
     sessionDailyCalls: 20
     dailyCalls: 50
+  lb-09:
+    name: Meeting Recorder
+    service: django-systems
+    aliases: [lb-fast, lb-stt, lb-stt-day, lb-stt-hour]
+    maxCallsPerRun: 4
+    sessionDailyCalls: 12
+    dailyCalls: 100
 
 # A trace reader that may see LB-01's runs and not LB-05's, to test the per-system limit.
 traceReaders:

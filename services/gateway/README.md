@@ -12,10 +12,10 @@ routing. Threat model: [`docs/SECURITY.md`](../../docs/SECURITY.md), sections 4 
 
 | Parameter | Value |
 |---|---|
-| API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
+| API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `POST /v1/audio/transcriptions` (multipart), `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
 | Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers). The Scope's route: `GET /v1/runs/{runId}/spans` (a run's trace, for the site's server only) |
 | Providers | Groq, Cloudflare Workers AI, OpenRouter; NVIDIA in the `dev` profile only |
-| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard` |
+| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard`, `lb-stt` |
 | Routing table | [`routing.yaml`](routing.yaml), validated in CI by `pnpm check` |
 | Callers | Services with an Ed25519-signed token, 10 minutes at most |
 | State | Redis: budgets and quotas (atomic Lua), run spans (streams) |
@@ -94,6 +94,45 @@ each provider.
   the whole window is refused. When no model gives a readable verdict, the call fails
   (502, 503 or 504), and the caller must treat the text as unchecked: skip the steps
   that can call tools, or serve a replay.
+
+## Speech to text
+
+**`POST /v1/audio/transcriptions`** is the OpenAI transcription endpoint, as multipart form data:
+`file` (the recording), `model` (`lb-stt`), `response_format` (`verbose_json`, the only format, since
+the segments' times are what callers need) and optionally `language` (`en`, `cs`; left out, the model
+detects it). Any other field, `prompt` and `timestamp_granularities[]` included, is dropped: the gateway
+always asks for segments at temperature 0 and gives the model no text to continue. It answers one shape
+whichever provider served the call:
+
+```json
+{"task": "transcribe", "language": "English", "duration": 59.9, "text": "Good morning, everyone. …",
+ "segments": [{"id": 0, "start": 0.0, "end": 2.4, "text": "Good morning, everyone.", "avg_logprob": -0.2, "no_speech_prob": 0.01}]}
+```
+
+- **The recording is measured from its bytes.** The gateway has no audio decoder, so the route takes
+  one format only: a WAV file of 16-bit PCM, mono, 16 kHz, which is what every system normalises a
+  recording to (`lb_common.audio` writes it; `src/audio/wav.ts` reads it). In that format a second is
+  exactly 32,000 bytes, so the duration is the data chunk's size over the byte rate, and the reader
+  believes the bytes and not the header: the RIFF size, the data chunk and the end of the file must
+  agree, and anything else is 400. The `duration` in the answer is that measurement, never the
+  provider's claim. A recording longer than the alias's `maxAudioSeconds` (60 for `lb-stt`) is 413
+  `input_too_large`, and so is a body past what such a recording needs.
+- **Budgets count seconds of audio.** `routing.yaml` limits Groq's Whisper in `audioSeconds` per hour
+  (7,200, Groq's own, as a sliding window) and per day (28,800, the 480 minutes of
+  [`docs/STACK.md`](../../docs/STACK.md)), and Workers AI's by the Neurons a minute of audio costs
+  (46.63). A call reserves the seconds the recording holds, and at least 10, which Groq bills as the
+  least a request costs. Neither provider reports usage for audio, so the reservation stands.
+- **Two wire formats, one answer.** Groq takes the OpenAI multipart request on its transcription
+  endpoint. Workers AI has no such endpoint: it is called on its own `/ai/run` with the audio in
+  base64 (`api: run` in `routing.yaml`) and answers inside Cloudflare's envelope. Either answer is
+  checked against a schema and held to the recording's own length (a segment that ends after it is
+  cut, one that starts after it is dropped, one that ends before it starts fails the attempt), and one
+  that cannot be made sense of moves the call to the next model.
+- **Visitor audio goes only where it may.** The permissions, the data-class rule (visitor audio skips a
+  provider that trains on inputs), the quotas, fallback and the error shapes are the chat route's.
+  Private transcription, on the box itself, is not a route here: it never calls the gateway.
+- **The span holds numbers.** The call's span records the seconds, the segment count and the model,
+  and the log holds no field of the form or of the answer: no audio, no word.
 
 ## Reading a run's trace
 
@@ -193,7 +232,7 @@ is stable:
 | 403 | `permission_denied` | The service may not read run traces (only a `traceReaders` service may) |
 | 404 | `run_not_found` | No trace for that run: unknown, expired, or a system the reader may not see |
 | 404 | `model_not_found` | Ask for an `lb-` alias of the right kind |
-| 413 | `input_too_large` | Shorten the prompt |
+| 413 | `input_too_large` | Shorten the prompt, or send a shorter recording; also a request body past a route's limit |
 | 429 | `quota_exceeded` | The run, visitor or system quota is spent; `Retry-After` when it frees up |
 | 429 | `rate_limited` | A run's trace is read too often; `Retry-After` says when to ask again |
 | 502 | `upstream_failed` | Every model failed: serve a replay |
@@ -205,8 +244,10 @@ is stable:
 
 `routing.yaml` holds each provider's free limits: per model on Groq, one shared pool
 of 10,000 Neurons a day on Workers AI (each model converts tokens to Neurons at
-Cloudflare's rates), and account-wide request limits on OpenRouter. Minute windows
-slide; day windows reset at 00:00 UTC, as the providers' do. Traffic stops at 90% of a
+Cloudflare's rates, and a speech model converts minutes of audio), and account-wide
+request limits on OpenRouter. Speech to text is limited in seconds of audio, which has
+its own unit (`audioSeconds`). Minute and hour windows slide; day windows reset at
+00:00 UTC, as the providers' do. Traffic stops at 90% of a
 minute limit and 95% of a day limit, and `/v1/usage` flags any daily budget past 70%.
 
 ## Security
@@ -266,8 +307,9 @@ curl -N localhost:8080/v1/chat/completions \
 `pnpm --filter @lb/gateway test` runs the unit tests and the integration tests. The
 integration tests use a real Redis from Testcontainers and scripted fake providers on
 local ports, and cover fallback, streaming, budgets, quotas, data classes, access
-control, a client disconnecting mid-stream, reranking and the guard's segments, and the
-Scope's route (who may read a trace, cursors, size limits, what is refused, how often a run
+control, a client disconnecting mid-stream, reranking and the guard's segments, speech to
+text (the WAV reader, fallback between a multipart and a base64 provider, the data-class
+rule, budgets in audio seconds, spans and logs that hold no audio), and the Scope's route (who may read a trace, cursors, size limits, what is refused, how often a run
 may be read, what the request log leaves out, and spans that hold no visitor's words). Without Docker, point them at any Redis:
 `LB_TEST_REDIS_URL=redis://127.0.0.1:6379 pnpm --filter @lb/gateway test`. Each test
 uses its own key prefix and removes its keys afterwards.
@@ -276,7 +318,6 @@ uses its own key prefix and removes its keys afterwards.
 
 These arrive with the system that first needs them:
 
-- `lb-stt` (speech to text), with LB-09.
 - A response cache for synthetic samples, and the persister that drains the span
   stream into `platform.run_spans`. Until it exists a trace lives in Redis for 24 hours
   after its last span, so a permalink to an older run answers 404.

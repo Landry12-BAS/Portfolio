@@ -6,6 +6,7 @@ gateway checks, accepts and answers: tokens, run headers, chat, streams, embeddi
 reranking, the guard, error codes, and spans that nest across the two runtimes.
 """
 
+import hashlib
 import json
 import os
 import secrets
@@ -15,6 +16,7 @@ import subprocess
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import httpx2
 import openai
@@ -23,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from openai.types.chat import ChatCompletionMessageParam
 from redis import Redis
 
+from lb_common.audio import BYTES_PER_SECOND, wav_from_pcm
 from lb_common.gateway import Gateway, GatewayCode, GatewaySettings
 from lb_common.run import Run, new_run_id, run_scope
 from lb_common.tokens import ServiceTokens, load_service_key
@@ -300,3 +303,136 @@ def test_the_gateways_spans_nest_under_the_python_step_that_called(
     assert call.parent_id == step.span_id
     assert call.attrs["alias"] == "lb-fast"
     assert [span.kind for span in spans if span.span_id == step.span_id] == ["system.step"]
+
+
+def audio_run(data_class: Literal["visitor", "synthetic"] = "visitor") -> Run:
+    """Make a run of LB-09, which owns the speech-to-text alias in the test routing table."""
+    if data_class == "synthetic":
+        return Run(system="lb-09", run_id=new_run_id(), data_class="synthetic")
+    return Run(system="lb-09", run_id=new_run_id(), session=f"session-{secrets.token_hex(8)}")
+
+
+def recording(seconds: float) -> bytes:
+    """Make a recording of silence that is exactly `seconds` long, in the format the gateway measures."""
+    return wav_from_pcm(bytes(round(seconds * BYTES_PER_SECOND)))
+
+
+def groq_transcript() -> dict[str, object]:
+    """Build the answer a Groq-like provider gives for a short recording."""
+    segment = {"id": 0, "start": 0.0, "end": 4.0, "text": " Marta will re-profile the Colombian by Wednesday."}
+    return {
+        "task": "transcribe",
+        "language": "English",
+        "duration": 5.0,
+        "text": segment["text"],
+        "segments": [segment],
+    }
+
+
+def test_a_recording_is_transcribed_by_the_real_gateway(gateway: Gateway, control: httpx2.Client) -> None:
+    """What Python writes as the form is what the gateway reads, measures and forwards, byte for byte."""
+    script(control, "alpha", {"kind": "json", "body": groq_transcript()})
+    wav = recording(5)
+
+    with run_scope(audio_run()):
+        transcript = gateway.transcribe(wav, language="en")
+
+    assert transcript.language == "English"
+    assert transcript.duration == 5.0
+    assert [(segment.start, segment.end, segment.text) for segment in transcript.segments] == [
+        (0.0, 4.0, "Marta will re-profile the Colombian by Wednesday.")
+    ]
+    [sent] = received(control, "alpha")
+    assert sent["authorization"] == "Bearer alpha-key"
+    assert sent["form"] == {
+        "fields": {
+            "model": "alpha/whisper-model",
+            "response_format": "verbose_json",
+            "temperature": "0",
+            "language": "en",
+        },
+        "file": {
+            "name": "recording.wav",
+            "type": "audio/wav",
+            "size": len(wav),
+            "sha256": hashlib.sha256(wav).hexdigest(),
+        },
+    }
+
+
+def test_a_visitors_recording_never_reaches_a_provider_that_trains_on_inputs(
+    gateway: Gateway, control: httpx2.Client
+) -> None:
+    """The first model trains on inputs: with every other one failing, the call fails rather than use it."""
+    script(control, "gamma", {"kind": "json", "body": groq_transcript()})
+    script(control, "alpha", {"kind": "json", "status": 500, "body": {}})
+    script(control, "beta", {"kind": "json", "status": 500, "body": {}})
+
+    with run_scope(audio_run()), pytest.raises(openai.APIStatusError) as caught:
+        gateway.transcribe(recording(5))
+
+    assert caught.value.code == GatewayCode.UPSTREAM_FAILED
+    assert received(control, "gamma") == []
+
+
+def test_a_synthetic_recording_may_use_the_whole_chain(gateway: Gateway, control: httpx2.Client) -> None:
+    """A curated sample is the site's own, so the provider that trains on inputs may serve it."""
+    script(control, "gamma", {"kind": "json", "body": groq_transcript()})
+
+    with run_scope(audio_run("synthetic")):
+        transcript = gateway.transcribe(recording(5))
+
+    assert transcript.segments
+    assert len(received(control, "gamma")) == 1
+
+
+def test_a_recording_that_is_too_long_reaches_python_as_its_code(gateway: Gateway, control: httpx2.Client) -> None:
+    """Measured from the bytes: over the alias's 30 seconds is refused, whether or not the body fits the limit."""
+    with run_scope(audio_run()):
+        for seconds in (30.2, 45):
+            with pytest.raises(openai.APIStatusError) as caught:
+                gateway.transcribe(recording(seconds))
+            assert caught.value.status_code == 413
+            assert caught.value.code == GatewayCode.INPUT_TOO_LARGE
+
+    assert received(control, "alpha") == []
+
+
+def test_audio_in_another_format_reaches_python_as_a_bad_request(gateway: Gateway) -> None:
+    """The gateway takes one format only; anything else is the caller's mistake."""
+    with run_scope(audio_run()), pytest.raises(openai.BadRequestError) as caught:
+        gateway.transcribe(b"ID3" + bytes(200))
+
+    assert caught.value.code == GatewayCode.INVALID_REQUEST
+
+
+def test_a_system_without_the_alias_is_refused(gateway: Gateway) -> None:
+    """LB-01 may not transcribe: the permission is the system's own list of aliases."""
+    with run_scope(visitor_run()), pytest.raises(openai.PermissionDeniedError) as caught:
+        gateway.transcribe(recording(5))
+
+    assert caught.value.code == GatewayCode.ALIAS_NOT_ALLOWED
+
+
+def test_the_gateways_span_for_a_recording_nests_under_the_python_step_and_holds_numbers_only(
+    gateway: Gateway,
+    contract: ContractGateway,
+    control: httpx2.Client,
+    redis: Redis,
+    read_spans: Callable[[str], list[Span]],
+) -> None:
+    """One trace holds both runtimes, and nothing the visitor said is in it."""
+    script(control, "alpha", {"kind": "json", "body": groq_transcript()})
+    tracer = Tracer(RedisSpanWriter(redis, contract.prefix))
+    run = audio_run()
+
+    with run_scope(run), tracer.span("transcribe") as step:
+        gateway.transcribe(recording(5))
+
+    spans = read_spans(f"{contract.prefix}run:{run.run_id}:spans")
+    call = next(span for span in spans if span.kind == "gateway.call")
+    assert call.parent_id == step.span_id
+    assert call.attrs["alias"] == "lb-stt"
+    assert call.attrs["audioSeconds"] == 5
+    assert call.attrs["segments"] == 1
+    assert "Colombian" not in json.dumps([span.model_dump(mode="json") for span in spans])
