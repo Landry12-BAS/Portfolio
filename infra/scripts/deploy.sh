@@ -26,6 +26,12 @@
 # that fails too, it exits 2, and someone has to look. A first deploy has no earlier release
 # to go back to, so a failure there leaves what it started in place, for inspection.
 #
+# It holds $LB_ROOT/deploy.lock from the start to the end, rollback included, and so does the
+# nightly backup (infra/systemd/lb-backup.service), so a deploy's jobs and the backup never run
+# at the same time: the memory budget counts on it (docker-compose.yml, Resources). The backup
+# waits for a deploy. A deploy does not wait: it is refused, and can be run again a few minutes
+# later (a backup takes minutes).
+#
 # A rollback does not undo database migrations. A release's migrations must therefore work
 # with the previous release's code too (docs/DEPLOY.md, Rolling back).
 #
@@ -66,7 +72,7 @@ release="${1:-}"
 
 mkdir -p "$root"
 exec 9> "$root/deploy.lock"
-flock -n 9 || die "another deploy is already running on this box."
+flock -n 9 || die "another deploy or the nightly backup is running on this box (it holds $root/deploy.lock); try again in a few minutes."
 
 # The release that is live now, if there is one: the target of the `current` link.
 previous=""

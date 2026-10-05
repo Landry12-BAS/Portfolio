@@ -15,6 +15,10 @@
 #     and `current` never moves; when that fails too the exit status is 2;
 #   - a bad release name, a wrong folder, a mismatched RELEASE file and a second deploy at
 #     the same time are refused;
+#   - the nightly backup, started with its unit's own command (infra/systemd/lb-backup.service),
+#     takes the deploy's lock: a deploy while it runs is refused, it waits for a deploy that is
+#     running and then backs up the release that is live, and when it cannot get the lock in
+#     its time it fails and backs up nothing;
 #   - old releases are removed, and the live one and the one before it are kept.
 #
 #   infra/scripts/test-deploy.sh
@@ -86,7 +90,8 @@ sha() { printf '%040x' "$1"; }
 
 # make_release <n>: a release folder as the deploy leaves it, with the real deploy.sh and
 # stand-ins for the scripts it calls. A stand-in fails when $BEHAVIOUR holds a file named
-# for the step and the release (fail-up-<release>, fail-smoke-<release>, ...).
+# for the step and the release (fail-up-<release>, fail-smoke-<release>, ...), and takes
+# three seconds over `up` or `run` when it holds slow-up or slow-run.
 make_release() {
     local release dir
     release="$(sha "$1")"
@@ -106,7 +111,14 @@ case " $* " in
         if [ -e "$BEHAVIOUR/unpinned-image" ]; then cat "$BEHAVIOUR/unpinned-image"; fi
         ;;
     *" pull "*) if [ -e "$BEHAVIOUR/fail-pull-$release" ]; then exit 1; fi ;;
-    *" up "*) if [ -e "$BEHAVIOUR/fail-up-$release" ]; then exit 1; fi ;;
+    *" up "*)
+        if [ -e "$BEHAVIOUR/slow-up" ]; then sleep 3; fi
+        if [ -e "$BEHAVIOUR/fail-up-$release" ]; then exit 1; fi
+        ;;
+    *" run "*)
+        if [ -e "$BEHAVIOUR/slow-run" ]; then sleep 3; fi
+        echo "compose $release run finished" >> "$CALLS"
+        ;;
 esac
 exit 0
 STUB
@@ -180,6 +192,39 @@ expect_not_called() {
 # expect_output <label> <text>: deploy.sh said it.
 expect_output() {
     if grep -qF -- "$2" <<<"$output"; then pass "$1"; else fail "$1 -- the output was: $output"; fi
+}
+
+# wait_for_call <text>: waits until a call containing the text is logged, ten seconds at most.
+wait_for_call() {
+    local tries=0
+    until grep -qF -- "$1" "$CALLS"; do
+        tries=$((tries + 1))
+        if [ "$tries" -gt 100 ]; then return 1; fi
+        sleep 0.1
+    done
+}
+
+# The nightly backup as its unit starts it: the unit's own command, which systemd runs without a
+# shell, with the box's /opt/lb moved to this test's root.
+backup_unit="$here/../systemd/lb-backup.service"
+read -ra unit_command <<<"$(sed -n 's/^ExecStart=//p' "$backup_unit")"
+backup_command=()
+for word in "${unit_command[@]}"; do
+    backup_command+=("${word/#\/opt\/lb/$LB_ROOT}")
+done
+
+# backup [wait seconds]: runs the backup's command, waiting the given time for the lock instead
+# of the unit's own when one is given, and keeps its exit status and output.
+backup() {
+    local -a command=("${backup_command[@]}")
+    local index
+    if [ -n "${1:-}" ]; then
+        for index in "${!command[@]}"; do
+            if [ "${command[$index]}" = --wait ]; then command[index + 1]="$1"; fi
+        done
+    fi
+    backup_status=0
+    backup_output="$("${command[@]}" 2>&1)" || backup_status=$?
 }
 
 a="$(sha 1)"
@@ -348,8 +393,62 @@ sleep 1
 deploy 1
 wait "$holder"
 expect_equal "a second deploy while one is running is refused" "1" "$status"
-expect_output "and says why" "another deploy is already running"
+expect_output "and says why" "another deploy or the nightly backup is running on this box"
 expect_not_called "and does nothing" "decrypt"
+
+# ------------------------------------------------------------------------------------------
+echo "the nightly backup and a deploy take turns"
+# ------------------------------------------------------------------------------------------
+reset
+make_release 1
+make_release 2
+deploy 1
+: > "$CALLS"
+touch "$BEHAVIOUR/slow-run"
+"${backup_command[@]}" > "$work/backup.log" 2>&1 &
+backup_process=$!
+wait_for_call "--profile backup run" || fail "the backup never started: $(cat "$work/backup.log")"
+deploy 2
+backup_status=0
+wait "$backup_process" || backup_status=$?
+rm -f "$BEHAVIOUR/slow-run"
+expect_equal "a deploy while the backup runs is refused" "1" "$status"
+expect_output "and says that the backup may be what holds the lock" "another deploy or the nightly backup is running on this box"
+expect_not_called "and does nothing" "decrypt $b"
+expect_equal "the backup is not disturbed" "0" "$backup_status"
+expect_equal "and the live release stays" "1" "$(live)"
+
+: > "$CALLS"
+touch "$BEHAVIOUR/slow-up"
+"$LB_ROOT/releases/$b/infra/scripts/deploy.sh" "$b" > "$work/deploy.log" 2>&1 &
+deploy_process=$!
+wait_for_call "compose $b tag=$b up" || fail "the deploy never reached its up: $(cat "$work/deploy.log")"
+backup
+deploy_status=0
+wait "$deploy_process" || deploy_status=$?
+rm -f "$BEHAVIOUR/slow-up"
+if [ "$backup_status" = 0 ]; then
+    pass "a backup while a deploy runs waits for it"
+else
+    fail "a backup while a deploy runs waits for it -- it exited $backup_status: $backup_output"
+fi
+expect_equal "and the deploy is not disturbed" "0" "$deploy_status"
+expect_in_order "the backup starts once the deploy is done" "smoke $b --public" "--profile backup run --rm --no-deps backup"
+if grep -F -- "--profile backup run" "$CALLS" | grep -qF "compose $b "; then
+    pass "and backs up through the release that is now live"
+else
+    fail "the backup did not run through release $b: $(grep -F -- "--profile backup run" "$CALLS")"
+fi
+
+: > "$CALLS"
+# A deploy that holds the lock for three seconds, and a backup that waits for it one second.
+( exec 8> "$LB_ROOT/deploy.lock"; flock -x 8; sleep 3 ) &
+holder=$!
+sleep 1
+backup 1
+wait "$holder"
+expect_equal "a backup that cannot get the lock in its time fails" "1" "$backup_status"
+expect_not_called "and backs up nothing" "--profile backup run"
 
 # ------------------------------------------------------------------------------------------
 echo "old releases"
