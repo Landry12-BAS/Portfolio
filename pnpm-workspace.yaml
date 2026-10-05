@@ -38,6 +38,12 @@ overrides:
 # for `nuxt dev --https`; nothing verifies a signature with it, and the production build does not
 # contain node-forge (`grep -r node-forge apps/web/.output` finds nothing). Remove this entry, and
 # run `pnpm audit`, when node-forge or listhen publishes a fix.
+# GHSA-vfj7-8cjw-p6xm: braces (up to 3.0.3, the newest release) can exhaust the stack on a deeply
+# nested brace pattern. It has no patched release yet, so no pin can fix it. The only way in is
+# @nuxtjs/i18n > @intlify/unplugin-vue-i18n > fast-glob, which expands the locale-file globs this
+# repository writes while the site is built; it runs on no visitor's input and serves no request.
+# Remove this entry, and run `pnpm audit`, when braces publishes a fix.
 auditConfig:
   ignoreGhsas:
     - GHSA-86w9-cpqp-85rv
+    - GHSA-vfj7-8cjw-p6xm

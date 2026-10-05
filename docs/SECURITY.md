@@ -388,8 +388,9 @@ attempts. Every prompt change must pass it.
   regexes open to catastrophic backtracking), and CI fails on any high or critical
   advisory from `pnpm audit`. An advisory with no fix may be ignored only with its reason
   written beside the entry in `pnpm-workspace.yaml`, and the entry goes when a fix ships;
-  today that is GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
-  certificate helper reaches and the production build does not contain.
+  today those are GHSA-86w9-cpqp-85rv (node-forge), which only the development server's
+  certificate helper reaches and the production build does not contain, and
+  GHSA-vfj7-8cjw-p6xm (braces), which only the build's locale-file globbing reaches.
 - **Every pull request** runs CodeQL and Semgrep on the code, gitleaks for secrets,
   pip-audit and pnpm audit on dependencies, and an OWASP ZAP baseline scan against the
   full stack started in CI.
