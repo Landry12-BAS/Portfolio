@@ -95,7 +95,19 @@ the commander's hypotheses, the card that waits for the visitor's approval, the 
 objective, the timeline and the postmortem, a replay of a recorded incident, the visitor's own
 incident with its text screened, a polling fallback for a network that blocks WebSockets, in
 English and Czech (see the web README); next come its recorded sample runs (`just record-sample
-lb-06 <sample>`, which needs the live back end with a model behind it). LB-07's board is on the
+lb-06 <sample>`, which needs the live back end with a model behind it). LB-07 QA Engineer is in the
+same monolith too: a synthetic staging shop with six bugs a visitor can switch on (only by a token the
+service signs, which the model can neither read nor change), a planner that writes the whole test in one
+model call over a closed vocabulary of six actions, a runner that executes it step by step in a headless
+Chromium, findings made by code (a failed expectation, a console error, a failed request, an axe
+violation, a navigation that was stopped), bug reports in a model's words that code checks against them,
+a Playwright test written by a template and kept only when it fails with the bugs on and passes with them
+off, a queue of one browser, and the visitor API with its two-runs-a-day quota (see the same README, with
+its threat model). The browser lives in a container of its own, `lb07-sandbox` (distroless, non-root, a
+read-only root, no capabilities, on an internal network that reaches nothing but the worker, restarted
+after twenty sessions), and three independent layers keep the page inside the staging shop; "one
+container per run" became that, because starting containers needs the Docker socket, which no service is
+given (`docs/SECURITY.md`; `just test-lb07-sandbox` proves it). LB-07's board is on the
 site at `/systems/lb-07/board`: the six bugs as switches and a goal of the visitor's own checked
 before it is sent, eight curated runs, the run followed by polling while it waits for the one
 browser ("2 runs are ahead of yours") and while it runs, the steps grouped by plan and re-plan,
