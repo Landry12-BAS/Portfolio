@@ -3,8 +3,9 @@
 // The agent's own endings (the wall clock, a refused plan) are final. A model that answered in no usable
 // form twice is final too (`plan_invalid`), and a provider that failed, timed out or could not be reached is
 // worth another try after a wait; a spent quota is not. A runner that is busy or could not be reached is
-// worth another try (the next attempt starts the browser passes over from the plan); a runner that says
-// the session expired is the wall clock. Messages never carry what a model or a page said.
+// worth another try (the next attempt starts the browser passes over from the plan), and so is a browser that
+// crashed (the runner starts a fresh one); a runner that says the session expired is the wall clock. Messages
+// never carry what a model or a page said.
 import { gatewayErrorOf } from '@lb/common'
 import type { GatewayCode } from '@lb/common'
 import type { Lb07FailureCode } from '@lb/contracts'

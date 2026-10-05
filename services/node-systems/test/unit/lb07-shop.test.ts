@@ -2,6 +2,8 @@
 // switches them on. The shop is driven over HTTP as a browser would drive it, with cookies, so the
 // bug a token names shows on the page and a token that is altered, expired or missing leaves the shop
 // clean. Nothing here needs a browser, a database or a network beyond this machine.
+import { createHash } from 'node:crypto'
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { LB07_BUG_IDS } from '@lb/contracts'
@@ -223,6 +225,77 @@ describe('the shop over HTTP', () => {
       expect(page.text).toContain('1 item')
       expect(page.text).not.toContain('2 items')
     }
+  })
+
+  it('sends its own strict policy with every answer: its origin only, no script, its one stylesheet by hash, no frame of it, forms to itself, no sniffing and no CORS', async () => {
+    const client = new ShopClient(shop.origin)
+    await client.post('/cart/add', { slug: 'ethiopia-guji' })
+    const answers = await Promise.all([
+      fetch(`${shop.origin}/`), fetch(`${shop.origin}/cart`), fetch(`${shop.origin}/about`), fetch(`${shop.origin}/nothing-here`),
+      fetch(`${shop.origin}/images/hero.svg`), fetch(`${shop.origin}/`, { method: 'PUT' }), fetch(`${shop.origin}/`, { method: 'OPTIONS', headers: { 'origin': 'http://evil.test', 'access-control-request-method': 'POST' } }),
+      fetch(`${shop.origin}/cart/add`, { method: 'POST', body: 'slug=ethiopia-guji', headers: { 'content-type': 'application/x-www-form-urlencoded', 'origin': 'http://evil.test' }, redirect: 'manual' }),
+      fetch(`${shop.origin}/cart/add`, { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } }),
+    ])
+    for (const answer of answers) {
+      const policy = answer.headers.get('content-security-policy') ?? ''
+      expect(policy, answer.url).toMatch(/(?:^|; )default-src '(?:self|none)'/)
+      expect(policy, answer.url).toContain('frame-ancestors \'none\'')
+      expect(answer.headers.get('x-content-type-options'), answer.url).toBe('nosniff')
+      for (const name of answer.headers.keys()) expect(name.startsWith('access-control-'), name).toBe(false)
+    }
+    const page = answers[0] as Response
+    const policy = page.headers.get('content-security-policy') ?? ''
+    expect(policy).toContain('script-src \'none\'')
+    expect(policy).toContain('form-action \'self\'')
+    expect(policy).toContain('object-src \'none\'')
+    expect(policy).toContain('base-uri \'none\'')
+    // The one stylesheet the pages carry is allowed by its hash, and that hash is the hash of what the page holds.
+    const html = await page.text()
+    const style = /<style>([\s\S]*?)<\/style>/.exec(html)?.[1] ?? ''
+    expect(policy).toContain(`style-src 'sha256-${createHash('sha256').update(style).digest('base64')}'`)
+    expect(page.headers.get('x-frame-options')).toBe('DENY')
+  })
+
+  it('lets the checkout run its one inline script only when the script-error bug is on, by the script\'s hash, and nowhere else', async () => {
+    const buggy = new ShopClient(shop.origin, tokenFor(['script-error']))
+    await buggy.post('/cart/add', { slug: 'house-espresso' })
+    const token = tokenFor(['script-error'])
+    const cart = Buffer.from(JSON.stringify({ v: 1, items: { 'house-espresso': 1 }, coupon: null })).toString('base64url')
+    const checkout = await fetch(`${shop.origin}/checkout`, { headers: { cookie: `lb07_bugs=${token}; lb07_cart=${cart}` } })
+    const html = await checkout.text()
+    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? ''
+    expect(script).toContain('order-summary-v2')
+    expect(checkout.headers.get('content-security-policy')).toContain(`script-src 'sha256-${createHash('sha256').update(script).digest('base64')}'`)
+    const front = await fetch(`${shop.origin}/`, { headers: { cookie: `lb07_bugs=${token}` } })
+    expect(front.headers.get('content-security-policy')).toContain('script-src \'none\'')
+    const clean = await fetch(`${shop.origin}/checkout`, { headers: { cookie: `lb07_cart=${cart}` } })
+    expect(clean.headers.get('content-security-policy')).toContain('script-src \'none\'')
+  })
+
+  it('redirects only to its own paths, whatever a form or a request line says', async () => {
+    const client = new ShopClient(shop.origin)
+    const locations: (string | null)[] = []
+    for (const [path, form] of [['/cart/add', { slug: 'ethiopia-guji' }], ['/cart/update', { 'qty-ethiopia-guji': '2', 'location': 'http://evil.test/' }], ['/cart/remove', { slug: '//evil.test' }], ['/cart/coupon', { code: 'http://evil.test/' }], ['/checkout', { name: 'A', email: 'a@example.test', street: 'S', city: 'C', next: '//evil.test' }]] as const) {
+      const response = await fetch(`${shop.origin}${path}`, { method: 'POST', body: new URLSearchParams(form).toString(), headers: { 'content-type': 'application/x-www-form-urlencoded' }, redirect: 'manual' })
+      locations.push(response.headers.get('location'))
+    }
+    // The checkout of an empty cart goes back to the cart; every location is a path of the shop.
+    for (const location of locations) expect(location).toMatch(/^\/(?:cart|orders\/bb-\d{1,7})$/)
+    expect((await client.get('//evil.test/cart')).status).toBe(200)
+    expect((await fetch(`${shop.origin}/..%2f..%2fetc%2fpasswd`)).status).toBe(404)
+    expect((await fetch(`${shop.origin}/images/..%2f..%2fpackage.json`)).status).toBe(404)
+  })
+
+  it('cannot be told to switch a bug on by anything a plan can type: only a signed token in its own cookie does it', async () => {
+    const forged = tokenFor(['cart-off-by-one'], 'run-0123456789', Date.now())
+    const client = new ShopClient(shop.origin)
+    await client.post('/cart/add', { slug: 'ethiopia-guji' })
+    // A plan can only type into the shop's fields: the coupon (which the shop keeps as letters and digits) and the checkout's.
+    const coupon = await client.post('/cart/coupon', { code: `lb07_bugs=${forged}` })
+    expect(coupon.text).toContain('1 item')
+    expect(coupon.text).not.toContain('2 items')
+    const checkout = await client.post('/checkout', { name: `lb07_bugs=${forged}`, email: `x@example.test; lb07_bugs=${forged}`, street: 'S', city: 'C' })
+    expect(checkout.text).toContain('Total charged €14.50')
   })
 
   it('has the about page with the partner links that point outside the shop', async () => {

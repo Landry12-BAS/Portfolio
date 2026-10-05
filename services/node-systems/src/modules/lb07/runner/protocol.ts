@@ -23,7 +23,8 @@ export const runnerFindingSchema = z.strictObject({
   kind: z.enum(LB07_FINDING_KINDS),
   engine: z.enum(LB07_ENGINES),
   stepIndex: z.int().min(0).nullable(),
-  title: z.string().min(1).max(120),
+  // Plain text, as the API that shows it requires: a title that is not is refused here, not when a visitor asks for the report.
+  title: z.string().min(1).max(120).regex(/^[^\p{Cc}\p{Cf}]+$/u, 'plain text'),
   detail: z.string().max(600),
   rule: z.string().regex(/^[a-z0-9-]{1,60}$/).nullable(),
   path: z.string().max(120).nullable(),

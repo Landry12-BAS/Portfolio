@@ -9,6 +9,27 @@ import { describeTarget, shopPathOf } from './guard.ts'
 import type { RunnerFinding } from './protocol.ts'
 import { plainDetail } from './snapshot.ts'
 
+/** How a navigation, a request or a socket was stopped. */
+export type BlockedHow = 'goto' | 'link' | 'request' | 'socket' | 'redirect'
+
+// How a blocked-navigation finding begins, by how it was stopped.
+const BLOCKED_WORDS: Readonly<Record<BlockedHow, string>> = {
+  goto: 'A step to go to',
+  link: 'A link to',
+  request: 'A request to',
+  socket: 'A socket to',
+  redirect: 'A redirect to',
+}
+
+// The longest title a finding may have (the protocol's and the API's limit).
+const MAX_TITLE_CHARS = 120
+
+/** Makes a title one plain line of at most 120 characters: control and format characters become spaces. */
+function plainTitle(title: string): string {
+  const plain = title.replaceAll(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, ' ').replaceAll(/\s+/g, ' ').trim().slice(0, MAX_TITLE_CHARS).trim()
+  return plain === '' ? 'A finding' : plain
+}
+
 /** Collects the findings of one page and hands them over in batches. */
 export class FindingCollector {
   readonly #engine: Lb07Engine
@@ -41,19 +62,18 @@ export class FindingCollector {
     return this.#offOrigin
   }
 
-  /** Adds a finding, unless the same one was already made. */
+  /** Adds a finding, unless the same one was already made. Its title is made plain and bounded, whatever went into it. */
   add(finding: Omit<RunnerFinding, 'engine' | 'stepIndex'>): void {
     const key = `${finding.kind}|${finding.rule ?? ''}|${finding.path ?? ''}|${finding.detail.slice(0, 120)}`
     if (this.#seen.has(key)) return
     this.#seen.add(key)
-    this.#pending.push({ ...finding, engine: this.#engine, stepIndex: this.#stepIndex })
+    this.#pending.push({ ...finding, title: plainTitle(finding.title), engine: this.#engine, stepIndex: this.#stepIndex })
   }
 
-  /** Records a request or a navigation the sandbox stopped. */
-  blockedNavigation(target: string, how: 'request' | 'link' | 'goto'): void {
+  /** Records a request, a socket or a navigation the sandbox stopped: by the plan's check (a goto, a link), by interception (a request, a socket), or by the browser's own network (a request or a redirect's next hop). */
+  blockedNavigation(target: string, how: BlockedHow): void {
     this.#blocked += 1
-    const how_ = how === 'request' ? 'A request to' : how === 'link' ? 'A link to' : 'A step to go to'
-    this.add({ kind: 'blocked_navigation', title: 'Stopped at the sandbox: an address outside the shop', detail: plainDetail(`${how_} ${target} was refused: the browser may reach only the staging shop.`), rule: null, path: null })
+    this.add({ kind: 'blocked_navigation', title: 'Stopped at the sandbox: an address outside the shop', detail: plainDetail(`${BLOCKED_WORDS[how]} ${target} was refused: the browser may reach only the staging shop.`), rule: null, path: null })
   }
 
   /** Counts a request that reached another origin, which must never happen. */
@@ -91,10 +111,14 @@ export class FindingCollector {
     })
     page.on('requestfailed', (request) => {
       const failure = request.failure()?.errorText ?? ''
-      // A request the sandbox aborted is already a blocked-navigation finding.
+      // A request interception aborted is already a blocked-navigation finding.
       if (failure.includes('BLOCKED_BY_CLIENT')) return
       const url = new URL(request.url())
-      if (url.origin !== this.#shopOrigin) return
+      if (url.origin !== this.#shopOrigin) {
+        // Interception never saw it (the next hop of a redirect does not pass it): the browser's own network stopped it.
+        this.blockedNavigation(describeTarget(request.url()), request.redirectedFrom() === null ? 'request' : 'redirect')
+        return
+      }
       const path = url.pathname.slice(0, 120)
       this.add({ kind: 'failed_request', title: 'A request failed', detail: plainDetail(`${request.method()} ${path} failed: ${failure || 'no answer'}.`), rule: null, path })
     })

@@ -15,9 +15,9 @@ export function cutTo(text: string, max: number): string {
   return `${text.slice(0, Math.max(0, max - note.length))}${note}`
 }
 
-/** Makes a snapshot plain and bounded: no control characters, no angle brackets, at most the limit. */
+/** Makes a snapshot plain and bounded: in its compatibility form (so full-width brackets are brackets), with no control characters, no angle brackets, at most the limit. */
 export function trimSnapshot(raw: string): string {
-  const plain = raw.replaceAll(CONTROL, ' ').replaceAll(/[<>]/g, ' ').replaceAll(/[ \t]+\n/g, '\n').replaceAll(/\n{3,}/g, '\n\n')
+  const plain = raw.normalize('NFKC').replaceAll(CONTROL, ' ').replaceAll(/[<>]/g, ' ').replaceAll(/[ \t]+\n/g, '\n').replaceAll(/\n{3,}/g, '\n\n')
   return cutTo(plain.trim(), LB07_LIMITS.maxSnapshotChars)
 }
 

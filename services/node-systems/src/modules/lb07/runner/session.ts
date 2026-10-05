@@ -1,10 +1,16 @@
-// The browser the agent drives, as sessions: one browser process for the runner's life, a fresh
-// context (its own cookies, storage and cache) for every run, closed when the run ends or when its
-// wall clock runs out, whichever comes first. The second of the sandbox's two layers lives here: every
-// request the page makes passes a route handler that lets through the shop's origin and aborts
-// everything else, recording it. The bug token goes into the context's cookie jar before the first page
-// opens, which is the only way a bug is switched on. After its share of runs the runner declares itself
-// exhausted, so the process can exit and be started fresh.
+// The browser the agent drives, as sessions: one browser process for the runner's life, a fresh context (its own
+// cookies, storage and cache) for every run, closed when the run ends or when its wall clock runs out, whichever
+// comes first. Two of the sandbox's layers live here (network.ts): every request a page makes passes interception,
+// which lets through the shop's origin only and refuses every socket, and the browser is started so its own network
+// reaches the shop and nothing else. A context has no window but its page (any other one a page opens is closed at
+// once), keeps the shop's own Content-Security-Policy, takes no download and runs no service worker. The bug token
+// goes into the context's cookie jar before the first page opens, which is the only way a bug is switched on.
+//
+// One session at a time: a second request to open one is refused as busy, even while the first is still opening.
+// A session whose caller never closes it (a worker that died) is closed at its wall clock and forgotten after a grace,
+// so the browser is never held for ever. A browser that crashed is said to have crashed, so the worker tries the run
+// again with a fresh one. After its share of runs the runner declares itself exhausted, and once its last session is
+// closed or forgotten it says so to whoever listens, so the process can exit and be started fresh.
 import { randomUUID } from 'node:crypto'
 
 import { LB07_LIMITS } from '@lb/contracts'
@@ -17,6 +23,7 @@ import { runStep } from './executor.ts'
 import type { StepResult } from './executor.ts'
 import { FindingCollector } from './findings.ts'
 import { FIREFOX_USER_AGENT, shopPathOf } from './guard.ts'
+import { DeadEnd, interceptRequests, networkWallArgs } from './network.ts'
 import type { CloseResponse, OpenSessionRequest, RunnerFinding } from './protocol.ts'
 import { trimSnapshot } from './snapshot.ts'
 
@@ -29,6 +36,8 @@ export interface SessionsOptions {
   runsPerLife?: number
   // The cookie the bug token travels in (the shop's name for it).
   bugCookie: string
+  // How long a session closed at its wall clock is kept for its caller to collect what it found, before it is forgotten.
+  expiredGraceMs?: number
 }
 
 /** One open session. */
@@ -40,7 +49,10 @@ interface Session {
   findings: FindingCollector
   startedAt: number
   timer: ReturnType<typeof setTimeout>
+  // The timer that forgets the session once its wall clock has closed it and the grace is over.
+  forget: ReturnType<typeof setTimeout> | undefined
   expired: boolean
+  crashed: boolean
 }
 
 /** The errors the sessions raise, with a code the server answers with. */
@@ -56,18 +68,26 @@ export class SessionError extends Error {
   }
 }
 
-// What Chromium is started with. Its own sandbox needs user namespaces the hardened container does
-// not grant (no capabilities, no new privileges), so the container is the sandbox and Chromium's
-// is off; the rest keeps one renderer and a small heap, since the shop is tiny.
+// What Chromium is started with, besides Playwright's own switches and the third layer's (network.ts). Chromium's own
+// sandbox needs user namespaces the hardened container does not grant (no capabilities, no new privileges), so the
+// container is the sandbox and Chromium's is off (Playwright turns it off too unless asked). Shared memory is not used
+// (the container's /dev/shm is small), and one renderer with a small heap is enough for the tiny shop.
 const LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-extensions', '--renderer-process-limit=1', '--js-flags=--max-old-space-size=128']
+
+// How long a session closed at its wall clock is kept before it is forgotten: a worker that is alive closes it well within this.
+const EXPIRED_GRACE_MS = 30_000
 
 /** The browser sessions of one runner process. */
 export class BrowserSessions {
   readonly #options: SessionsOptions
   readonly #runsPerLife: number
+  readonly #deadEnd = new DeadEnd()
+  readonly #exhaustedListeners: (() => void)[] = []
   #browser: Browser | undefined
   #current: Session | undefined
+  #opening = false
   #runsServed = 0
+  #saidExhausted = false
 
   /** Prepares the sessions; the browser starts with the first one. */
   constructor(options: SessionsOptions) {
@@ -80,9 +100,9 @@ export class BrowserSessions {
     return this.#runsServed
   }
 
-  /** Whether a session is open. */
+  /** Whether a session is open, or being opened. */
   get busy(): boolean {
-    return this.#current !== undefined
+    return this.#current !== undefined || this.#opening
   }
 
   /** Whether this process has served its share and should exit for a fresh start. */
@@ -90,13 +110,36 @@ export class BrowserSessions {
     return this.#runsServed >= this.#runsPerLife
   }
 
-  /** Starts the browser, once. */
+  /** How many pages the open session's context has: one, whatever its page tried to open. */
+  get openPages(): number {
+    return this.#current?.context.pages().length ?? 0
+  }
+
+  /** How many contexts the browser holds: at most one, the open session's. */
+  get openContexts(): number {
+    return this.#browser?.isConnected() ? this.#browser.contexts().length : 0
+  }
+
+  /** Calls `listener` once, when the runner is exhausted and its last session has been closed or forgotten. */
+  whenExhausted(listener: () => void): void {
+    this.#exhaustedListeners.push(listener)
+  }
+
+  /** Starts the browser, once, with the third layer's switches; a browser that died is started again. */
   async #browserReady(): Promise<Browser> {
     if (this.#browser?.isConnected()) return this.#browser
-    const launch: LaunchOptions = { headless: true, args: LAUNCH_ARGS }
+    const deadEndPort = await this.#deadEnd.start()
+    const launch: LaunchOptions = { headless: true, args: [...LAUNCH_ARGS, ...networkWallArgs(this.#options.shopOrigin, deadEndPort)] }
     if (this.#options.executablePath) launch.executablePath = this.#options.executablePath
-    this.#browser = await chromium.launch(launch)
-    return this.#browser
+    const browser = await chromium.launch(launch)
+    browser.on('disconnected', () => this.#crashed(browser))
+    this.#browser = browser
+    return browser
+  }
+
+  /** Marks the open session as crashed when the browser it lives in has gone. */
+  #crashed(browser: Browser): void {
+    if (this.#browser === browser && this.#current) this.#current.crashed = true
   }
 
   /** The open session, or a refusal. */
@@ -104,55 +147,87 @@ export class BrowserSessions {
     const session = this.#current
     if (!session || session.id !== id) throw new SessionError('no_session', 'There is no such session.')
     if (session.expired) throw new SessionError('expired', 'The session reached its wall clock and was closed.')
+    if (session.crashed) throw new SessionError('browser', 'The browser crashed during the run.')
     return session
   }
 
-  /** Opens a session for a run: a fresh context with the bug token in its cookie jar, the sandbox's route and the collectors attached. */
+  /** Opens a session for a run: a fresh context with the bug token in its cookie jar, the sandbox's layers and the collectors attached. */
   async open(request: OpenSessionRequest): Promise<string> {
-    if (this.#current) throw new SessionError('busy', 'A run is in the browser. Try again when it has ended.')
+    if (this.busy) throw new SessionError('busy', 'A run is in the browser. Try again when it has ended.')
     if (this.exhausted) throw new SessionError('exhausted', 'This runner has served its share of runs and is about to restart.')
+    // Taken before the first wait, so a second request that arrives while this one opens is refused.
+    this.#opening = true
+    try {
+      const session = await this.#newSession(request)
+      this.#current = session
+      this.#runsServed += 1
+      return session.id
+    }
+    finally {
+      this.#opening = false
+    }
+  }
+
+  /** Makes the context and the page of a new session. */
+  async #newSession(request: OpenSessionRequest): Promise<Session> {
     const browser = await this.#browserReady()
     const context = await browser.newContext({
       viewport: { width: 1_024, height: 768 },
       userAgent: request.engine === 'firefox-ua' ? FIREFOX_USER_AGENT : undefined,
-      // axe is injected into the shop's pages; the shop sets no policy, and this keeps the injection working if one day it does.
-      bypassCSP: true,
       javaScriptEnabled: true,
       acceptDownloads: false,
       serviceWorkers: 'block',
     })
-    const findings = new FindingCollector(request.engine, this.#options.shopOrigin)
-    const shop = new URL(this.#options.shopOrigin)
-    if (request.bugToken !== null) {
-      await context.addCookies([{ name: this.#options.bugCookie, value: request.bugToken, domain: shop.hostname, path: '/', httpOnly: true, sameSite: 'Lax' }])
-    }
-    // The second layer: nothing leaves for another origin, whatever the page asks for.
-    await context.route('**/*', async (route) => {
-      const url = route.request().url()
-      if (new URL(url).origin === this.#options.shopOrigin) {
-        await route.continue()
-        return
+    try {
+      const findings = new FindingCollector(request.engine, this.#options.shopOrigin)
+      const shop = new URL(this.#options.shopOrigin)
+      if (request.bugToken !== null) {
+        await context.addCookies([{ name: this.#options.bugCookie, value: request.bugToken, domain: shop.hostname, path: '/', httpOnly: true, sameSite: 'Lax' }])
       }
-      findings.blockedNavigation(FindingCollector.targetOf(url), 'request')
-      await route.abort('blockedbyclient')
-    })
-    const page = await context.newPage()
-    page.on('dialog', dialog => void dialog.dismiss().catch(() => undefined))
-    findings.attach(page)
-    const id = randomUUID()
-    const session: Session = { id, engine: request.engine, context, page, findings, startedAt: Date.now(), expired: false, timer: setTimeout(() => void this.#expire(id), request.wallClockMs) }
-    session.timer.unref()
-    this.#current = session
-    this.#runsServed += 1
-    return id
+      await interceptRequests(context, this.#options.shopOrigin, findings)
+      const page = await context.newPage()
+      // The session has one window: any other a page opens is closed at once.
+      context.on('page', (other) => {
+        if (other !== page) void other.close().catch(() => undefined)
+      })
+      page.on('dialog', dialog => void dialog.dismiss().catch(() => undefined))
+      findings.attach(page)
+      const id = randomUUID()
+      const session: Session = { id, engine: request.engine, context, page, findings, startedAt: Date.now(), expired: false, crashed: false, forget: undefined, timer: setTimeout(() => void this.#expire(id), request.wallClockMs) }
+      page.on('crash', () => {
+        session.crashed = true
+      })
+      session.timer.unref()
+      return session
+    }
+    catch (error) {
+      await context.close().catch(() => undefined)
+      throw error
+    }
   }
 
-  /** Closes a session whose wall clock ran out; its findings stay until it is closed by the caller. */
+  /** Closes a session whose wall clock ran out; its findings stay until it is closed by the caller, or until the grace is over and it is forgotten. */
   async #expire(id: string): Promise<void> {
     const session = this.#current
     if (!session || session.id !== id) return
     session.expired = true
+    session.forget = setTimeout(() => this.#forget(id), this.#options.expiredGraceMs ?? EXPIRED_GRACE_MS)
+    session.forget.unref()
     await session.context.close().catch(() => undefined)
+  }
+
+  /** Forgets a session nobody closed, so the browser is free for the next run. */
+  #forget(id: string): void {
+    if (this.#current?.id !== id) return
+    this.#current = undefined
+    this.#released()
+  }
+
+  /** Says the runner is spent, once, when it is exhausted and holds no session. */
+  #released(): void {
+    if (!this.exhausted || this.busy || this.#saidExhausted) return
+    this.#saidExhausted = true
+    for (const listener of this.#exhaustedListeners) listener()
   }
 
   /** Runs one step in the session. */
@@ -160,6 +235,8 @@ export class BrowserSessions {
     const session = this.#session(id)
     session.findings.stepIndex = index
     const result = await runStep(session.page, step, this.#options.shopOrigin, session.findings)
+    // A browser that went away during the step is a crash, not an outcome of the plan.
+    this.#session(id)
     return { ...result, path: shopPathOf(session.page.url(), this.#options.shopOrigin), findings: session.findings.drain() }
   }
 
@@ -203,8 +280,10 @@ export class BrowserSessions {
     const session = this.#current
     if (!session || session.id !== id) throw new SessionError('no_session', 'There is no such session.')
     clearTimeout(session.timer)
+    if (session.forget) clearTimeout(session.forget)
     this.#current = undefined
     await session.context.close().catch(() => undefined)
+    this.#released()
     return { findings: session.findings.drain(), offOriginRequests: session.findings.offOrigin, blocked: session.findings.blocked }
   }
 
@@ -213,5 +292,6 @@ export class BrowserSessions {
     if (this.#current) await this.close(this.#current.id).catch(() => undefined)
     await this.#browser?.close().catch(() => undefined)
     this.#browser = undefined
+    await this.#deadEnd.close()
   }
 }

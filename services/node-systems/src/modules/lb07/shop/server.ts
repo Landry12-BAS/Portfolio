@@ -14,7 +14,7 @@ import type { Lb07BugId } from '@lb/contracts'
 import { productBySlug } from './catalogue.ts'
 import { addToCart, applyCoupon, CART_COOKIE, readCart, setQuantity, totalsOf, writeCart } from './cart.ts'
 import type { Cart } from './cart.ts'
-import { aboutPage, cartPage, checkoutFailedPage, checkoutPage, frontPage, imageSvg, notFoundPage, orderPage, productPage } from './pages.ts'
+import { aboutPage, BUG_SCRIPT, cartPage, checkoutFailedPage, checkoutPage, frontPage, imageSvg, notFoundPage, orderPage, productPage, STYLE } from './pages.ts'
 import type { CheckoutForm, Order } from './pages.ts'
 import { BUG_COOKIE, checkTokenKey, verifyBugToken } from './token.ts'
 
@@ -75,22 +75,61 @@ function readForm(request: IncomingMessage): Promise<URLSearchParams | undefined
   })
 }
 
-/** Writes an HTML page with the shop's headers. */
-function sendPage(response: ServerResponse, status: number, body: string, cart?: Cart): void {
-  const headers: Record<string, string> = {
-    'content-type': 'text/html; charset=utf-8',
+/** An inline block's hash, as a Content-Security-Policy source. */
+function hashSource(text: string): string {
+  return `'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`
+}
+
+// The two inline blocks the shop's pages may hold: the stylesheet every page carries, and the bug's one script.
+const STYLE_SOURCE = hashSource(STYLE)
+const BUG_SCRIPT_SOURCE = hashSource(BUG_SCRIPT)
+
+/**
+ * The shop's policy for a page, the third of the sandbox's layers at the page's own level: everything from the
+ * shop's origin only, so a script that got into a page could load and connect to nothing else; no script at all,
+ * but the checkout's one bug script by its hash when that page needs it; the stylesheet by its hash; no plugin, no
+ * base, forms only to the shop, and no frame of a page anywhere. The browser keeps it (the sandbox does not bypass it).
+ */
+export function pagePolicy(allowBugScript: boolean): string {
+  return [
+    'default-src \'self\'',
+    `script-src ${allowBugScript ? BUG_SCRIPT_SOURCE : '\'none\''}`,
+    `style-src ${STYLE_SOURCE}`,
+    'img-src \'self\'',
+    'object-src \'none\'',
+    'base-uri \'none\'',
+    'form-action \'self\'',
+    'frame-ancestors \'none\'',
+  ].join('; ')
+}
+
+// The policy of every answer that is not a page (a picture, a redirect, a refusal): nothing in it may load or run.
+const NOTHING_POLICY = 'default-src \'none\'; frame-ancestors \'none\''
+
+/** The headers every answer of the shop carries: no caching, no sniffing, no referrer, no framing, and the policy given. No CORS header, ever. */
+function baseHeaders(policy: string): Record<string, string> {
+  return {
     'cache-control': 'no-store',
+    'content-security-policy': policy,
     'x-content-type-options': 'nosniff',
+    'x-frame-options': 'DENY',
     'referrer-policy': 'no-referrer',
+    'cross-origin-opener-policy': 'same-origin',
+    'cross-origin-resource-policy': 'same-origin',
   }
+}
+
+/** Writes an HTML page with the shop's headers; the page's policy allows the bug's script only when asked to. */
+function sendPage(response: ServerResponse, status: number, body: string, cart?: Cart, allowBugScript = false): void {
+  const headers: Record<string, string> = { ...baseHeaders(pagePolicy(allowBugScript)), 'content-type': 'text/html; charset=utf-8' }
   if (cart) headers['set-cookie'] = `${CART_COOKIE}=${writeCart(cart)}; Path=/; HttpOnly; SameSite=Lax`
   response.writeHead(status, headers)
   response.end(body)
 }
 
-/** Redirects after a form, saving the cart. */
+/** Redirects after a form to a path of the shop, saving the cart. */
 function redirect(response: ServerResponse, location: string, cart: Cart): void {
-  response.writeHead(303, { 'location': location, 'cache-control': 'no-store', 'set-cookie': `${CART_COOKIE}=${writeCart(cart)}; Path=/; HttpOnly; SameSite=Lax` })
+  response.writeHead(303, { ...baseHeaders(NOTHING_POLICY), 'location': location, 'set-cookie': `${CART_COOKIE}=${writeCart(cart)}; Path=/; HttpOnly; SameSite=Lax` })
   response.end()
 }
 
@@ -134,7 +173,7 @@ export function createShopServer(options: ShopOptions): Server {
     if (method === 'GET' || method === 'HEAD') {
       if (path === '/') return sendPage(response, 200, frontPage(totals(), bugs))
       if (path === '/cart') return sendPage(response, 200, cartPage(cart, totals()))
-      if (path === '/checkout') return sendPage(response, 200, checkoutPage(cart, totals(), bugs))
+      if (path === '/checkout') return sendPage(response, 200, checkoutPage(cart, totals(), bugs), undefined, bugs.includes('script-error'))
       if (path === '/about') return sendPage(response, 200, aboutPage(totals()))
       const product = /^\/products\/([a-z0-9-]{1,40})$/.exec(path)
       if (product) {
@@ -145,7 +184,7 @@ export function createShopServer(options: ShopOptions): Server {
       if (image) {
         const svg = imageSvg(image[1] ?? '')
         if (svg === undefined) return sendPage(response, 404, notFoundPage(totals()))
-        response.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' })
+        response.writeHead(200, { ...baseHeaders(NOTHING_POLICY), 'content-type': 'image/svg+xml' })
         response.end(svg)
         return
       }
@@ -184,7 +223,7 @@ export function createShopServer(options: ShopOptions): Server {
         const filled: CheckoutForm = { name: field(form, 'name', 80), email: field(form, 'email', 120), street: field(form, 'street', 120), city: field(form, 'city', 80) }
         const current = totals()
         if (current.lines.length === 0) return redirect(response, '/cart', cart)
-        if (Object.values(filled).some(value => value === '')) return sendPage(response, 400, checkoutPage(cart, current, bugs, 'Please fill in every field.'))
+        if (Object.values(filled).some(value => value === '')) return sendPage(response, 400, checkoutPage(cart, current, bugs, 'Please fill in every field.'), undefined, bugs.includes('script-error'))
         // The bug: in a browser that is not Chromium, the checkout fails.
         if (bugs.includes('checkout-engine') && isSecondEngine(request.headers['user-agent'])) return sendPage(response, 500, checkoutFailedPage(current))
         const order: Order = { number: orderNumber(cart, now()), totalCents: current.totalCents, items: current.shownItems }
@@ -194,13 +233,13 @@ export function createShopServer(options: ShopOptions): Server {
       return sendPage(response, 404, notFoundPage(totals()))
     }
 
-    response.writeHead(405, { 'allow': 'GET, HEAD, POST', 'cache-control': 'no-store' })
+    response.writeHead(405, { ...baseHeaders(NOTHING_POLICY), allow: 'GET, HEAD, POST' })
     response.end()
   }
 
   return createServer((request, response) => {
     handle(request, response).catch(() => {
-      if (!response.headersSent) response.writeHead(500, { 'cache-control': 'no-store' })
+      if (!response.headersSent) response.writeHead(500, baseHeaders(NOTHING_POLICY))
       response.end()
     })
   })

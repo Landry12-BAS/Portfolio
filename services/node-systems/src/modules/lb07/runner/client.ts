@@ -1,15 +1,22 @@
 // The service's side of the runner's API: a small client over `fetch` that opens a session, runs a step,
-// reads the snapshot and the screenshot, runs axe and closes the session, checking every answer against
-// protocol.ts. A runner that cannot be reached, answers something else, or says it is busy becomes a
-// `RunnerError` with a code the engine turns into the run's failure or its wait.
+// reads the snapshot and the screenshot, runs axe and closes the session, showing the worker's key with every
+// call (key.ts) and checking every answer against protocol.ts. The runner drives a browser that hostile pages
+// could, in the worst case, take over, so its answers are read like any stranger's: never larger than the
+// largest honest one (a screenshot), and refused when they do not fit their schema. A runner that cannot be
+// reached, answers something else, says it is busy or that its browser crashed becomes a `RunnerError` with a
+// code the engine turns into the run's failure or its retry.
 import type { Lb07Engine, Lb07Step } from '@lb/contracts'
 import type { z } from 'zod'
 
+import { RUNNER_KEY_HEADER } from './key.ts'
 import { axeResponseSchema, closeResponseSchema, healthResponseSchema, openSessionResponseSchema, runnerErrorSchema, screenshotResponseSchema, snapshotResponseSchema, stepResponseSchema } from './protocol.ts'
 import type { CloseResponse, HealthResponse, RunnerFinding, StepResponse } from './protocol.ts'
 
 /** What went wrong with the runner, as a stable code. */
-export type RunnerErrorCode = 'unreachable' | 'busy' | 'exhausted' | 'expired' | 'bad_answer' | 'refused'
+export type RunnerErrorCode = 'unreachable' | 'busy' | 'exhausted' | 'expired' | 'crashed' | 'bad_answer' | 'refused'
+
+/** The most bytes an answer of the runner may have: a screenshot at its limit as base64, with room for the rest. */
+export const MAX_ANSWER_BYTES = 1_048_576
 
 /** A failure to get an answer from the runner. */
 export class RunnerError extends Error {
@@ -40,19 +47,52 @@ const CALL_TIMEOUT_MS = 30_000
 function codeOf(status: number, body: unknown): RunnerErrorCode {
   const parsed = runnerErrorSchema.safeParse(body)
   const code = parsed.success ? parsed.data.error.code : ''
+  if (code === 'browser') return 'crashed'
   if (status === 409 || code === 'busy') return 'busy'
   if (status === 503 || code === 'exhausted') return 'exhausted'
   if (status === 410 || code === 'expired') return 'expired'
   return 'refused'
 }
 
+/**
+ * Reads an answer's body as JSON, at most `MAX_ANSWER_BYTES` of it: an answer that says it is longer, or turns out
+ * to be, is refused without being read to its end. Undefined when there is no body or it is not JSON.
+ */
+async function readBoundedJson(response: Response): Promise<unknown> {
+  const declared = Number(response.headers.get('content-length') ?? '0')
+  if (declared > MAX_ANSWER_BYTES) {
+    await response.body?.cancel().catch(() => undefined)
+    throw new RunnerError('bad_answer', 'The browser runner answered with more than any answer holds.')
+  }
+  if (!response.body) return undefined
+  const chunks: Uint8Array[] = []
+  let size = 0
+  const reader = response.body.getReader()
+  for (let read = await reader.read(); !read.done; read = await reader.read()) {
+    size += read.value.byteLength
+    if (size > MAX_ANSWER_BYTES) {
+      await reader.cancel().catch(() => undefined)
+      throw new RunnerError('bad_answer', 'The browser runner answered with more than any answer holds.')
+    }
+    chunks.push(read.value)
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  }
+  catch {
+    return undefined
+  }
+}
+
 /** The runner over HTTP. */
 export class HttpRunner implements Runner {
   readonly #baseUrl: string
+  readonly #key: string
 
-  /** Points at a runner, such as http://lb07-runner:8008. */
-  constructor(baseUrl: string) {
+  /** Points at a runner, such as http://lb07-runner:8008, with the key it wants (key.ts). */
+  constructor(baseUrl: string, key: string) {
     this.#baseUrl = baseUrl.replace(/\/$/, '')
+    this.#key = key
   }
 
   /** Makes one call and reads its JSON answer against a schema. */
@@ -61,7 +101,7 @@ export class HttpRunner implements Runner {
     try {
       response = await fetch(`${this.#baseUrl}${path}`, {
         method,
-        headers: body === undefined ? {} : { 'content-type': 'application/json' },
+        headers: body === undefined ? { [RUNNER_KEY_HEADER]: this.#key } : { [RUNNER_KEY_HEADER]: this.#key, 'content-type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
         redirect: 'error',
@@ -72,10 +112,11 @@ export class HttpRunner implements Runner {
     }
     let answer: unknown
     try {
-      answer = await response.json()
+      answer = await readBoundedJson(response)
     }
-    catch {
-      answer = undefined
+    catch (error) {
+      if (error instanceof RunnerError) throw error
+      throw new RunnerError('unreachable', 'The browser runner stopped answering.')
     }
     if (!response.ok) throw new RunnerError(codeOf(response.status, answer), `The browser runner refused (${response.status}).`)
     const parsed = schema.safeParse(answer)

@@ -28,7 +28,8 @@ export interface Order {
   items: number
 }
 
-const STYLE = `
+/** The shop's one stylesheet, inline in every page; the server allows it by its hash (server.ts). */
+export const STYLE = `
   body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1c1b1a; background: #fbfaf8; }
   header { display: flex; gap: 24px; align-items: center; padding: 12px 24px; background: #2b2420; color: #f6f1ea; }
   header a { color: inherit; }
@@ -173,11 +174,15 @@ ${totalsTable(totals)}
   return layout('Cart', totals, body)
 }
 
+/**
+ * The script the `script-error` bug adds to the checkout page: it reaches for an element the page does not have and
+ * throws a TypeError. It is the shop's only script, and the server allows it by its hash on that page alone (server.ts).
+ */
+export const BUG_SCRIPT = 'document.addEventListener("DOMContentLoaded", function () { var summary = document.getElementById("order-summary-v2"); summary.textContent = "ready"; });'
+
 /** The checkout page: the summary and the form. With the script that throws, when that bug is on. */
 export function checkoutPage(cart: Cart, totals: Totals, bugs: readonly Lb07BugId[], problem?: string): string {
-  const head = bugs.includes('script-error')
-    ? new Markup('<script>document.addEventListener("DOMContentLoaded", function () { var summary = document.getElementById("order-summary-v2"); summary.textContent = "ready"; });</script>')
-    : new Markup('')
+  const head = bugs.includes('script-error') ? new Markup(`<script>${BUG_SCRIPT}</script>`) : new Markup('')
   const body = html`
 <h1>Checkout</h1>
 ${totals.lines.length === 0

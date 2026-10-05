@@ -28,6 +28,7 @@ import { hostname } from 'node:os'
 
 import { LB07_LIMITS } from '@lb/contracts'
 
+import { runnerKeyFrom } from './modules/lb07/runner/key.ts'
 import { createRunnerServer } from './modules/lb07/runner/server.ts'
 import { BrowserSessions } from './modules/lb07/runner/session.ts'
 import { createShopServer } from './modules/lb07/shop/server.ts'
@@ -78,10 +79,15 @@ async function shutDown(code: number): Promise<void> {
   process.exit(code)
 }
 
-// After its share of runs the process exits once the last session is closed; Compose starts a fresh one.
-const runner = createRunnerServer(sessions, () => {
-  console.log('lb07 sandbox has served its share of runs and is restarting')
-  setTimeout(() => void shutDown(0), 500).unref()
+// After its share of runs the process exits once the last session is closed (or, when its worker never closed it,
+// forgotten after its wall clock and a grace); Compose starts a fresh one. A run still in the browser is never cut short.
+const runner = createRunnerServer({
+  sessions,
+  key: runnerKeyFrom(tokenKey),
+  onExhausted: () => {
+    console.log('lb07 sandbox has served its share of runs and is restarting')
+    setTimeout(() => void shutDown(0), 500).unref()
+  },
 })
 
 await listen(shop, shopPort, '127.0.0.1')
