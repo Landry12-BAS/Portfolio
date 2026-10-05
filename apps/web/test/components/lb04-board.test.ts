@@ -12,8 +12,10 @@ import type { Recording } from '@lb/contracts'
 import { DOMWrapper, flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
 import Lb04Board from '~/boards/lb-04/Lb04Board.vue'
+import ContractViewer from '~/boards/lb-04/components/ContractViewer.vue'
 import { POLL_MS } from '~/boards/lb-04/limits'
 import { useLb04Store } from '~/boards/lb-04/store'
 import { useReadingStore } from '~/stores/reading'
@@ -433,6 +435,26 @@ describe('LB-04\'s board', () => {
       ;(input.element as HTMLInputElement).value = '0'
       await input.trigger('change')
       expect((input.element as HTMLInputElement).value).toBe('1')
+    })
+
+    it('keep the digits the visitor has typed in the page box when the viewer redraws before they leave it', async () => {
+      const { wrapper, store } = await reviewed()
+      await showFirstRisk(wrapper, store)
+      const input = wrapper.get('[data-testid="viewer-page"]')
+      const box = input.element as HTMLInputElement
+
+      // The background comparison of the texts redraws the viewer once for each page it reads; a redraw by hand
+      // between the typing and the visitor's leaving the box is the same thing, without waiting for the pages.
+      box.value = '9'
+      await input.trigger('input')
+      wrapper.findComponent(ContractViewer).vm.$forceUpdate()
+      await nextTick()
+      expect(box.value).toBe('9')
+
+      await input.trigger('change')
+      await flushPromises()
+      expect(box.value).toBe('9')
+      expect(engine.drawn).toContain(9)
     })
 
     it('close the engine when the board goes away', async () => {
