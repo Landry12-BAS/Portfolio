@@ -883,7 +883,7 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   same call was run in the development session, which reached Hugging Face through its proxy, and
   private mode then transcribed the six committed recordings with those weights (word error rate
   0.106, measured on an x86-64 development machine: `services/django-systems/README.md`); no image
-  with them was built there, GitHub's image job does that. Nothing was measured on the box's
+  with them was built there; GitHub's image job built it (the `django-systems` image of the CI run on 1852093 passed, weights step included). Nothing was measured on the box's
   Ampere A1. Fast mode's route exists in the gateway and is tested with fake providers; it has
   never been called with a provider key. The shared `lb09-audio` volume and the 5 MB upload route
   through Caddy are checked by the Compose rules and `infra/caddy/test.sh`, not by a deployed

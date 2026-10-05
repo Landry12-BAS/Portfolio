@@ -285,7 +285,12 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
 
 `pnpm typecheck` also runs `tsc -p tsconfig.tools.json`, a strict check of the scripts, the tests and the
 journeys, which `nuxt typecheck` does not read. Where a Chromium is preinstalled, point Playwright at it
-with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`.
+with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`. CI runs Playwright's own, whose default is the
+headless shell: a Chromium with no media capture, where `getUserMedia` answers `NotSupportedError` even with
+the fake device. The journeys that need a microphone (`e2e/lb09-recorder.spec.ts`) therefore ask for the
+full Chromium in its new headless mode (`channel: 'chromium'`) when no executable is given. To run the suite
+as CI does, leave the variable unset where `PLAYWRIGHT_BROWSERS_PATH` holds the builds: a journey that passes
+only in the full browser is a CI failure waiting.
 
 ### Against the real services
 
