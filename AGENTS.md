@@ -82,7 +82,20 @@ with its table, the findings with their quotes as text, a PDF viewer that loads 
 under a policy of its own and highlights exactly the characters a citation names, and redlines
 as insertions and deletions, in English and Czech (see the web README); next come its recorded
 sample runs (`just record-sample lb-04 <sample>`, which needs the live back end with a model
-behind it).
+behind it). LB-06 Incident Commander is in the same monolith too: a seeded, event-sourced shop
+simulator (six services, four faults, the same seed always the same incident), detection and
+correlation written as code (the SLO burn rate, the new log signatures, the deploys before the
+first divergence), a commander and three specialist agents orchestrated in code with a hard cap
+of 15 model calls, proposals from a closed list of actions that only the visitor's approval can
+apply, the incident's log as a Postgres table and a Redis stream, a WebSocket feed, and the
+visitor API with its one-incident-a-day quota (an incident the agents could not run is given
+back) (see the same README). LB-06's board is on the site at `/systems/lb-06/board`: six charts
+that turn when the fault strikes, each with a text alternative and a table, the agents' steps and
+the commander's hypotheses, the card that waits for the visitor's approval, the service level
+objective, the timeline and the postmortem, a replay of a recorded incident, the visitor's own
+incident with its text screened, a polling fallback for a network that blocks WebSockets, in
+English and Czech (see the web README); next come its recorded sample runs (`just record-sample
+lb-06 <sample>`, which needs the live back end with a model behind it).
 Add each new command to the Commands section in the change that introduces it.
 
 ## Git rules (owner's instruction, mandatory)
@@ -238,6 +251,7 @@ Everything runs through the root `justfile`, which wraps the pnpm scripts and uv
 | `just node-openapi` | Regenerate `services/node-systems/openapi.json` after an API change (a test and `just check` fail while it is stale) |
 | `just eval-lb08 [--samples] [--case ID] [--pause SECONDS]` | Run LB-08's golden set through the live pipeline and grade it by rules (at most two gateway calls a case, paced by `--pause`; run it when prompts or routes change) |
 | `just eval-lb04 [--samples] [--case ID] [--no-redlines] [--pause SECONDS]` | Run LB-04's golden set (six seed contracts, two of them refused before any model) through the live pipeline and grade it by rules: quotes checked against the contract's own text, planted findings found (a recall gate), a hostile contract's instructions never obeyed (at most five gateway calls a contract and one for its redline, about 24 for the set, paced by `--pause`; run it when prompts or routes change; it exits 1 unless every case passes and recall reaches its gate) |
+| `just eval-lb06 [--samples] [--case ID] [--pause SECONDS]` | Run LB-06's golden set (eight incidents: each of the four faults, a second seed for two of them, and a hostile text in the parameters of two) through the whole simulator, the detection and the live agents behind the gateway, and grade it by rules: the cause, the first proposal, the evidence cited, the model calls, the recovery, the postmortem, an injection never obeyed (about nine gateway calls a case, 15 at the cap, about 72 for the set, paced by `--pause`, default 8; run it when prompts or routes change; it exits 1 unless every case passes) |
 | `just audit` | Check npm and Python dependencies against known vulnerabilities |
 | `just e2e` | Build the site's test build (the production build plus a stand-in for Turnstile and the mock recordings), then run the Playwright journeys, axe checks and security-header tests against it and the mock back end |
 | `just check-build` | Fail if the production build (`just build` first) holds any trace of the test build's Turnstile stand-in |

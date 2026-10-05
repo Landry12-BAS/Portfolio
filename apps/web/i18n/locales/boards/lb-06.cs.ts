@@ -14,7 +14,7 @@ const lb06 = {
     replay: 'Přehrát tento incident',
     live: 'Spustit tento incident naživo',
     noRecording: 'K tomuto incidentu zatím není záznam, takže by se spustil naživo.',
-    liveCost: 'Spuštění naživo spotřebuje váš jeden incident na dnešek. Agenti provedou asi deset volání modelu, a žádné, pokud už byl stejný incident dříve spuštěn.',
+    liveCost: 'Spuštění naživo spotřebuje váš jeden incident na dnešek. Agenti provedou devět až patnáct volání modelu, a žádné, pokud už byl stejný incident dříve spuštěn.',
     noLive: 'Tato kopie webu teď nemůže spouštět incidenty naživo.',
     allowanceUsed: 'Dnešní incident je vyčerpán. Přehrávání a incident, který jste spustili, zůstávají otevřené.',
     ownTitle: 'Vytvořte si vlastní incident',

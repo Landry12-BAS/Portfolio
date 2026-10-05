@@ -15,7 +15,7 @@ const lb06 = {
     replay: 'Replay this incident',
     live: 'Run this incident live',
     noRecording: 'There is no recording of this incident yet, so it would run live.',
-    liveCost: 'Running it live uses your one incident today. The agents make about ten model calls, and none when the same incident has been run before.',
+    liveCost: 'Running it live uses your one incident today. The agents make nine to fifteen model calls, and none when the same incident has been run before.',
     noLive: 'This copy of the site cannot run incidents live right now.',
     allowanceUsed: 'Today\'s incident is used. Replays and the incident you started are still open.',
     ownTitle: 'Make your own incident',

@@ -13,7 +13,10 @@ board follows, **LB-02's board**, the one that streams (a WebSocket) and can be 
 drawn in the browser, and the safety demo), **LB-08's board** (the Workflow Automator: a graph on a canvas and as an
 outline, and a run with its retries and dead letters) and **LB-03's board** (the Invoice Reader: a file uploaded,
 the page of the document with the place of every field drawn over it, a table of fields that can be corrected,
-and the checks, the journal entry and the exports).
+and the checks, the journal entry and the exports), **LB-04's board** (the Contract Radar: a PDF read in the browser
+beside a risk radar, findings with their quotes, and redlines) and **LB-06's board** (the Incident Commander: a shop
+simulated minute by minute, dashboards that turn when a fault strikes, a team of agents at work, and a fix that
+waits for the visitor's click).
 
 ## Run it
 
@@ -42,7 +45,7 @@ app/
   components/board/                the evaluation-board kit (components)
   board-kit/                       the kit's logic: plain modules, no Nuxt, tested alone
   boards/registry.ts               which systems have a board
-  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...; LB-05 also chart/; LB-04 also pdf/)
+  boards/<system>/                 one folder per board (LB-01: Lb01Board.vue, store.ts, ...; LB-05 also chart/; LB-04 also pdf/; LB-06 also socket.ts)
   stores/                          Pinia: session, scope, replay (kit-wide), reading, catalog
   plugins/00.zod-jitless.ts        Zod without `new Function`, which the CSP forbids
 public/                            static files; LB-02's service worker is written by hand, its icon, manifests and offline pages are generated
@@ -262,7 +265,8 @@ one, its board says "No recording yet" and offers the live run. See `recordings/
   makes one fail), and LB-04's against `Lb04Site`, whose back end is the mock's LB-04 (the real PDF
   extraction and review pipeline in a worker thread, with the golden set's reference reviewer for a model;
   the first open of each sample is done before the fake timers start, because a worker thread does not
-  obey them).
+  obey them), and LB-06's against `FakeLb06Site`, whose back end is the mock's LB-06 (the real simulator, the
+  real detection and the reference agents for a model) with a fake WebSocket bound to the mock's hub.
 - **integration**: the site's server over HTTP against the mock back end, route by route; the recorder
   and the `record-sample` command.
 - **contract**: the site's server against the real gateway and a real Redis (Testcontainers, or
@@ -374,6 +378,32 @@ Playwright reuses a server it finds on `E2E_PORT`, so `e2e/lb04.spec.ts` runs on
 worker (the provider remembers which sample it is reading). The recorder (`just record-sample lb-04
 <sample> --out <a scratch folder>`) runs against it too. A recording made so is labelled `live` and was
 made with a fake model, so it is never kept.
+
+LB-06 is the same recipe again, with the provider answering as `ReferenceAgents` (`golden/reference.ts`), which
+reads only the data slots of a prompt, so it needs to know nothing about the incident: the first words of the
+system prompt say which agent is asking, and a plan starts a new set of reference agents. The guard
+(`lb-guard`) is a model that answers with a number, and it must report a small prompt, since the gateway refuses
+a classifier's answer that fills its window. The routing table is `routing.lb06.yaml`. An incident takes about
+twenty seconds from the first click to the postmortem on the real clock (a minute of the shop every two seconds).
+What running the board there found, none of which a test against the mock could:
+
+- an incident that **reuses an earlier run's answers** (every visitor after the first, since the samples are
+  cached) writes no span while it goes, and its root span a moment after it ends, so the Scope gave up looking
+  after eight seconds and said there was no trace. The board now looks again when the incident ends;
+- the same incident replays its steps stamped **1 and with no model call** (the contract's smallest step), so the
+  board counted a call it never made. Each step now carries the calls spent when it was taken, zero until a model
+  call has been made;
+- a **failed incident cost the visitor's day**: with the models out of reach, the one incident a visitor gets a
+  day was spent on an incident that never ran. The service now gives it back, once (and so does the mock), and the
+  board says so and counts it again;
+- the visitor's **own incident** really is screened: the guard flags an instruction in a flag's name, replaces it
+  with a label and the agents read the label.
+
+The journeys of `e2e/lb06.spec.ts` ran against it (two workers), and the recorder
+(`just record-sample lb-06 <sample> --out <a scratch folder>`) wrote a recording the board replays to the
+end. One thing to know when running the whole file there: every journey leaves an incident open, and the
+service runs at most eight at once, so after about eight the service answers 503 (`too_many_incidents`) until
+the oldest have ended (eight minutes at most). That is the service doing what it should.
 
 ## Decisions worth knowing
 
@@ -504,3 +534,38 @@ made with a fake model, so it is never kept.
   made it, was thrown away. Not run: a real model, a real Turnstile site key and challenge, a recording made
   on a live back end, and the site on Vercel, where a function's request body is limited (4.5 MB, as
   documented) above the proxy's 3 MiB for a PDF of 2 MB sent as base64.
+- **LB-06's incident is its log.** The board keeps the events of the incident and works the rest out of them
+  (`incident.ts`): the state is the newest event that changes it, the proposal that waits is the newest
+  `proposal.made` nobody has answered, the model calls spent are the most any step says it had spent, and the
+  charts are the `tick` events. The service's own view of the incident (the cost, the guard's verdict, whether the
+  answers were cached) is read again a moment after the events that change it, and the larger of the two counts
+  wins, so the numbers never run behind the log. The log is capped (`LB06_LIMITS.maxEvents`) and merged by event
+  number, so an event that arrives twice, over the socket and by a poll, is drawn once.
+- **LB-06's feed is a WebSocket with a polling fallback.** The visitor's pass for it is fetched from the site
+  (`/api/tokens/lb-06`, five minutes, LB-06 only) and sent in the first frame, never in the address. The socket
+  reconnects with backoff and asks for the events after the last it holds. A network that blocks WebSockets, or a
+  socket that cannot be kept open, turns into reading the log's pages every second and a half, and says so
+  ("Polling the log"); nothing else about the board changes.
+- **The visitor's click is the only way to change the shop.** The card that waits shows the proposal in words,
+  why, and what it touches; Approve and Reject send the id of the proposal that waits, and the service refuses an
+  answer to one that is gone (409), so a stale tab cannot approve a proposal it has not seen. A replay has no
+  buttons and says there is nobody to ask. Rejecting sends the agents back to work, up to three proposals in all.
+- **The charts are SVG drawn by code** (`series.ts`, `ServiceChart.vue`, no chart library) and say everything in
+  words as well: the service's state is a word with an icon, a failing service has a heavier frame, the landmarks
+  are letters on dashed lines (staggered over three rows, since the fault, the alert and the agents' start are
+  within three minutes of each other, and turned to the left near the right edge so none is cut off), and each
+  chart has a title and a description that give the start, the peak and the present value. Every number is also
+  offered as a table for the metric chosen.
+- **The Scope looks again at the end.** The incident's root span is written after the incident ends, and an
+  incident that reuses an earlier run's answers writes nothing before it; so when the incident ends, a Scope that
+  had stopped looking (nothing found, stalled, failed) looks again for six seconds, keeping what it has.
+- **A cached incident spent no model call**, whatever its steps say: they are replayed stamped with the contract's
+  smallest step and no call, so the board counts calls only once a step says one was made.
+- **An incident the agents could not run gives the day's incident back**, in the service and in the mock, and the
+  board counts it again; one ended early, or at the step cap, stays spent. Abandoned incidents (a visitor who
+  closes the tab at the approval) hold one of the eight places the demo runs at once until the incident's
+  eight minutes are over.
+- **LB-06's board ran against the real Node service** (see "Against the real services"). Not run: a real model
+  (so how often real agents find the cause, and what they propose after a rejection, are unmeasured: the reference
+  agents propose the same fix again), a real Turnstile site key and challenge, a recording made on a live back end
+  (the two in `e2e/fixtures` are the mock's and say so), and the box's two ARM cores.

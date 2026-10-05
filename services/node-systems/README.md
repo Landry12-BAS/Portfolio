@@ -524,12 +524,12 @@ closes only when the SLO has recovered, measured by code.
 | Verify | Code: five healthy minutes in a row (the short window under 1x) close the loop. A remediation that has not brought the SLO back in twelve minutes sends the commander back | The proposals spent end the incident as aborted |
 | Postmortem | Code builds the timeline from the log; the model writes prose over it (`lb-reason`, 1 call, 1 repair) that must reference only kinds of event the log holds, or no prose is shown. Then the incident closes and its root span is written | |
 
-A clean incident costs 9 calls (10 with the screen), the datasheet's 10 to 15 with repairs and a
-second ranking, and never more than 15. The agents' work for a scenario is cached by the scenario's
+A clean incident costs 9 calls (10 with the screen), up to 15 with repairs and a
+second ranking, and never more than 15 (the datasheet says 9 to 15). The agents' work for a scenario is cached by the scenario's
 key and the prompts' version (`engine/cache.ts`): a curated sample's second run replays its plan, tool
 calls, reports, ranking and postmortem at no model call, so the samples spend quota once. **No live
 score is recorded here: no provider key exists where this was built, so the live eval has never been
-run, and the datasheet's 10 to 15 stays a target.**
+run, and the datasheet's 9 to 15 stays an estimate.**
 
 ### What a running incident costs
 
