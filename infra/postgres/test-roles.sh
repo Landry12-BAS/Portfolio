@@ -130,8 +130,11 @@ docker run -d --name "$db" --network "$net" --user postgres --read-only --cap-dr
     "$image" postgres -c config_file=/etc/postgresql/postgresql.conf >/dev/null
 docker run -d --name "$client" --network "$net" --user postgres --entrypoint sleep "$image" 600 >/dev/null
 ready=false
-for _ in $(seq 1 60); do
-    if docker exec "$db" pg_isready -h /var/run/postgresql -d lb -q; then ready=true; break; fi
+# The image starts a temporary server to run its init scripts, stops it, and starts the real one: the server
+# is the real one once it has said it is ready twice, and `pg_isready` alone answers for the temporary one.
+for _ in $(seq 1 90); do
+    if [ "$(docker logs "$db" 2>&1 | grep -c 'database system is ready to accept connections')" -ge 2 ] \
+        && docker exec "$db" pg_isready -h /var/run/postgresql -d lb -q; then ready=true; break; fi
     sleep 1
 done
 if [ "$ready" != true ]; then
