@@ -493,11 +493,18 @@ Short notes, as the playbook asks (step 8).
   characters and needs the visitor's own session: anyone else's is indistinguishable from none.
 - **Tampering.** The recording is untrusted bytes: its container is told from its first bytes,
   it is decoded in a child the kernel holds to a CPU, memory and time budget, and its length is
-  what came out, never what a header says. The transcript is untrusted text: it goes between
+  what came out, never what a header says. The child is pinned to the sniffed container's demuxer
+  (`format=` on `av.open`) and never lets FFmpeg probe, so a file whose first bytes pass the
+  container check cannot steer the decoder to a demuxer that opens another file or a URL (`concat`,
+  `sdp`, `hls`, `dash`); a body that holds a different container than its first bytes claim is
+  refused. The transcript is untrusted text: it goes between
   markers it cannot close, the prompts call it data, and an item is kept only when its quote is
   really in the transcript, is not spoken to an assistant, and names an owner the meeting named.
   Every model answer must fit its Pydantic schema, with one repair. The model never supplies a
-  time; the code does. The audio file's name is random and the store refuses any other.
+  time; the code does. The audio file's name is random and the store refuses any other. The CSV
+  export is for a spreadsheet, so a cell of the extractor's text or a quote from the recording
+  that begins like a formula (`=`, `+`, `-`, `@`, a tab or a carriage return) is written as text
+  (`lb09/export.py`, and the board's `export.ts` to match; docs/SECURITY.md, section 4).
 - **Data exposure.** Synthetic samples; a visitor's own recording goes, in fast mode, only to
   providers that do not train on inputs, and in private mode nowhere. The file is deleted when
   transcribed, on success and on failure, and the sweep removes anything older than an hour.
@@ -525,8 +532,41 @@ Known gaps, stated rather than hidden:
 - An owner is accepted when it is a label or a capitalised word the meeting said, so a model that
   assigns a job to the wrong person who was named in the meeting is not caught by the code.
 - The connection cap and the stage announcements are per process, as LB-02's are.
+- A non-owner who knew a meeting's 16-character ID could, in the brief window while the WebSocket
+  reads the row, be in that meeting's group before ownership is checked (the group is joined first
+  so an owner misses no stage); the ID is the unguessable secret, and only progress metadata (no
+  words) would ever reach them, so this is defence-in-depth, not an open leak.
 - Not run live: the golden eval, the word error rate in either mode, and recorded samples. The
   private model's weights are not in this image until the download step in docs/DEPLOY.md runs.
+
+Adversarial review (Oct 2026), each attack tried against the real service, Postgres, Redis and the
+real decode child. **Fixed**, each with a test that failed before the fix:
+
+- **CSV export formula injection.** A recording whose words, or an extractor summary, began with
+  `=`, `+`, `-`, `@`, a tab or a carriage return wrote a live formula into the CSV a visitor opens
+  in Excel or LibreOffice (`=HYPERLINK(…)` and the like), though docs/SECURITY.md, section 4
+  promised such a cell is written as text. `lb09/export.py` and the board's `export.ts` now
+  neutralise it, the way LB-03's export does.
+- **Decoder container confusion.** A file whose first bytes passed the container check (an ID3 tag
+  reads as MP3) but whose body was another container was decoded as whatever FFmpeg probed it to
+  be, not as the container the gate approved; probing can reach demuxers that open another file or
+  a URL. The child is now pinned to the sniffed container's demuxer and a mismatched body is refused.
+
+**Tried and held** (one line each):
+
+- A WAV header claiming four gigabytes, a data chunk past the end, zero channels, an absurd rate: the
+  length is measured from the decoded samples, never the header, and odd rates are resampled.
+- A decoder bomb (kilobytes decoding to hours): the child stops at a minute and a little (CUT), the
+  wall clock and `RLIMIT_AS`/`RLIMIT_CPU` kill a runaway, and the parent refuses it.
+- 3 MiB of random bytes behind a valid first four bytes: undecodable, nothing written.
+- Several uploads at once against the five-a-day limit: the per-visitor advisory lock serialises them.
+- A Celery redelivery, a crash, a soft-time-limit, a lost worker: the task is claimed once, audio is
+  deleted on every path, and the sweep gives up on what the worker lost.
+- Another visitor's meeting over the API and the WebSocket: filtered by session; not found.
+- A token minted for another system, a forged one, an altered claim: refused (the shared token corpus).
+- Wrong WebSocket frames (binary, over 2 KB, a second frame, no hello in time, a bad JSON hello): closed.
+- A transcript that tells the extractor to ignore its instructions or addresses an assistant: the item
+  is dropped in code after its quote is checked against the transcript.
 
 ## Operating notes for LB-09
 
