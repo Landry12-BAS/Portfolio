@@ -211,15 +211,15 @@ export const systemsCs = {
     function: 'Měří prompty všech ostatních systémů, takže každá změna promptu vychází se skóre.',
     visitorAction: 'Upraví prompt a porovná skóre a náklady',
     problem: 'Týmy změní prompt nebo model a o poklesu kvality se dozvědí od svých uživatelů.',
-    tryIt: 'Vyberte systém, třeba navrhovač odpovědí z LB-01. Upravte jeho prompt a spusťte ho na zlaté sadě napříč bezplatnými poskytovateli. Porovnejte skóre, latenci a čerpání kvót s produkcí a pak si otevřete každý případ, který se změnil.',
+    tryIt: 'Vyberte prompt některého systému, třeba navrhovač odpovědí z LB-01. Upravte ho a spusťte na deseti případech jeho zlaté sady, u Groq, Workers AI nebo obou. Porovnejte skóre, latenci, tokeny a volání s produkcí a pak si otevřete každý případ, který se změnil.',
     proves: 'Metodiku evaluace LLM, rozhodování o směrování mezi poskytovateli a disciplínu v CI.',
     tags: ['Evaluace', 'Více poskytovatelů'],
     chain: ['zlatá sada', 'běh variant', 'hodnocení pravidly', 'LLM jako soudce', 'intervaly spolehlivosti', 'brána v CI'],
     stack: ['asynchronní Flask', 'paralelní volání přes asyncio', 'httpx', 'Postgres', 'GitHub Actions'],
     highlights: [
-      'Asynchronní Flask, protože běh evaluace jsou stovky souběžných volání, která většinou čekají na síť.',
+      'Flask s vlastní pipeline v asyncio: běh má nejvýš 40 volání modelu, která většinou čekají na síť, takže je jedna smyčka událostí posílá po čtyřech a výsledky produkce z mezipaměti nestojí žádné.',
       'Běhy návštěvníků hodnotí pravidla. LLM soudce běží každou noc a jeho skóre se počítá až po kalibraci na lidském hodnocení.',
-      'Stejná brána běží v CI a zablokuje merge, který skóre sníží. Rozhoduje také o tom, které záložní modely smějí obsluhovat jednotlivé trasy.',
+      'V CI brána zastaví změnu, jejíž skóre klesne pod odevzdanou základní hodnotu, a každou noc poradce řekne, které záložní modely na které trase obstojí.',
     ],
     limits: [
       { label: 'Případů na běh návštěvníka', value: '10' },

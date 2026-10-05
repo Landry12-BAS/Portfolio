@@ -291,15 +291,15 @@ export const systems = [
     phase: 3,
     size: 'L',
     problem: 'Teams change a prompt or a model and learn from their users that quality dropped.',
-    tryIt: 'Pick a system, such as the LB-01 reply drafter. Edit its prompt and run it on the golden set across the free providers. Compare score, latency and quota use with production, then open every case that changed.',
+    tryIt: 'Pick a system\'s prompt, such as the LB-01 reply drafter. Edit it and run it on ten cases of its golden set, on Groq, Workers AI or both. Compare score, latency, tokens and calls with production, then open every case that changed.',
     proves: 'LLM evaluation methodology, multi-provider routing decisions, and CI discipline.',
     tags: ['Evals', 'Multi-provider'],
     chain: ['golden set', 'run variants', 'rule-based graders', 'LLM judge', 'confidence intervals', 'CI gate'],
     stack: ['Flask async', 'asyncio fan-out', 'httpx', 'Postgres', 'GitHub Actions'],
     highlights: [
-      'Async Flask, because an eval run is hundreds of concurrent calls that mostly wait on the network.',
+      'Flask with an asyncio pipeline of its own: a run is up to 40 model calls that mostly wait on the network, so one event loop sends them four at a time, and production\'s cached results cost none.',
       'Visitor runs use rule-based graders. The LLM judge runs nightly, calibrated against human labels before its scores count.',
-      'The same gate runs in CI and blocks a merge that lowers a score. It also decides which fallback models may serve each route.',
+      'In CI, a gate fails a change whose score falls below its committed baseline, and each night an advisor says which fallback models pass on each route.',
     ],
     limits: [
       { label: 'Cases per visitor run', value: '10' },
