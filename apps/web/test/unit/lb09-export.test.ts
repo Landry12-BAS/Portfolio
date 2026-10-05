@@ -4,7 +4,7 @@
 // the speaker labels were inferred from the words.
 import { describe, expect, it } from 'vitest'
 
-import { exportCsv, exportJson, exportMeeting, exportText, LABELS_NOTE } from '~/boards/lb-09/export'
+import { exportCsv, exportJson, exportMeeting, exportText, LABELS_NOTE, safeCell } from '~/boards/lb-09/export'
 import type { Item, Meeting, Segment } from '~/boards/lb-09/schemas'
 
 const meeting: Meeting = {
@@ -51,6 +51,26 @@ describe('the exports', () => {
     expect(lines[0]).toBe('"kind","text","owner","deadline","start_seconds","end_seconds","evidence"')
     expect(lines[1]).toBe('"decision","Roast the Ethiopia first","","","0.2","3.1","Let\'s start with the Ethiopia."')
     expect(lines[2]).toBe('"action","Order the bags, ""forty""","Speaker 2","Friday","3.4","7","I will order the bags, say ""forty"", by Friday."')
+  })
+
+  it('neutralise a CSV cell that begins like a spreadsheet formula (docs/SECURITY.md, section 4)', () => {
+    // A formula-starting cell gets a leading quote, so a spreadsheet reads it as text, not a formula.
+    expect(safeCell('=HYPERLINK("http://evil.example/x","click")')).toBe('\'=HYPERLINK("http://evil.example/x","click")')
+    for (const start of ['=cmd', '+1', '-2+3', '@SUM(1+1)', '\tTAB']) expect(safeCell(start).startsWith('\'')).toBe(true)
+    // A plain sentence keeps its own text; a newline or a leading carriage return becomes a space (also safe).
+    expect(safeCell('Roast the Ethiopia first')).toBe('Roast the Ethiopia first')
+    expect(safeCell('a\tb\nc')).toBe('a\tb c')
+    // A carriage return before a formula is flattened to a space, and the formula behind it is still neutralised.
+    expect(safeCell('\r=evil')).toBe('\' =evil')
+    // The extractor's text and the quotes copied from the visitor's own recording are untrusted.
+    const hostile: Item[] = [
+      { position: 0, kind: 'action', text: '=HYPERLINK("http://evil.example/x","click")', owner: '@SUM(1+1)', deadline: '+1', evidence: '-2+3', start: 1, end: 2, first_segment: 0, last_segment: 0 },
+    ]
+    const csv = exportCsv(hostile)
+    expect(csv).toContain('"\'=HYPERLINK')
+    expect(csv).toContain('"\'@SUM(1+1)"')
+    expect(csv).toContain('"\'+1"')
+    expect(csv).toContain('"\'-2+3"')
   })
 
   it('write the follow-up for LB-08 with each decision, each owner and deadline, and the labels note', () => {

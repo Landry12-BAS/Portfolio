@@ -4,7 +4,7 @@ import csv
 import io
 import json
 
-from lb09.export import LABELS_NOTE, as_csv, as_json, as_text
+from lb09.export import LABELS_NOTE, as_csv, as_json, as_text, safe_cell
 from lb09.models import Item, Meeting, Segment
 
 MEETING = Meeting(public_id="meeting-0123456789ab", mode="fast", duration_seconds=41.1, transcriber="lb-stt")
@@ -78,6 +78,36 @@ def test_csv_has_a_header_and_one_row_an_item() -> None:
     assert rows[0] == ["kind", "text", "owner", "deadline", "start_seconds", "end_seconds", "evidence"]
     assert rows[2] == ["action", "Order bags", "Peter", "Wednesday", "20.1", "23.8", "I will order."]
     assert len(rows) == 4
+
+
+def test_the_csv_turns_a_formula_cell_into_text_so_a_spreadsheet_does_not_run_it() -> None:
+    """A cell that begins like a formula is written as text (docs/SECURITY.md, section 4).
+
+    The extractor's text and the quotes copied from the visitor's own recording are untrusted: a cell that
+    begins with `=`, `+`, `-`, `@`, a tab or a carriage return is read by a spreadsheet as a formula.
+    """
+    hostile = [
+        Item(
+            position=0,
+            kind="action",
+            text='=HYPERLINK("http://evil.example/x","click")',
+            owner="@SUM(1+1)",
+            deadline="+1",
+            evidence="-2+3",
+            start=1.0,
+            end=2.0,
+            first_segment=0,
+            last_segment=0,
+        )
+    ]
+    row = list(csv.reader(io.StringIO(as_csv(hostile))))[1]
+    for cell in (row[1], row[2], row[3], row[6]):
+        assert not cell.startswith(("=", "+", "-", "@", "\t", "\r"))
+    assert row[1] == '\'=HYPERLINK("http://evil.example/x","click")'
+    assert row[2] == "'@SUM(1+1)"
+    # A plain sentence keeps its own text, and an internal newline becomes a space.
+    assert safe_cell("Roast the Colombian first") == "Roast the Colombian first"
+    assert safe_cell("line one\nline two") == "line one line two"
 
 
 def test_the_text_export_describes_the_follow_up_as_a_process_for_lb_08() -> None:

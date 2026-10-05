@@ -37,15 +37,33 @@ export function exportJson(meeting: Meeting, segments: readonly Segment[], items
   return `${JSON.stringify(document, null, 2)}\n`
 }
 
+/** The characters a spreadsheet reads as the start of a formula. */
+const FORMULA_STARTS = ['=', '+', '-', '@', '\t', '\r']
+
+/**
+ * Makes a cell of free text safe to open in a spreadsheet: control characters out, and a cell that begins
+ * like a formula (`=`, `+`, `-`, `@`, a tab or a carriage return) turned into text with a leading quote.
+ * This mirrors the API's `safe_cell` (services/django-systems/lb09/export.py), so a replay exports exactly
+ * what a live run does (docs/SECURITY.md, section 4).
+ */
+export function safeCell(text: string): string {
+  const flat = text.replace(/[\r\n]+/g, ' ')
+  // Drop C0 control characters and DEL, keeping the tab, which the formula check below still catches.
+  const cleaned = [...flat].filter(character => character === '\t' || !(character <= '\u001f' || character === '\u007f')).join('')
+  const leading = cleaned.replace(/^\s+/, '').normalize('NFKC').slice(0, 1)
+  if (FORMULA_STARTS.some(start => cleaned.startsWith(start)) || ['=', '+', '-', '@'].includes(leading)) return `'${cleaned}`
+  return cleaned
+}
+
 /** Quotes one CSV cell: always in double quotes, with the cell's own doubled. */
 function csvCell(value: string | number): string {
   return `"${String(value).replaceAll('"', '""')}"`
 }
 
-/** Writes the items as CSV, one row an item, with a header. */
+/** Writes the items as CSV, one row an item, with a header. Free-text cells are made spreadsheet-safe first. */
 export function exportCsv(items: readonly Item[]): string {
   const header = ['kind', 'text', 'owner', 'deadline', 'start_seconds', 'end_seconds', 'evidence']
-  const rows = items.map(item => [item.kind, item.text, item.owner ?? '', item.deadline ?? '', item.start, item.end, item.evidence].map(csvCell).join(','))
+  const rows = items.map(item => [item.kind, safeCell(item.text), safeCell(item.owner ?? ''), safeCell(item.deadline ?? ''), String(item.start), String(item.end), safeCell(item.evidence)].map(csvCell).join(','))
   return `${[header.map(csvCell).join(','), ...rows].join('\n')}\n`
 }
 
