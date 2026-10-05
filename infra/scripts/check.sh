@@ -11,7 +11,7 @@
 #   - every image is pinned by digest or built here (pin-images.sh --check);
 #   - the Compose files resolve and follow the security rules (check-compose.sh);
 #   - the Caddyfile is valid and is formatted the way `caddy fmt` writes it;
-#   - the systemd units parse;
+#   - the systemd units parse, and the nightly backup's unit takes the deploy's lock;
 #   - the encrypted secrets files are encrypted, and nothing else is in infra/secrets.
 #
 #   infra/scripts/check.sh
@@ -100,6 +100,38 @@ systemd_units() {
     fi
 }
 
+# The nightly backup and a deploy's jobs never run at the same time: the memory budget counts
+# them as groups that never meet (compose-policy.jq). So the backup's unit must start it through
+# flock, on the file deploy.sh locks, and give up waiting for it before systemd's own timeout
+# ends the unit. test-deploy.sh runs the unit's command beside a real deploy; this reads the unit.
+backup_takes_the_deploy_lock() {
+    local unit="$infra/systemd/lb-backup.service" index wait_seconds="" timeout_minutes
+    local -a command
+    read -ra command <<<"$(sed -n 's/^ExecStart=//p' "$unit")"
+    if [ "${command[0]:-}" != /usr/bin/flock ]; then
+        echo "lb-backup.service does not start the backup through /usr/bin/flock, so it could run beside a deploy."
+        return 1
+    fi
+    # deploy.sh locks $root/deploy.lock, and its root is /opt/lb unless LB_ROOT says otherwise.
+    # shellcheck disable=SC2016 # the dollar signs are deploy.sh's own text, not to be expanded here
+    if ! grep -qF 'root="${LB_ROOT:-/opt/lb}"' "$here/deploy.sh" || ! grep -qF 'exec 9> "$root/deploy.lock"' "$here/deploy.sh"; then
+        echo "deploy.sh no longer locks /opt/lb/deploy.lock, the file lb-backup.service waits for: change the two together."
+        return 1
+    fi
+    if ! printf '%s\n' "${command[@]}" | grep -qxF /opt/lb/deploy.lock; then
+        echo "lb-backup.service does not lock /opt/lb/deploy.lock, the file deploy.sh holds."
+        return 1
+    fi
+    for index in "${!command[@]}"; do
+        if [ "${command[$index]}" = --wait ]; then wait_seconds="${command[index + 1]:-}"; fi
+    done
+    timeout_minutes="$(sed -n 's/^TimeoutStartSec=\([0-9][0-9]*\)min$/\1/p' "$unit")"
+    if ! [[ "$wait_seconds" =~ ^[0-9]+$ && "$timeout_minutes" =~ ^[0-9]+$ ]] || [ "$wait_seconds" -ge $((timeout_minutes * 60)) ]; then
+        echo "lb-backup.service must wait for the lock with --wait <seconds>, for less than its TimeoutStartSec=<minutes>min."
+        return 1
+    fi
+}
+
 # copy_sources <COPY line>: the paths a COPY instruction reads from the build context, one a
 # line: every word after the flags and before the last word, which is the destination.
 copy_sources() {
@@ -183,6 +215,7 @@ check "Compose files follow the security rules" "$here/check-compose.sh"
 check "the policy rules themselves can fail" "$here/test-compose-policy.sh"
 check "the Caddyfile is valid and formatted" caddyfile
 check "systemd units parse" systemd_units
+check "the nightly backup takes the deploy's lock, for less than its unit's timeout" backup_takes_the_deploy_lock
 check "infra/secrets holds only templates and encrypted files" secrets_folder
 
 echo

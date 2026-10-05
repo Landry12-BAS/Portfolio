@@ -867,8 +867,7 @@ The container does not run Chrome for Testing but Chrome Headless Shell (a build
 127 MiB when idle, and a peak of 263 to 271 MiB over five runs in a row of the same heaviest case under the 384 MiB
 limit (327 to 332 MiB with no limit), with 83 tasks. So `lb07-sandbox` has `mem_limit: 384m`, and the 768 MiB above
 is what `just lb07-sandbox` needs on a development machine with the full Chrome for Testing. How the 384 MiB fits the
-box's budget, and what the owner has to decide about it, is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), "The memory
-budget".
+box's budget is in [`docs/DEPLOY.md`](../../docs/DEPLOY.md), "The memory budget".
 
 ### LB-07 tests
 
