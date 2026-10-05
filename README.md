@@ -31,13 +31,14 @@ OpenRouter behind one gateway, with NVIDIA NIM for private experiments.
 - [Security design](docs/SECURITY.md): no accounts, no login, zero inbound ports
 - [The LB mark](brand/README.md)
 
-Status: Phase 1 in build. The site runs: the catalog, a datasheet for every system,
-light and dark themes, and the security headers from the design. The AI gateway
-(LB-00) runs too: one door for every model call, with fallback, free-tier budgets,
-visitor quotas, run spans, reranking and a prompt-injection guard
-([how it works](services/gateway/README.md)). The Python systems share
-[`lb-common`](python/lb-common/README.md): the gateway client, service tokens and the
-run tracer. The Support Desk (LB-01) is in build.
+Status: all ten systems are built and tested, each with its evaluation board on the site in
+English and Czech, and the AI gateway (LB-00) that every model call goes through
+([how it works](services/gateway/README.md)). `just dev-mock` opens every demo against the mock
+back end with no keys at all. What is not done needs the owner's provider keys and the box: no
+hosted model has been called yet, so the recorded sample runs, the live evals and the live
+baselines are still to be made, and deploying is the owner's step
+([`docs/DEPLOY.md`](docs/DEPLOY.md) is the runbook). [`AGENTS.md`](AGENTS.md) says where each
+system lives, and every README says what was measured and what was not.
 
 Run it with Node 22.18 or later, pnpm 10 and uv: `just install`, then `just dev`. The
 commands are listed in [`AGENTS.md`](AGENTS.md#commands).
