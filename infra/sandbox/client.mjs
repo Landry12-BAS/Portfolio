@@ -1,23 +1,27 @@
 // The stand-in for node-worker in infra/sandbox/test.sh. It runs in a container of its own on the
 // sandbox network and calls LB-07's runner as the worker does: through the service's own client
-// (HttpRunner), with bug tokens signed by the key the sandbox was given, running a golden plan in
+// (HttpRunner) with the key the worker shows it (derived from the bug-token key, runner/key.ts),
+// with bug tokens signed by the key the sandbox was given, running a golden plan in
 // the three passes the agent makes (src/modules/lb07/agent/machine.ts): the bugs on in Chromium,
 // the bugs on behind Firefox's user agent, and the bugs off in Chromium. Each command prints what
 // it saw and exits 1 when that is not what the sandbox must do.
 //
 //   node client.mjs health                   the runner answers, and is ready for a run
+//   node client.mjs keyless                  a call without the runner's key, or with a wrong one, is refused
 //   node client.mjs golden <case id>...      the cases' passes, graded by the bug catalogue's truths
 //   node client.mjs heavy <runs>             the heaviest case, run after run (the memory test)
 //   node client.mjs exhaust <runs per life>  the last run of the runner's life, then its restart
 //   node client.mjs connect <host> <port>    whether a TCP connection opens: connected, refused or blocked
 //
 // Settings: LB07_RUNNER_URL (default http://lb07-sandbox:8008) and LB07_SHOP_TOKEN_KEY (the key
-// the sandbox verifies bug tokens with, as hex). The repository is read from where this file is.
+// the sandbox verifies bug tokens with, as hex; the runner's own key is derived from it, as the
+// worker does it). The repository is read from where this file is.
 import { connect } from 'node:net'
 
 import { matchesTruth, readBugCatalogue } from '../../services/node-systems/src/modules/lb07/data/bugs.ts'
 import { readGoldenSet } from '../../services/node-systems/src/modules/lb07/golden/cases.ts'
 import { HttpRunner, RunnerError } from '../../services/node-systems/src/modules/lb07/runner/client.ts'
+import { RUNNER_KEY_HEADER, runnerKeyFrom } from '../../services/node-systems/src/modules/lb07/runner/key.ts'
 import { signBugToken, TOKEN_LIFETIME_MS, tokenKeyFromHex } from '../../services/node-systems/src/modules/lb07/shop/token.ts'
 
 const REPOSITORY = new URL('../../', import.meta.url).pathname
@@ -29,7 +33,7 @@ const BUG_KINDS = new Set(['expectation_failed', 'console_error', 'failed_reques
 // How long the runner may take to come back after it exits, in half-second polls.
 const RESTART_POLLS = 120
 
-const runner = new HttpRunner(RUNNER_URL)
+const runner = new HttpRunner(RUNNER_URL, runnerKeyFrom(tokenKey()))
 let failures = 0
 
 /** Prints a check that held. */
@@ -48,11 +52,16 @@ function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-/** The key the bug tokens are signed with, from the environment. */
-function tokenKey() {
+/** The key the bug tokens are signed with, as hex, from the environment. */
+function tokenKeyHex() {
   const hex = process.env.LB07_SHOP_TOKEN_KEY?.trim()
   if (!hex) throw new Error('LB07_SHOP_TOKEN_KEY is required: the key the sandbox verifies bug tokens with.')
-  return tokenKeyFromHex(hex)
+  return hex
+}
+
+/** The key the bug tokens are signed with. */
+function tokenKey() {
+  return tokenKeyFromHex(tokenKeyHex())
 }
 
 /** Signs a bug token for a run, as the worker does, or gives none when no bug is on. */
@@ -128,6 +137,31 @@ async function health() {
   const answer = await runner.health()
   console.log(JSON.stringify(answer))
   if (!answer.ok) fail('the runner says it is not ok')
+}
+
+/** Opens a session on the runner with the given headers, and says what the runner answered. */
+async function openWith(headers) {
+  const body = JSON.stringify({ runId: 'run-sandbox-keyless', engine: 'chromium', bugToken: null, wallClockMs: 60_000 })
+  const response = await fetch(`${RUNNER_URL}/sessions`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body })
+  await response.body?.cancel()
+  return response.status
+}
+
+/** `keyless`: only the worker may drive the runner. Nothing else that reaches its address, a page of the browser it drives included, can open a session without the key; the health check, which holds nothing, answers to anyone. */
+async function keyless() {
+  const without = await openWith({})
+  if (without === 401) pass('a call with no runner key is refused: 401')
+  else fail(`a call with no runner key got ${without}`)
+  const wrong = await openWith({ [RUNNER_KEY_HEADER]: '0'.repeat(64) })
+  if (wrong === 401) pass('a call with a wrong runner key is refused: 401')
+  else fail(`a call with a wrong runner key got ${wrong}`)
+  const reused = await openWith({ [RUNNER_KEY_HEADER]: tokenKeyHex() })
+  if (reused === 401) pass('the bug-token key is not the runner key: a call with it is refused: 401')
+  else fail(`a call with the bug-token key got ${reused}`)
+  const health = await fetch(`${RUNNER_URL}/healthz`)
+  await health.body?.cancel()
+  if (health.status === 200) pass('the health check answers without a key')
+  else fail(`the health check got ${health.status} without a key`)
 }
 
 /** `golden`: the named cases, each graded. */
@@ -242,12 +276,13 @@ function tryConnect(host, port) {
 
 const [command, ...rest] = process.argv.slice(2)
 if (command === 'health') await health()
+else if (command === 'keyless') await keyless()
 else if (command === 'golden') await golden(rest)
 else if (command === 'heavy') await heavy(Number(rest[0] ?? 5))
 else if (command === 'exhaust') await exhaust(Number(rest[0]))
 else if (command === 'connect') console.log(await tryConnect(rest[0], rest[1]))
 else {
-  console.error('usage: client.mjs health | golden <case id>... | heavy <runs> | exhaust <runs per life> | connect <host> <port>')
+  console.error('usage: client.mjs health | keyless | golden <case id>... | heavy <runs> | exhaust <runs per life> | connect <host> <port>')
   process.exit(2)
 }
 process.exit(failures === 0 ? 0 : 1)
