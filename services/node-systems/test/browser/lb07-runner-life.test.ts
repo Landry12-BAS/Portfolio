@@ -3,10 +3,12 @@
 // runner says it has served its share only once its last session is closed or forgotten, never while a run is in
 // the browser; a browser that dies in the middle of a run is said to have crashed and the next session gets a fresh
 // one; and the sandbox process itself, started as its container starts it, exits after its share of runs once the
-// last one is closed. Ports 8161 and 8162 are this suite's.
+// last one is closed.
 import { execFileSync, spawn } from 'node:child_process'
 import type { ChildProcess } from 'node:child_process'
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { createServer } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -42,6 +44,15 @@ function sessionsFor(runsPerLife: number, expiredGraceMs = 30_000): { sessions: 
 /** Waits for a number of milliseconds. */
 function pause(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/** A port of the loopback interface that is free now, for a process this test starts. */
+async function freePort(): Promise<number> {
+  const probe = createServer()
+  await new Promise<void>(resolve => probe.listen(0, '127.0.0.1', resolve))
+  const { port } = probe.address() as AddressInfo
+  await new Promise<void>(resolve => probe.close(() => resolve()))
+  return port
 }
 
 /** A request to open a session, with a wall clock the test chooses. */
@@ -155,8 +166,9 @@ describe('the sandbox process', () => {
     const tokenKeyHex = Buffer.from(TEST_TOKEN_KEY).toString('hex')
     // The container's home is on its read-only root: whatever the process or its browser writes must go to the temporary folder.
     const home = mkdtempSync(join(tmpdir(), 'lb07-home-'))
+    const [shopPort, runnerPort] = [await freePort(), await freePort()]
     child = spawn(process.execPath, [fileURLToPath(new URL('../../src/sandbox.ts', import.meta.url))], {
-      env: { PATH: process.env.PATH, HOME: home, LB07_SHOP_PORT: '8161', LB07_SANDBOX_PORT: '8162', LB07_SANDBOX_HOST: '127.0.0.1', LB07_SHOP_TOKEN_KEY: tokenKeyHex, LB07_BROWSER_PATH: executablePath ?? '', LB07_RUNS_PER_LIFE: '1' },
+      env: { PATH: process.env.PATH, HOME: home, LB07_SHOP_PORT: String(shopPort), LB07_SANDBOX_PORT: String(runnerPort), LB07_SANDBOX_HOST: '127.0.0.1', LB07_SHOP_TOKEN_KEY: tokenKeyHex, LB07_BROWSER_PATH: executablePath ?? '', LB07_RUNS_PER_LIFE: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     const exited = new Promise<number | null>(resolve => child?.once('exit', code => resolve(code)))
@@ -169,14 +181,14 @@ describe('the sandbox process', () => {
         }
       })
     })
-    const runner = new HttpRunner('http://127.0.0.1:8162', runnerKeyFrom(TEST_TOKEN_KEY))
+    const runner = new HttpRunner(`http://127.0.0.1:${runnerPort}`, runnerKeyFrom(TEST_TOKEN_KEY))
     const id = await runner.open(opening())
     expect((await runner.health()).exhausted).toBe(true)
     await pause(1_000)
     expect(child.exitCode).toBeNull()
     expect((await runner.step(id, 0, { action: 'goto', path: '/' })).outcome).toBe('ok')
     // The shop it serves sends its own policy.
-    expect((await fetch('http://127.0.0.1:8161/')).headers.get('content-security-policy')).toContain('default-src \'self\'')
+    expect((await fetch(`http://127.0.0.1:${shopPort}/`)).headers.get('content-security-policy')).toContain('default-src \'self\'')
     await runner.close(id)
     const code = await Promise.race([exited, pause(10_000).then(() => 'still running')])
     expect(code).toBe(0)
