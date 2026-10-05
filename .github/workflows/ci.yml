@@ -19,9 +19,9 @@ env:
 
 jobs:
   web:
-    name: Lint, types, tests and end-to-end
+    name: Lint, types and tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     # The gateway's and the Node systems' integration tests need Redis, and the Node systems'
     # also Postgres with pgvector: the versions production runs, as in the python job. Each
     # test file makes a database and a key prefix of its own on them.
@@ -84,14 +84,46 @@ jobs:
       - name: The check does find the stand-in in the test build
         run: pnpm --filter @lb/web exec node scripts/check-production-build.ts .output-e2e --expect-test-code
 
+  # The end-to-end suite is the longest thing CI runs (over 500 journeys and axe checks, about twenty minutes on
+  # four cores, and it grows with every board), so it runs in shards, each on its own runner, against its own copy
+  # of the test build and the mock back end. A shard needs nothing but the site: no Redis, no Postgres.
+  e2e:
+    name: End-to-end, accessibility and security headers (${{ matrix.shard }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { index: 1, shard: 1/4 }
+          - { index: 2, shard: 2/4 }
+          - { index: 3, shard: 3/4 }
+          - { index: 4, shard: 4/4 }
+    steps:
+      # Actions are pinned by commit SHA; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lb/web build:e2e
       - run: pnpm --filter @lb/web exec playwright install --with-deps chromium
       - name: End-to-end, accessibility and security headers, against the test build and the mock back end
-        run: pnpm --filter @lb/web e2e
+        run: pnpm --filter @lb/web exec playwright test --shard=${{ matrix.shard }}
 
       - if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.index }}
           path: |
             apps/web/playwright-report
             apps/web/test-results
