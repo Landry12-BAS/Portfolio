@@ -342,12 +342,13 @@ Google [Gemini API terms](https://ai.google.dev/gemini-api/terms)
     at the limit.
   - **Two cores.** CPU-heavy jobs (LB-07 browser runs, LB-09 private transcription,
     LB-03 OCR) run one at a time from their queues, and replay mode covers bursts.
-    Each container has a memory limit, and the limits are budgeted to the last MiB of
-    the 12 GB (the host keeps 1): 8 GiB for what runs all the time, among them LB-07's
-    browser sandbox at 384 MiB (measured at about 270 MiB under that limit for its
-    heaviest plan), and 11 GiB with a deploy's jobs and the nightly backup. The table, with what
-    each number rests on, and the owner's decision for the next system that needs
-    memory are in `docs/DEPLOY.md`, part 2.
+    Each container has a memory limit, and the limits are budgeted against the 12 GB
+    (the host keeps 1), counted as they run: what runs all the time, 8576 MiB among them
+    LB-07's browser sandbox at 384 (measured at about 270 MiB under that limit for its
+    heaviest plan), plus the larger of a deploy's biggest wave of jobs (1536) and the
+    nightly backup (768), which never run together, must fit in 11 GiB. At the peak that
+    is 10112 MiB, about 1.1 GiB to spare. The table, with what each number rests on, and
+    the decision behind the way of counting are in `docs/DEPLOY.md`, part 2.
   - **Staying free.** Oracle reclaims an Always Free VM only when CPU, network and
     memory all stay under 20% for 7 days. With every service resident, memory stays
     well above 20%, and the launch checklist confirms it in the OCI metrics. The
