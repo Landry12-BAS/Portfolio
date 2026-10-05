@@ -49,6 +49,12 @@ interface Delayed {
   ms: number
 }
 
+/** A test waiting for a call to arrive. */
+interface Arrival {
+  match: string
+  arrived: () => void
+}
+
 /** Waits for a number of milliseconds, or fails as a browser's `fetch` does when its request is aborted. */
 function wait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -94,6 +100,7 @@ export class FakeSite {
   readonly #options: FakeSiteOptions
   readonly #scripted: Scripted[] = []
   readonly #delayed: Delayed[] = []
+  readonly #arrivals: Arrival[] = []
 
   /** Starts a fake site with an empty mock back end. */
   constructor(options: FakeSiteOptions = {}) {
@@ -115,6 +122,17 @@ export class FakeSite {
     this.#delayed.push({ match, ms })
   }
 
+  /**
+   * Settles when the next call whose "METHOD /path" starts with `match` arrives, whether it is answered at
+   * once or held back. A test that holds a call back waits for this before it lets the fake clock run: the
+   * hold is a timer, set once the call has arrived, and a timer set after the clock ran never fires.
+   */
+  nextCall(match: string): Promise<void> {
+    return new Promise((arrived) => {
+      this.#arrivals.push({ match, arrived })
+    })
+  }
+
   /** The calls made to paths that start with a prefix, in order. */
   callsTo(prefix: string, method?: string): FakeCall[] {
     return this.calls.filter(call => call.path.startsWith(prefix) && (method === undefined || call.method === method))
@@ -130,6 +148,8 @@ export class FakeSite {
     const path = `${url.pathname}${url.search}`
     this.calls.push({ method: request.method, path, body: upload === undefined ? body : { upload: { filename: upload.filename, bytes: upload.data.length } } })
     const key = `${request.method} ${path}`
+    const arrival = this.#arrivals.findIndex(item => key.startsWith(item.match))
+    if (arrival >= 0) this.#arrivals.splice(arrival, 1)[0]?.arrived()
     const held = this.#delayed.findIndex(item => key.startsWith(item.match))
     if (held >= 0) await wait(this.#delayed.splice(held, 1)[0]?.ms ?? 0, request.signal)
     const index = this.#scripted.findIndex(item => key.startsWith(item.match))

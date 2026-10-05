@@ -30,7 +30,9 @@ function reportCase(id: string): ReportCase {
   return found
 }
 
-describe('a run of the golden set with the reference models', () => {
+// A run reads six contracts' PDFs in worker threads before the fake models answer, which takes longer
+// than the unit default of five seconds on a slow runner.
+describe('a run of the golden set with the reference models', { timeout: 30_000 }, () => {
   it('passes every case, finds every planted problem, and costs only the calls the pipeline makes', async () => {
     const recorder = new Recorder()
     const deps = referenceDeps(recorder)
