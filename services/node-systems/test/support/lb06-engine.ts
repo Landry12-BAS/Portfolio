@@ -180,7 +180,7 @@ export async function createLb06Harness(serverUrl: string, options: HarnessOptio
     },
     async close() {
       if (running.size > 0) {
-        await database.db.update(incidents).set({ state: 'aborted', endReason: 'timed_out', updatedAt: clock.now() }).where(notInArray(incidents.state, [...ENDED_STATES]))
+        await database.db.update(incidents).set({ state: 'aborted', endReason: 'timed_out', pendingProposal: null, updatedAt: clock.now() }).where(notInArray(incidents.state, [...ENDED_STATES]))
         await Promise.allSettled([...running])
       }
       await testDatabase.drop()

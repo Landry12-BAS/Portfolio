@@ -320,7 +320,7 @@ attempts. Every prompt change must pass it.
   a proxy setting, so a token can't be sent anywhere but the gateway. Provider keys
   exist only in the gateway. Without Redis the gateway can't check a budget, so it
   fails closed.
-- **Postgres:** one role per system (LB-01, LB-02, LB-03, LB-05 and LB-08 so far), granted only
+- **Postgres:** one role per system (LB-01 to LB-06 and LB-08 so far), granted only
   its own schema and the shared `extensions` schema (pgvector, btree_gist: an extension
   object, not data); the gateway's role sees only `platform`. The superuser can log in
   only over the container's own socket, and every deploy re-applies the roles and

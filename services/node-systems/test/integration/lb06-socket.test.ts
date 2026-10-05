@@ -13,6 +13,7 @@ import { RedisFeedWriter } from '../../src/modules/lb06/engine/feed.ts'
 import { CLOSE, MAX_CONNECTIONS_PER_VISITOR } from '../../src/modules/lb06/engine/socket.ts'
 import type { ServerFrame } from '../../src/modules/lb06/engine/socket.ts'
 import { startIncident } from '../../src/modules/lb06/engine/service.ts'
+import { lastSeq } from '../../src/modules/lb06/engine/store.ts'
 import { createLb06ApiHarness } from '../support/lb06-api.ts'
 import type { Lb06ApiHarness } from '../support/lb06-api.ts'
 import { VISITOR_A, VISITOR_B } from '../support/lb06-engine.ts'
@@ -94,8 +95,10 @@ describe('the hello and the feed', () => {
     for (let index = 1; index < seen.length; index += 1) expect(seen[index]).toBeGreaterThan(seen[index - 1] as number)
 
     // A second page that joins late gets the events after the one it holds, and nothing twice.
-    const late = await connect()
+    // It holds the first two events after the opening, so the log must reach the third before it joins: the clock ticks on its own, and a slow machine has not always got there.
     const held = incident.lastSeq + 2
+    await waitFor('an event after the two the late page holds', async () => (await lastSeq(api.engine.deps.db, incident.id)) > held, 20_000)
+    const late = await connect()
     late.send({ type: 'hello', token: api.tokenFor(VISITOR_A), incident: incident.id, after: held })
     const lateReady = await late.nextFrame(frame => frame.type === 'ready')
     if (lateReady.type !== 'ready') throw new Error('not ready')
