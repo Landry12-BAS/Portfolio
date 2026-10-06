@@ -31,6 +31,18 @@ onlyBuiltDependencies:
 # to a patched release keeps `pnpm audit` clean.
 overrides:
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
+  # GHSA-x6jw-m9v5-85vh, GHSA-g4wm-2vf7-vfgr, GHSA-858h-whjf-mvg5 (simple-git up to 4.0.0) and
+  # GHSA-v5rq-49vh-5v5c (its argument parser): git options that slip past simple-git's checks run
+  # commands. Only simple-git 4 is fixed. Its one user here is nuxt > @nuxt/devtools 3.4.2, which
+  # imports simple-git's default export, gone in 4: so devtools stays off (`devtools: { enabled: false }`
+  # in apps/web/nuxt.config.ts, which returns before devtools loads the code that imports it). Pinning 4
+  # keeps the vulnerable code out of the install; turning devtools on needs a devtools release built on
+  # simple-git 4 (4.0 is in beta), and then this entry removed.
+  '@nuxt/devtools>simple-git': ^4.0.2
+  # GHSA-68fv-2mgg-jv7q: source-map-js before 1.2.2 spins on crafted indexed source-map sections. One
+  # copy serves the build and lint chains (Vue's compiler, PostCSS, Vite, ESLint's CSS parser), and the
+  # fix is a patch release.
+  source-map-js: ^1.2.2
 
 # GHSA-86w9-cpqp-85rv: node-forge (up to 1.4.0, the newest release) accepts a forged RSA PKCS#1 v1.5
 # signature. It has no patched release yet, so no pin can fix it. The only way in is
