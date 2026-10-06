@@ -87,7 +87,7 @@ const { mine, mineStatus, workflow, busy } = storeToRefs(store)
 }
 
 .item.open {
-  border-left-color: var(--lb-board);
+  border-left-color: var(--lb-board-mark);
 }
 
 .name {

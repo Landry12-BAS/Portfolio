@@ -139,7 +139,7 @@ defineProps<{
 }
 
 .step.status-running {
-  border-color: var(--lb-board);
+  border-color: var(--lb-board-mark);
 }
 
 .step.status-failed {

@@ -102,7 +102,7 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
 }
 
 .card.chosen {
-  border-color: var(--lb-board);
+  border-color: var(--lb-board-mark);
   background: var(--lb-board-tint);
 }
 
@@ -126,7 +126,7 @@ function recordingState(id: string): 'yes' | 'no' | 'unknown' {
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: var(--lb-board);
+  accent-color: var(--lb-board-mark);
 }
 
 .head {

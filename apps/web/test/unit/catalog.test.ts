@@ -1,10 +1,14 @@
-// Unit tests for the selection guide's filters and store, and the reading-mode guard.
+// Unit tests for the selection guide's filters and store, the reading-mode guard, and the home page's
+// stamp, which must agree with the boards that exist.
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import cs from '../../i18n/locales/cs'
+import en from '../../i18n/locales/en'
 import { filterSystems } from '#shared/catalog'
 import { systemsIn } from '#shared/data/datasheets'
 import { systems } from '#shared/data/systems'
+import { hasBoard } from '~/boards/registry'
 import { useCatalogStore } from '~/stores/catalog'
 import { isReadingMode } from '~/stores/reading'
 
@@ -61,5 +65,14 @@ describe('reading modes', () => {
     expect(isReadingMode('technical')).toBe(true)
     expect(isReadingMode('<img onerror>')).toBe(false)
     expect(isReadingMode(null)).toBe(false)
+  })
+})
+
+describe('the home page stamp', () => {
+  it('says all ten systems are built, and every one of them has its evaluation board', () => {
+    expect(systems.filter(system => !hasBoard(system.slug)).map(system => system.part)).toEqual([])
+    expect(systems).toHaveLength(10)
+    expect(en.home.quickref.stamp).toBe('All ten systems built')
+    expect(cs.home.quickref.stamp).toBe('Všech deset systémů hotovo')
   })
 })

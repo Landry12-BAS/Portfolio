@@ -174,7 +174,7 @@ const announcement = computed(() => {
           </span>
           <span
             v-if="day.hasMine"
-            class="mine"
+            class="own-mark"
             aria-hidden="true"
           >
             <LbIcon
@@ -267,7 +267,10 @@ const announcement = computed(() => {
 </template>
 
 <style scoped>
+/* The calendar lays itself out by its own width, not the window's: beside the phone on a wide board, alone
+   on a narrow one, so only its own width says how much room its rows have. */
 .calendar {
+  container: lb02-calendar / inline-size;
   display: grid;
   align-content: start;
   gap: 10px;
@@ -317,9 +320,10 @@ const announcement = computed(() => {
   border: 1.5px solid var(--lb-ink);
 }
 
+/* The days: cells of one width, in as many columns as fit. */
 .days {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
   gap: 6px;
   min-width: 0;
   padding: 0;
@@ -331,7 +335,7 @@ const announcement = computed(() => {
   position: relative;
   display: grid;
   gap: 1px;
-  min-width: 78px;
+  min-width: 0;
   padding: 5px 8px;
   cursor: pointer;
   background: var(--lb-sheet);
@@ -367,10 +371,12 @@ const announcement = computed(() => {
   color: var(--lb-graphite);
 }
 
-.mine {
+/* On the count's line, which is always short, so it never covers the day's name. Its class is its own:
+   `.mine` marks the visitor's own row in the list, which must stay in the list's flow. */
+.own-mark {
   position: absolute;
-  top: 5px;
   right: 6px;
+  bottom: 6px;
   display: inline-flex;
 }
 
@@ -394,7 +400,7 @@ const announcement = computed(() => {
 
 .row {
   display: grid;
-  grid-template-columns: 6.8em minmax(0, 1fr) auto;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
   gap: 2px 10px;
   align-items: baseline;
   padding: 7px 8px;
@@ -410,6 +416,10 @@ const announcement = computed(() => {
 
 .row.mine .state {
   font-weight: 700;
+}
+
+.what {
+  overflow-wrap: anywhere;
 }
 
 .row[data-state="booked"] .what {
@@ -451,7 +461,8 @@ const announcement = computed(() => {
   color: var(--lb-graphite);
 }
 
-@media (max-width: 420px) {
+/* Too narrow for three columns: the time goes on a line of its own, above the name and the state. */
+@container lb02-calendar (max-width: 380px) {
   .row {
     grid-template-columns: 1fr auto;
   }

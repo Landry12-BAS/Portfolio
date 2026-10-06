@@ -165,9 +165,11 @@ Take LB-01's folder as the template. For a system `LB-0N`:
    - `Lb0nBoard.vue`, a component with two props, `permalinkFor: (runId) => string` and an optional
      `now`, that renders `<BoardShell :part :name :state>` with the default slot (the demo), `#aside`
      (limits, counters) and `#scope` (`<BoardScopePanel :brief :permalink>`). A board whose work
-     needs more room than the main column (LB-08's canvas beside its form) puts it in `#wide`, which
-     has the board's whole width under both columns. Its `<script setup>` opens with a comment that
-     says what it is, like every file.
+     needs more room than the main column (LB-08's canvas beside its form, LB-02's phone beside its
+     calendar) puts it in `#wide`, which has the board's whole width under both columns. A component
+     that can be wide or narrow lays itself out by its own width, with a container query (LB-02's
+     calendar), not by the window's. Its `<script setup>` opens with a comment that says what it is,
+     like every file.
    - `schemas.ts`: a Zod schema for every answer the board reads, bounded, with the `Assert<...>`
      type checks against the generated OpenAPI types (see LB-01's) so the back end changing a field
      fails the type check, not the page.
@@ -759,3 +761,10 @@ waited for Groq's minute; labelled `live` though a fake model made it, it was th
   (so how a real prompt edit scores is unmeasured), a real Turnstile site key and challenge, a recording made on a
   live back end (the three in `e2e/fixtures` are the mock's and say so), the nightly, the judge and the gate live,
   and the box's two ARM cores.
+- **A mark in the board's colour that says something on its own** (a meter's fill, the chosen sample, the current
+  document, a picked or running step, a progress bar) uses `--lb-board-mark`, not `--lb-board`: the deep blue
+  stands about 1.1:1 on the dark theme's tint and 1.3:1 on its sheet, so in the dark theme a full allowance read as
+  empty and the chosen sample as unchosen. The token is the deep blue in the light theme and the ribbon in the dark
+  one; `packages/ui/test/tokens.test.ts` holds it to 3:1 on the tint and the sheet in both (WCAG 1.4.11, which
+  axe does not check), and `e2e/theme.spec.ts` checks the colours a dark board really draws. Frames, dashed
+  replay borders and chips stay in `--lb-board`: they decorate, and the words beside them say the same.

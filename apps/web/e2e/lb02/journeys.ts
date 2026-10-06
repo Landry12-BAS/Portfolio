@@ -2,7 +2,7 @@
 // that drops, a handoff and the message limit, replays of recorded samples, the keyboard, and Czech.
 // They are registered by e2e/lb02.spec.ts, which runs them one after another on a calendar nobody has touched.
 import { expect, test } from '../fixtures'
-import { ASKS_FOR_CUPPING, beginConversation, control, openBoard, say, slotRow, watchSockets, watchWrites } from './support'
+import { ASKS_FOR_CUPPING, beginConversation, calendarCollisions, control, openBoard, say, slotRow, watchSockets, watchWrites } from './support'
 
 /** Registers the journeys. */
 export function journeys(): void {
@@ -251,6 +251,25 @@ export function journeys(): void {
       await expect(page.getByTestId('line-pause')).toHaveText('o 6 min později', { timeout: 15_000 })
       await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/, { timeout: 15_000 })
       await expect(page.getByTestId('email-badge')).toContainText('nikdy neodesláno')
+    })
+  })
+
+  test.describe('the layout', () => {
+    test('gives the calendar room beside the phone, keeps the visitor\'s own slot in the list, and no name, state or mark runs into another, from a phone to a wide screen', async ({ page }) => {
+      await openBoard(page)
+      await page.getByTestId('start-sample').click()
+      await expect(page.getByTestId('booking-code')).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/, { timeout: 15_000 })
+      await expect(page.locator('.day .own-mark')).toHaveCount(1)
+      await expect(page.getByTestId('slots').locator('li[data-state="booked"]')).toContainText('Booked for you')
+      for (const width of [390, 768, 1000, 1280, 1440, 1920]) {
+        await page.setViewportSize({ width, height: 900 })
+        const calendar = await page.getByTestId('calendar').boundingBox()
+        const phone = await page.getByTestId('phone').boundingBox()
+        if (!calendar || !phone) throw new Error(`the calendar or the phone is not drawn at ${width} px`)
+        expect(calendar.width, `the calendar's width at ${width} px`).toBeGreaterThanOrEqual(280)
+        if (width >= 1000) expect(calendar.y, `the calendar beside the phone at ${width} px`).toBeLessThan(phone.y + phone.height)
+        expect(await calendarCollisions(page), `at ${width} px`).toEqual([])
+      }
     })
   })
 

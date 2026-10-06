@@ -64,3 +64,41 @@ export function slotRow(page: Page, state: 'free' | 'held' | 'booked', text?: st
 
 /** What a visitor writes to ask for a cupping tomorrow at 14:30 for two, giving a name and an address. */
 export const ASKS_FOR_CUPPING = (name: string, email: string): string => `Hello! I'd like a cupping for two tomorrow at 14:30. I'm ${name}, ${email}.`
+
+/**
+ * Says what collides on the live calendar as it is drawn now: a slot drawn outside the list, a slot's name
+ * running out of its column or into its state, a day's name running out of its cell or under the mark of
+ * the visitor's own slot. Empty when every slot is in the list and every name, state and mark has its room.
+ */
+export async function calendarCollisions(page: Page): Promise<string[]> {
+  return await page.getByTestId('calendar').evaluate((calendar) => {
+    const problems: string[] = []
+    const meet = (one: Element, two: Element): boolean => {
+      const a = one.getBoundingClientRect()
+      const b = two.getBoundingClientRect()
+      return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+    }
+    const overflows = (element: Element): boolean => element.scrollWidth > element.clientWidth + 1
+    const list = calendar.querySelector('[data-testid="slots"]')?.getBoundingClientRect()
+    for (const row of calendar.querySelectorAll<HTMLElement>('[data-testid="slots"] li')) {
+      const slot = row.dataset.slot ?? '?'
+      const where = row.getBoundingClientRect()
+      if (list && (where.top < list.top || where.bottom > list.bottom + 1)) problems.push(`slot ${slot}: drawn outside the list`)
+      const when = row.querySelector('.when')
+      const what = row.querySelector('.what')
+      const state = row.querySelector('.state')
+      if (!when || !what || !state) continue
+      if (overflows(what)) problems.push(`slot ${slot}: its name runs out of its column`)
+      if (meet(what, state)) problems.push(`slot ${slot}: its name meets its state`)
+      if (meet(when, what)) problems.push(`slot ${slot}: its time meets its name`)
+    }
+    for (const day of calendar.querySelectorAll('.day')) {
+      const name = day.querySelector('.name')
+      if (!name) continue
+      if (overflows(name)) problems.push(`day ${name.textContent?.trim()}: its name runs out of its cell`)
+      const mark = day.querySelector('.own-mark')
+      if (mark && meet(name, mark)) problems.push(`day ${name.textContent?.trim()}: its name meets the mark`)
+    }
+    return problems
+  })
+}

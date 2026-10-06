@@ -144,7 +144,7 @@ function standing(item: DocumentSummary): string {
 }
 
 .item.current {
-  border-color: var(--lb-board);
+  border-color: var(--lb-board-mark);
 }
 
 .label {

@@ -107,7 +107,7 @@ const rows = computed(() => props.limits.map(row => ({ label: row.label, value: 
 
 .fill {
   height: 100%;
-  background: var(--lb-board);
+  background: var(--lb-board-mark);
 }
 
 .resets {

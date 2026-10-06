@@ -331,7 +331,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .canvas :deep(.vue-flow__connection-path) {
-  stroke: var(--lb-board);
+  stroke: var(--lb-board-mark);
   stroke-width: 2.5;
 }
 

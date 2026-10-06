@@ -513,7 +513,7 @@ const announcement = computed(() => {
 
 .fill {
   height: 100%;
-  background: var(--lb-board);
+  background: var(--lb-board-mark);
   transition: width 90ms linear;
 }
 

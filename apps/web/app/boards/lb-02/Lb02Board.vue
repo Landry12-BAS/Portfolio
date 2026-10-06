@@ -6,8 +6,10 @@
 // visitor: the guide shows how to try to double-book a slot and why the database refuses it. The
 // message the booking code wrote itself carries a receipt, the confirmation email is only recorded
 // and never sent, and a conversation that needs a person is handed over with its transcript. A
-// sample with a recording replays it for free, labelled as a replay. The conversation travels over a
-// WebSocket; everything else is plain HTTP through the site's API.
+// sample with a recording replays it for free, labelled as a replay. The phone and the calendar sit side
+// by side in the board's wide area, under both columns, since the main column leaves the calendar too
+// narrow to read. The conversation travels over a WebSocket; everything else is plain HTTP through the
+// site's API.
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -293,93 +295,95 @@ onBeforeUnmount(() => {
 
     <BoardTurnstileGate @retry="retry" />
 
-    <div class="workspace">
-      <div class="phone-column">
-        <PhoneFrame
-          :status="phoneStatus"
-          :attempt="store.attempt"
-        >
-          <ChatLog
-            ref="log"
-            :lines="lines"
-            :working="working"
-            :language="chatLanguage"
-            :brief="brief"
-            :empty="emptyText"
-          />
-          <div class="dock">
-            <BookingStatus
-              :hold="hold"
-              :booking="booking"
-              :now="serverTime"
-              :replay="runMode === 'replay'"
-              :title-of="titleOf"
-              email-href="#lb02-email"
-            />
-            <p
-              v-if="noticeText"
-              class="notice"
-              role="alert"
-              :data-notice="notice"
-              data-testid="notice"
-            >
-              {{ noticeText }}
-            </p>
-            <ChatComposer
-              ref="composer"
-              :mode="composerMode"
+    <template #wide>
+      <div class="workspace">
+        <div class="phone-column">
+          <PhoneFrame
+            :status="phoneStatus"
+            :attempt="store.attempt"
+          >
+            <ChatLog
+              ref="log"
+              :lines="lines"
               :working="working"
               :language="chatLanguage"
-              :unsent="unsent"
-              :messages-left="store.messagesLeft"
-              @send="send"
+              :brief="brief"
+              :empty="emptyText"
             />
-          </div>
-        </PhoneFrame>
-        <SampleScript
-          v-if="script && runMode === 'live'"
-          :script="script"
-          :language="scripts[script.sampleId]?.language ?? code"
-          :can-send="store.canSay"
-          @next="store.sendNextScripted()"
-          @all="store.playScript()"
-          @stop="store.stopScript()"
+            <div class="dock">
+              <BookingStatus
+                :hold="hold"
+                :booking="booking"
+                :now="serverTime"
+                :replay="runMode === 'replay'"
+                :title-of="titleOf"
+                email-href="#lb02-email"
+              />
+              <p
+                v-if="noticeText"
+                class="notice"
+                role="alert"
+                :data-notice="notice"
+                data-testid="notice"
+              >
+                {{ noticeText }}
+              </p>
+              <ChatComposer
+                ref="composer"
+                :mode="composerMode"
+                :working="working"
+                :language="chatLanguage"
+                :unsent="unsent"
+                :messages-left="store.messagesLeft"
+                @send="send"
+              />
+            </div>
+          </PhoneFrame>
+          <SampleScript
+            v-if="script && runMode === 'live'"
+            :script="script"
+            :language="scripts[script.sampleId]?.language ?? code"
+            :can-send="store.canSay"
+            @next="store.sendNextScripted()"
+            @all="store.playScript()"
+            @stop="store.stopScript()"
+          />
+        </div>
+
+        <LiveCalendar
+          :slots="slots"
+          :now="serverTime"
+          :status="calendarStatus"
+          :last-change="lastChange"
+          :recently-changed="recentlyChanged"
+          :offerings="offerings"
+          :replay="runMode === 'replay'"
+          :title-of="titleOf"
+          @reload="store.loadCalendar()"
         />
       </div>
 
-      <LiveCalendar
-        :slots="slots"
-        :now="serverTime"
-        :status="calendarStatus"
-        :last-change="lastChange"
-        :recently-changed="recentlyChanged"
-        :offerings="offerings"
-        :replay="runMode === 'replay'"
-        :title-of="titleOf"
-        @reload="store.loadCalendar()"
+      <ConfirmationEmail
+        v-if="booking"
+        :confirmation="detail?.confirmation ?? null"
+        :status="detailStatus"
       />
-    </div>
 
-    <ConfirmationEmail
-      v-if="booking"
-      :confirmation="detail?.confirmation ?? null"
-      :status="detailStatus"
-    />
+      <HandoffCard
+        v-if="handedOver"
+        ref="handoffCard"
+        :handoff="detail?.handoff ?? null"
+        :status="detailStatus"
+        :language="chatLanguage"
+      />
 
-    <HandoffCard
-      v-if="handedOver"
-      ref="handoffCard"
-      :handoff="detail?.handoff ?? null"
-      :status="detailStatus"
-      :language="chatLanguage"
-    />
+      <SecondTabGuide />
 
-    <SecondTabGuide />
-
-    <AppPanel
-      :scope="boardScope(code)"
-      :online="online"
-    />
+      <AppPanel
+        :scope="boardScope(code)"
+        :online="online"
+      />
+    </template>
 
     <template #aside>
       <BoardLimitsPanel

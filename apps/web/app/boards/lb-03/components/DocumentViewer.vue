@@ -277,7 +277,7 @@ function go(page: number): void {
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: var(--lb-board);
+  accent-color: var(--lb-board-mark);
 }
 
 .full {

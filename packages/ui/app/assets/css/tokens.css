@@ -14,6 +14,10 @@
   --lb-board: #0a2a6e;
   --lb-board-deep: #061b4a;
   --lb-board-tint: #e8eeff;
+  /* A mark in the board's colour that says something on its own: a meter's fill, the chosen or current
+     item, a running step. The deep shade on the light theme; the ribbon itself on the dark theme, where
+     the deep shade would vanish into the dark tint and sheet (WCAG 1.4.11 asks 3:1 of both). */
+  --lb-board-mark: var(--lb-board);
   --lb-silk: #f2f5ff;
   --lb-gold: #c9a43b;
   --lb-marker: #ffe45c;
@@ -64,6 +68,7 @@ html.dark {
   --lb-board: #0b2463;
   --lb-board-deep: #040f2e;
   --lb-board-tint: #0e1d45;
+  --lb-board-mark: var(--lb-signal);
   --lb-silk: #e3eaff;
   --lb-marker: #5a4e12;
   --lb-paper: #ffffff;

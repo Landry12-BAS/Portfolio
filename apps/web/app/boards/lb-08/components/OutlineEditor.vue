@@ -373,7 +373,7 @@ function chooseBranch(node: WorkflowNode, event: Event): void {
 
 .step.picked {
   background: var(--lb-board-tint);
-  border-color: var(--lb-board);
+  border-color: var(--lb-board-mark);
 }
 
 .head {
@@ -426,7 +426,7 @@ function chooseBranch(node: WorkflowNode, event: Event): void {
 }
 
 .connection.picked {
-  border-left-color: var(--lb-board);
+  border-left-color: var(--lb-board-mark);
 }
 
 .to {

@@ -114,7 +114,7 @@ const heard = computed(() => props.transcript.segments.find(segment => withinSpa
 
 .heard .jump {
   background: var(--lb-board-tint);
-  border-color: var(--lb-board);
+  border-color: var(--lb-board-mark);
 }
 
 .time {

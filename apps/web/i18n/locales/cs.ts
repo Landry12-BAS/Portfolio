@@ -46,7 +46,7 @@ const cs = {
     lede: 'Deset AI systémů v produkční kvalitě, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
     quickref: {
       label: 'Stručný přehled',
-      stamp: 'Fáze 1 ve vývoji',
+      stamp: 'Všech deset systémů hotovo',
       owner: 'Autor',
       systems: 'Systémy',
       systemsValue: '10 na jedné sdílené platformě (LB-00)',

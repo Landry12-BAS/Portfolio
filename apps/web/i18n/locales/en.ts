@@ -44,7 +44,7 @@ const en = {
     lede: 'Ten production-grade AI systems, built for one fictional coffee company and open to every visitor. Each one runs live on this site, shows every step it takes, and invites people to try to break it.',
     quickref: {
       label: 'Quick reference',
-      stamp: 'Phase 1 in build',
+      stamp: 'All ten systems built',
       owner: 'Owner',
       systems: 'Systems',
       systemsValue: '10, on one shared platform (LB-00)',
