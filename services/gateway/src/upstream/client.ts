@@ -28,8 +28,11 @@ export type FailureReason
     | 'stream_error'
 
 /**
- * A failed attempt. `retry` moves the call to the next model on the chain; `reject`
- * means the request itself is at fault, so no other model would do better.
+ * A failed attempt. `retry` moves the call to the next model on the chain. `reject` is a
+ * provider refusing the request itself (a 400 or 422): the call moves on too, since
+ * providers accept different shapes and a model's own malformed tool call comes back as
+ * a 400, but it trips no breaker and costs no budget, and when every model tried refuses,
+ * the caller gets the last refusal as upstream_rejected.
  */
 export type Failure
   = | { kind: 'retry', reason: FailureReason, status?: number, retryAfterMs?: number }
@@ -118,7 +121,8 @@ export function upstreamMessage(text: string): string {
 /** Decides what a provider's error status means: try the next model, or give up. */
 export function classifyStatus(status: number, headers: Headers, text: string, nowMs: number): Failure {
   if (status === 429) return { kind: 'retry', reason: 'rate_limited', status, retryAfterMs: parseRetryAfter(headers.get('retry-after'), nowMs) }
-  // Malformed or unsupported input fails the same way on every model.
+  // The provider refuses the request itself. Another provider may take it (the first live run met both
+  // Workers AI refusing null content and Groq refusing its own model's malformed tool call).
   if (status === 400 || status === 422) return { kind: 'reject', status, message: upstreamMessage(text) }
   if (status >= 500) return { kind: 'retry', reason: 'server_error', status }
   // 401, 402, 403, 404, 408, 413 and the rest: this provider or model can't serve the

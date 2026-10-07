@@ -88,6 +88,16 @@ describe('shaping the upstream call', () => {
     })
     expect(upstreamChatBody(call, workers, 700, false)).toEqual({ model: '@cf/openai/gpt-oss-120b', messages: call.messages, max_tokens: 700 })
   })
+
+  it('gives a tool-only assistant turn an empty string where the provider refuses null, and leaves it null elsewhere', () => {
+    const groq = routing.models.get('groq/gpt-oss-120b')!
+    const workers = routing.models.get('workers-ai/gpt-oss-120b')!
+    const toolTurn = { role: 'assistant', content: null, tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'update_details', arguments: '{"party_size":2}' } }] }
+    const call = request({ messages: [{ role: 'user', content: 'A tasting for two.' }, toolTurn, { role: 'tool', tool_call_id: 'call_1', content: 'Recorded.' }] })
+
+    expect(upstreamChatBody(call, workers, 700, false).messages).toEqual([call.messages[0], { ...toolTurn, content: '' }, call.messages[2]])
+    expect(upstreamChatBody(call, groq, 700, false).messages).toEqual(call.messages)
+  })
 })
 
 describe('token estimates', () => {

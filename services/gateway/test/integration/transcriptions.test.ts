@@ -140,14 +140,26 @@ describe('a recording that is transcribed', () => {
     expect(received()).toEqual([1, 1, 0, 0])
   })
 
-  it('passes on a provider\'s refusal of the audio itself, which no other model would take better', async () => {
+  it('moves to the next model when one refuses the audio, since providers take different audio', async () => {
     gw.providers.alpha.enqueue({ kind: 'json', status: 400, body: { error: { message: 'could not process file' } } })
+    gw.providers.beta.enqueue({ kind: 'json', body: workersTranscription(SPEECH) })
+
+    const response = await transcribe(transcriptionParts(wav(5)))
+
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['x-lb-model']).toBe('beta/whisper')
+    expect(received()).toEqual([1, 1, 0, 0])
+  })
+
+  it('passes the refusal back when every model that may take the audio refuses it', async () => {
+    gw.providers.alpha.enqueue({ kind: 'json', status: 400, body: { error: { message: 'could not process file' } } })
+    gw.providers.beta.enqueue({ kind: 'json', status: 400, body: { success: false, errors: [{ code: 5006, message: 'audio could not be decoded' }] } })
 
     const response = await transcribe(transcriptionParts(wav(5)))
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toMatchObject({ error: { code: 'upstream_rejected' } })
-    expect(received()).toEqual([1, 0, 0, 0])
+    expect(response.json()).toMatchObject({ error: { code: 'upstream_rejected', message: expect.stringContaining('audio could not be decoded') } })
+    expect(received()).toEqual([1, 1, 0, 0])
   })
 })
 

@@ -46,9 +46,15 @@ export function outputLimit(request: ChatRequest, alias: Alias): number {
   return requested ?? alias.maxOutputTokens
 }
 
+/** Gives an assistant turn with no content (one that only calls tools) an empty string, for a provider that refuses null. */
+function withTextContent(message: ChatRequest['messages'][number]): ChatRequest['messages'][number] {
+  return message.role === 'assistant' && (message.content === null || message.content === undefined) ? { ...message, content: '' } : message
+}
+
 /**
  * Rewrites the validated request for one model: the provider's model ID, the provider's
- * name for the token cap, reasoning effort only for models that reason, and a request
+ * name for the token cap, an empty string for a tool-only assistant turn where the
+ * provider refuses null, reasoning effort only for models that reason, and a request
  * for token usage on streams.
  */
 export function upstreamChatBody(request: ChatRequest, model: Model, maxOutput: number, stream: boolean): Record<string, unknown> {
@@ -59,6 +65,7 @@ export function upstreamChatBody(request: ChatRequest, model: Model, maxOutput: 
   delete body.stream
   delete body.stream_options
   body[model.provider.maxTokensParam] = maxOutput
+  if (!model.provider.nullContent) body.messages = request.messages.map(withTextContent)
   if (request.reasoning_effort && model.capabilities.has('reasoning')) body.reasoning_effort = request.reasoning_effort
   if (stream) {
     body.stream = true

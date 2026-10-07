@@ -22,6 +22,8 @@ export interface Provider {
   terms: ProviderConfig['terms']
   maxTokensParam: ProviderConfig['maxTokensParam']
   streamUsage: boolean
+  // False when the provider refuses an assistant turn with null content (ProviderConfig's nullContent).
+  nullContent: boolean
   limits: Limits | undefined
   headers: Readonly<Record<string, string>>
 }
@@ -222,6 +224,7 @@ export function loadRouting(text: string, env: Env): Routing {
       terms: config.terms,
       maxTokensParam: config.maxTokensParam,
       streamUsage: config.streamUsage,
+      nullContent: config.nullContent,
       limits: config.limits,
       headers: config.headers ?? {},
     }

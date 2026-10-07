@@ -229,7 +229,13 @@ curl -H "authorization: Bearer $WEB_TOKEN" "localhost:8080/v1/runs/run-012345678
 4. **Walk the chain.** For each model: skip it while its circuit breaker is open or a
    429's Retry-After runs; reserve its minute and day budgets (requests, tokens or
    Neurons) atomically; call it. A 429, 5xx, timeout or dropped connection moves to the
-   next model. A 400 comes straight back, since every model would refuse it.
+   next model. So does a provider's 400 or 422, without tripping the breaker or spending
+   budget: providers take different shapes, and a model's own malformed tool call comes
+   back as a 400. Only when every model tried refuses does the caller get
+   `upstream_rejected`, with the last refusal. The first live run (2026-10-07) found both
+   cases: Groq refusing gpt-oss-120b's tool call ("Failed to parse tool call arguments as
+   JSON"), and Workers AI refusing an assistant turn whose content is null, which a
+   provider marked `nullContent: false` in routing.yaml now gets as an empty string.
 5. **Stream.** A stream commits to a model when its first event arrives. After that it
    never switches provider: a failure ends it with an error event.
 6. **Settle.** The reservation is corrected with the provider's own token count, and
@@ -245,7 +251,7 @@ is stable:
 |---|---|---|
 | 400 | `invalid_request` | Fix the headers or body |
 | 400 | `unsupported_request` | No allowed model on the alias can take this call (for example images on `lb-tools`) |
-| 400 | `upstream_rejected` | The provider refused the request itself; its reason is in the message |
+| 400 | `upstream_rejected` | Every model tried refused the request itself; the last refusal's reason is in the message |
 | 401 | `invalid_service_token` | Mint a fresh token |
 | 403 | `system_not_allowed`, `alias_not_allowed` | The service or system may not make this call |
 | 403 | `permission_denied` | The service may not read run traces (only a `traceReaders` service may) |

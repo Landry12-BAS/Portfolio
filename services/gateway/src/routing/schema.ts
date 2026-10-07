@@ -74,6 +74,10 @@ const provider = z.strictObject({
   maxTokensParam: z.enum(['max_tokens', 'max_completion_tokens']).default('max_tokens'),
   // Whether streams may ask for a final usage chunk (stream_options.include_usage).
   streamUsage: z.boolean().default(true),
+  // Whether it takes an assistant turn whose content is null, OpenAI's form for a reply that only calls
+  // tools. Workers AI refuses one ("Bad input") and takes an empty string, so every tool call's follow-up
+  // failed there until the gateway sent "" (found by the first live run, 2026-10-07).
+  nullContent: z.boolean().default(true),
   limits: limits.optional(),
   // Extra request headers, such as OpenRouter's X-Title; they can never replace the key.
   headers: z.record(z.string().regex(/^[a-z0-9-]{1,64}$/i), z.string().max(200)).optional(),

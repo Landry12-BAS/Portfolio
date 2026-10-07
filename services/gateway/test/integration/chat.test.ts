@@ -101,14 +101,24 @@ describe('fallback', () => {
     expect(gw.providers.beta.requests).toHaveLength(0)
   })
 
-  it('passes a provider\'s 400 back without trying other models', async () => {
+  it('moves to the next model when a provider refuses the request, since providers take different shapes', async () => {
+    gw.providers.alpha.enqueue({ kind: 'json', status: 400, body: { error: { message: 'Failed to parse tool call arguments as JSON' } } })
+
+    const response = await chat(chatBody())
+
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['x-lb-model']).toBe('beta/small')
+    expect(gw.providers.beta.requests).toHaveLength(1)
+  })
+
+  it('passes the last refusal back when every model tried refuses the request', async () => {
     gw.providers.alpha.enqueue({ kind: 'json', status: 400, body: { error: { message: 'response_format schema is not supported' } } })
+    gw.providers.beta.enqueue({ kind: 'json', status: 422, body: { error: { message: 'schema is not supported here either' } } })
 
     const response = await chat(chatBody())
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toMatchObject({ error: { code: 'upstream_rejected', message: expect.stringContaining('response_format schema is not supported') } })
-    expect(gw.providers.beta.requests).toHaveLength(0)
+    expect(response.json()).toMatchObject({ error: { code: 'upstream_rejected', message: expect.stringContaining('schema is not supported here either') } })
   })
 })
 

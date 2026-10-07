@@ -207,14 +207,18 @@ export class ModelCall {
 
   /**
    * Walks the chain until one model serves the call, and returns that model's answer.
-   * Each model is skipped while its breaker is open or its budget is spent; a failed
-   * attempt moves on to the next model. Throws when none can serve it.
+   * Each model is skipped while its breaker is open or its budget is spent; a failed or
+   * refused attempt moves on to the next model. Throws when none can serve it: with the
+   * last refusal when every model tried refused the request, else as a failure.
    */
   async run<T>(attempt: Attempt<T>): Promise<Served<T>> {
     // Models the plan ruled out (data class, terms, capability, no key) go in the trace too.
     for (const { model, reason } of this.#plan.excluded) this.#skip(model, reason)
     let nextFreeAt = Number.POSITIVE_INFINITY
     let timedOut = false
+    // The last provider refusal, and whether any attempt failed otherwise, for the error the caller gets.
+    let refusal: { provider: string, message: string } | undefined
+    let failedOtherwise = false
 
     for (const model of this.#plan.candidates) {
       const now = this.#ctx.now()
@@ -268,12 +272,14 @@ export class ModelCall {
       const { failure } = result
       if (failure.kind === 'reject' || refundable.has(failure.reason)) await this.#ctx.meters.adjust(refund(meters))
       if (failure.kind === 'reject') {
-        // The request itself is at fault, so every other model would refuse it too.
+        // This provider refused the request itself. The model isn't failing, so its breaker is untouched,
+        // and the next model may take what this one refused.
         this.#ctx.breaker.release(model.ref)
         this.#attemptSpan(model, now, 'error', { outcome: 'rejected', httpStatus: failure.status })
-        await this.#close({ ok: false, error: 'upstream_rejected' })
-        throw new GatewayError(400, 'upstream_rejected', `${model.provider.name} rejected the request: ${failure.message}`)
+        refusal = { provider: model.provider.name, message: failure.message }
+        continue
       }
+      failedOtherwise = true
       if (failure.reason === 'rate_limited') {
         this.#ctx.breaker.coolDown(model.ref, this.#ctx.now() + (failure.retryAfterMs ?? 30_000))
       }
@@ -287,6 +293,11 @@ export class ModelCall {
       })
     }
 
+    if (refusal && !failedOtherwise && !timedOut) {
+      // Every model that was tried refused the request, so it is the request that needs changing.
+      await this.#close({ ok: false, error: 'upstream_rejected' })
+      throw new GatewayError(400, 'upstream_rejected', `${refusal.provider} rejected the request: ${refusal.message}`)
+    }
     return this.#fail(timedOut, nextFreeAt)
   }
 

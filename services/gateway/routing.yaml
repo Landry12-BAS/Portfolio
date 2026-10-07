@@ -105,6 +105,8 @@ providers:
     keyEnv: CLOUDFLARE_API_TOKEN
     trainsOnInputs: false
     terms: production
+    # Refuses an assistant turn whose content is null (a reply that only calls tools); the gateway sends "".
+    nullContent: false
     # One free pool for every model: 10,000 Neurons a day, reset at 00:00 UTC. Each
     # model below converts its tokens to Neurons at Cloudflare's published rates.
     limits:
