@@ -10,14 +10,13 @@ The ones here were made on 2026-10-07 on a development machine (x86-64), against
 platform running locally (the gateway, the three back ends, Postgres, Redis and LB-07's sandbox)
 with the real providers behind the gateway: Groq and Workers AI, and OpenRouter for synthetic
 content only. Each is one real run with real model calls, and its timings are that machine's and
-those providers' on that day. 61 of the 66 curated samples have one. None is invented: until a
-sample has one, its board says so and offers the live run, which spends the visitor's quota.
-These five have none yet:
+those providers' on that day; a run's trace says which model answered each call, since a busy
+minute sends a call down its route's fallbacks. 65 of the 66 curated samples have one. None is
+invented: until a sample has one, its board says so and offers the live run, which spends the
+visitor's quota. This one has none yet:
 
 | Sample | Why not yet |
 |---|---|
-| `lb-05/lost-repeat-buyers-last-quarter`, `lb-05/monthly-revenue-last-year` | The analyst could not answer: its models failed, then the SQL writer's route (`lb-reason`) had spent the day's free budget on both of its providers. To record again on a fresh day. |
-| `lb-06/memory-leak`, `lb-06/cache-stampede` | The agents could not finish: one answer stayed invalid after its repair, and later calls found the day's budgets spent. To record again on a fresh day. |
 | `lb-07/partner-link` | The planner declines to click the About page's partner links, as its prompt tells it (they lead outside the shop), so the sandbox's stop that the sample is there to show never happens, and the verdict is passing where the golden set expects not_verified. Recording it waits on a choice: let the planner click a link the goal names and leave the stop to the sandbox (a prompt change, with LB-07's live eval), or make the sample show the refusal. |
 
 To make one:
