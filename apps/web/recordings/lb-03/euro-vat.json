@@ -1,0 +1,1543 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "euro-vat",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:30:15.446Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "hanse-green-2026-4417.pdf"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "byte_size": 6452,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:03.243701Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:03.243701Z",
+          "failure": null,
+          "fields": null,
+          "id": "sf1icWFFlKhh7DJ5cfqpNA",
+          "journal": null,
+          "journal_status": null,
+          "kind": "pdf",
+          "label": "hanse-green-2026-4417.pdf",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": 0,
+          "run_id": null,
+          "state": "uploaded",
+          "steps": [],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:03.243701Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/sf1icWFFlKhh7DJ5cfqpNA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 6452,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:03.243701Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:03.243701Z",
+          "failure": null,
+          "fields": null,
+          "id": "sf1icWFFlKhh7DJ5cfqpNA",
+          "journal": null,
+          "journal_status": null,
+          "kind": "pdf",
+          "label": "hanse-green-2026-4417.pdf",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "ocr",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 4
+              },
+              "ms": 4,
+              "name": "queue",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:03.253162Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/sf1icWFFlKhh7DJ5cfqpNA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 6452,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:03.243701Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:03.243701Z",
+          "failure": null,
+          "fields": null,
+          "id": "sf1icWFFlKhh7DJ5cfqpNA",
+          "journal": null,
+          "journal_status": null,
+          "kind": "pdf",
+          "label": "hanse-green-2026-4417.pdf",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "extract",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 4
+              },
+              "ms": 4,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 130,
+                "worker_ms": 6766
+              },
+              "ms": 7818,
+              "name": "ocr",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:11.068554Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/sf1icWFFlKhh7DJ5cfqpNA"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 6452,
+          "can_export": true,
+          "checks": [
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "required_fields",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "issue_date",
+                "due_date"
+              ],
+              "id": "dates_valid",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "currency"
+              ],
+              "id": "currency_known",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "signs_agree",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_items_sum",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_bases",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "total_reconciles",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "fields_on_page",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "vendor",
+                "invoice_number"
+              ],
+              "id": "not_duplicate",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            }
+          ],
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:03.243701Z",
+          "duplicate": null,
+          "elapsed_ms": 12022,
+          "expires_at": "2026-10-07T12:30:03.243701Z",
+          "failure": null,
+          "fields": [
+            {
+              "box": null,
+              "checks": [],
+              "edited": false,
+              "kind": "choice",
+              "path": "document_type",
+              "value": "invoice"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.07154,
+                  0.04667,
+                  0.43318,
+                  0.04667,
+                  0.43318,
+                  0.06389,
+                  0.07154,
+                  0.06389
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "vendor",
+              "value": "Hanseatic Green Coffee GmbH"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.81525,
+                  0.08722,
+                  0.93318,
+                  0.08722,
+                  0.93318,
+                  0.10056,
+                  0.81525,
+                  0.10056
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "invoice_number",
+              "value": "RE-2026-4417"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.84906,
+                  0.12056,
+                  0.93318,
+                  0.12056,
+                  0.93318,
+                  0.13389,
+                  0.84906,
+                  0.13389
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "issue_date",
+              "value": "2026-09-10"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.84827,
+                  0.13833,
+                  0.93239,
+                  0.13833,
+                  0.93239,
+                  0.15167,
+                  0.84827,
+                  0.15167
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "due_date",
+              "value": "2026-10-10"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.89701,
+                  0.15444,
+                  0.9316,
+                  0.15444,
+                  0.9316,
+                  0.17056,
+                  0.89701,
+                  0.17056
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "currency",
+              "path": "currency",
+              "value": "EUR"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.07233,
+                  0.34222,
+                  0.34906,
+                  0.34333,
+                  0.34984,
+                  0.35778,
+                  0.07154,
+                  0.35667
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.0.description",
+              "value": "Green coffee Ethiopia Guji, 60 kg bag"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.55739,
+                  0.34278,
+                  0.5739,
+                  0.34278,
+                  0.5739,
+                  0.35722,
+                  0.55739,
+                  0.35722
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.0.quantity",
+              "value": "3"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.68947,
+                  0.34222,
+                  0.74214,
+                  0.34222,
+                  0.74214,
+                  0.35778,
+                  0.68947,
+                  0.35778
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.unit_price",
+              "value": "612.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.86871,
+                  0.34111,
+                  0.9316,
+                  0.34167,
+                  0.93082,
+                  0.35722,
+                  0.86792,
+                  0.35667
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.total",
+              "value": "1836.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.07154,
+                  0.36556,
+                  0.36792,
+                  0.36722,
+                  0.36871,
+                  0.38167,
+                  0.07075,
+                  0.38
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.1.description",
+              "value": "Green coffee Colombia Huila, 69 kg bag"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.55818,
+                  0.36667,
+                  0.57469,
+                  0.36667,
+                  0.57469,
+                  0.38111,
+                  0.55818,
+                  0.38111
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.1.quantity",
+              "value": "2"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.68947,
+                  0.36667,
+                  0.74057,
+                  0.36667,
+                  0.74057,
+                  0.38056,
+                  0.68947,
+                  0.38056
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.unit_price",
+              "value": "548.50"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.86871,
+                  0.36611,
+                  0.9316,
+                  0.36611,
+                  0.9316,
+                  0.38167,
+                  0.86871,
+                  0.38167
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.total",
+              "value": "1097.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.0684,
+                  0.39056,
+                  0.23821,
+                  0.39056,
+                  0.23821,
+                  0.40556,
+                  0.0684,
+                  0.40556
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.2.description",
+              "value": "Jute sack, empty (100)"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.55975,
+                  0.39,
+                  0.57311,
+                  0.39,
+                  0.57311,
+                  0.40444,
+                  0.55975,
+                  0.40444
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.2.quantity",
+              "value": "1"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.68947,
+                  0.39,
+                  0.74135,
+                  0.39,
+                  0.74135,
+                  0.40389,
+                  0.68947,
+                  0.40389
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.2.unit_price",
+              "value": "185.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.88365,
+                  0.38889,
+                  0.93632,
+                  0.39,
+                  0.93475,
+                  0.40722,
+                  0.88286,
+                  0.40556
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.2.total",
+              "value": "185.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.06918,
+                  0.41389,
+                  0.30975,
+                  0.41389,
+                  0.30975,
+                  0.42889,
+                  0.06918,
+                  0.42889
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.3.description",
+              "value": "Freight Hamburg to Brno (pallet)"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.56053,
+                  0.41389,
+                  0.57311,
+                  0.41389,
+                  0.57311,
+                  0.42722,
+                  0.56053,
+                  0.42722
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.3.quantity",
+              "value": "1"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.68947,
+                  0.41278,
+                  0.74214,
+                  0.41278,
+                  0.74214,
+                  0.42833,
+                  0.68947,
+                  0.42833
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.3.unit_price",
+              "value": "240.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.88286,
+                  0.41278,
+                  0.93553,
+                  0.41278,
+                  0.93553,
+                  0.42833,
+                  0.88286,
+                  0.42833
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.3.total",
+              "value": "240.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.07154,
+                  0.43833,
+                  0.23035,
+                  0.43833,
+                  0.22956,
+                  0.45278,
+                  0.07154,
+                  0.45278
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.4.description",
+              "value": "Sample set, 3 x 250 g"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.56053,
+                  0.43833,
+                  0.57311,
+                  0.43833,
+                  0.57311,
+                  0.45167,
+                  0.56053,
+                  0.45167
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.4.quantity",
+              "value": "1"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.69733,
+                  0.43667,
+                  0.74214,
+                  0.43667,
+                  0.74214,
+                  0.45333,
+                  0.69733,
+                  0.45333
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.4.unit_price",
+              "value": "45.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.89072,
+                  0.43667,
+                  0.93553,
+                  0.43667,
+                  0.93553,
+                  0.45333,
+                  0.89072,
+                  0.45333
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.4.total",
+              "value": "45.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.86714,
+                  0.47778,
+                  0.93396,
+                  0.47778,
+                  0.93396,
+                  0.49333,
+                  0.86714,
+                  0.49333
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "subtotal",
+              "value": "3403.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9359,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.06604,
+                  0.49278,
+                  0.09119,
+                  0.49278,
+                  0.09119,
+                  0.50778,
+                  0.06604,
+                  0.50778
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "rate",
+              "path": "vat.0.rate",
+              "value": "0.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.21462,
+                  0.49278,
+                  0.25314,
+                  0.49278,
+                  0.25314,
+                  0.50722,
+                  0.21462,
+                  0.50722
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.base",
+              "value": "45.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.375,
+                  0.49333,
+                  0.40252,
+                  0.49333,
+                  0.40252,
+                  0.50778,
+                  0.375,
+                  0.50778
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.amount",
+              "value": "0.00"
+            },
+            {
+              "box": {
+                "band": "medium",
+                "confidence": 0.8209,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.06525,
+                  0.50833,
+                  0.09041,
+                  0.50833,
+                  0.09041,
+                  0.52278,
+                  0.06525,
+                  0.52278
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "rate",
+              "path": "vat.1.rate",
+              "value": "7.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.19261,
+                  0.50833,
+                  0.25314,
+                  0.50833,
+                  0.25314,
+                  0.52333,
+                  0.19261,
+                  0.52333
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.1.base",
+              "value": "2933.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.35692,
+                  0.50778,
+                  0.40566,
+                  0.50778,
+                  0.40566,
+                  0.52333,
+                  0.35692,
+                  0.52333
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.1.amount",
+              "value": "205.31"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.0684,
+                  0.52333,
+                  0.09906,
+                  0.52333,
+                  0.09906,
+                  0.53778,
+                  0.0684,
+                  0.53778
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "rate",
+              "path": "vat.2.rate",
+              "value": "19.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.20755,
+                  0.52278,
+                  0.25157,
+                  0.52278,
+                  0.25157,
+                  0.53833,
+                  0.20755,
+                  0.53833
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.2.base",
+              "value": "425.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.36635,
+                  0.52278,
+                  0.40252,
+                  0.52278,
+                  0.40252,
+                  0.53833,
+                  0.36635,
+                  0.53833
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.2.amount",
+              "value": "80.75"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.85535,
+                  0.50778,
+                  0.9316,
+                  0.50833,
+                  0.93082,
+                  0.52611,
+                  0.85456,
+                  0.52556
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "total",
+              "value": "3689.06"
+            }
+          ],
+          "id": "sf1icWFFlKhh7DJ5cfqpNA",
+          "journal": {
+            "currency": "EUR",
+            "date": "2026-09-10",
+            "lines": [
+              {
+                "account": "5010",
+                "credit": "0.00",
+                "debit": "2933.00",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Green coffee"
+              },
+              {
+                "account": "5020",
+                "credit": "0.00",
+                "debit": "185.00",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Packaging materials"
+              },
+              {
+                "account": "5040",
+                "credit": "0.00",
+                "debit": "240.00",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Freight and delivery"
+              },
+              {
+                "account": "5090",
+                "credit": "0.00",
+                "debit": "45.00",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Other expenses"
+              },
+              {
+                "account": "1400",
+                "credit": "0.00",
+                "debit": "286.06",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Input VAT receivable"
+              },
+              {
+                "account": "2100",
+                "credit": "3689.06",
+                "debit": "0.00",
+                "memo": "Hanseatic Green Coffee GmbH RE-2026-4417",
+                "name": "Accounts payable, suppliers"
+              }
+            ],
+            "reference": "Hanseatic Green Coffee GmbH RE-2026-4417",
+            "total_credit": "3689.06",
+            "total_debit": "3689.06"
+          },
+          "journal_status": "made",
+          "kind": "pdf",
+          "label": "hanse-green-2026-4417.pdf",
+          "model": "openai/gpt-oss-20b",
+          "model_calls": 3,
+          "ocr_ms": 7806,
+          "pages": 1,
+          "prices_include_vat": false,
+          "queued_ahead": null,
+          "run_id": "ahMyAA-JendmacZEs0BBoQ",
+          "state": "ready",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 4
+              },
+              "ms": 4,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 130,
+                "worker_ms": 6766
+              },
+              "ms": 7818,
+              "name": "ocr",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "flagged": false,
+                "score": 0.0007,
+                "segments": 1
+              },
+              "ms": 898,
+              "name": "injection check",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "alias": "lb-fast",
+                "attempts": 2,
+                "picture": false,
+                "text_chars": 753,
+                "text_cut": false
+              },
+              "ms": 3104,
+              "name": "extract",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "failed": 0,
+                "ran": 9
+              },
+              "ms": 1,
+              "name": "validate",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "expected": 36,
+                "found": 36
+              },
+              "ms": 166,
+              "name": "place fields",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "compared": 6,
+                "duplicate": false
+              },
+              "ms": 6,
+              "name": "check duplicates",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "lines": 6
+              },
+              "ms": 0,
+              "name": "journal entry",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:15.271475Z"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "ahMyAA-JendmacZEs0BBoQ",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "43e560bb2d15b11a",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1791372603250,
+        "endMs": 1791372611068,
+        "attrs": {
+          "pages": 1,
+          "words": 130,
+          "worker_ms": 6766,
+          "wall_ms": 7806,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 7,
+          "oom_score_adj": 1000
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "4548f408f6ad3eab",
+        "parentId": "a7dad9f124e97215",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372611079,
+        "endMs": 1791372611971,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "a7dad9f124e97215",
+        "parentId": "97b846bb9b5b1bd1",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372611079,
+        "endMs": 1791372611972,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 259,
+          "maxOutputTokens": 16,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 219,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0006789813633076847,
+          "segments": 2
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "97b846bb9b5b1bd1",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "ok",
+        "startMs": 1791372611075,
+        "endMs": 1791372611974,
+        "attrs": {
+          "segments": 1,
+          "flagged": false,
+          "score": 0.0007
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "d157d9ae0f6f2175",
+        "parentId": "106028bc021d5381",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372611979,
+        "endMs": 1791372613551,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "106028bc021d5381",
+        "parentId": "b8305e5d359c33a3",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372611978,
+        "endMs": 1791372613553,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 886,
+          "maxOutputTokens": 1024,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 942,
+          "outputTokens": 1024
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "1d8827b40d073152",
+        "parentId": "5fbefb8756df8cf7",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372613560,
+        "endMs": 1791372615073,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "5fbefb8756df8cf7",
+        "parentId": "b8305e5d359c33a3",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372613560,
+        "endMs": 1791372615075,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 938,
+          "maxOutputTokens": 1024,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 982,
+          "outputTokens": 885
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "b8305e5d359c33a3",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.step",
+        "name": "extract",
+        "status": "ok",
+        "startMs": 1791372611974,
+        "endMs": 1791372615078,
+        "attrs": {
+          "alias": "lb-fast",
+          "picture": false,
+          "attempts": 2,
+          "text_cut": false,
+          "text_chars": 753
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "62de25eb55197d80",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.step",
+        "name": "validate",
+        "status": "ok",
+        "startMs": 1791372615098,
+        "endMs": 1791372615099,
+        "attrs": {
+          "failed": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "e7da13994a3238d7",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.step",
+        "name": "place fields",
+        "status": "ok",
+        "startMs": 1791372615099,
+        "endMs": 1791372615265,
+        "attrs": {
+          "found": 36,
+          "expected": 36
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "ab2af5ba0f19d805",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.step",
+        "name": "check duplicates",
+        "status": "ok",
+        "startMs": 1791372615265,
+        "endMs": 1791372615271,
+        "attrs": {
+          "compared": 6,
+          "duplicate": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "af0281f729c2c88f",
+        "parentId": "23634d1229e6409f",
+        "kind": "system.step",
+        "name": "journal entry",
+        "status": "ok",
+        "startMs": 1791372615271,
+        "endMs": 1791372615271,
+        "attrs": {
+          "lines": 6
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ahMyAA-JendmacZEs0BBoQ",
+        "system": "lb-03",
+        "spanId": "23634d1229e6409f",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1791372603249,
+        "endMs": 1791372615280,
+        "attrs": {
+          "kind": "pdf",
+          "outcome": "ready",
+          "model_calls": 3
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 3,
+    "steps": 7,
+    "durationMs": 12031
+  }
+}

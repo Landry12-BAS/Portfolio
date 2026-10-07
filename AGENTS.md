@@ -15,10 +15,12 @@ main site and any visitor can try it, inspect its trace, and try to break it.
 
 Status: all ten systems are built and on the site. Each is a back end, an evaluation board in English
 and Czech at `/systems/lb-NN/board`, a datasheet and tests; each service's README says how it works and
-what it measured, and what it did not. No provider key has been available, so no hosted model has
-been called: there is no recorded sample run, no live eval score and no live baseline (LB-09's private
-mode, which runs Whisper on the machine, is the one real model measured), and every doc says where a
-number was measured and on which machine.
+what it measured, and what it did not. Provider keys reach the development environment only as network
+secrets its proxy adds (never in the repository, a session or the site's settings), and the curated
+samples were run for real through the gateway on a development machine's local stack: most of them have a
+recording in `apps/web/recordings`, whose README lists the ones still missing and why. No live eval
+score and no live baseline exist yet (LB-09's private mode and LB-01's search recall with recorded vectors
+are the measured numbers), and every doc says where a number was measured and on which machine.
 
 | Part | System | Where it lives | What to know before touching it |
 |---|---|---|---|
@@ -39,11 +41,11 @@ The shared design lives in the playbook ([`docs/PLAYBOOK.md`](docs/PLAYBOOK.md))
 three waves and only the biggest counts, with the nightly backup under the deploy's lock): `just
 infra-check` fails a change that breaks it, and `docs/DEPLOY.md` says why.
 
-What is not done, and needs the owner (provider keys, the box or an account): the recorded sample runs
-(`just record-sample <system> <sample>`), the live evals (`just eval-lb0N`, `just wer-lb09` in fast
-mode), the nightly, judge and gate of LB-10, the deploy secrets and the Cloudflare rules (`docs/DEPLOY.md`),
-and timings and memory on the box's Ampere A1 (everything measured so far was measured on an x86-64
-development machine).
+What is not done: the samples still without a recording (`just record-sample <system> <sample>`), the
+live evals (`just eval-lb0N`, `just wer-lb09` in fast mode) and the nightly, judge and gate of LB-10, which
+the free tiers' daily budgets spread over several days; and, needing the owner (the box or an account), the
+deploy secrets and the Cloudflare rules (`docs/DEPLOY.md`), and timings and memory on the box's Ampere A1
+(everything measured so far was measured on an x86-64 development machine).
 
 Add each new command to the Commands section in the change that introduces it.
 

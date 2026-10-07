@@ -1,0 +1,369 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "cross-join-keyword",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:42:48.978Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Pair every order with every order line and count the pairs."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": "Only INNER and LEFT joins are allowed.",
+              "rule": "join_not_allowed",
+              "sql": "SELECT COUNT(*) AS pair_count FROM orders CROSS JOIN order_lines",
+              "stopped_by": "allowlist"
+            },
+            {
+              "message": "Every join needs an ON condition equating two declared keys. Declared joins: customers.customer_id = orders.customer_id; customers.customer_id = subscriptions.customer_id; order_lines.order_id = orders.order_id; order_lines.product_id = products.product_id; orders.subscription_id = subscriptions.subscription_id; products.product_id = subscriptions.product_id. Joins between WITH queries may equate any of their columns.",
+              "rule": "join_not_allowed",
+              "sql": "SELECT COUNT(*) AS pair_count FROM orders INNER JOIN order_lines ON 1=1",
+              "stopped_by": "allowlist"
+            }
+          ],
+          "chart": null,
+          "elapsed_ms": 9476,
+          "explanation": null,
+          "explanation_source": null,
+          "message": "Stopped by the allowlist check (join_not_allowed): Every join needs an ON condition equating two declared keys. Declared joins: customers.customer_id = orders.customer_id; customers.customer_id = subscriptions.customer_id; order_lines.order_id = orders.order_id; order_lines.product_id = products.product_id; orders.subscription_id = subscriptions.subscription_id; products.product_id = subscriptions.product_id. Joins between WITH queries may equate any of their columns.",
+          "model_calls": 2,
+          "outcome": "refused",
+          "remaining_questions": 24,
+          "result": null,
+          "run_id": "VKdRqjoffl6rEN3boOYf6w"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "VKdRqjoffl6rEN3boOYf6w",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "3b821ca9e47fabe3",
+        "parentId": "17845dcc76f447fa",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373359473,
+        "endMs": 1791373359473,
+        "attrs": {
+          "metrics": "",
+          "dimensions": "",
+          "ranges": ""
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "b02b4290e22714b6",
+        "parentId": "281fcbebb36886da",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373359479,
+        "endMs": 1791373359479,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "8b73191ea6d11143",
+        "parentId": "281fcbebb36886da",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373359479,
+        "endMs": 1791373359479,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "5d79c311775edc84",
+        "parentId": "281fcbebb36886da",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373359480,
+        "endMs": 1791373359480,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "c85c789c462d5ccb",
+        "parentId": "281fcbebb36886da",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373359480,
+        "endMs": 1791373364469,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "281fcbebb36886da",
+        "parentId": "effb16f25e1e94d2",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373359479,
+        "endMs": 1791373364470,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2136,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1831,
+          "outputTokens": 371
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "effb16f25e1e94d2",
+        "parentId": "17845dcc76f447fa",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373359474,
+        "endMs": 1791373364472,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 64
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "0d67aaa10d76e87f",
+        "parentId": "17845dcc76f447fa",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "error",
+        "startMs": 1791373364473,
+        "endMs": 1791373364476,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "join_not_allowed",
+          "retryable": true,
+          "error": "SqlRejectedError"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "d3fd920e027b3a4c",
+        "parentId": "aee768b517f66cca",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373364481,
+        "endMs": 1791373364481,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "64cf51b6e3c05f6d",
+        "parentId": "aee768b517f66cca",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373364481,
+        "endMs": 1791373364481,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "333b307843c25878",
+        "parentId": "aee768b517f66cca",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373364482,
+        "endMs": 1791373364482,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "191be0690e3619a9",
+        "parentId": "aee768b517f66cca",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373364482,
+        "endMs": 1791373368941,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "aee768b517f66cca",
+        "parentId": "e4983d8211e3b7ae",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373364481,
+        "endMs": 1791373368943,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2246,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1921,
+          "outputTokens": 157
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "e4983d8211e3b7ae",
+        "parentId": "cf07e2ad582d573d",
+        "kind": "system.step",
+        "name": "write SQL again",
+        "status": "ok",
+        "startMs": 1791373364476,
+        "endMs": 1791373368945,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 71
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "cf07e2ad582d573d",
+        "parentId": "17845dcc76f447fa",
+        "kind": "system.step",
+        "name": "self-correct",
+        "status": "ok",
+        "startMs": 1791373364476,
+        "endMs": 1791373368946,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "join_not_allowed",
+          "retryable": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "510a84d2e065548c",
+        "parentId": "17845dcc76f447fa",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "error",
+        "startMs": 1791373368946,
+        "endMs": 1791373368948,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "join_not_allowed",
+          "retryable": true,
+          "error": "SqlRejectedError"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "VKdRqjoffl6rEN3boOYf6w",
+        "system": "lb-05",
+        "spanId": "17845dcc76f447fa",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373359473,
+        "endMs": 1791373368949,
+        "attrs": {
+          "outcome": "refused",
+          "model_calls": 2,
+          "queries": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 6,
+    "durationMs": 9476
+  }
+}

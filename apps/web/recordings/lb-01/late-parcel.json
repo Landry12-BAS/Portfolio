@@ -1,0 +1,574 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "late-parcel",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:26:29.852Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0001",
+          "language": "en",
+          "body": "Order BB-1041 still hasn't arrived. The tracking says it was sent more than a week ago. Where is it?"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "jPaBJa0YzCoezrcR",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-07T11:26:24.571Z",
+          "body": "Order BB-1041 still hasn't arrived. The tracking says it was sent more than a week ago. Where is it?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "Hvkuuqh8Eza093DbDD_4YQ",
+          "expires_at": "2026-10-08T11:26:24.571Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/jPaBJa0YzCoezrcR"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "jPaBJa0YzCoezrcR",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-07T11:26:24.571Z",
+          "body": "Order BB-1041 still hasn't arrived. The tracking says it was sent more than a week ago. Where is it?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "Hvkuuqh8Eza093DbDD_4YQ",
+          "expires_at": "2026-10-08T11:26:24.571Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/jPaBJa0YzCoezrcR"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "jPaBJa0YzCoezrcR",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "awaiting_approval",
+          "category": "late",
+          "created_at": "2026-10-07T11:26:24.571Z",
+          "body": "Order BB-1041 still hasn't arrived. The tracking says it was sent more than a week ago. Where is it?",
+          "order_number": "BB-1041",
+          "escalation_reason": "",
+          "run_id": "Hvkuuqh8Eza093DbDD_4YQ",
+          "expires_at": "2026-10-08T11:26:24.571Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "Hi Sam Carter,",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "I see that your order BB-1041 was shipped on 2026-09-27 with Vltava Post (tracking number VP481937721CZ).",
+                "citations": [
+                  "order:BB-1041"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Since it has been more than 5 working days after dispatch and you have not received it, we will open an investigation with the carrier today.",
+                "citations": [
+                  "passage:shipping.late-parcels",
+                  "order:BB-1041"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "We will update you on the investigation within 2 working days.",
+                "citations": [
+                  "passage:shipping.late-parcels"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Thank you for your patience.",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Basalt & Bean support",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "openai/gpt-oss-120b",
+            "sources": [
+              {
+                "id": "order:BB-1041",
+                "title": "Order BB-1041",
+                "text": "Order BB-1041: shipped. Dates: placed 2026-09-23, roasted 2026-09-25, shipped 2026-09-27. Ships to CZ with Vltava Post, tracking number VP481937721CZ. Items: 1 x Ethiopia Guji, filter, 250 g, at 349 CZK each; 1 x Colombia Huila, filter, 250 g, at 319 CZK each. Delivery 89 CZK. Total 757 CZK."
+              },
+              {
+                "id": "passage:shipping.late-parcels",
+                "title": "Shipping and delivery §4: Late parcels",
+                "text": "If a parcel within the Czech Republic has not arrived 5 working days after dispatch, or 10 working days for the rest of the EU, send us the order number. We open an investigation with the carrier the same day and update you within 2 working days."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "173790a1c97cc919",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1791372384621,
+        "endMs": 1791372384621,
+        "attrs": {}
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "356830837bc04133",
+        "parentId": "6d282f09e31b638d",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372384629,
+        "endMs": 1791372385336,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "6d282f09e31b638d",
+        "parentId": "6a20a6e72559f14d",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372384628,
+        "endMs": 1791372385338,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 36,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 27,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0004148548177909106,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "6a20a6e72559f14d",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372384622,
+        "endMs": 1791372385340,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0004
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "c17ce4b5ed1bc838",
+        "parentId": "421ceace2241119f",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372385348,
+        "endMs": 1791372386128,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "421ceace2241119f",
+        "parentId": "e6e5d96693ce8f03",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372385347,
+        "endMs": 1791372386130,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 441,
+          "maxOutputTokens": 300,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 427,
+          "outputTokens": 108
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "e6e5d96693ce8f03",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1791372385341,
+        "endMs": 1791372386135,
+        "attrs": {
+          "category": "late",
+          "senior_agent": "none",
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "2725355bdd111567",
+        "parentId": "8db1d9f8b9fffabd",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1791372386141,
+        "endMs": 1791372386602,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "modelId": "@cf/baai/bge-m3",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "8db1d9f8b9fffabd",
+        "parentId": "1a895a0b198afcb4",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1791372386141,
+        "endMs": 1791372386603,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 10,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "1a895a0b198afcb4",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1791372386136,
+        "endMs": 1791372386621,
+        "attrs": {
+          "candidates": 8,
+          "used_vectors": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "fd5ef0861d3f014a",
+        "parentId": "70024992dcc0df2c",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1791372386630,
+        "endMs": 1791372387119,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "modelId": "@cf/baai/bge-reranker-base",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "70024992dcc0df2c",
+        "parentId": "abbae5922b576ecd",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1791372386627,
+        "endMs": 1791372387120,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 585,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "documents": 8
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "abbae5922b576ecd",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1791372386622,
+        "endMs": 1791372387122,
+        "attrs": {
+          "reranked": true,
+          "top_relevance": 0.5356
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "01faa8dad331b88f",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1791372387122,
+        "endMs": 1791372387125,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "1d12116715756fb4",
+        "parentId": "9518dfc377feddbe",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372387134,
+        "endMs": 1791372387134,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "cc9e1f4a769d33a1",
+        "parentId": "9518dfc377feddbe",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372387134,
+        "endMs": 1791372387134,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "3975d79ffb02eb80",
+        "parentId": "9518dfc377feddbe",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372387134,
+        "endMs": 1791372389250,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "9518dfc377feddbe",
+        "parentId": "d68849f20cf479d3",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372387133,
+        "endMs": 1791372389251,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 915,
+          "maxOutputTokens": 1000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 848,
+          "outputTokens": 827
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "d68849f20cf479d3",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1791372387129,
+        "endMs": 1791372389254,
+        "attrs": {
+          "answerable": true,
+          "sentences": 6,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "f02ef4020f830bcb",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1791372389255,
+        "endMs": 1791372389256,
+        "attrs": {
+          "supported": true,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "90e477801e2b2b92",
+        "parentId": "7b9453b72f7bca34",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1791372389256,
+        "endMs": 1791372389256,
+        "attrs": {
+          "status": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "Hvkuuqh8Eza093DbDD_4YQ",
+        "system": "lb-01",
+        "spanId": "7b9453b72f7bca34",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1791372384620,
+        "endMs": 1791372389257,
+        "attrs": {
+          "language": "en",
+          "status": "awaiting_approval"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 5,
+    "steps": 9,
+    "durationMs": 4637
+  }
+}

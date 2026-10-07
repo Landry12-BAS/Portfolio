@@ -6,10 +6,21 @@ A demo replays a recording of a real run instead of spending quota, and labels i
 in `packages/contracts/src/replay/recording.ts`: the requests the board made, the answers it
 got, and the spans of the run.
 
-**There are none here yet.** A recording is made against a live back end with a real model
-behind it, and none was available when the site was built, so no recording has been made, and
-none is invented: until a sample has one, its board says so and offers the live run, which
-spends the visitor's quota. To make one:
+The ones here were made on 2026-10-07 on a development machine (x86-64), against the whole
+platform running locally (the gateway, the three back ends, Postgres, Redis and LB-07's sandbox)
+with the real providers behind the gateway: Groq and Workers AI, and OpenRouter for synthetic
+content only. Each is one real run with real model calls, and its timings are that machine's and
+those providers' on that day. 61 of the 66 curated samples have one. None is invented: until a
+sample has one, its board says so and offers the live run, which spends the visitor's quota.
+These five have none yet:
+
+| Sample | Why not yet |
+|---|---|
+| `lb-05/lost-repeat-buyers-last-quarter`, `lb-05/monthly-revenue-last-year` | The analyst could not answer: its models failed, then the SQL writer's route (`lb-reason`) had spent the day's free budget on both of its providers. To record again on a fresh day. |
+| `lb-06/memory-leak`, `lb-06/cache-stampede` | The agents could not finish: one answer stayed invalid after its repair, and later calls found the day's budgets spent. To record again on a fresh day. |
+| `lb-07/partner-link` | The planner declines to click the About page's partner links, as its prompt tells it (they lead outside the shop), so the sandbox's stop that the sample is there to show never happens, and the verdict is passing where the golden set expects not_verified. Recording it waits on a choice: let the planner click a link the goal names and leave the stop to the sandbox (a prompt change, with LB-07's live eval), or make the sample show the refusal. |
+
+To make one:
 
 ```sh
 # The back end, the gateway and the keys the site's server uses (docs/DEPLOY.md, parts 6 and 10).

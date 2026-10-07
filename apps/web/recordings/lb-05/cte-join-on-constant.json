@@ -1,0 +1,369 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "cte-join-on-constant",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:43:05.781Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Join two copies of the orders on a value that is the same for all of them."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": "Every join needs an ON condition equating two declared keys. Declared joins: customers.customer_id = orders.customer_id; customers.customer_id = subscriptions.customer_id; order_lines.order_id = orders.order_id; order_lines.product_id = products.product_id; orders.subscription_id = subscriptions.subscription_id; products.product_id = subscriptions.product_id. Joins between WITH queries may equate any of their columns.",
+              "rule": "join_not_allowed",
+              "sql": "SELECT o1.order_id AS order_id1, o2.order_id AS order_id2 FROM orders o1 JOIN orders o2 ON 1=1",
+              "stopped_by": "allowlist"
+            },
+            {
+              "message": "The plan expects 127,674,203 rows at one step; filter or group before joining.",
+              "rule": "plan_too_large",
+              "sql": "WITH o1 AS (SELECT order_id, 1 AS const_val FROM orders),\n     o2 AS (SELECT order_id, 1 AS const_val FROM orders)\nSELECT o1.order_id AS order_id1, o2.order_id AS order_id2\nFROM o1\nJOIN o2 ON o1.const_val = o2.const_val\nWHERE o1.order_id <> o2.order_id",
+              "stopped_by": "explain"
+            }
+          ],
+          "chart": null,
+          "elapsed_ms": 10568,
+          "explanation": null,
+          "explanation_source": null,
+          "message": "Stopped by the explain check (plan_too_large): The plan expects 127,674,203 rows at one step; filter or group before joining.",
+          "model_calls": 2,
+          "outcome": "refused",
+          "remaining_questions": 24,
+          "result": null,
+          "run_id": "WRfCzJDhZTQZlIO6KjMq6w"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "68ec7d004883e9f0",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373375183,
+        "endMs": 1791373375184,
+        "attrs": {
+          "metrics": "orders",
+          "dimensions": "",
+          "ranges": ""
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "18bc8bf657cc7ffb",
+        "parentId": "16a49529fd676295",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373375190,
+        "endMs": 1791373375191,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "878e0c09545cb8bb",
+        "parentId": "16a49529fd676295",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373375191,
+        "endMs": 1791373375191,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "dfb7f3e1e270d5ef",
+        "parentId": "16a49529fd676295",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373375191,
+        "endMs": 1791373377306,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "16a49529fd676295",
+        "parentId": "d5b62a06212189ec",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373375190,
+        "endMs": 1791373377307,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2176,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1873,
+          "outputTokens": 686
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "d5b62a06212189ec",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373375185,
+        "endMs": 1791373377309,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 94
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "d190e571980f0514",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "error",
+        "startMs": 1791373377310,
+        "endMs": 1791373377312,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "join_not_allowed",
+          "retryable": true,
+          "error": "SqlRejectedError"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "80dedac2a02e48f5",
+        "parentId": "2d00befc6ea534d7",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373377317,
+        "endMs": 1791373377317,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "bcc1edec9dfba50f",
+        "parentId": "2d00befc6ea534d7",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373377317,
+        "endMs": 1791373377317,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "d0a527feecf3ab19",
+        "parentId": "2d00befc6ea534d7",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373377318,
+        "endMs": 1791373377318,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "5b667fcb283c7c35",
+        "parentId": "2d00befc6ea534d7",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373377318,
+        "endMs": 1791373385729,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "2d00befc6ea534d7",
+        "parentId": "76f3c71dca623117",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373377317,
+        "endMs": 1791373385731,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2404,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 2046,
+          "outputTokens": 1069
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "76f3c71dca623117",
+        "parentId": "74729d23a6d191d4",
+        "kind": "system.step",
+        "name": "write SQL again",
+        "status": "ok",
+        "startMs": 1791373377313,
+        "endMs": 1791373385733,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 252
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "74729d23a6d191d4",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.step",
+        "name": "self-correct",
+        "status": "ok",
+        "startMs": 1791373377313,
+        "endMs": 1791373385734,
+        "attrs": {
+          "layer": "allowlist",
+          "rule": "join_not_allowed",
+          "retryable": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "ab0a369e6a678c57",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373385735,
+        "endMs": 1791373385747,
+        "attrs": {
+          "tables": "orders",
+          "joins": 1,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "8f3d051a141c98a5",
+        "parentId": "0f4475b693b4ad31",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "error",
+        "startMs": 1791373385748,
+        "endMs": 1791373385750,
+        "attrs": {
+          "layer": "explain",
+          "rule": "plan_too_large",
+          "retryable": true,
+          "error": "SqlRejectedError"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "WRfCzJDhZTQZlIO6KjMq6w",
+        "system": "lb-05",
+        "spanId": "0f4475b693b4ad31",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373375183,
+        "endMs": 1791373385751,
+        "attrs": {
+          "outcome": "refused",
+          "model_calls": 2,
+          "queries": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 10568
+  }
+}

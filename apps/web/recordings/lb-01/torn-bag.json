@@ -1,0 +1,579 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "torn-bag",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:25:37.202Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0001",
+          "language": "en",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "7SZd-BiIUgBp4Jek",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-07T11:25:25.501Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "FmApfJS3dzpSaavdNRse6g",
+          "expires_at": "2026-10-08T11:25:25.501Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/7SZd-BiIUgBp4Jek"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "7SZd-BiIUgBp4Jek",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-07T11:25:25.501Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "FmApfJS3dzpSaavdNRse6g",
+          "expires_at": "2026-10-08T11:25:25.501Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/7SZd-BiIUgBp4Jek"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "7SZd-BiIUgBp4Jek",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "awaiting_approval",
+          "category": "damaged",
+          "created_at": "2026-10-07T11:25:25.501Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "BB-1040",
+          "escalation_reason": "",
+          "run_id": "FmApfJS3dzpSaavdNRse6g",
+          "expires_at": "2026-10-08T11:25:25.501Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "Hello Sam Carter,",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Thank you for contacting us about the torn bag in your recent order.",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "We see that order BB-1040 was delivered on 2026-10-04.",
+                "citations": [
+                  "order:BB-1040"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "To process a free replacement for the damaged bag, please send us a photo of the torn bag and the outer box within 14 days of delivery.",
+                "citations": [
+                  "passage:damaged.torn-bags"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Once we receive the photo, we will arrange to send you a replacement at no cost and you do not need to return the damaged bag.",
+                "citations": [
+                  "passage:damaged.torn-bags"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "We look forward to resolving this quickly for you.",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Best regards, Basalt & Bean support",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "openai/gpt-oss-120b",
+            "sources": [
+              {
+                "id": "order:BB-1040",
+                "title": "Order BB-1040",
+                "text": "Order BB-1040: delivered. Dates: placed 2026-09-28, roasted 2026-09-30, shipped 2026-10-01, delivered 2026-10-04. Ships to CZ with Vltava Post, tracking number VP481920337CZ. Items: 2 x Basalt Blend, whole-bean, 250 g, at 289 CZK each. Delivery 89 CZK. Total 667 CZK."
+              },
+              {
+                "id": "passage:damaged.torn-bags",
+                "title": "Damaged, stale or wrong items §1: Torn or crushed bags",
+                "text": "If a bag arrives torn, punctured or crushed, send us a photo of the bag and the outer box within 14 days of delivery. We send a replacement free of charge, and you don't need to return the damaged bag."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "FmApfJS3dzpSaavdNRse6g",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "40614cbf6a244328",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1791372325770,
+        "endMs": 1791372325770,
+        "attrs": {}
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "dcc26ef77dd8f0d4",
+        "parentId": "d7d084f4cd971f3e",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372325864,
+        "endMs": 1791372326639,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "d7d084f4cd971f3e",
+        "parentId": "1526b7a2b82f65d3",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372325814,
+        "endMs": 1791372326642,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 50,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 43,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0004204525612294674,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "1526b7a2b82f65d3",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372325782,
+        "endMs": 1791372326644,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0004
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "b2d4e6a6b8797181",
+        "parentId": "c4ad0cce57f29dba",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372326861,
+        "endMs": 1791372327401,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "c4ad0cce57f29dba",
+        "parentId": "c9c82689f66fe121",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372326860,
+        "endMs": 1791372327403,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 455,
+          "maxOutputTokens": 300,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 442,
+          "outputTokens": 169
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "c9c82689f66fe121",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1791372326645,
+        "endMs": 1791372327429,
+        "attrs": {
+          "category": "damaged",
+          "senior_agent": "none",
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "39c72ea6a421fc50",
+        "parentId": "655b86909aa94a01",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1791372327439,
+        "endMs": 1791372328014,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "modelId": "@cf/baai/bge-m3",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "655b86909aa94a01",
+        "parentId": "e1be1d0fa963e217",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1791372327438,
+        "endMs": 1791372328015,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 9,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "e1be1d0fa963e217",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1791372327430,
+        "endMs": 1791372328033,
+        "attrs": {
+          "candidates": 8,
+          "used_vectors": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "2530c8d10c6d9fa1",
+        "parentId": "fa162b5dca53378a",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1791372328042,
+        "endMs": 1791372334152,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "modelId": "@cf/baai/bge-reranker-base",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "fa162b5dca53378a",
+        "parentId": "99d501297db5cfc6",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1791372328042,
+        "endMs": 1791372334153,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 565,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "documents": 8
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "99d501297db5cfc6",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1791372328033,
+        "endMs": 1791372334155,
+        "attrs": {
+          "reranked": true,
+          "top_relevance": 0.7139
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "97ae6ccf16d182d8",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1791372334156,
+        "endMs": 1791372334160,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "53f23fa581ab1c0b",
+        "parentId": "afda764e151c7301",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372334174,
+        "endMs": 1791372334174,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "5a2607794859684d",
+        "parentId": "afda764e151c7301",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372334174,
+        "endMs": 1791372334174,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "d8e7f998611d7049",
+        "parentId": "afda764e151c7301",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372334174,
+        "endMs": 1791372336673,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "afda764e151c7301",
+        "parentId": "4305fd4e32d609a3",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372334173,
+        "endMs": 1791372336675,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 918,
+          "maxOutputTokens": 1000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 866,
+          "outputTokens": 957
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "4305fd4e32d609a3",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1791372334168,
+        "endMs": 1791372336677,
+        "attrs": {
+          "answerable": true,
+          "sentences": 7,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "0778ada898f35d41",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1791372336678,
+        "endMs": 1791372336678,
+        "attrs": {
+          "supported": true,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "0a55b12af83b83f5",
+        "parentId": "acaa6ba99c06c4c1",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1791372336679,
+        "endMs": 1791372336679,
+        "attrs": {
+          "status": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "FmApfJS3dzpSaavdNRse6g",
+        "system": "lb-01",
+        "spanId": "acaa6ba99c06c4c1",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1791372325770,
+        "endMs": 1791372336679,
+        "attrs": {
+          "language": "en",
+          "status": "awaiting_approval"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 5,
+    "steps": 9,
+    "durationMs": 10909
+  }
+}

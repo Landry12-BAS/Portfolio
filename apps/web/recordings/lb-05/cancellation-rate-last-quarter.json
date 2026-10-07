@@ -1,0 +1,345 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "cancellation-rate-last-quarter",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:41:06.284Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "What was the cancellation rate last quarter?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT COUNT_IF(orders.status = 'cancelled')::DOUBLE PRECISION / COUNT(*) AS cancellation_rate FROM orders WHERE orders.ordered_at BETWEEN DATE '2026-07-01' AND DATE '2026-09-30'",
+              "stopped_by": null
+            }
+          ],
+          "chart": null,
+          "elapsed_ms": 7164,
+          "explanation": "cancellation rate: 0.03551283650929555.",
+          "explanation_source": "fallback",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "number",
+                "name": "cancellation_rate"
+              }
+            ],
+            "elapsed_ms": 4,
+            "joins": 0,
+            "row_count": 1,
+            "rows": [
+              [
+                0.03551283650929555
+              ]
+            ],
+            "sql": "SELECT\n  CAST(COUNT_IF(orders.status = 'cancelled') AS DOUBLE) / COUNT(*) AS cancellation_rate\nFROM orders AS orders\nWHERE\n  orders.ordered_at BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE)\nLIMIT 1000",
+            "tables": [
+              "orders"
+            ],
+            "truncated": false
+          },
+          "run_id": "2pA85GWcckcWOCW5nHbiyw"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "2pA85GWcckcWOCW5nHbiyw",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "c772ce29276a1eae",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373259079,
+        "endMs": 1791373259079,
+        "attrs": {
+          "metrics": "cancellation_rate",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "6b30ba9719fe28c8",
+        "parentId": "66beef1e317e601f",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373259087,
+        "endMs": 1791373259087,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "07544b239dbc0d32",
+        "parentId": "66beef1e317e601f",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373259087,
+        "endMs": 1791373259087,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "8539580a6e688f15",
+        "parentId": "66beef1e317e601f",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373259088,
+        "endMs": 1791373259088,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "29114458fc93ae6a",
+        "parentId": "66beef1e317e601f",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373259088,
+        "endMs": 1791373265003,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "66beef1e317e601f",
+        "parentId": "5fecebfed9f1fd6d",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373259086,
+        "endMs": 1791373265005,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2189,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1881,
+          "outputTokens": 368
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "5fecebfed9f1fd6d",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373259080,
+        "endMs": 1791373265007,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 178
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "cde7076c54c6119f",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373265008,
+        "endMs": 1791373265015,
+        "attrs": {
+          "tables": "orders",
+          "joins": 0,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "357d109fa72c0246",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791373265015,
+        "endMs": 1791373265017,
+        "attrs": {
+          "operators": 4,
+          "estimated_rows": 403998
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "011b982b445786c0",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791373265018,
+        "endMs": 1791373265023,
+        "attrs": {
+          "rows": 1,
+          "columns": 1,
+          "elapsed_ms": 4,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "0ecf7f6a6c36609f",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791373265024,
+        "endMs": 1791373265024,
+        "attrs": {
+          "kind": "none",
+          "reason": "too_few_rows"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "54dbfba7fc876fd0",
+        "parentId": "6fc548d7d894aa83",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791373265029,
+        "endMs": 1791373266238,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "6fc548d7d894aa83",
+        "parentId": "630071dcb4ece97b",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791373265028,
+        "endMs": 1791373266239,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 277,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 305,
+          "outputTokens": 500
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "630071dcb4ece97b",
+        "parentId": "f00d022c8b20c434",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791373265024,
+        "endMs": 1791373266242,
+        "attrs": {
+          "source": "fallback"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2pA85GWcckcWOCW5nHbiyw",
+        "system": "lb-05",
+        "spanId": "f00d022c8b20c434",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373259078,
+        "endMs": 1791373266242,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 7164
+  }
+}

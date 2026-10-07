@@ -1,0 +1,497 @@
+{
+  "v": 1,
+  "system": "lb-04",
+  "sample": "clean-supply",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:36:10.444Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb04/contracts",
+        "body": {
+          "from": "sample",
+          "sampleId": "clean-supply"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "title": "Wholesale supply agreement, fair terms",
+          "origin": "sample",
+          "sampleId": "clean-supply",
+          "state": "queued",
+          "failure": null,
+          "pages": null,
+          "createdAt": "2026-10-07T11:34:29.263Z",
+          "expiresAt": "2026-10-07T12:34:29.263Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "title": "Wholesale supply agreement, fair terms",
+          "origin": "sample",
+          "sampleId": "clean-supply",
+          "state": "analysing",
+          "failure": null,
+          "pages": 11,
+          "createdAt": "2026-10-07T11:34:29.263Z",
+          "expiresAt": "2026-10-07T12:34:29.263Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "title": "Wholesale supply agreement, fair terms",
+          "origin": "sample",
+          "sampleId": "clean-supply",
+          "state": "verifying",
+          "failure": null,
+          "pages": 11,
+          "createdAt": "2026-10-07T11:34:29.263Z",
+          "expiresAt": "2026-10-07T12:34:29.263Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "title": "Wholesale supply agreement, fair terms",
+          "origin": "sample",
+          "sampleId": "clean-supply",
+          "state": "done",
+          "failure": null,
+          "pages": 11,
+          "createdAt": "2026-10-07T11:34:29.263Z",
+          "expiresAt": "2026-10-07T12:34:29.263Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c/pages"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "pages": [
+            {
+              "page": 1,
+              "text": "WHOLESALE SUPPLY AGREEMENT\nbetween\nBasalt & Bean Coffee Co. s.r.o.\nand\nVltava Grand Hotels a.s.\nThis Agreement is dated 1 October 2026 and is made between:\n(1) Basalt & Bean Coffee Co. s.r.o., a company incorporated in the Czech Republic\nwith registered number 01234567, whose registered office is at 12 Roastery\nLane, 110 00 Prague 1 (the “Supplier”); and\n(2) Vltava Grand Hotels a.s., a company incorporated in the Czech Republic with\nregistered number 87654321, whose registered office is at 5 Riverside Quay,\n110 00 Prague 1 (the “Customer”).\nBackground\n(A) The Supplier roasts and sells specialty coffee.\n(B) The Customer operates hotels and cafes and wishes to buy coffee from the\nSupplier to serve and resell in them.\n(C) The parties have agreed that the Supplier will supply the Products to the\nCustomer on the terms of this Agreement.\nThe parties agree as follows:\n1. DEFINITIONS AND INTERPRETATION\n1.1 In this Agreement the following words have these meanings:\n(a) “Agreement” means this agreement, including its Schedules;\n(b) “Business Day” means a day other than a Saturday, a Sunday or a public holiday\nin the Czech Republic;\n(c) “Delivery Point” means each hotel or cafe of the Customer named in a Purchase\nOrder;\n(d) “Products” means the roasted coffee products listed in Schedule 1, in the pack\nsizes stated there;\n(e) “Purchase Order” means a written order for Products placed by the Customer\nunder clause 4;\n(f) “Specification” means the quality specification for each Product in Schedule 1,\nand the Supplier’s cupping standard in force when the Product was roasted;\n(g) “Term” has the meaning given in clause 3.3.\nPage 1 of 11"
+            },
+            {
+              "page": 2,
+              "text": "1.2 Headings do not affect the interpretation of this Agreement. A reference to a clause\nor a Schedule is to a clause of, or a Schedule to, this Agreement. A reference to\nwriting includes email, but not any other electronic message.\n1.3 Words in the singular include the plural and the other way round. The words “inclu-\nding” and “in particular” do not limit the words that come before them.\n2. SUPPLY OF PRODUCTS\n2.1 During the Term the Supplier shall supply, and the Customer shall buy, the Products\nthat the Customer orders under clause 4, on the terms of this Agreement.\n2.2 The Supplier shall supply the Products with the care and skill to be expected of a\nspecialty roaster, and shall make sure that each Product matches its Specification\nand is fit to be served to the public.\n2.3 The Supplier shall use reasonable endeavours to keep enough green coffee in stock\nto meet the forecasts that the Customer gives under clause 4.2. If the Supplier\ncannot supply a Product, it shall tell the Customer without delay and offer the nearest\nequivalent Product, which the Customer may accept or refuse.\n2.4 Nothing in this Agreement obliges the Customer to buy a minimum quantity of\nProducts, or stops the Supplier from supplying other customers or the Customer from\nbuying coffee from other suppliers.\n3. TERM AND RENEWAL\n3.1 This Agreement starts on 1 November 2026 and, unless it ends earlier under clause\n23, continues for an initial period of twenty-four (24) months (the “Initial Term”).\n3.2 This Agreement shall renew automatically for successive periods of twelve (12)\nmonths each unless either party gives the other written notice of non-renewal at least\nsixty (60) days before the end of the then-current term.\n3.3 The Initial Term and each period for which this Agreement renews are together the\n“Term”. The prices in Schedule 1 apply during the Initial Term and may be reviewed\nunder clause 5.5 afterwards.\n4. ORDERS AND FORECASTS\n4.1 The Customer shall order Products by sending the Supplier a Purchase Order by\nemail, stating the Products, the quantities, the Delivery Point and the delivery date it\nwants.\n4.2 By the fifteenth day of each month the Customer shall give the Supplier a non-bin-\nding forecast of the Products it expects to order in the following three (3) months. The\nforecast is given in good faith to help the Supplier plan its roasting and purchasing,\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 2 of 11"
+            },
+            {
+              "page": 3,
+              "text": "and does not bind the Customer to buy.\n4.3 The Supplier shall confirm or refuse each Purchase Order within two (2) Business\nDays of receiving it. A Purchase Order that the Supplier has not refused within that\ntime is accepted.\n4.4 The Supplier shall accept a Purchase Order that is within the Customer’s latest\nforecast and gives at least five (5) Business Days’ notice. For other Purchase Orders\nit shall use reasonable endeavours to supply by the date requested.\n4.5 The Customer may change or cancel a Purchase Order without charge until the\nSupplier has started roasting the Products it covers.\n5. PRICE AND PAYMENT\n5.1 The price of each Product is the price per kilogram stated for it in Schedule 1,\nexclusive of value added tax. The prices include packaging, and delivery to a Delivery\nPoint in the Czech Republic.\n5.2 The Supplier shall invoice the Customer for each delivery on or after the date of\ndelivery. Each invoice shall state the Purchase Order it relates to, the Products and\nquantities delivered, the price and the value added tax due.\n5.3 The Customer shall pay each undisputed invoice within thirty (30) days of the date of\nthe invoice, by bank transfer to the account stated on the invoice. Interest accrues on\nan overdue amount at the statutory rate from the due date until it is paid.\n5.4 If the Customer disputes an invoice in good faith, it shall tell the Supplier in writing\nwithin fourteen (14) days of receiving it, giving its reasons, and shall pay the part that\nis not in dispute. The parties shall try to settle the dispute within thirty (30) days.\n5.5 The Supplier may propose new prices for the Products by written notice given at least\nninety (90) days before the end of the Initial Term or of any later period. Prices\nchange only if the Customer agrees in writing. If it does not, the existing prices\ncontinue to apply.\n6. DELIVERY AND RISK\n6.1 The Supplier shall deliver the Products to the Delivery Point stated in each Purchase\nOrder, within the delivery window for that Delivery Point in Schedule 2, on the date\nthe Supplier has confirmed.\n6.2 The Supplier shall deliver in sealed, labelled packaging marked with the Product’s\nname, its roast date and a lot code. The Customer shall make sure that someone is\npresent to receive each delivery, and shall sign the delivery note.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 3 of 11"
+            },
+            {
+              "page": 4,
+              "text": "6.3 Risk in the Products passes to the Customer on delivery. Ownership passes when\nthe Customer has paid for them in full.\n6.4 If the Supplier delivers more or less than ordered, the Customer may reject the\nexcess or accept it at the stated price. The Customer shall pay only for what it\naccepts, and the Supplier shall deliver any shortfall within three (3) Business Days.\n6.5 Delivery dates are given in good faith. If the Supplier expects to deliver late it shall tell\nthe Customer straight away and say when delivery will be made.\n7. QUALITY, INSPECTION AND COMPLAINTS\n7.1 The Supplier shall roast each Product within seven (7) days before it delivers it, and\nshall give the roast date and the lot code of each delivery on the delivery note.\n7.2 The Customer shall inspect each delivery within five (5) Business Days of receiving\nit, and shall tell the Supplier in writing of any Product that does not match the Specifi-\ncation, giving enough detail to identify the lot.\n7.3 If a Product does not match the Specification, the Supplier shall, at the Customer’s\nchoice, replace it at no charge within five (5) Business Days or credit the price paid\nfor it. The Customer shall keep the Product available for inspection until the Supplier\nhas examined it.\n7.4 The Supplier shall keep a sample of each lot for twelve (12) months after delivery,\nand shall give the Customer the result of any quality test of the lot on request.\n8. WARRANTIES\n8.1 The Supplier warrants that, when it delivers them, the Products will match their\nSpecification, will be of satisfactory quality and fit for human consumption, and will\nhave been roasted, packed, labelled and stored in accordance with the law.\n8.2 The Supplier warrants that it has the right to sell the Products and that ownership of\nthem will pass to the Customer free from any charge or security.\n8.3 The Customer warrants that it will store and serve the Products in accordance with\nthe instructions on their packaging, and will not alter or re-label them in a way that\nmakes them misleading.\n8.4 Each party warrants that it has the power to enter into this Agreement and that doing\nso does not put it in breach of any other agreement.\n9. FOOD SAFETY AND COMPLIANCE\n9.1 The Supplier shall comply with the laws that apply to roasting, packing, labelling and\nselling coffee in the Czech Republic and the European Union, including the rules on\nfood hygiene, traceability and allergens.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 4 of 11"
+            },
+            {
+              "page": 5,
+              "text": "9.2 The Supplier shall keep records that let it trace each lot of green coffee through\nroasting and packing to the customers that received it, and shall give the Customer\nthe records for any lot on request within two (2) Business Days.\n9.3 If the Supplier learns that a Product it has delivered may be unsafe, it shall tell the\nCustomer at once and shall co-operate in any recall or withdrawal that the law\nrequires or that either party reasonably considers necessary.\n9.4 The Customer may audit the Supplier’s roastery once in each calendar year, on at\nleast ten (10) Business Days’ notice and during working hours, to check the\nSupplier’s compliance with this clause. The Customer shall not disturb the Supplier’s\noperations more than it must.\n9.5 Each party shall comply with the laws on bribery, sanctions and the protection of\npersonal data that apply to it, and shall not do anything that puts the other in breach\nof them.\n10. SERVICE LEVELS AND REPORTING\n10.1 The Supplier shall meet the service levels in Schedule 3 for the accuracy, the timeli-\nness and the completeness of its deliveries.\n10.2 Within ten (10) Business Days after the end of each calendar quarter the Supplier\nshall send the Customer a report of its performance against the service levels in that\nquarter, with the number of deliveries made, the number made late and the number\nof complaints received.\n10.3 If the Supplier misses a service level in two consecutive months, the parties shall\nmeet within fifteen (15) Business Days to agree a plan to put it right. The plan shall\nbe in writing and shall say who will do what and by when.\n10.4 The Customer’s remedies for a failure to meet a service level are those in clause 7.3\nand the plan under clause 10.3, and the parties shall consider in good faith any\nfurther remedy that the plan proposes.\n11. TRAINING AND SUPPORT\n11.1 The Supplier shall give a barista training session of up to three (3) hours, free of\ncharge, at each new Delivery Point within the first sixty (60) days after the first\ndelivery to it.\n11.2 The Supplier shall make a coffee specialist available by telephone and email on\nBusiness Days between 08:00 and 17:00 to answer questions about brewing,\ngrinding, storing and serving the Products.\n11.3 The Supplier shall give the Customer a brewing guide for each Product, and shall\nupdate it when the recipe for a Product changes.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 5 of 11"
+            },
+            {
+              "page": 6,
+              "text": "11.4 Further training, equipment servicing and tastings are provided at the Supplier’s rates\nin force at the time, as agreed in writing in advance.\n12. SUBCONTRACTING\n12.1 The Supplier may use subcontractors to roast, pack or deliver the Products, provided\nthat it tells the Customer who they are and remains responsible for what they do or\nfail to do as if it were the Supplier’s own act or omission.\n12.2 The Supplier shall make sure that each subcontractor is bound by terms that protect\nConfidential Information as this Agreement requires, and that it complies with the\nlaws on food safety.\n12.3 The Customer may object to a subcontractor on reasonable grounds relating to food\nsafety, and the parties shall then discuss in good faith how to resolve the objection.\n13. INSURANCE\n13.1 The Supplier shall keep in force, during the Term and for twelve (12) months after-\nwards, product safety insurance with a reputable insurer for at least two million euros\n(EUR 2,000,000) for each claim.\n13.2 The Customer shall keep in force, during the Term, insurance of the kinds that a\nprudent operator of hotels and cafes would keep, including public liability insurance.\n13.3 Each party shall give the other a certificate of its insurance on request.\n14. DATA PROTECTION\n14.1 Each party shall comply with the law on the protection of personal data in connection\nwith this Agreement, including Regulation (EU) 2016/679.\n14.2 The parties expect to exchange only the business contact details of their staff. Each\nshall use the other’s contact details only to perform this Agreement and shall keep\nthem secure.\n14.3 If a party becomes aware of a breach of the security of the other’s personal data, it\nshall tell the other without undue delay.\n15. ETHICAL SOURCING AND SUSTAINABILITY\n15.1 The Supplier shall buy green coffee only from sources that it has reasonably checked\ncomply with the laws on labour, health and safety and the environment in the country\nof origin, and shall not knowingly buy coffee that was produced using forced or child\nlabour.\n15.2 On request, the Supplier shall tell the Customer the country and, where it knows\nthem, the farm or cooperative of origin of each Product.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 6 of 11"
+            },
+            {
+              "page": 7,
+              "text": "15.3 The Supplier shall use packaging that can be recycled or composted where that is\navailable at a reasonable cost, and shall tell the Customer what the packaging is\nmade of.\n15.4 Each party shall comply with its own code of conduct on ethical sourcing and shall\ngive the other a copy of it on request.\n16. SAMPLES AND NEW PRODUCTS\n16.1 The Supplier shall tell the Customer when it introduces a new coffee or a new\nseasonal blend, and shall give the Customer a free tasting sample of up to two\nhundred and fifty (250) grams of each on request.\n16.2 The Customer may ask the Supplier to add a coffee to Schedule 1. The Supplier shall\nreply within ten (10) Business Days, giving a price and a minimum order if it agrees.\nA coffee is added only when both parties have confirmed the price in writing.\n16.3 The Supplier may stop selling a Product if the green coffee it is roasted from is no\nlonger available at a reasonable price, provided that it gives the Customer at least\nsixty (60) days’ written notice and offers the nearest equivalent Product.\n17. MARKETING AND PROMOTION\n17.1 The Supplier shall give the Customer, free of charge, the menus, posters, table cards\nand digital images that it makes to promote the Products, and the Customer may use\nthem in its hotels and cafes during the Term.\n17.2 The Customer shall show the Products on its menus under the names given in\nSchedule 1, and shall tell the Supplier before it runs a promotion that features a\nProduct by name.\n17.3 Neither party shall make a public statement about this Agreement without the other’s\nwritten consent, except as the law requires.\n18. BUSINESS CONTINUITY\n18.1 The Supplier shall keep a stock of roasted and green coffee sufficient to meet the\nCustomer’s forecast orders for at least fourteen (14) days.\n18.2 The Supplier shall keep a written plan for continuing to roast and deliver if its roastery\nis closed or its supply of green coffee is interrupted, and shall give the Customer a\nsummary of the plan on request.\n18.3 If the Supplier cannot roast at its own roastery, it may use another roastery that\nmeets the standards in this Agreement for as long as the problem lasts, and shall tell\nthe Customer without delay.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 7 of 11"
+            },
+            {
+              "page": 8,
+              "text": "19. INTELLECTUAL PROPERTY\n19.1 The Supplier grants the Customer a non-exclusive licence to use the Supplier’s name\nand logo to describe the Products in the Customer’s hotels and cafes during the\nTerm.\n19.2 Each party keeps all intellectual property rights in its own materials. For the Supplier\nthese include its blend formulations, roast profiles, cupping specifications and\npackaging designs, which the Supplier does not assign or license to the Customer\nunder this Agreement.\n19.3 The Customer shall not use the Supplier’s name or logo in a way that suggests that\nthe Supplier endorses anything other than the Products.\n19.4 The Supplier confirms that, to its knowledge, the Products and their packaging do not\ninfringe the intellectual property rights of any third party.\n20. CONFIDENTIALITY\n20.1 Each party shall keep confidential all information of a confidential nature that it\nreceives from the other under or in connection with this Agreement, including the\nother’s prices, customers, recipes, methods and business plans (“Confidential Infor-\nmation”). It shall use Confidential Information only to perform this Agreement, and\nshall not disclose it to anyone except as clause 20.2 allows.\n20.2 A party may disclose Confidential Information to its employees, professional advisers\nand insurers who need to know it and who are bound to keep it confidential, and to\nthe extent that the law, a court or a regulator requires.\n20.3 The duty of confidence does not apply to information that is or becomes public other\nthan through a breach of this Agreement, that the receiving party already knew\nwithout a duty of confidence, or that it develops independently.\n20.4 The obligations in this clause continue during the Term and for three (3) years after\nthis Agreement ends.\n21. LIMITATION OF LIABILITY\n21.1 Each party’s total aggregate liability to the other under or in connection with this\nAgreement, whether in contract, tort (including negligence) or otherwise, shall not\nexceed the total price paid or payable for the Products supplied under this Agreement\nin the twelve (12) months before the event giving rise to the claim.\n21.2 Neither party shall be liable to the other for any loss of profit, loss of business, loss of\ngoodwill or any indirect or consequential loss arising under or in connection with this\nAgreement.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 8 of 11"
+            },
+            {
+              "page": 9,
+              "text": "21.3 Nothing in this Agreement limits or excludes a party’s liability for death or personal\ninjury caused by its negligence, for fraud, or for anything else that the law does not\nallow to be limited or excluded.\n22. INDEMNITY\n22.1 Each party shall indemnify the other against third-party claims to the extent that they\narise from its own breach of this Agreement, its own negligence or the infringement\nof intellectual property rights by its own materials, subject to the limit of liability in this\nAgreement.\n22.2 A party that wants to rely on this clause shall tell the other promptly of the claim, let\nthe other take over its defence at the other’s cost, and not settle the claim without the\nother’s written consent.\n23. TERMINATION\n23.1 Either party may terminate this Agreement by written notice with immediate effect if\nthe other party commits a material breach of it that cannot be put right, or that it fails\nto put right within thirty (30) days of a written notice requiring it to do so.\n23.2 Either party may terminate this Agreement by written notice with immediate effect if\nthe other party becomes insolvent, enters liquidation, or has a petition for its insol-\nvency filed against it that is not dismissed within sixty (60) days.\n23.3 When this Agreement ends for any reason, the Customer shall pay for all Products\ndelivered, each party shall return or delete the other’s Confidential Information, and\nthe clauses that by their nature continue after it ends shall continue.\n24. FORCE MAJEURE\n24.1 Neither party is in breach of this Agreement, or liable for a delay in performing it, to\nthe extent that the delay is caused by an event beyond its reasonable control, such\nas flood, fire, storm, war, an epidemic, a strike that is not of its own staff, a failure of\npublic power or transport networks, or the closure of a port, so long as it tells the\nother party promptly and does what it reasonably can to reduce the effect.\n24.2 If an event of this kind continues for more than sixty (60) days, either party may end\nthis Agreement by written notice to the other.\n25. NOTICES\n25.1 A notice under this Agreement must be in writing, in English, and sent by email to the\naddress that the receiving party has given for notices, with a copy by registered post\nto its registered office. A notice sent by email is received on the next Business Day\nafter it is sent, unless the sender receives a message that it was not delivered.\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 9 of 11"
+            },
+            {
+              "page": 10,
+              "text": "25.2 Each party shall tell the other without delay if its address for notices changes.\n26. GENERAL\n26.1 Neither party may assign or transfer its rights or obligations under this Agreement\nwithout the other’s written consent, which shall not be unreasonably withheld.\n26.2 This Agreement is the whole agreement between the parties about its subject. It\nreplaces everything they said or wrote before about it, and neither party has relied on\nanything that is not written in it.\n26.3 A change to this Agreement is effective only if it is in writing and signed by both\nparties.\n26.4 If a part of this Agreement is found to be invalid or unenforceable, the rest stays in\nforce and the parties shall replace the invalid part with a valid one that comes as\nclose as possible to what they meant.\n26.5 A party that does not use a right under this Agreement on one occasion does not\ngive it up for the future.\n26.6 This Agreement may be signed in counterparts, including by electronic signature,\neach of which is an original.\n27. GOVERNING LAW AND DISPUTES\n27.1 This Agreement and any dispute or claim arising out of or in connection with it,\nincluding a non-contractual one, shall be governed by the law of the Czech Republic.\n27.2 The parties shall first try to settle any dispute through their managing directors. If it is\nnot settled within thirty (30) days, the courts of the Czech Republic, and in the first\ninstance the Municipal Court in Prague, shall have exclusive jurisdiction.\nSigned by the parties’ authorised representatives on the date at the start of this Agreement.\nFor Basalt & Bean Coffee Co. s.r.o. For Vltava Grand Hotels a.s.\nName: Name:\nTitle: Title:\nSignature: Signature:\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 10 of 11"
+            },
+            {
+              "page": 11,
+              "text": "Schedule 1. PRODUCTS AND PRICES\nPrices are in euros per kilogram, exclusive of value added tax, and include packaging and\ndelivery to a Delivery Point in the Czech Republic.\nProduct Pack EUR per kgSpecification\nBasalt Blend 1 kg 1 kg bag 18.40 Medium roast, cupping score 84 or more\nColombia Huila Espresso 1 kg 1 kg bag 21.90 Medium-dark roast, cupping score 85 or mor\nEthiopia Guji Filter 1 kg 1 kg bag 24.60 Light roast, cupping score 87 or more\nKenya Nyeri Filter 1 kg 1 kg bag 25.80 Light roast, cupping score 87 or more\nDecaf Sugarcane 1 kg 1 kg bag 22.30 Medium roast, cupping score 83 or more\nHouse Espresso 5 kg bag 5 kg bag 16.90 Medium-dark roast, cupping score 83 or mor\nSchedule 2. DELIVERY WINDOWS\nDelivery Point Days Window Order by\nPrague hotels Mon, Wed, Fri 07:00-11:00 10:00 the day before\nPrague cafes Tue, Thu 08:00-12:00 10:00 the day before\nBrno hotels and cafes Mon, Thu 08:00-14:00 10:00 two days before\nOstrava hotels Wed 09:00-15:00 10:00 two days before\nSchedule 3. SERVICE LEVELS\nEach measure is the share of deliveries or Purchase Orders in the period that meet it. The\nSupplier reports on them under clause 10.2.\nMeasure TargetMeasured\nDeliveries made on the date the Supplier confirmed 97% Monthly\nDeliveries complete, with every line as ordered 99% Monthly\nDeliveries with a roast date within seven days 100% Monthly\nPurchase Orders confirmed within two Business Days 98% Monthly\nComplaints answered within two Business Days 95% Monthly\nLots that match their Specification 99% Quarterly\nWholesale Supply Agreement · Basalt & Bean Coffee Co. s.r.o. and Vltava Grand Hotels a.s.\nPage 11 of 11"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c/file"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "contentType": "application/pdf",
+          "size": 43109,
+          "base64": "JVBERi0xLjcKJYGBgYEKCjEgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFsgNSAwIFIgNyAwIFIgOSAwIFIgMTEgMCBSIDEzIDAgUiAxNSAwIFIgMTcgMCBSIDE5IDAgUiAyMSAwIFIgMjMgMCBSIDI1IDAgUiBdCi9Db3VudCAxMQo+PgplbmRvYmoKCjIgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDEgMCBSCj4+CmVuZG9iagoKMyAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcKPj4KZW5kb2JqCgo0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYS1Cb2xkCi9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nCj4+CmVuZG9iagoKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDEgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0hlbHZldGljYS1Cb2xkLTcwOTg0ODA3ODkgNCAwIFIKL0hlbHZldGljYS05NzQyNjgyNTY4IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0yMDAwODA1OTg2IDQgMCBSCi9IZWx2ZXRpY2EtOTc1MDQ2OTIwNyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNzU3MjUzMzY4NiA0IDAgUgovSGVsdmV0aWNhLTg0NTAxODAxMDcgMyAwIFIKL0hlbHZldGljYS04NjU5ODcxODc4IDMgMCBSCi9IZWx2ZXRpY2EtNTgyNDY2MjMzOCAzIDAgUgovSGVsdmV0aWNhLTE4NDg1MjQxNzUgMyAwIFIKL0hlbHZldGljYS03ODg4OTExMDYzIDMgMCBSCi9IZWx2ZXRpY2EtOTc5MzQ0OTI5IDMgMCBSCi9IZWx2ZXRpY2EtMjcwODE5OTk1NiAzIDAgUgovSGVsdmV0aWNhLTY3MDM2ODI2NjQgMyAwIFIKL0hlbHZldGljYS03MzU1Njk0ODcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTg3ODQwMTU3MTEgNCAwIFIKL0hlbHZldGljYS05NjY4MzMzNDkzIDMgMCBSCi9IZWx2ZXRpY2EtMjUwODEyMDQ0IDMgMCBSCi9IZWx2ZXRpY2EtMTI3NTMyMjgzMiAzIDAgUgovSGVsdmV0aWNhLTc3MjA5NjYyOTUgMyAwIFIKL0hlbHZldGljYS00NTI1MDcyNzYyIDMgMCBSCi9IZWx2ZXRpY2EtNTU2Mzg1MzYwNSAzIDAgUgovSGVsdmV0aWNhLTQ4NjkwNzA5NTkgMyAwIFIKL0hlbHZldGljYS03OTU5NTgyNDgyIDMgMCBSCi9IZWx2ZXRpY2EtMjE2Mzc5OTMzNyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNDgyNDk5MDIyMiA0IDAgUgovSGVsdmV0aWNhLUJvbGQtNTg0NTA0Nzk2MCA0IDAgUgovSGVsdmV0aWNhLTc1OTI4NDA0NTAgMyAwIFIKL0hlbHZldGljYS01Nzg4MzA3ODYgMyAwIFIKL0hlbHZldGljYS02NjExNTc4NzAzIDMgMCBSCi9IZWx2ZXRpY2EtNjgzNzU5MDcxMyAzIDAgUgovSGVsdmV0aWNhLTYyMzU0Njc2OTMgMyAwIFIKL0hlbHZldGljYS0yNjY4MTI0MTY5IDMgMCBSCi9IZWx2ZXRpY2EtMTE4NjAxMDcyNiAzIDAgUgovSGVsdmV0aWNhLTgyNjg2MTIwMDIgMyAwIFIKL0hlbHZldGljYS0xNzMzMDUwMzg0IDMgMCBSCi9IZWx2ZXRpY2EtMjExNDY1NTY4OCAzIDAgUgovSGVsdmV0aWNhLTYxODY2NjQzMDAgMyAwIFIKL0hlbHZldGljYS02ODU3ODcwOTM4IDMgMCBSCi9IZWx2ZXRpY2EtOTUzODYyODQwOCAzIDAgUgovSGVsdmV0aWNhLTEzMTYwNDc5MzQgMyAwIFIKL0hlbHZldGljYS03NzMzMTE5NTI5IDMgMCBSCi9IZWx2ZXRpY2EtNzg0NTIwODQzNiAzIDAgUgovSGVsdmV0aWNhLTI1MjU3MzcxNDAgMyAwIFIKL0hlbHZldGljYS0xOTI1MTA1NDEgMyAwIFIKL0hlbHZldGljYS0zNTI0NTM0MTEgMyAwIFIKL0hlbHZldGljYS04ODM0NzY0ODgwIDMgMCBSCi9IZWx2ZXRpY2EtNzMxMjI3NDUyMiAzIDAgUgo+Pgov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G/V0XhoBuikQ7mTbKvOtNbmVnEeHcYfPI/eiN00ktmkBHePAWVeKm04sz1fqwilrKuUVHsW1E5NlJnTWlMXF3trfNek4zq2iO3gNwvu8Ygwmg2+U2Iztvx53EiOqD/KL9htfgOLKAavu+5dK3kH3rcPWFdgG492a/wKu4lkRCmVuZHN0cmVhbQplbmRvYmoKCjcgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAxIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9IZWx2ZXRpY2EtQm9sZC00NTMzODY3NjMzIDQgMCBSCi9IZWx2ZXRpY2EtNDczNDcyNDA1MiAzIDAgUgovSGVsdmV0aWNhLTI1MTQ2Mjk2MDcgMyAwIFIKL0hlbHZldGljYS0yOTE3NTg0MzM3IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0yNzU5MjA0MDQ4IDQgMCBSCi9IZWx2ZXRpY2EtMjUxNTAxODE4MyAzIDAgUgovSGVsdmV0aWNhLTEwOTUxMTQ4MzggMyAwIFIKL0hlbHZldGljYS1Cb2xkLTQ0ODI2NjQxMzggNCAwIFIKL0hlbHZldGljYS1Cb2xkLTQ4OTk3OTEzMDggNCAwIFIKL0hlbHZldGljYS02NDc1NTI0NzgyIDMgMCBSCi9IZWx2ZXRpY2EtNzI2NDgwODQ1MyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMzgwMDcxMzkxMyA0IDAgUgovSGVsdmV0aWNhLTg5Mzc4ODk3NzggMyAwIFIKL0hlbHZldGljYS04MjIyOTk5MTYwIDMgMCBSCi9IZWx2ZXRpY2EtMTkzMDMzNTA3NyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNTU3MDAzMDI4MCA0IDAgUgovSGVsdmV0aWNhLTI2MDM4MTk2NzkgMyAwIFIKL0hlbHZldGljYS0yODY3OTQ5MDEwIDMgMCBSCi9IZWx2ZXRpY2EtNDg4NDU5NzYwMyAzIDAgUgovSGVsdmV0aWNhLTgwMDIxMDI0NjcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTcyMzE5MzEwNzAgNCAwIFIKL0hlbHZldGljYS0xNTE4NjIxNjgxIDMgMCBSCi9IZWx2ZXRpY2EtOTA2ODE1NTc4OCAzIDAgUgovSGVsdmV0aWNhLTU0NjUzMjU0MzcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTIzMzYyNzYyMDMgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTI4MDQzMTEyNjkgNCAwIFIKL0hlbHZldGljYS01MzczOTUzMTc1IDMgMCBSCi9IZWx2ZXRpY2EtMTgzNjQ1OTA1NiAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNzYzNjg5ODE4IDQgMCBSCi9IZWx2ZXRpY2EtMjAxNTg1ODA3MyAzIDAgUgovSGVsdmV0aWNhLTc4NDU1OTg3NTMgMyAwIFIKL0hlbHZldGljYS04NzMzMTI5MjQ5IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xMTM0NjA3NjYyIDQgMCBSCi9IZWx2ZXRpY2EtMTIwMDU3MjU1NCAzIDAgUgovSGVsdmV0aWNhLTI4NzgyNDMzMDggMyAwIFIKL0hlbHZldGljYS02NDQ2MTEwMDE4IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC05MDMyMDA3MzI5IDQgMCBSCi9IZWx2ZXRpY2EtQm9sZC0yNDM4MDA1MTQxIDQgMCBSCi9IZWx2ZXRpY2EtNDE1NTI5OTU5NCAzIDAgUgovSGVsdmV0aWNhLTgyMTYzMzY5MTcgMyAwIFIKL0hlbHZldGljYS05ODMwMjczMzY2IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC02OTQwNTgxMjQ1IDQgMCBSCi9IZWx2ZXRpY2EtOTY2NjM2MDA1NSAzIDAgUgovSGVsdmV0aWNhLTg3NTExNzUxMTUgMyAwIFIKL0hlbHZldGljYS0zMzkzMDM4NDE5IDMgMCBSCi9IZWx2ZXRpY2EtMTc4NTg3MzAwNSAzIDAgUgovSGVsdmV0aWNhLTQ4MDE0NTMyMzQgMyAwIFIKPj4KL1hPYmplY3QgPDwKPj4KL0V4dEdTdGF0ZSA8PAo+Pgo+PgovTWVkaWFCb3ggWyAwIDAgNTk1IDg0MiBdCi9Bbm5vdHMgWyBdCi9Db250ZW50cyBbIDggMCBSIF0KPj4KZW5kb2JqCgo4IDAgb2JqCjw8Ci9GaWx0ZXIgL0ZsYXRlRGVjb2RlCi9MZW5ndGggMjE5Ngo+PgpzdHJlYW0KeJylWsmOIzcMvfsrfA4wE0mkNiDIoe0ycsglQP9AkA0JJggmCPL9eSSlWtwlT5cz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SGVsdmV0aWNhLTQ4NTUxMzg5MzkgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTQzOTU2MzMxNiA0IDAgUgovSGVsdmV0aWNhLTE4MDk0MTA2NzkgMyAwIFIKL0hlbHZldGljYS04MDM4ODY4MTMxIDMgMCBSCi9IZWx2ZXRpY2EtMzUzMzQwMjQ3NyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNjEzOTMzNjQyOCA0IDAgUgovSGVsdmV0aWNhLTIwNTkwNjQ2MSAzIDAgUgovSGVsdmV0aWNhLTQ3ODMwOTU1OTEgMyAwIFIKL0hlbHZldGljYS05NTg5ODU2MTkwIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xMTE4NDIxMjMxIDQgMCBSCi9IZWx2ZXRpY2EtMTUyMjQ3MjM1NyAzIDAgUgovSGVsdmV0aWNhLTEzMTUzODk2MzkgMyAwIFIKL0hlbHZldGljYS05NjUwOTMxMDQwIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xMzAxMzExMDgyIDQgMCBSCi9IZWx2ZXRpY2EtNTk1NDA4MTEzNCAzIDAgUgovSGVsdmV0aWNhLTkwODI1NjczNzggMyAwIFIKL0hlbHZldGljYS0zMDA2NzI0MjQwIDMgMCBSCi9IZWx2ZXRpY2EtMzc3MTA1MDE3MyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjY2MDc5NjE1MyA0IDAgUgovSGVsdmV0aWNhLUJvbGQtOTQwNDk4MTMyMyA0IDAgUgovSGVsdmV0aWNhLTk2NjEyODYzMjkgMyAwIFIKL0hlbHZldGljYS04MzU4NzE0NjA1IDMgMCBSCi9IZWx2ZXRpY2EtNjU3NTYyMTQyMyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjQ4MTY0NTk5NCA0IDAgUgovSGVsdmV0aWNhLTY4Njg2MTA0MDAgMyAwIFIKL0hlbHZldGljYS02Njc5MzI3NzExIDMgMCBSCi9IZWx2ZXRpY2EtODU1NDU0NDE3NCAzIDAgUgovSGVsdmV0aWNhLTQ3NzQwNDk5MTMgMyAwIFIKL0hlbHZldGljYS04MDEzMTIyNDc0IDMgMCBSCj4+Ci9YT2JqZWN0IDw8Cj4+Ci9FeHRHU3RhdGUgPDwKPj4KPj4KL01lZGlhQm94IFsgMCAwIDU5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MDE3MjI1MzUgMyAwIFIKL0hlbHZldGljYS0xNTM4MTE4NTIxIDMgMCBSCi9IZWx2ZXRpY2EtNTE0NTcxMjUyNyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjQwOTY1Mjc0NSA0IDAgUgovSGVsdmV0aWNhLTE5NzMxNzEzMTQgMyAwIFIKL0hlbHZldGljYS0yNTI1ODM3OTAwIDMgMCBSCi9IZWx2ZXRpY2EtOTIyMTQ0MjI2MiAzIDAgUgovSGVsdmV0aWNhLTQ5NjQ5MjA2NjIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTg5ODI0MTU1MDYgNCAwIFIKL0hlbHZldGljYS0zMjc3ODAyMzIwIDMgMCBSCi9IZWx2ZXRpY2EtOTcyNzk0NDk4OSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtOTE1NjM3MjgyNSA0IDAgUgovSGVsdmV0aWNhLUJvbGQtNDk4MTMxMjgxMCA0IDAgUgovSGVsdmV0aWNhLTI2NzExMjI1OTIgMyAwIFIKL0hlbHZldGljYS0xMzIzMjIzOSAzIDAgUgovSGVsdmV0aWNhLTQ5NDU1NDk3MDMgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTkwODY3OTQzNTYgNCAwIFIKL0hlbHZldGljYS01OTE0MDE4MjMyIDMgMCBSCi9IZWx2ZXRpY2EtODk0NjcwODY1MSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMzgwMjU3NDg3OCA0IDAgUgovSGVsdmV0aWNhLTY1NDA0ODIxOTUgMyAwIFIKL0hlbHZldGljYS01MjIzNjA4MDM0IDMgMCBSCi9IZWx2ZXRpY2EtODk3ODc3NzcxMSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNzUzMzU4MDQyNiA0IDAgUgovSGVsdmV0aWNhLTIyMTY3MjM4OTkgMyAwIFIKL0hlbHZldGljYS00NzM2NDI2NjE2IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC00ODU5OTg4MjM1IDQgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xODkzNDA5OTgwIDQgMCBSCi9IZWx2ZXRpY2EtODA0MDgyMzkyMCAzIDAgUgovSGVsdmV0aWNhLTg0MzgzMjkwNjIgMyAwIFIKL0hlbHZldGljYS0yMTE4MDA5NDI3IDMgMCBSCi9IZWx2ZXRpY2EtNzYwNjI0NDQ3MSAzIDAgUgovSGVsdmV0aWNhLTI4OTc2NjA3ODUgMyAwIFIKPj4KL1hPYmplY3QgPDwKPj4KL0V4dEdTdGF0ZSA8PAo+Pgo+PgovTWVkaWFCb3ggWyAwIDAgNTk1IDg0MiBdCi9Bbm5vdHMgWyBdCi9Db250ZW50cyBbIDEyIDAgUiBdCj4+CmVuZG9iagoKMTIgMCBvYmoKPDwKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL0xlbmd0aCAyMTcxCj4+CnN0cmVhbQp4nKVa244jNw5991f4OUBmRYnUBQgCpO0y9mFfFugfWGwuSJAgSBDs9+8hdakqu8rd5cxg3O26SCJ1eHhIzR+nt/eT++Lyef7486fTP/75w6//++Gvn//7n6/ffv/1+69DiVKYXaAz0fn9x5Pn8/u/TnR2+Evn5M8J/95/O30Top9C+Pb8/svp/avT9H769+mPD+dIFKKEFLxsDk94oY8vPpYU4pt3scTJu8QxR/FOXPLxFjlJDIkxlEsuUsKgUewbx9v8NIeEq3otXnHfY7SbjhY5SrxghqhXU/G4xreU4mTfA94uyT2MnXTUOB20mkvxGTaXfaNFvoiZ/WThWZdSlwSXMK7EeNM79Z147a6KMalxF390oQYB4RgK+Yi7exAIboYAH4VAZhjgSMK+N9r4XGJcbLx6RK3HtjWPrDcRvoGv4BF9unoGd9WLoY1C5h19gvUNvM3+8hQsV/i8eGfPfhcNcv35oyAQgjH4fGI3hYYCzJ5j6GtvthCu6DWna4DV+knzevBT144rZhc8hVUXfUPBLbs2GtjJ8FLhXmqQxIv91jGWDH9t5oO2xwLkkqeUdm3HqNXyhZWw/WJ2T5Gf4WBpwRoT9W3bQX0GlmCUOKxNaouGeicY22fMgXANHm+xV2/p/b4XrB4GMb0WW2BWTxlcsE0FiK2YqGHAousoymCcE4Q/Rtr19JiB70lQvWf4MdRRi6RUn7DYqfySgI9bYyCqPjQC/ShegWp8n4nbqPphxy51DR3jK3zWZy8HvYKgEypOxO17RT7iX/0Gjyj3IhZa9KUWLx2jofFFSxQbicZQ17Ba/QuO0adeQ5QPcHJILoNWnO7rFqb8wFQyLiARJr5wEZaiMcaFJwkCeuIgjG831v0knpjVF/h+xd0LruiTLEcTf0V/yZmYEGG76HdhrDPQwTlgmMce5Rz3d7mNL5/iEhMamv51r8WYKd8LkAcWUe5q0QIWSb5HVbGYUn6JI0dVDn/MYnp9MN9RrGesSHg7easPJMeuNZa82aJ8kU2W1vOIyTs2xts3eyKoT2rmVRaY/fUYAVWCjREe70865qsRkZSFEofCeyjD0maU+YNz5OxAjB7Rsu/hNv7ncq7iBnddVxfPPLfGGpDU9gxIkw/yVdsXy3DAqL2pz6WD9kO4ZaIsfrtCMPuZu45ZIXmby59mjBpTSZUMnrL1DoS1zP4QjzyUinq85rKpofRqODbvLmY132N0eMRfD+cWlkRe/L62EZ+rN4LNXgz/c8x1q8RWKZpd6t6rmtNcMTJlMURMNkY0PKyj8LUMwg7eRsTssrI4v8gfh4s+AvwI2pa2A9I8NGaoGiLS476+spv3Hv+Uhrzc6+r7+C1g6aO5SbwgGxS3r0AYeauhBEq1KfeahcRWSnZlpfzVE8a92dRaMt7+WxxhURdqbdT0V88Hcz0xatCDXijeEwSFj/vqFJN27miVh63i0xVMfFMFb6X7ZsPAPBdrXOHTa4U4VzlrLm64canH3BMEHW4JRLbq6oknpGqVXvdbTUiw2XYu9hrwpZjPJXsIMXHbUgkxD5QsY/7oTgefUnYey963b8zwOTU276yygyrteLVntzRHVyWjQ4KoQLYZkUDBmzK76g5b5WcVD1iVN3sLUMlHsa5vQUrn/a4PE/Wa9yE7PuqxDdzPSk3vqH18nx0TJbExgZWWMaRputuyWhseq4jXEfXN+uxLGCukQeSz9vr2KpOQBsqsgkTKIzCl18rD6hB5udJAvvGZtuGnM0sZ8x6vNFBDEzRg2Y/ePv4TbGvt6K2inEY9XJXLZVVB7lQJo+t32eO61rLs1eZDtsRoR3kLcYPICfuYDtwz+QeZ+L4KrmhsT+GncrShvSnfOxz3mLH8toh0RLJYRT21mmSyyLhqP2mhvHrEtVUcZm8AkwsK730/+Dizt8Wx1X7SoqtVVqMDWbt7b/17y02mjxvXD46oPukZwOysPbPa19TnwlIHrGKcIKVfi2aXoTg5yG7GCM4tYvlwXSWF2FEGvPZ9OmZ4Kap6JPU++syeo6PTDg/CQ2XyEFerOriOvnF8oKg+Wl8WjgnOlv36ymde9Kq07z9HUz+w+MRBSOzdTvvtZucHLWusFWXLocFUkdRaTI9MXsFRgCoAy+e0e7oAobzE0VH+j8KOs6eyX5/PMzzRlB/iaOHzEZOrSleRsMrgGyj6RPwejSPQc3TZhf1qy7Nf9Tqb6mWsd6F7W89gWmaLBVORKhSrXDf4dFGjkaqSfvRmI6ifrjPDbZxfUfN/mb1+OIpSTvhDT6LI9zM3yxdv4/iwr+VqeehiqrL3Hl7rSEkIklF47XKnd25G/FFbUVRhZSGX/azcx+ehkI0nfNOExzmzsl1XobfavRj7XOz3zj5WWTLWWPlGI0zvb3IoW+V7vCuFVWMk1Qy7PqAc5r7nbaufgEwiC5srFr2tutcVK21tXco8zpnu7XvthChLKRlp8IlqJmloqcfWkW/4y5oNoZujShMpm937YtcCHz1VspVRLoEdFrerqSG5O3OXF1Q1IsTB8PKkZpxn+GTNqArQqsRl9/ReEd0hnup4jX1uK702GG/w4MyBS83We3qvdPAzBz0hdE96A0QDyev51F79I53XVwrATrDtDMN6SmB7b+/e6xl9WizT31KtqrU20/7krKCL5alLksGNC0Vl//9AegY5ymdE2bnCTzqqJS+aRO0oMqdiKUmXWRtn9bgumAHeEtN98UBVYFehYylvc7FB19k/7v47Q8Q+MXOic94Miuxq81eStfXMLTbvCrypbFPkW9KGnYKvJlLvfLQrbVN4teH6zdshlJ8QClP91q2VaKnY2l94NlXC1zuc64EL7hsU/Cue8FmLU5eybHkCqeYL7p+5SlcxwtQ1h9GKCHRHGf8HIVLpawplbmRzdHJlYW0KZW5kb2JqCgoxMyAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDEgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0hlbHZldGljYS1Cb2xkLTc2MzMwOTg3OTQgNCAwIFIKL0hlbHZldGljYS0xNzk1MzY2Nzk2IDMgMCBSCi9IZWx2ZXRpY2EtOTkyNzg2ODA2MCAzIDAgUgovSGVsdmV0aWNhLTg1NDg0NjE0MiAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNjE2NDIzNDgxNSA0IDAgUgovSGVsdmV0aWNhLTQzNDI1Mzc3ODggMyAwIFIKL0hlbHZldGljYS0xMzY3MDczMTUwIDMgMCBSCi9IZWx2ZXRpY2EtNTQ2Njc5OTQwNiAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMzAwNTU1Njk5MyA0IDAgUgovSGVsdmV0aWNhLTU4NDI5MTk2NCAzIDAgUgovSGVsdmV0aWNhLTIxNDA4MzM1NzEgMyAwIFIKL0hlbHZldGljYS0xMTYzOTMyNDQgMyAwIFIKL0hlbHZldGljYS0yNzAyNzg2MDAgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTk3NDkyODEyNyA0IDAgUgovSGVsdmV0aWNhLTE4NDA2ODY1ODMgMyAwIFIKL0hlbHZldGljYS05NzAwMTY2OTYgMyAwIFIKL0hlbHZldGljYS0yMDM1OTMxMjc5IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0yNDkyMjMyMjMgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTU4MDk2ODc0NTkgNCAwIFIKL0hlbHZldGljYS05NDk3MjQ1OTAyIDMgMCBSCi9IZWx2ZXRpY2EtNjc5MzAxOTEwNiAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNjY2NDE3NjYxMCA0IDAgUgovSGVsdmV0aWNhLTE4NTE4MzQyNzUgMyAwIFIKL0hlbHZldGljYS01MjE0NjE0OTUzIDMgMCBSCi9IZWx2ZXRpY2EtNTI5MDYyMDMyMiAzIDAgUgovSGVsdmV0aWNhLTI5MzgwMTgwMTUgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTk5NDUxMzc2MzYgNCAwIFIKL0hlbHZldGljYS00NTYyMTk1NzIyIDMgMCBSCi9IZWx2ZXRpY2EtNTg0ODgzNDQ5MSAzIDAgUgovSGVsdmV0aWNhLTE4MzkwNTg2NDcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTc1NDcyNjcwNTkgNCAwIFIKL0hlbHZldGljYS04NTI1ODUwNjgxIDMgMCBSCi9IZWx2ZXRpY2EtOTg3MTI0ODc1MyAzIDAgUgovSGVsdmV0aWNhLTM4Nzk3ODc4NzUgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTUwODM4MjE2MzQgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTUzNDg1MjY5OTMgNCAwIFIKL0hlbHZldGljYS03OTAwMjYzNTAyIDMgMCBSCi9IZWx2ZXRpY2EtNTEyMTk5NTQ3IDMgMCBSCi9IZWx2ZXRpY2EtNTYxODI4NDA5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b250IDw8Ci9IZWx2ZXRpY2EtQm9sZC02NzkxMDU2MzA3IDQgMCBSCi9IZWx2ZXRpY2EtNDIxMzAyMTc5NyAzIDAgUgovSGVsdmV0aWNhLTIzODg2ODE5NzMgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTkwNjgxMjc1MDcgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTQ1MTU0OTIxMTEgNCAwIFIKL0hlbHZldGljYS02MTcxMzI3NjQwIDMgMCBSCi9IZWx2ZXRpY2EtODgwOTI0ODE3NyAzIDAgUgovSGVsdmV0aWNhLTkwNjUxMTQzNzIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTYzNzAwNjU1NzIgNCAwIFIKL0hlbHZldGljYS04NzQzNjc3MTQ0IDMgMCBSCi9IZWx2ZXRpY2EtNTk5OTk2MjI4MCAzIDAgUgovSGVsdmV0aWNhLTcxODU1MDI2OCAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNTIxMTkyMjE3MSA0IDAgUgovSGVsdmV0aWNhLTM2ODA2NTU2MzUgMyAwIFIKL0hlbHZldGljYS03MTk4MDQ1ODE5IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC02MTM5NzA3NDkgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTEyMjExMDAzNjUgNCAwIFIKL0hlbHZldGljYS0yMzcyODY3MTA2IDMgMCBSCi9IZWx2ZXRpY2EtOTg4OTgwNjI5OCAzIDAgUgovSGVsdmV0aWNhLTgzNjUwNzU1MCAzIDAgUgovSGVsdmV0aWNhLUJvbGQtOTE5NjU4OTI5MyA0IDAgUgovSGVsdmV0aWNhLTQyODI1MTg0NDUgMyAwIFIKL0hlbHZldGljYS0zNTYyNjgyOTMwIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC05MzE4Mzk0NjY4IDQgMCBSCi9IZWx2ZXRpY2EtMzk3MDM4MTU4NSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMTg3OTA5MTgwNSA0IDAgUgovSGVsdmV0aWNhLUJvbGQtODI5MDQ3Nzk1IDQgMCBSCi9IZWx2ZXRpY2EtNTI4MTQ1MDExMyAzIDAgUgovSGVsdmV0aWNhLTE3NDg2MjY3MTEgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTEwMTcwMDgzNzkgNCAw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KQ01TSfTftfE00dS70nIy2lC1bSEUiPoFVm/UN8uPOVfQogIzFmQX/7VQp+DJjYrh/ZOqlLX7tBd78TJ8ehZT7BxYFZZ6JEnIKo+YleuVCpu1v9oIGv2oe2J/MeQ3Zz/AjeRcnoKZW5kc3RyZWFtCmVuZG9iagoKMTcgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAxIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9IZWx2ZXRpY2EtQm9sZC01MjUxOTc5MDIzIDQgMCBSCi9IZWx2ZXRpY2EtNjM5NjgxMTI1OCAzIDAgUgovSGVsdmV0aWNhLTcxNTkwMjA4NDMgMyAwIFIKL0hlbHZldGljYS04NTI0MTE1ODMzIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC01OTA1MTg5MTg3IDQgMCBSCi9IZWx2ZXRpY2EtOTU2MjkyNDkxNyAzIDAgUgovSGVsdmV0aWNhLTc4OTc5NzE0MjQgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTQ1NjMzOTIyMDggNCAwIFIKL0hlbHZldGljYS1Cb2xkLTE0MjI1NDk1OTYgNCAwIFIKL0hlbHZldGljYS0yNTk4MTAxMTgzIDMgMCBSCi9IZWx2ZXRpY2EtOTkwMDEyNDg3MiAzIDAgUgovSGVsdmV0aWNhLTkwMDEwNzM3NDcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTE4MDg4OTA5NjkgNCAwIFIKL0hlbHZldGljYS02MTI1MDU2NDU1IDMgMCBSCi9IZWx2ZXRpY2EtNjkwNTUwMjUzMSAzIDAgUgovSGVsdmV0aWNhLTM3NjI5MTQ2MDQgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTIzMjc4MzgxNjIgNCAwIFIKL0hlbHZldGljYS00NDE2MDA5ODg1IDMgMCBSCi9IZWx2ZXRpY2EtMzU5NTA0MTA5MSAzIDAgUgovSGVsdmV0aWNhLTUyODMxMDQyNzQgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTMyNTA0ODQzOTEgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTY4MDM3ODA1MCA0IDAgUgovSGVsdmV0aWNhLTk2MDU4MTM4MzMgMyAwIFIKL0hlbHZldGljYS0zODI4NjUwNjAwIDMgMCBSCi9IZWx2ZXRpY2EtNjQ2MzU3NjI1NSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMzAzNjAwMDExIDQgMCBSCi9IZWx2ZXRpY2EtMTM3NDk2Mzc3IDMgMCBSCi9IZWx2ZXRpY2EtODc2ODg2NTU4NSAzIDAgUgovSGVsdmV0aWNhLTcxNzg1NDY3MzcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTg1MjQyMTc3OSA0IDAgUgovSGVsdmV0aWNhLTkwNTA5Nzk5NDUgMyAwIFIKL0hlbHZldGljYS03MDkzOTcxNDIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTMzMjY0NTU3NDEgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTg3MzQ4MDY3NDIgNCAwIFIKL0hlbHZldGljYS0zOTc4ODQ5NzMyIDMgMCBSCi9IZWx2ZXRpY2EtMzg3OTQwMjM3MyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjUwMDQzOTAxNiA0IDAgUgovSGVsdmV0aWNhLTQ0NTcxOTE1NTQgMyAwIFIKL0hlbHZldGljYS04MjY1NDgxODUgMyAwIFIKL0hlbHZldGljYS0xMjI1OTg3MTkyIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xNTMzODY3MzkgNCAwIFIKL0hlbHZldGljYS0zNDc4MDU0MzYzIDMgMCBSCi9IZWx2ZXRpY2EtNjM3MjY1NDU4MiAzIDAgUgovSGVsdmV0aWNhLTg4NjY1Nzk5MDUgMyAwIFIKL0hlbHZldGljYS0zNDgwNTMxNjE2IDMgMCBSCi9IZWx2ZXRpY2EtODQ3MzQzMDU0NiAzIDAgUgo+PgovWE9iamVjdCA8PAo+PgovRXh0R1N0YXRlIDw8Cj4+Cj4+Ci9NZWRpYUJveCBbIDAgMCA1OTUgODQyIF0KL0Fubm90cyBbIF0KL0NvbnRlbnRzIFsgMTggMCBSIF0KPj4KZW5kb2JqCgoxOCAwIG9iago8PAovRmlsdGVyIC9GbGF0ZURlY29kZQovTGVuZ3RoIDIwNDgKPj4Kc3RyZWFtCnicrVnZriNFDH3PV+QZiaEWuxYJ8ZClxQMvSPcHEJtAgxAI8f0cu6q6qpNU5naYGU0mnV6qbB8fH7v/OpzeDuaDScf+8fevh6++/fnjvz//89uPP3x5+vPjT1+yY5tjNs4frT2+/XJw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YZcMBTj3g/y09niTV0MbSVaZSyL5EPpettI+blEJUHoLq47pIeqTqX2GjGQX8Y++djlvkSnIeOT9kwxinI7bcI/84oL+wiV9aUNVciSKSeoa7LyWo+Z9lPizCtkg/E/lZYqeoZuu111nlfGJJxKCTV464UeeQBX+AEo8EtWuo8wY0G3FRk7ghS0l/gc6B17ECmVuZHN0cmVhbQplbmRvYmoKCjE5IDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovSGVsdmV0aWNhLUJvbGQtMzg5NDkxNjg0OSA0IDAgUgovSGVsdmV0aWNhLUJvbGQtMTgzNzA3OTQ1NCA0IDAgUgovSGVsdmV0aWNhLTg4NTE4MDI5MyAzIDAgUgovSGVsdmV0aWNhLTk1NjU4MTE2MTQgMyAwIFIKL0hlbHZldGljYS03ODgzMzg4NjExIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC03MjE0OTEwMDI5IDQgMCBSCi9IZWx2ZXRpY2EtMzI5NDg5NDI5NiAzIDAgUgovSGVsdmV0aWNhLTQ3NDA1NzMzNDcgMyAwIFIKL0hlbHZldGljYS05Mjg0ODc0OTM0IDMgMCBSCi9IZWx2ZXRpY2EtMTA4MDMxNzgxMyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjU1NTE0OTE1MSA0IDAgUgovSGVsdmV0aWNhLTEwNzQwMTYyNTUgMyAwIFIKL0hlbHZldGljYS0zMjMzMzg5NzcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTM5NjgyMjM5MzAgNCAwIFIKL0hlbHZldGljYS0xNjQ0ODExNDMgMyAwIFIKL0hlbHZldGljYS05NjYwNDkzODIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTQxODI2MjY0NiA0IDAgUgovSGVsdmV0aWNhLUJvbGQtNDU5NTA0ODcwOCA0IDAgUgovSGVsdmV0aWNhLTYyNjMyMTc4MzAgMyAwIFIKL0hlbHZldGljYS02Mzg3MjUyNDMzIDMgMCBSCi9IZWx2ZXRpY2EtNTU1NTgyMTU2MSAzIDAgUgovSGVsdmV0aWNhLTY3MTc0OTU5MzggMyAwIFIKL0hlbHZldGljYS0xNzIwODcwMDE5IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC00OTg1MDY3OTM5IDQgMCBSCi9IZWx2ZXRpY2EtOTk3MDg4OTg0IDMgMCBSCi9IZWx2ZXRpY2EtNTQ2OTczNjE5NSAzIDAgUgovSGVsdmV0aWNhLTY5ODU1NjQ2NjQgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTEyNzI4NTEwNzggNCAwIFIKL0hlbHZldGljYS0xNTExODA2NDczIDMgMCBSCi9IZWx2ZXRpY2EtOTgzNDY4Nzg5IDMgMCBSCi9IZWx2ZXRpY2EtMjIxOTg2MjgzNiAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMTU3MjM0MTQzMCA0IDAgUgovSGVsdmV0aWNhLTg2NTU0MzU5NTYgMyAwIFIKL0hlbHZldGljYS05MDY3NTY4Mzc1IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC00NjEzOTgzMDU1IDQgMCBSCi9IZWx2ZXRpY2EtQm9sZC04OTgwMzc4MDUgNCAwIFIKL0hlbHZldGljYS00NjQwMzkxMDg2IDMgMCBSCi9IZWx2ZXRpY2EtOTAwNzI2ODY1NiAzIDAgUgovSGVsdmV0aWNhLTQ3NDgwMzI0NzMgMyAwIFIKL0hlbHZldGljYS01NjA4OTY3ODIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTg4NTIyOTAwMTggNCAwIFIKL0hlbHZldGljYS0zNTA2MDQzOTIyIDMgMCBSCi9IZWx2ZXRpY2EtMzIxODQ1NjAwMyAzIDAgUgovSGVsdmV0aWNhLTU3ODYwNjM2NCAzIDAgUgovSGVsdmV0aWNhLTY3MzQxNjEwMjggMyAwIFIKL0hlbHZldGljYS05Mjk4NjU0Mzc2IDMgMCBSCj4+Ci9YT2JqZWN0IDw8Cj4+Ci9FeHRHU3RhdGUgPDwKPj4KPj4KL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQovQW5ub3RzIFsgXQovQ29udGVudHMgWyAyMCAwIFIgXQo+PgplbmRvYmoKCjIwIDAgb2JqCjw8Ci9GaWx0ZXIgL0ZsYXRlRGVjb2RlCi9MZW5ndGggMjEwOQo+PgpzdHJlYW0KeJy9Wk2P3MgNvfev6HMAOyrWB6uAxR6mR0IOuQSYPxAk3kUCLxYOgvz+PJJVUqlbNR61g3jggbtVUhXJx8dHyt8uL2+X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t2xo1ND6FHrHk+seYValsqX+aBpFOxq5HXimI5AGqzZOtJZsGzNub55qt313/WF+8bDm9DzeZbDnNL2TYt6qi7wl0BRgJctVAa22mM4ppvO6VsLoxtfGYT9j287uKrIazv6/VCvkIc8ed1jOtXL/0VdNXnZqv+4HQlBwySErr/kQ7LnyetQe1F5DKuR2I35x+5HkeIEDA8noQ0W1sHrSb6KJfO3/5U9s0wCRDSJR4OjZPjWpBXa4CYOCAiCOQ/2PEnIl3L3mp3kkct7xRCGodchNTkeeQMJ9Bvlcg732jFbDZYSzNiKgtb22+C9eOppKCmVuZHN0cmVhbQplbmRvYmoKCjIxIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovSGVsdmV0aWNhLUJvbGQtNDI0NDgzMTcyOCA0IDAgUgovSGVsdmV0aWNhLTYwODcyNzg4NDMgMyAwIFIKL0hlbHZldGljYS04MTQ1MjQ1ODg3IDMgMCBSCi9IZWx2ZXRpY2EtMzY0NjU2OTc1NCAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNjU1NzQ5OTMyOSA0IDAgUgovSGVsdmV0aWNhLUJvbGQtMjE4NzA4Njk4MiA0IDAgUgovSGVsdmV0aWNhLTIyMDQ4OTAyMjEgMyAwIFIKL0hlbHZldGljYS0zMjg3ODM2NTQ5IDMgMCBSCi9IZWx2ZXRpY2EtMjMyMjg5NDY1OSAzIDAgUgovSGVsdmV0aWNhLTU2NDMzNjIxOTUgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTI2OTczODMzNzQgNCAwIFIKL0hlbHZldGljYS0xMDA3MDgyMjYyIDMgMCBSCi9IZWx2ZXRpY2EtNDgxNzE4ODUwOCAzIDAgUgovSGVsdmV0aWNhLTg4NTQwNTY1OTkgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTQyODkzNzIyNTcgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTk5MTA1MTg3NiA0IDAgUgovSGVsdmV0aWNhLTgyNzEwMzc1MTggMyAwIFIKL0hlbHZldGljYS0xNTA2MDE1Mjk2IDMgMCBSCi9IZWx2ZXRpY2EtMjYzMTM0Nzg1IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC05NjU3NjM3NTAzIDQgMCBSCi9IZWx2ZXRpY2EtNjk0NDI3NTc4IDMgMCBSCi9IZWx2ZXRpY2EtNTI0MzE0MzY3MCAzIDAgUgovSGVsdmV0aWNhLTMzNjA0Nzk3ODkgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTU4MDA4NzE5MTcgNCAwIFIKL0hlbHZldGljYS02NzkzNTI3MjYyIDMgMCBSCi9IZWx2ZXRpY2EtODA2NDAzNjA4MiAzIDAgUgovSGVsdmV0aWNhLTI0NjgwNDg1NTkgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTU2NzkwNjIxOTUgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTczOTU3NzExNzggNCAwIFIKL0hlbHZldGljYS00MzU5MTE1ODI4IDMgMCBSCi9IZWx2ZXRpY2EtNDU3NjUzMDc3NyAzIDAgUgovSGVsdmV0aWNhLTQ4NDUyNzAyNzggMyAwIFIKL0hlbHZldGljYS03NzMyMTY1OTQ3IDMgMCBSCi9IZWx2ZXRpY2EtMjUzMTAzODg0IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC0xNDA0NzYwNjM4IDQgMCBSCi9IZWx2ZXRpY2EtNTQ1MDU5MDc2MyAzIDAgUgovSGVsdmV0aWNhLTI1MjgyMDgxNTIgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTgxMTkwNDY3MyA0IDAgUgovSGVsdmV0aWNhLUJvbGQtMjM3NTk3NTg0NCA0IDAgUgovSGVsdmV0aWNhLTg1MjM2ODY0ODYgMyAwIFIKL0hlbHZldGljYS0zOTMzMDgzNzE1IDMgMCBSCi9IZWx2ZXRpY2EtMjU1NDk4NzYzNiAzIDAgUgovSGVsdmV0aWNhLTYwMzkzODc1NDkgMyAwIFIKL0hlbHZldGljYS0xNDU4MDU1ODI5IDMgMCBSCi9IZWx2ZXRpY2EtNjIxNDk5MzgzOSAzIDAgUgo+PgovWE9iamVjdCA8PAo+PgovRXh0R1N0YXRlIDw8Cj4+Cj4+Ci9NZWRpYUJveCBbIDAgMCA1OTUgODQyIF0KL0Fubm90cyBbIF0KL0NvbnRlbnRzIFsgMjIgMCBSIF0KPj4KZW5kb2JqCgoyMiAwIG9iago8PAovRmlsdGVyIC9GbGF0ZURlY29kZQovTGVuZ3RoIDIxODQKPj4Kc3Ry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Mzk2NzY5NzA1NCAzIDAgUgovSGVsdmV0aWNhLTkxOTgxMDIzODkgMyAwIFIKL0hlbHZldGljYS02NDU4MTI5MTU3IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC00MjU5MDI4OTEyIDQgMCBSCi9IZWx2ZXRpY2EtMjgwMTcxMTQyOCAzIDAgUgovSGVsdmV0aWNhLTMwMTc5MTI4MzcgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTUyOTMyNjU5NiA0IDAgUgovSGVsdmV0aWNhLTcwMDEyOTI2MDAgMyAwIFIKL0hlbHZldGljYS02NjE1MDIwMyAzIDAgUgovSGVsdmV0aWNhLUJvbGQtNzE1NzE4MjEwMiA0IDAgUgovSGVsdmV0aWNhLUJvbGQtMTUyMTU2MjExOSA0IDAgUgovSGVsdmV0aWNhLTE2ODQzNjk1MDMgMyAwIFIKL0hlbHZldGljYS00MjQ2Mjg2MTEwIDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC04NDk1MzAyNDQ1IDQgMCBSCi9IZWx2ZXRpY2EtNzI1NzIxNTYxNSAzIDAgUgovSGVsdmV0aWNhLTIyNzYxNjMwNTAgMyAwIFIKL0hlbHZldGljYS0xNjI3NDk2NDQ3IDMgMCBSCi9IZWx2ZXRpY2EtMTc2OTM5NzE3NSAzIDAgUgovSGVsdmV0aWNhLTIwMTQ5MTE5MjAgMyAwIFIKL0hlbHZldGljYS02NTY4NjQ0MjggMyAwIFIKL0hlbHZldGljYS01NjMzMzU3NjggMyAwIFIKL0hlbHZldGljYS0zOTY0NjgzNDkwIDMgMCBSCi9IZWx2ZXRpY2EtNDczMjQxMTcwMiAzIDAgUgovSGVsdmV0aWNhLTcwMTQ2ODU4MjMgMyAwIFIKL0hlbHZldGljYS0zNDk0ODY4NTA1IDMgMCBSCi9IZWx2ZXRpY2EtNTA5NDU3NDAzMCAzIDAgUgovSGVsdmV0aWNhLTQyNTQ2NjUxMjUgMyAwIFIKL0hlbHZldGljYS0yMTgwNjA1NzMxIDMgMCBSCj4+Ci9YT2JqZWN0IDw8Cj4+Ci9FeHRHU3RhdGUgPDwKPj4KPj4KL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQovQW5ub3RzIFsgXQovQ29udGVudHMgWyAyNCAwIFIgXQo+PgplbmRvYmoK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Bz80NXoKZW5kc3RyZWFtCmVuZG9iagoKMjUgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAxIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9IZWx2ZXRpY2EtQm9sZC04ODYzMDI2ODI5IDQgMCBSCi9IZWx2ZXRpY2EtNzAxNzU1MDkzMCAzIDAgUgovSGVsdmV0aWNhLTc0Nzg3MDkyMzMgMyAwIFIKL0hlbHZldGljYS1Cb2xkLTcyNzkyOTAxMzcgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTY2NTk3MDkxMzQgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTgxODU5MDY4NjYgNCAwIFIKL0hlbHZldGljYS1Cb2xkLTUxOTA0MTc5ODggNCAwIFIKL0hlbHZldGljYS05MzY2MjcwNyAzIDAgUgovSGVsdmV0aWNhLTc0NDg3NzMwNjcgMyAwIFIKL0hlbHZldGljYS02Nzg5NDc2MTU1IDMgMCBSCi9IZWx2ZXRpY2EtMTk3NjgwNjM3OSAzIDAgUgovSGVsdmV0aWNhLTQ2NDY3NDEzODUgMyAwIFIKL0hlbHZldGljYS03NjExMzEwMTc2IDMgMCBSCi9IZWx2ZXRpY2EtNjQyNzMwOTI2MCAzIDAgUgovSGVsdmV0aWNhLTg2MjQyNjYzMjUgMyAwIFIKL0hlbHZldGljYS0xMjk3NDQ2MzY2IDMgMCBSCi9IZWx2ZXRpY2EtMzAyNTc3MjkxMyAzIDAgUgovSGVsdmV0aWNhLTg5NzgzMTE1NDkgMyAwIFIKL0hlbHZldGljYS0xNjcxMzc2NDE2IDMgMCBSCi9IZWx2ZXRpY2EtODA3MTg2ODQ2OCAzIDAgUgovSGVsdmV0aWNhLTYyOTI4ODg0NjEgMyAwIFIKL0hlbHZldGljYS04MzE3NjcyMjM2IDMgMCBSCi9IZWx2ZXRpY2EtMjk2Njc0MjEyIDMgMCBSCi9IZWx2ZXRpY2EtMTcwMjE1MjM4MiAzIDAgUgovSGVsdmV0aWNhLTg1Nzc2MTcwOTMgMyAwIFIKL0hlbHZldGljYS04NjMxMTAyNjA1IDMgMCBSCi9IZWx2ZXRpY2EtMTkzMjY1Nzc0OSAzIDAgUgovSGVsdmV0aWNhLTg5MTY1NzYzODggMyAwIFIKL0hlbHZldGljYS02MTM0MDM1OTgyIDMgMCBSCi9IZWx2ZXRpY2EtNTE2NzEyMzQzNCAzIDAgUgovSGVsdmV0aWNhLTQzODA5MzA2NSAzIDAgUgovSGVsdmV0aWNhLUJvbGQtMjI5MDkzODA5NiA0IDAgUgovSGVsdmV0aWNhLUJvbGQtOTgyMjY1Mjc5NCA0IDAgUgovSGVsdmV0aWNhLUJvbGQtNjYzMDM5NjczMiA0IDAgUgovSGVsdmV0aWNhLUJvbGQtNTY3MjA5NTk4NCA0IDAgUgovSGVsdmV0aWNhLUJvbGQtMTkzOTM5ODA4NSA0IDAgUgovSGVsdmV0aWNhLTQzNjI3MDQzODggMyAwIFIKL0hlbHZldGljYS05NTMzMzUwMDI5IDMgMCBSCi9IZWx2ZXRpY2EtMjgxOTQ2Nzc1MiAzIDAgUgovSGVsdmV0aWNhLTI4Mjk2NDI4MDMgMyAwIFIKL0hlbHZldGljYS03OTg4Njk3NzkwIDMgMCBSCi9IZWx2ZXRpY2EtNjE3NjA4MDAxMyAzIDAgUgovSGVsdmV0aWNhLTU1MzkyMTc3OTMgMyAwIFIKL0hlbHZldGljYS01NTM1MDg0MDk2IDMgMCBSCi9IZWx2ZXRpY2EtMjA1OTY2NjUxNyAzIDAgUgovSGVsdmV0aWNhLTY4NjUzNTE3MzIgMyAwIFIKL0hlbHZldGljYS0xNzI0NjA0NzYxIDMgMCBSCi9IZWx2ZXRpY2EtNTA0MjM3MzcxMiAzIDAgUgovSGVsdmV0aWNhLTI2NjY3NTQxNzMgMyAwIFIKL0hlbHZldGljYS03MDQwMDc2MDc1IDMgMCBSCi9IZWx2ZXRpY2EtMTg0OTQwMTI4NyAzIDAgUgovSGVsdmV0aWNhLTU3NjUwNTg3ODggMyAwIFIKL0hlbHZldGljYS1Cb2xkLTkwNTkyOTk3MzUgNCAwIFIKL0hlbHZldGljYS00MTUxNDM1NDQgMyAwIFIKL0hlbHZldGljYS0yOTI0MTI0Nzk4IDMgMCBSCi9IZWx2ZXRpY2EtQm9sZC00NDEyNjA3NTU0IDQgMCBSCi9IZWx2ZXRpY2EtQm9sZC04MTk5MzcxNTUyIDQgMCBSCi9IZWx2ZXRpY2EtQm9sZC00Mjk5Mjk1NTYxIDQgMCBSCi9IZWx2ZXRpY2EtNDcyMDY4NzQ5IDMgMCBSCi9IZWx2ZXRpY2EtMzQ4MjY2NTA2MCAzIDAgUgovSGVsdmV0aWNhLTc2NzA0Mjk5NjEgMyAwIFIKL0hlbHZldGljYS03NTU1MzI0OTg5IDMgMCBSCi9IZWx2ZXRpY2EtNzU3OTcyNTI4OSAzIDAgUgovSGVsdmV0aWNhLTIyMjY5NDE1MjAgMyAwIFIKL0hlbHZldGljYS0yNjQ4MjkwOTAgMyAwIFIKL0hlbHZldGljYS02MjEyODUxODUwIDMgMCBSCi9IZWx2ZXRpY2EtMzk5OTk3MzUyMSAzIDAgUgovSGVsdmV0aWNhLTcyNTQ3NTMzODMgMyAwIFIKL0hlbHZldGljYS0xNjU1Mzg5NDI3IDMgMCBSCi9IZWx2ZXRpY2EtMTc2OTUxNDI1OSAzIDAgUgovSGVsdmV0aWNhLTk1NzYxMDQ3NDggMyAwIFIKL0hlbHZldGljYS0zOTExNjk2NjAxIDMgMCBSCi9IZWx2ZXRpY2EtNzkwMTY2NjYyIDMgMCBSCi9IZWx2ZXRpY2EtNzA2NzU1NjE2MiAzIDAgUgovSGVsdmV0aWNhLTQwODI1MTMzMTMgMyAwIFIKL0hlbHZldGljYS01MTU5ODY5NTM2IDMgMCBSCi9IZWx2ZXRpY2EtOTgzMjQzNDc4NyAzIDAgUgovSGVsdmV0aWNhLTIyMTAyMjQ5NzEgMyAwIFIKPj4KL1hPYmplY3QgPDwKPj4KL0V4dEdTdGF0ZSA8PAo+Pgo+PgovTWVkaWFCb3ggWyAwIDAgNTk1IDg0MiBdCi9Bbm5vdHMgWyBdCi9Db250ZW50cyBbIDI2IDAgUiBdCj4+CmVuZG9iagoKMjYgMCBvYmoKPDwKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL0xlbmd0aCAyMDk3Cj4+CnN0cmVhbQp4nMVa244bRRB991f4GSlLd136IiGkrNcWD7wg7Q8gCAgUhIIQ38+p6rkm00YzTsRa8toz46nqOlWnLj0fTs+vp/AUynl+++vX09ffvXv/z7u/f/vpxzfPf77/+U0piQOlQvUcw5OeX385kZxfvz/Fc8ArnjOdc8KRP07fKCdOJWmSrOmSlAJHulLQoCQ3EVVhFWUKEuUqMpypwjjF355ffz+9fnW6vp5+OH34T+1yiFk1VIYScVstUVPYFAuZUoVymiE8RXyDcjgC5XBM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gclz9idWFs+voLe0I4azDagtiuxP21NSiA3PEnQFctf2bRxhoCW7+ENiadj1pvGMfDTywK87T1XdsQRRDISiJMctS1CmJ5smisyPOOWhsI9jD2SfV1L/BeWAujoKZW5kc3RyZWFtCmVuZG9iagoKMjcgMCBvYmoKPDwKL1RpdGxlIDxGRUZGMDA1NzAwNjgwMDZGMDA2QzAwNjUwMDczMDA2MTAwNkMwMDY1MDAyMDAwNTMwMDc1MDA3MDAwNzAwMDZDMDA3OTAwMjAwMDQxMDA2NzAwNzIwMDY1MDA2NTAwNkQwMDY1MDA2RTAwNzQ+Ci9BdXRob3IgPEZFRkYwMDU2MDA2QzAwNzQwMDYxMDA3NjAwNjEwMDIwMDA0NzAwNzIwMDYxMDA2RTAwNjQwMDIwMDA0ODAwNkYwMDc0MDA2NTAwNkMwMDczMDAyMDAwNjEwMDJFMDA3MzAwMkU+Ci9TdWJqZWN0IDxGRUZGMDA0MTAwMjAwMDczMDA3OTAwNkUwMDc0MDA2ODAwNjUwMDc0MDA2OTAwNjMwMDIwMDA2MzAwNkYwMDZFMDA3NDAwNzIwMDYxMDA2MzAwNzQwMDIwMDA2NjAwNkYwMDcyMDAyMDAwNzQwMDY4MDA2NTAwMjAwMDQyMDA2MTAwNzMwMDYxMDA2QzAwNzQwMDIwMDAyNjAwMjAwMDQyMDA2NTAwNjEwMDZFMDAyMDAwNDMwMDZGMDA2RTAwNzQwMDcyMDA2MTAwNjMwMDc0MDAyMDAwNTIwMDYxMDA2NDAwNjEwMDcyMDAyMDAwNjQwMDY1MDA2RDAwNkYwMDJFMDAyMDAwNDUwMDc2MDA2NTAwNzIwMDc5MDAyMDAwNkUwMDYxMDA2RDAwNjUwMDIwMDA2OTAwNkUwMDIwMDA2OTAwNzQwMDIwMDA2OTAwNzMwMDIwMDA2OTAwNkUwMDc2MDA2NTAwNkUwMDc0MDA2NTAwNjQwMDJFPgovS2V5d29yZHMgPEZFRkYwMDczMDA3OTAwNkUwMDc0MDA2ODAwNjUwMDc0MDA2OTAwNjMwMDIwMDA2MzAwNkYwMDZFMDA3NDAwNzIwMDYxMDA2MzAwNzQwMDIwMDA2QzAwNjIwMDJEMDAzMDAwMzQ+Ci9DcmVhdG9yIDxGRUZGMDA0QzAwNDIwMDJEMDAzMDAwMzQwMDIwMDA3MzAwNjUwMDY1MDA2NDAwMjAwMDY3MDA2NTAwNkUwMDY1MDA3MjAwNjEwMDc0MDA2RjAwNzI+Ci9Qcm9kdWNlciA8RkVGRjAwNzAwMDY0MDA2NjAwMkQwMDZDMDA2OTAwNjI+Ci9DcmVhdGlvbkRhdGUgKEQ6MjAyNjA5MDEwOTAwMDBaKQovTW9kRGF0ZSAoRDoyMDI2MDkwMTA5MDAwMFopCj4+CmVuZG9iagoKeHJlZgowIDI4CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNiAwMDAwMCBuIAowMDAwMDAwMTQ1IDAwMDAwIG4gCjAwMDAwMDAxOTUgMDAwMDAgbiAKMDAwMDAwMDI5MyAwMDAwMCBuIAowMDAwMDAwMzk2IDAwMDAwIG4gCjAwMDAwMDE5MDMgMDAwMDAgbiAKMDAwMDAwMzc0NSAwMDAwMCBuIAowMDAwMDA1Mjk3IDAwMDAwIG4gCjAwMDAwMDc1NjcgMDAwMDAgbiAKMDAwMDAwOTA1MiAwMDAwMCBuIAowMDAwMDExMTc5IDAwMDAwIG4gCjAwMDAwMTI3NjIgMDAwMDAgbiAKMDAwMDAxNTAwOCAwMDAwMCBuIAowMDAwMDE2NTc4IDAwMDAwIG4gCjAwMDAwMTg4NDYgMDAwMDAgbiAKMDAwMDAyMDQwNCAwMDAwMCBuIAowMDAwMDIyNjIwIDAwMDAwIG4gCjAwMDAwMjQxNDAgMDAwMDAgbiAKMDAwMDAyNjI2MyAwMDAwMCBuIAowMDAwMDI3Nzc1IDAwMDAwIG4gCjAwMDAwMjk5NTkgMDAwMDAgbiAKMDAwMDAzMTQ0OCAwMDAwMCBuIAowMDAwMDMzNzA3IDAwMDAwIG4gCjAwMDAwMzUxMDEgMDAwMDAgbiAKMDAwMDAzNjkyNCAwMDAwMCBuIAowMDAwMDM5MzM5IDAwMDAwIG4gCjAwMDAwNDE1MTEgMDAwMDAgbiAKCnRyYWlsZXIKPDwKL1NpemUgMjgKL1Jvb3QgMiAwIFIKL0luZm8gMjcgMCBSCj4+CgpzdGFydHhyZWYKNDI0NjgKJSVFT0Y="
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/5276a6e8-1368-4bb1-858f-4e2023dbc51c/report"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "contractId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+          "playbookVersion": 1,
+          "findings": [],
+          "radar": [
+            {
+              "topic": "liability",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "indemnity",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "termination",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "renewal",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "payment",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "ip",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "confidentiality",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "governing_law",
+              "score": 0,
+              "findings": 0
+            },
+            {
+              "topic": "exclusivity",
+              "score": 0,
+              "findings": 0
+            }
+          ],
+          "verification": {
+            "checked": 0,
+            "kept": 0,
+            "dropped": 0,
+            "reasons": {
+              "quote_not_found": 0,
+              "quote_too_short": 0,
+              "quote_too_long": 0,
+              "quote_in_instruction": 0,
+              "unknown_rule": 0,
+              "topic_mismatch": 0,
+              "absent_contradicted": 0,
+              "duplicate": 0,
+              "over_limit": 0
+            }
+          },
+          "screen": {
+            "verdict": "clean",
+            "guardScore": 0.001248553511686623,
+            "passages": [],
+            "passageCount": 0
+          },
+          "calls": 2,
+          "calibrated": true,
+          "redlines": [],
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "9bd4fe433247b527",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "extract text",
+        "status": "ok",
+        "startMs": 1791372869292,
+        "endMs": 1791372870071,
+        "attrs": {
+          "pages": 11,
+          "characters": 24530
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "ea5753ce57b83258",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "split clauses",
+        "status": "ok",
+        "startMs": 1791372870086,
+        "endMs": 1791372870088,
+        "attrs": {
+          "clauses": 128,
+          "numbered": 127
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "25b130d59e9e6ba2",
+        "parentId": "c3a681b1d1010d89",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372870102,
+        "endMs": 1791372870981,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "c3a681b1d1010d89",
+        "parentId": "d64549a31446f156",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372870102,
+        "endMs": 1791372870982,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 997,
+          "maxOutputTokens": 56,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 764,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.001248553511686623,
+          "segments": 7
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "d64549a31446f156",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372870096,
+        "endMs": 1791372870985,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0012
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "3e341491776789d6",
+        "parentId": "69e028dabe5b73fa",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-ultra",
+        "status": "error",
+        "startMs": 1791372870996,
+        "endMs": 1791372960999,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-ultra",
+          "modelId": "nvidia/nemotron-3-ultra-550b-a55b:free",
+          "outcome": "timeout"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "9e018f6487b86cba",
+        "parentId": "69e028dabe5b73fa",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372960999,
+        "endMs": 1791372968847,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "69e028dabe5b73fa",
+        "parentId": "769e53713330cff4",
+        "kind": "gateway.call",
+        "name": "lb-long",
+        "status": "ok",
+        "startMs": 1791372870995,
+        "endMs": 1791372968849,
+        "attrs": {
+          "alias": "lb-long",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 2,
+          "estimatedInputTokens": 9432,
+          "maxOutputTokens": 4096,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 7429,
+          "outputTokens": 1268
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "769e53713330cff4",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "cited analysis",
+        "status": "ok",
+        "startMs": 1791372870988,
+        "endMs": 1791372968853,
+        "attrs": {
+          "alias": "lb-long",
+          "attempts": 1,
+          "notes": 0,
+          "missing": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "17866af678f1cab8",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "verify quotes",
+        "status": "ok",
+        "startMs": 1791372968874,
+        "endMs": 1791372968875,
+        "attrs": {
+          "kept": 0,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "cb9b9c15d28fecdd",
+        "parentId": "404d0aa1718b68c7",
+        "kind": "system.step",
+        "name": "assemble report",
+        "status": "ok",
+        "startMs": 1791372968876,
+        "endMs": 1791372968876,
+        "attrs": {
+          "findings": 0,
+          "screen": "clean",
+          "calibrated": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "5276a6e8-1368-4bb1-858f-4e2023dbc51c",
+        "system": "lb-04",
+        "spanId": "404d0aa1718b68c7",
+        "kind": "system.run",
+        "name": "contract review",
+        "status": "ok",
+        "startMs": 1791372869263,
+        "endMs": 1791372968883,
+        "attrs": {
+          "outcome": "done",
+          "origin": "sample",
+          "pages": 11,
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 6,
+    "durationMs": 99620
+  }
+}

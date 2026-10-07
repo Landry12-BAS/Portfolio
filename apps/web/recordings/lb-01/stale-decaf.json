@@ -1,0 +1,684 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "stale-decaf",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:27:12.907Z",
+  "language": "cs",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0004",
+          "language": "cs",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "UWj8UGObfE8rme7N",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-07T11:27:06.577Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "UyCtDi0di46FDa6SsNQedg",
+          "expires_at": "2026-10-08T11:27:06.577Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/UWj8UGObfE8rme7N"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "UWj8UGObfE8rme7N",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-07T11:27:06.577Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "UyCtDi0di46FDa6SsNQedg",
+          "expires_at": "2026-10-08T11:27:06.577Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/UWj8UGObfE8rme7N"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "UWj8UGObfE8rme7N",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "awaiting_approval",
+          "category": "damaged",
+          "created_at": "2026-10-07T11:27:06.577Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "BB-1046",
+          "escalation_reason": "",
+          "run_id": "UyCtDi0di46FDa6SsNQedg",
+          "expires_at": "2026-10-08T11:27:06.577Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "Dobrý den, paní Nováková,",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "děkujeme za vaši zprávu ohledně objednávky BB-1046.",
+                "citations": [
+                  "order:BB-1046"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Podle našich záznamů byla káva v této objednávce opražená 30. 8. 2026 a objednávka byla doručena 4. 10. 2026.",
+                "citations": [
+                  "order:BB-1046"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Protože káva dorazila více než 30 dnů po datu pražení, máte nárok na výměnu zboží nebo vrácení peněz.",
+                "citations": [
+                  "passage:damaged.stale-coffee",
+                  "order:BB-1046"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Prosím, dejte nám vědět, kterou z těchto možností si přejete.",
+                "citations": [
+                  "passage:damaged.stale-coffee"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Vrácení zboží hradíme my a pošleme vám e-mailem předplacený štítek, takže pro vás bude vrácení zdarma.",
+                "citations": [
+                  "passage:returns.prepaid-labels"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Tým podpory Basalt & Bean",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "qwen/qwen3.8-27b",
+            "sources": [
+              {
+                "id": "order:BB-1046",
+                "title": "Order BB-1046",
+                "text": "Order BB-1046: delivered. Dates: placed 2026-10-01, roasted 2026-08-30, shipped 2026-10-02, delivered 2026-10-04. Ships to CZ with Vltava Post, tracking number VP481950061CZ. Items: 2 x Lava Decaf, moka, 250 g, at 299 CZK each. Delivery 89 CZK. Total 687 CZK."
+              },
+              {
+                "id": "passage:damaged.stale-coffee",
+                "title": "Poškozené, staré nebo chybné zboží §2: Stará káva",
+                "text": "Na každém sáčku je datum pražení. Pokud k vám sáček dorazí více než 30 dnů po datu pražení, dejte nám vědět do 14 dnů od doručení a my ho vyměníme, nebo vám vrátíme peníze, podle toho, co si vyberete."
+              },
+              {
+                "id": "passage:returns.prepaid-labels",
+                "title": "Vrácení zboží a peněz §5: Předplacené štítky pro vrácení",
+                "text": "U poškozeného, starého nebo chybného zboží hradíme vrácení my: pošleme vám e-mailem předplacený štítek a vrácení vás nic nestojí."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "UyCtDi0di46FDa6SsNQedg",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "08a83975374b86d1",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1791372426614,
+        "endMs": 1791372426614,
+        "attrs": {}
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "8e69e1bc40861c01",
+        "parentId": "24def0037882e924",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372426619,
+        "endMs": 1791372426949,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "24def0037882e924",
+        "parentId": "182e5094a888ff89",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372426618,
+        "endMs": 1791372426950,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 47,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 48,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0004229595942888409,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "182e5094a888ff89",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372426615,
+        "endMs": 1791372426952,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0004
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "6497a07bf817ec99",
+        "parentId": "642dcee85ebd73f6",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372426957,
+        "endMs": 1791372427502,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "642dcee85ebd73f6",
+        "parentId": "42dc008d2450cedb",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372426957,
+        "endMs": 1791372427503,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 452,
+          "maxOutputTokens": 300,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 452,
+          "outputTokens": 218
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "42dc008d2450cedb",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1791372426953,
+        "endMs": 1791372427506,
+        "attrs": {
+          "category": "damaged",
+          "senior_agent": "none",
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "86bc9304cee74475",
+        "parentId": "90146450aed42999",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1791372427510,
+        "endMs": 1791372427799,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "modelId": "@cf/baai/bge-m3",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "90146450aed42999",
+        "parentId": "689334e8e5b348fa",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1791372427510,
+        "endMs": 1791372427800,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 8,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "689334e8e5b348fa",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1791372427506,
+        "endMs": 1791372427820,
+        "attrs": {
+          "candidates": 8,
+          "used_vectors": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "7fc4d45b5b84c2d6",
+        "parentId": "59203c373f9295ec",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1791372427829,
+        "endMs": 1791372428090,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "modelId": "@cf/baai/bge-reranker-base",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "59203c373f9295ec",
+        "parentId": "f1d5d06ce953ac06",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1791372427829,
+        "endMs": 1791372428090,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 542,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "documents": 8
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "f1d5d06ce953ac06",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1791372427821,
+        "endMs": 1791372428092,
+        "attrs": {
+          "reranked": true,
+          "top_relevance": 0.7268
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "988126559be05f4c",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1791372428094,
+        "endMs": 1791372428097,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "677a6b0457899949",
+        "parentId": "25b930bd18067af9",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372428107,
+        "endMs": 1791372428107,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "032ac7a041455ec4",
+        "parentId": "25b930bd18067af9",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372428107,
+        "endMs": 1791372428107,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "6faac15fb5036c12",
+        "parentId": "25b930bd18067af9",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372428107,
+        "endMs": 1791372430559,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "25b930bd18067af9",
+        "parentId": "30d13c62b1bc8dde",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372428107,
+        "endMs": 1791372430561,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 908,
+          "maxOutputTokens": 1000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1005,
+          "outputTokens": 1000
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "f15845f72c8221b4",
+        "parentId": "275441b4761aa3d3",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372430569,
+        "endMs": 1791372430569,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "ede1f9fc3540c602",
+        "parentId": "275441b4761aa3d3",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372430569,
+        "endMs": 1791372430569,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "faf7c9c621ac416a",
+        "parentId": "275441b4761aa3d3",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791372430569,
+        "endMs": 1791372430569,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "003e73677892a36c",
+        "parentId": "275441b4761aa3d3",
+        "kind": "gateway.attempt",
+        "name": "groq/qwen3.8-27b",
+        "status": "ok",
+        "startMs": 1791372430569,
+        "endMs": 1791372431831,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/qwen3.8-27b",
+          "modelId": "qwen/qwen3.8-27b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "275441b4761aa3d3",
+        "parentId": "30d13c62b1bc8dde",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372430568,
+        "endMs": 1791372431832,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 960,
+          "maxOutputTokens": 1000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/qwen3.8-27b",
+          "inputTokens": 1052,
+          "outputTokens": 419
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "30d13c62b1bc8dde",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1791372428103,
+        "endMs": 1791372431836,
+        "attrs": {
+          "answerable": true,
+          "sentences": 7,
+          "attempts": 2
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "b88c4da82dda35be",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1791372431837,
+        "endMs": 1791372431837,
+        "attrs": {
+          "supported": true,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "92abb868e85d9d7d",
+        "parentId": "4cb18cdbcdfe98ff",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1791372431838,
+        "endMs": 1791372431838,
+        "attrs": {
+          "status": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "UyCtDi0di46FDa6SsNQedg",
+        "system": "lb-01",
+        "spanId": "4cb18cdbcdfe98ff",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1791372426614,
+        "endMs": 1791372431839,
+        "attrs": {
+          "language": "cs",
+          "status": "awaiting_approval"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 6,
+    "steps": 9,
+    "durationMs": 5225
+  }
+}

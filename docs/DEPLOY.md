@@ -871,21 +871,24 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   build`, which uses Nitro's Vercel preset and writes `apps/web/.vercel/output`) was run once
   here, by hand: it stopped with `EEXIST` because two routes of the API made the same function,
   which is fixed, and `test/unit/api-routes.test.ts` now checks the route list for it; no CI step
-  makes that build. They were never deployed, never run with a real Turnstile
-  site key, challenge and hostname, and never run with a model behind LB-01. So no
-  **recording** exists: `just record-sample lb-01 torn-bag` needs the live back end and
-  records nothing until it has run there, and until it has the boards say "No recording yet"
-  and offer the live run. Not checked either: whether the Vercel plan lets a function wait the
-  95 seconds the proxy allows LB-05, LB-08 and LB-04.
-- Real provider traffic: no provider key was available.
+  makes that build. They were never deployed and never run with a real Turnstile site key,
+  challenge and hostname. The **recordings** the boards replay were made on 2026-10-07 against
+  the platform running locally on a development machine, with the real providers behind the
+  gateway (`apps/web/recordings/README.md` lists them and the samples still without one). Not
+  checked either: whether the Vercel plan lets a function wait the 95 seconds the proxy allows
+  LB-05, LB-08 and LB-04.
+- Real provider traffic from the box: none. Groq, Workers AI and OpenRouter have only been called
+  from a development machine's local stack, through the gateway (the recordings, LB-01's recorded
+  vectors and the measurements the services' READMEs date).
 - LB-09's image with the Whisper weights: the build fetches them from Hugging Face
   (`infra/docker/django-systems.Dockerfile`, with `faster_whisper.utils.download_model`). The
   same call was run in the development session, which reached Hugging Face through its proxy, and
   private mode then transcribed the six committed recordings with those weights (word error rate
   0.106, measured on an x86-64 development machine: `services/django-systems/README.md`); no image
   with them was built there; GitHub's image job built it (the `django-systems` image of the CI run on 1852093 passed, weights step included). Nothing was measured on the box's
-  Ampere A1. Fast mode's route exists in the gateway and is tested with fake providers; it has
-  never been called with a provider key. The shared `lb09-audio` volume and the 5 MB upload route
+  Ampere A1. Fast mode transcribed the three sample meetings through the gateway (Groq's
+  whisper-large-v3-turbo) when their recordings were made; its word error rate is not measured
+  yet (`just wer-lb09 --mode fast`). The shared `lb09-audio` volume and the 5 MB upload route
   through Caddy are checked by the Compose rules and `infra/caddy/test.sh`, not by a deployed
   stack.
 

@@ -262,9 +262,10 @@ visitor, keeps each answer that shows a new state, reads the whole trace from th
 as the test mock gets `origin: mock` and is written under `e2e/fixtures/recordings`; any other gets
 `live`. The site shows a `live` recording to anyone, and a `mock` one only in the end-to-end build.
 
-**There are no live recordings yet.** One needs a live back end with a model behind it, and none was
-available when this was built; the recorder has been run against the mock only. Until a sample has
-one, its board says "No recording yet" and offers the live run. See `recordings/README.md`.
+The live recordings in `recordings/` were made on 2026-10-07 on a development machine, against the
+whole platform running locally with the real providers behind the gateway. A sample without one (the
+list and the reasons are in `recordings/README.md`) has a board that says "No recording yet" and offers
+the live run.
 
 ## Tests
 

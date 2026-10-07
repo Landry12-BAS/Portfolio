@@ -1,0 +1,399 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "active-subscriptions-by-frequency",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:40:37.381Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "How many active subscriptions are there for each delivery frequency?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT subscriptions.frequency_days AS frequency_days, COUNT(*) AS active_subscriptions FROM subscriptions WHERE subscriptions.status = 'active' GROUP BY subscriptions.frequency_days ORDER BY subscriptions.frequency_days",
+              "stopped_by": null
+            }
+          ],
+          "chart": {
+            "kind": "point",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "data": {
+                "values": [
+                  {
+                    "x": 7,
+                    "y": 1288
+                  },
+                  {
+                    "x": 14,
+                    "y": 6802
+                  },
+                  {
+                    "x": 28,
+                    "y": 9405
+                  }
+                ]
+              },
+              "description": "A point chart of active subscriptions by frequency days.",
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "title": "frequency days",
+                  "type": "quantitative"
+                },
+                "y": {
+                  "field": "y",
+                  "title": "active subscriptions",
+                  "type": "quantitative"
+                }
+              },
+              "height": 280,
+              "mark": {
+                "tooltip": true,
+                "type": "point"
+              },
+              "width": "container"
+            }
+          },
+          "elapsed_ms": 4454,
+          "explanation": "There are 1,288 active subscriptions with a 7‑day frequency. There are 6,802 active subscriptions with a 14‑day frequency. There are 9,405 active subscriptions with a 28‑day frequency.",
+          "explanation_source": "model",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "integer",
+                "name": "frequency_days"
+              },
+              {
+                "kind": "integer",
+                "name": "active_subscriptions"
+              }
+            ],
+            "elapsed_ms": 5,
+            "joins": 0,
+            "row_count": 3,
+            "rows": [
+              [
+                7,
+                1288
+              ],
+              [
+                14,
+                6802
+              ],
+              [
+                28,
+                9405
+              ]
+            ],
+            "sql": "SELECT\n  subscriptions.frequency_days AS frequency_days,\n  COUNT(*) AS active_subscriptions\nFROM subscriptions AS subscriptions\nWHERE\n  subscriptions.status = 'active'\nGROUP BY\n  subscriptions.frequency_days\nORDER BY\n  frequency_days\nLIMIT 1000",
+            "tables": [
+              "subscriptions"
+            ],
+            "truncated": false
+          },
+          "run_id": "nhtDtvUneZlrH3JNhl4gZA"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "nhtDtvUneZlrH3JNhl4gZA",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "1398a2e0f2fba34b",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373232895,
+        "endMs": 1791373232896,
+        "attrs": {
+          "metrics": "active_subscriptions",
+          "dimensions": "",
+          "ranges": ""
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "cd4c6460f8860156",
+        "parentId": "a41b42d89154c955",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373232903,
+        "endMs": 1791373232903,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "29663648035ba5ab",
+        "parentId": "a41b42d89154c955",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373232903,
+        "endMs": 1791373232903,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "83f9e46d94ed354c",
+        "parentId": "a41b42d89154c955",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373232903,
+        "endMs": 1791373232903,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "d14face893fc05d7",
+        "parentId": "a41b42d89154c955",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373232903,
+        "endMs": 1791373236725,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "a41b42d89154c955",
+        "parentId": "6a095ad0edba3f90",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373232902,
+        "endMs": 1791373236726,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2169,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1850,
+          "outputTokens": 156
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "6a095ad0edba3f90",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373232897,
+        "endMs": 1791373236728,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 220
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "f84aa56d2d9a6fe6",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373236729,
+        "endMs": 1791373236736,
+        "attrs": {
+          "tables": "subscriptions",
+          "joins": 0,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "9afa97398b775735",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791373236738,
+        "endMs": 1791373236741,
+        "attrs": {
+          "operators": 4,
+          "estimated_rows": 16089
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "1bf42f6423f49fc7",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791373236743,
+        "endMs": 1791373236748,
+        "attrs": {
+          "rows": 3,
+          "columns": 2,
+          "elapsed_ms": 5,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "6bff80128dd7de67",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791373236749,
+        "endMs": 1791373236749,
+        "attrs": {
+          "kind": "point",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "c4e76a68c57a8665",
+        "parentId": "b77ff25eca9ba0ae",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791373236756,
+        "endMs": 1791373237344,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "b77ff25eca9ba0ae",
+        "parentId": "ed88fee5d00ebb7e",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791373236755,
+        "endMs": 1791373237346,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 299,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 304,
+          "outputTokens": 232
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "ed88fee5d00ebb7e",
+        "parentId": "9ea0312f8546c36e",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791373236750,
+        "endMs": 1791373237348,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "nhtDtvUneZlrH3JNhl4gZA",
+        "system": "lb-05",
+        "spanId": "9ea0312f8546c36e",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373232895,
+        "endMs": 1791373237349,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 3
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 4454
+  }
+}
