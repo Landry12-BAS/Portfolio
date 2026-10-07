@@ -38,7 +38,7 @@ calls behind it nest under it.
 | Redact PII | Replaces emails, phone numbers, card numbers and IBANs with labels before any model reads the ticket ([`lb01/redaction.py`](lb01/redaction.py)) | Never fails: patterns only |
 | Screen for injection | `lb-guard` (Prompt Guard 2) checks the redacted ticket | Fails closed: the ticket goes to a person as `unchecked` |
 | Classify | `lb-fast` names the category, the order number, any senior agent's matter, and an English search query | Repairs a malformed answer once, then escalates as `pipeline_error` |
-| Hybrid search | Postgres full-text search and pgvector, fused by reciprocal rank ([`lb01/search.py`](lb01/search.py)) | Without a query vector, keywords alone |
+| Hybrid search | Postgres full-text search and pgvector, fused by reciprocal rank ([`lb01/search.py`](lb01/search.py)); vectors are compared exactly, with no approximate index, since an HNSW index lost live passages behind the row versions a change leaves | Without a query vector, keywords alone |
 | Rerank | `lb-rerank` orders the finalists by relevance | Keeps the fused order and claims no relevance |
 | Look up order | Finds the order on the ticket's own customer only, without a model ([`lb01/orders.py`](lb01/orders.py)) | Another customer's order reads exactly like a missing one |
 | Draft with citations | `lb-tools` writes the reply sentence by sentence, each with its sources, in the ticket's language | Repairs once, then escalates; says so when the sources don't answer |

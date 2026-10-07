@@ -11,6 +11,7 @@ from datetime import date
 
 import pytest
 from django.conf import settings
+from django.db import connections
 
 from lb01.models import PolicyPassage
 from lb01.search import (
@@ -98,6 +99,31 @@ def test_keyword_ranking_finds_nothing_without_a_real_word() -> None:
 def test_vector_ranking_puts_the_closest_passage_first(corpus: list[str]) -> None:
     """The passage whose vector the query's points at comes first."""
     assert vector_ranking(pointing_at(corpus, "coffee.storage"), 10)[0] == "coffee.storage"
+
+
+def test_vector_ranking_stays_exact_after_vectors_change(corpus: list[str]) -> None:
+    """Every embedded passage is ranked, closest first, even after each one's vector has changed several times.
+
+    Each change leaves the old row version behind until a vacuum. Here the old versions
+    all point the query's way, so they are nearer to it than any live passage but one.
+    An approximate index such as HNSW hands Postgres a fixed number of nearest
+    candidates (40) before the old versions are dropped, and would return almost
+    nothing; an exact scan returns every passage.
+    """
+    query = pointing_at(corpus, "coffee.storage")
+    for round_number in range(1, 5):
+        for position, key in enumerate(corpus):
+            # A vector distinct from every other, so no index can fold it into one it has seen.
+            nearer = [(round_number * 100 + position + 2) * value for value in query]
+            PolicyPassage.objects.filter(key=key).update(embedding=nearer)
+            PolicyPassage.objects.filter(key=key).update(embedding=one_hot(position))
+    with connections["lb01"].cursor() as cursor:
+        # Offer the planner every index there is, as a bigger table would.
+        cursor.execute("set local enable_seqscan = off")
+
+    ranking = vector_ranking(query, len(corpus))
+
+    assert ranking == ["coffee.storage", *(key for key in corpus if key != "coffee.storage")]
 
 
 @pytest.mark.usefixtures("corpus")

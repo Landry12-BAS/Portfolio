@@ -134,7 +134,11 @@ def keyword_ranking(query: str, limit: int) -> list[str]:
 
 
 def vector_ranking(vector: Sequence[float], limit: int) -> list[str]:
-    """Return the keys of the embedded passages closest in meaning to the query vector, best first."""
+    """Return the keys of the embedded passages closest in meaning to the query vector, best first.
+
+    The ranking is exact: every embedded passage is compared, and none is left out
+    (see `PolicyPassage.embedding`).
+    """
     if len(vector) != EMBEDDING_DIMENSIONS or not all(math.isfinite(value) for value in vector):
         raise ValueError(f"a query vector is {EMBEDDING_DIMENSIONS} finite numbers")
     ranked = (

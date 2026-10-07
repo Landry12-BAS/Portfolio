@@ -18,7 +18,7 @@ from django.db import models
 from django.db.models.functions import Length
 from django.db.models.lookups import GreaterThanOrEqual, LessThanOrEqual
 from django.utils import timezone
-from pgvector.django import HnswIndex, VectorField
+from pgvector.django import VectorField
 
 # bge-m3, the model behind lb-embed, returns vectors of this many dimensions.
 EMBEDDING_DIMENSIONS: Final = 1024
@@ -86,23 +86,18 @@ class PolicyPassage(models.Model):
         output_field=SearchVectorField(),
         db_persist=True,
     )
-    # Empty until the corpus is embedded; search then runs on keywords alone.
+    # Empty until the corpus is embedded; search then runs on keywords alone. No index:
+    # the corpus is a few dozen passages, which an exact scan ranks in well under a
+    # millisecond. An approximate index (HNSW) hands back a fixed number of candidates
+    # before Postgres drops the row versions a reseed or `just embed` left behind, so it
+    # loses passages that are there.
     embedding = VectorField(dimensions=EMBEDDING_DIMENSIONS, null=True, blank=True)
 
     class Meta:
-        """Passages in policy order, with indexes for the two halves of hybrid search."""
+        """Passages in policy order, with the full-text index keyword search reads."""
 
         ordering = ("policy__position", "position")
-        indexes = (
-            GinIndex(fields=["search"], name="lb01_passage_search"),
-            HnswIndex(
-                fields=["embedding"],
-                name="lb01_passage_embedding",
-                m=16,
-                ef_construction=64,
-                opclasses=["vector_cosine_ops"],
-            ),
-        )
+        indexes = (GinIndex(fields=["search"], name="lb01_passage_search"),)
 
     def __str__(self) -> str:
         """Name the passage by its key."""

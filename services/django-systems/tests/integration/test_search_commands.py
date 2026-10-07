@@ -1,5 +1,6 @@
 """Integration tests for `embed_lb01` and `eval_lb01_search`, on copies of the data they write."""
 
+import re
 from datetime import date
 from io import StringIO
 from pathlib import Path
@@ -57,6 +58,14 @@ def data_copy(tmp_path: Path, settings: Settings) -> Path:
 
 
 @pytest.fixture
+def data_without_vectors(data_copy: Path) -> Path:
+    """Return the data copy as it was before `just embed` first ran, without recorded passage or golden-set vectors."""
+    (data_copy / "seed" / "lb01" / "embeddings.json").unlink(missing_ok=True)
+    (data_copy / "evals" / "lb01" / "query-embeddings.json").unlink(missing_ok=True)
+    return data_copy
+
+
+@pytest.fixture
 def fake_gateway(monkeypatch: pytest.MonkeyPatch) -> type[FakeGateway]:
     """Make embed_lb01 connect to the fake gateway."""
     FakeGateway.connections = 0
@@ -71,12 +80,14 @@ def run_command(name: str, *args: str) -> str:
     return output.getvalue()
 
 
-def test_embed_records_every_vector_then_nothing_more(data_copy: Path, fake_gateway: type[FakeGateway]) -> None:
+def test_embed_records_every_vector_then_nothing_more(
+    data_without_vectors: Path, fake_gateway: type[FakeGateway]
+) -> None:
     """The first run embeds every text and writes both files; the second connects to nothing."""
     first = run_command("embed_lb01")
 
-    passages = read_embedding_file(data_copy / "seed" / "lb01" / "embeddings.json")
-    queries = read_embedding_file(data_copy / "evals" / "lb01" / "query-embeddings.json")
+    passages = read_embedding_file(data_without_vectors / "seed" / "lb01" / "embeddings.json")
+    queries = read_embedding_file(data_without_vectors / "evals" / "lb01" / "query-embeddings.json")
     assert passages is not None
     assert queries is not None
     embedded = len(passages.vectors) + len(queries.vectors)
@@ -89,7 +100,7 @@ def test_embed_records_every_vector_then_nothing_more(data_copy: Path, fake_gate
     assert fake_gateway.connections == 1
 
 
-@pytest.mark.usefixtures("data_copy")
+@pytest.mark.usefixtures("data_without_vectors")
 def test_embed_says_what_is_missing_without_the_gateway_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     """With texts to embed and no gateway settings, the command stops and names the variables."""
     for name in ("LB_GATEWAY_URL", "LB_SERVICE_NAME", "LB_SERVICE_KEY_FILE"):
@@ -111,12 +122,11 @@ def test_eval_prints_recall_against_the_gate_and_every_miss() -> None:
 
 
 @pytest.mark.usefixtures("fake_gateway")
-def test_eval_measures_hybrid_search_once_vectors_are_recorded(data_copy: Path) -> None:
-    """After `just embed` and `just seed`, the report adds hybrid search, with its gate still unset."""
+def test_eval_measures_hybrid_search_once_vectors_are_recorded(data_without_vectors: Path) -> None:
+    """After `just embed` and `just seed`, the report adds hybrid search, next to its gate."""
     run_command("embed_lb01")
-    seed(data_copy / "seed" / "lb01", date(2026, 10, 1))
+    seed(data_without_vectors / "seed" / "lb01", date(2026, 10, 1))
 
     report = run_command("eval_lb01_search")
 
-    assert "ticket hybrid" in report
-    assert "gate unset" in report
+    assert re.search(r"ticket hybrid +\d\.\d{3} / \d\.\d{3} +gate \d\.\d{3} / \d\.\d{3}", report)
