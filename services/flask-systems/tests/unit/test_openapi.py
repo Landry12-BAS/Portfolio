@@ -125,9 +125,12 @@ def test_every_lb_03_route_needs_a_visitor_token_and_says_what_it_takes_and_give
     assert methods == ["delete", "get", "get", "get", "get", "get", "post", "post"]
 
 
-def test_lb10_routes_need_a_visitor_token_and_start_a_run_with_202() -> None:
-    """Every LB-10 route is behind the visitor token, and a run is started with 202 and polled."""
-    document = create_app(make_platform(), SYSTEMS).api_doc
+def test_lb10_routes_need_a_visitor_token_and_start_a_run_with_202(document: dict[str, Any]) -> None:
+    """Every LB-10 route is behind the visitor token, and a run is started with 202 and polled.
+
+    It reads the document made on a platform with no data, so a machine that has generated LB-05's warehouse
+    builds the same document as CI.
+    """
     lb10_paths = {path: item for path, item in document["paths"].items() if path.startswith("/api/lb10/")}
 
     assert sorted(lb10_paths) == [
