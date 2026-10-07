@@ -120,7 +120,7 @@ Mistral's free mode (trains on inputs unless you opt out).
 | Alias | Used by | Chain, in order |
 |---|---|---|
 | `lb-fast` | Classification, short JSON (LB-01, LB-03, LB-05, LB-09) | Groq gpt-oss-20b → Workers AI gpt-oss-20b → Workers AI glm-4.7-flash |
-| `lb-tools` | Chat and tool calls (LB-01, LB-02, LB-06, LB-07, LB-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter qwen3.8-27b:free (synthetic only) |
+| `lb-tools` | Chat and tool calls (LB-01, LB-02, LB-06, LB-07, LB-08) | Groq gpt-oss-120b → Groq qwen3.8-27b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only; OpenRouter dropped its free qwen3.8-27b) |
 | `lb-reason` | SQL and planning (LB-05, LB-06) | Groq gpt-oss-120b → Workers AI gpt-oss-120b → OpenRouter nemotron-3-super:free (synthetic only) |
 | `lb-long` | Long documents (LB-04) | Workers AI gpt-oss-120b for uploads. OpenRouter nemotron-3-ultra:free for synthetic samples |
 | `lb-vision` | Invoices, screenshots (LB-03, LB-07) | Workers AI Llama 4 Scout → Workers AI Gemma 4 26B → OpenRouter Gemma 4 31B:free (synthetic only) |
@@ -129,7 +129,7 @@ Mistral's free mode (trains on inputs unless you opt out).
 | `lb-stt` | Fast mode (LB-09) | Groq whisper-large-v3-turbo → Workers AI whisper-large-v3-turbo. Private mode runs faster-whisper on the box |
 | `lb-guard` | Every free-text input | Groq llama-prompt-guard-2-86m → Groq llama-prompt-guard-2-22m. Both are Groq previews, and nothing else checks for injection, so the guard fails closed |
 | `lb-judge` | Nightly evals (LB-10) | Groq gpt-oss-120b → Workers AI gpt-oss-120b |
-| `lb-eval-*` | Eval Lab's pinned aliases (LB-10, flask-systems only) | One model each, no fallback: Groq gpt-oss-120b, gpt-oss-20b and qwen3.8-27b; Workers AI gpt-oss-120b, gpt-oss-20b and glm-4.7-flash; OpenRouter qwen3.8-27b and nemotron-3-super (synthetic only: a visitor's prompt never reaches it) |
+| `lb-eval-*` | Eval Lab's pinned aliases (LB-10, flask-systems only) | One model each, no fallback: Groq gpt-oss-120b, gpt-oss-20b and qwen3.8-27b; Workers AI gpt-oss-120b, gpt-oss-20b and glm-4.7-flash; OpenRouter nemotron-3-super (synthetic only: a visitor's prompt never reaches it) |
 
 These model IDs are the candidates on 27 Sep 2026. Each must pass its route's golden
 set in Eval Lab before it serves visitors. The exact provider model IDs, context sizes,

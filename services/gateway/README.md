@@ -15,7 +15,7 @@ routing. Threat model: [`docs/SECURITY.md`](../../docs/SECURITY.md), sections 4 
 | API | OpenAI-compatible: `POST /v1/chat/completions` (JSON or SSE), `POST /v1/embeddings`, `POST /v1/audio/transcriptions` (multipart), `GET /v1/models`. The gateway's own: `POST /v1/rerank`, `POST /v1/guard` |
 | Operations | `GET /v1/usage`, `GET /healthz` (liveness), `GET /readyz` (Redis and providers). The Scope's route: `GET /v1/runs/{runId}/spans` (a run's trace, for the site's server only) |
 | Providers | Groq, Cloudflare Workers AI, OpenRouter; NVIDIA in the `dev` profile only |
-| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard`, `lb-stt`, and Eval Lab's eight pinned `lb-eval-*` ([below](#pinned-eval-aliases)) |
+| Aliases | `lb-fast`, `lb-tools`, `lb-reason`, `lb-long`, `lb-vision`, `lb-judge`, `lb-embed`, `lb-rerank`, `lb-guard`, `lb-stt`, and Eval Lab's seven pinned `lb-eval-*` ([below](#pinned-eval-aliases)) |
 | Routing table | [`routing.yaml`](routing.yaml), validated in CI by `pnpm check` |
 | Callers | Services with an Ed25519-signed token, 10 minutes at most |
 | State | Redis: budgets and quotas (atomic Lua), run spans (streams) |
@@ -137,9 +137,9 @@ whichever provider served the call:
 ## Pinned eval aliases
 
 Eval Lab (LB-10) has to say how one prompt does on one model, which a virtual alias hides behind its
-fallbacks. So `routing.yaml` also holds eight `lb-eval-*` aliases, one for every model on the `lb-fast`,
+fallbacks. So `routing.yaml` also holds seven `lb-eval-*` aliases, one for every model on the `lb-fast`,
 `lb-tools` and `lb-reason` chains that Eval Lab can score: `lb-eval-groq-120b`, `-groq-20b`, `-groq-qwen`,
-`-cf-120b`, `-cf-20b`, `-cf-glm`, `-or-qwen` and `-or-nemotron`.
+`-cf-120b`, `-cf-20b`, `-cf-glm` and `-or-nemotron`.
 
 - **One model, no fallback.** The loader refuses an `lb-eval-*` alias with more than one model on its
   chain. A call that fails is a failed call, and a score is about the model it names.

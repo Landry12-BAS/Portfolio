@@ -180,11 +180,9 @@ providers:
       day: { requests: 1000 }
     headers:
       X-Title: Landry Bodjona portfolio
+    # qwen/qwen3.8-27b:free was dropped from OpenRouter's catalogue (it answered 404, 2026-10-07); only
+    # its paid variant is left, so lb-tools falls back to nemotron-3-super here instead.
     models:
-      qwen3.8-27b:
-        id: qwen/qwen3.8-27b:free
-        context: 262144
-        capabilities: [chat, tools, json_schema, reasoning, vision]
       nemotron-3-super:
         id: nvidia/nemotron-3-super-120b-a12b:free
         context: 262144
@@ -239,7 +237,7 @@ aliases:
       - groq/gpt-oss-120b
       - groq/qwen3.8-27b
       - workers-ai/gpt-oss-120b
-      - openrouter/qwen3.8-27b
+      - openrouter/nemotron-3-super
       - nvidia/nemotron-3-super
 
   lb-reason:
@@ -340,9 +338,9 @@ aliases:
   # chain of one: no fallback, and a call that fails is a failed call, never a different model's answer.
   # There is one for every model on the lb-fast, lb-tools and lb-reason chains that LB-10 can score, so
   # each fallback can be measured on its own. Only the flask-systems service may use them (the loader
-  # refuses a system of another service that lists one), through LB-10. The two OpenRouter aliases are
+  # refuses a system of another service that lists one), through LB-10. The OpenRouter alias is
   # synthetic only: that provider may train on inputs, so a visitor's prompt can never reach it, and
-  # they serve the curated nightly runs and CI. The sizes are lb-tools': a prompt plus its answer stays
+  # it serves the curated nightly runs and CI. The sizes are lb-tools': a prompt plus its answer stays
   # under Groq's 8K tokens a minute.
   lb-eval-groq-120b:
     description: Eval Lab, Groq gpt-oss-120b, pinned
@@ -399,23 +397,12 @@ aliases:
     chain:
       - workers-ai/glm-4.7-flash
 
-  lb-eval-or-qwen:
-    description: Eval Lab, OpenRouter qwen3.8-27b, pinned, synthetic content only
-    kind: chat
-    maxInputTokens: 4000
-    maxOutputTokens: 2048
-    # Free OpenRouter models queue: they are given longer than the Groq and Workers AI ones.
-    timeouts: { responseMs: 60000 }
-    services: [flask-systems]
-    syntheticOnly: true
-    chain:
-      - openrouter/qwen3.8-27b
-
   lb-eval-or-nemotron:
     description: Eval Lab, OpenRouter nemotron-3-super, pinned, synthetic content only
     kind: chat
     maxInputTokens: 4000
     maxOutputTokens: 2048
+    # Free OpenRouter models queue: they are given longer than the Groq and Workers AI ones.
     timeouts: { responseMs: 60000 }
     services: [flask-systems]
     syntheticOnly: true
@@ -602,10 +589,10 @@ systems:
   lb-10:
     name: Eval Lab
     service: flask-systems
-    # The eight pinned eval aliases, and lb-judge for the nightly LLM judge. Visitor runs may only reach
-    # the Groq and Workers AI ones: the service offers no other, and the OpenRouter ones refuse visitor
+    # The seven pinned eval aliases, and lb-judge for the nightly LLM judge. Visitor runs may only reach
+    # the Groq and Workers AI ones: the service offers no other, and the OpenRouter one refuses visitor
     # content here as well.
-    aliases: [lb-eval-groq-120b, lb-eval-groq-20b, lb-eval-groq-qwen, lb-eval-cf-120b, lb-eval-cf-20b, lb-eval-cf-glm, lb-eval-or-qwen, lb-eval-or-nemotron, lb-judge]
+    aliases: [lb-eval-groq-120b, lb-eval-groq-20b, lb-eval-groq-qwen, lb-eval-cf-120b, lb-eval-cf-20b, lb-eval-cf-glm, lb-eval-or-nemotron, lb-judge]
     # A visitor run is the 10 cases of the sample on the edited prompt, once for each of up to two
     # providers (20 calls), plus the production prompt's 10 cases for each provider whose baseline is
     # not cached yet (up to 20 more, once for everybody). A malformed answer is graded as it is and never

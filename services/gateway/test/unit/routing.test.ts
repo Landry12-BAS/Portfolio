@@ -49,7 +49,7 @@ describe('the committed routing table', () => {
     expect([...routing.aliases.keys()]).toEqual([
       'lb-fast', 'lb-tools', 'lb-reason', 'lb-long', 'lb-vision', 'lb-judge', 'lb-embed', 'lb-rerank', 'lb-guard', 'lb-stt',
       'lb-eval-groq-120b', 'lb-eval-groq-20b', 'lb-eval-groq-qwen', 'lb-eval-cf-120b', 'lb-eval-cf-20b', 'lb-eval-cf-glm',
-      'lb-eval-or-qwen', 'lb-eval-or-nemotron',
+      'lb-eval-or-nemotron',
     ])
   })
 
@@ -293,8 +293,8 @@ describe('mistakes the loader catches', () => {
 
   it('waives the visitor rule only for an alias that says it is synthetic only', () => {
     expect(issuesOf(edited((doc) => {
-      delete doc.aliases['lb-eval-or-qwen'].syntheticOnly
-    }))).toEqual(['aliases.lb-eval-or-qwen: no model can take visitor content in production'])
+      delete doc.aliases['lb-eval-or-nemotron'].syntheticOnly
+    }))).toEqual(['aliases.lb-eval-or-nemotron: no model can take visitor content in production'])
   })
 
   it('refuses a visitor quota above the system\'s daily quota', () => {
@@ -362,7 +362,7 @@ describe('Eval Lab\'s pinned aliases', () => {
     expect(pinned.map(alias => alias.chain.map(model => model.ref))).toEqual([
       ['groq/gpt-oss-120b'], ['groq/gpt-oss-20b'], ['groq/qwen3.8-27b'],
       ['workers-ai/gpt-oss-120b'], ['workers-ai/gpt-oss-20b'], ['workers-ai/glm-4.7-flash'],
-      ['openrouter/qwen3.8-27b'], ['openrouter/nemotron-3-super'],
+      ['openrouter/nemotron-3-super'],
     ])
     for (const route of ['lb-fast', 'lb-tools', 'lb-reason']) {
       const served = routing.aliases.get(route)!.chain.filter(model => model.provider.terms === 'production')
@@ -419,18 +419,18 @@ describe('planning a chain', () => {
     const plan = planChain(tools, 'visitor', 'production', chat)
     expect(plan.candidates.map(model => model.ref)).toEqual(['groq/gpt-oss-120b', 'groq/qwen3.8-27b', 'workers-ai/gpt-oss-120b'])
     expect(plan.excluded.map(({ model, reason }) => [model.ref, reason])).toEqual([
-      ['openrouter/qwen3.8-27b', 'visitor-data'],
+      ['openrouter/nemotron-3-super', 'visitor-data'],
       ['nvidia/nemotron-3-super', 'terms'],
     ])
   })
 
   it('offers synthetic samples the rest of the production chain', () => {
     const plan = planChain(tools, 'synthetic', 'production', chat)
-    expect(plan.candidates.map(model => model.ref)).toContain('openrouter/qwen3.8-27b')
+    expect(plan.candidates.map(model => model.ref)).toContain('openrouter/nemotron-3-super')
   })
 
   it('drops models without a capability the call needs', () => {
     const plan = planChain(tools, 'synthetic', 'dev', new Set<Capability>(['chat', 'json_schema']))
-    expect(plan.candidates.map(model => model.ref)).toEqual(['groq/gpt-oss-120b', 'openrouter/qwen3.8-27b'])
+    expect(plan.candidates.map(model => model.ref)).toEqual(['groq/gpt-oss-120b', 'openrouter/nemotron-3-super'])
   })
 })

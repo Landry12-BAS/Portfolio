@@ -61,7 +61,8 @@ PROVIDERS: tuple[Provider, ...] = (
         name="OpenRouter (free hosts)",
         note="Free models behind a router whose hosts may train on inputs: curated nightly runs only.",
         trains_on_inputs=True,
-        aliases={"fast": "lb-eval-or-qwen", "tools": "lb-eval-or-qwen", "reason": "lb-eval-or-nemotron"},
+        # Its free qwen3.8-27b is gone from OpenRouter's catalogue, so nemotron-3-super scores every route here.
+        aliases={"fast": "lb-eval-or-nemotron", "tools": "lb-eval-or-nemotron", "reason": "lb-eval-or-nemotron"},
     ),
 )
 PROVIDERS_BY_ID = {provider.id: provider for provider in PROVIDERS}
