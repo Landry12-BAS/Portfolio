@@ -43,6 +43,10 @@ overrides:
   # copy serves the build and lint chains (Vue's compiler, PostCSS, Vite, ESLint's CSS parser), and the
   # fix is a patch release.
   source-map-js: ^1.2.2
+  # GHSA-pqg4-j6r4-53mv: shell-quote's quote() before 1.11.0 lets a line terminator through after a
+  # `{ comment }` token, so a quoted command can run a second one. Its one user here is
+  # nuxt > @nuxt/devtools > launch-editor, which the site keeps off (see simple-git above).
+  shell-quote: ^1.11.0
 
 # GHSA-86w9-cpqp-85rv: node-forge (up to 1.4.0, the newest release) accepts a forged RSA PKCS#1 v1.5
 # signature. It has no patched release yet, so no pin can fix it. The only way in is
