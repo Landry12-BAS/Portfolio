@@ -5,7 +5,7 @@ import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
-from core.structured import ChatMessage, Completion
+from core.structured import ChatMessage, Completion, ReasoningEffort
 from lb01.models import EMBEDDING_DIMENSIONS
 from lb_common.gateway import GatewayResponseError
 from lb_common.run import Run, current_run
@@ -81,12 +81,20 @@ class FakeChat:
     requests: list[tuple[str, list[ChatMessage]]] = field(default_factory=list)
     runs: list[Run | None] = field(default_factory=list)
     output_caps: dict[str, int] = field(default_factory=dict)
+    efforts: dict[str, ReasoningEffort | None] = field(default_factory=dict)
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
         """Return the alias's next scripted reply, or fail like the gateway; remember the request."""
         self.requests.append((alias, list(messages)))
         self.runs.append(current_run())
         self.output_caps[alias] = max_tokens
+        self.efforts[alias] = reasoning
         if self.fails:
             raise GatewayResponseError("The gateway is unavailable.")
         return Completion(text=self.replies[alias].pop(0), model=f"test/{alias}")

@@ -5,13 +5,17 @@
 // then its transcript and its items are read. The board follows a live meeting over the WebSocket,
 // but a recording holds requests and answers only, so the replay shows the stages from the reads.
 // The runner refuses what it cannot record honestly: a meeting that failed (a curated meeting should
-// be looked into, not shown failing) and one that names no run (so there is no trace to replay). It
+// be looked into, not shown failing), one that names no run (so there is no trace to replay), and one
+// whose decisions and actions are not the ones its card promises (a run that lost its items to the
+// evidence check, or found others, is a run to look into, not a demo). It
 // costs one of the visitor's recordings, the sample's seconds of speech-to-text and two or three model
 // calls.
 import type { Exchange } from '@lb/contracts'
 
 import { itemsSchema, meetingSchema, transcriptSchema } from '../../app/boards/lb-09/schemas.ts'
+import type { Items } from '../../app/boards/lb-09/schemas.ts'
 import { LB09_SAMPLES } from '../../shared/data/samples/lb09.ts'
+import type { MeetingSample } from '../../shared/data/samples/lb09-types.ts'
 import type { Backend } from './backend.ts'
 import type { RecordedRun } from './record.ts'
 
@@ -21,6 +25,14 @@ const MEETINGS_PATH = '/api/lb09/meetings'
 const READ_EVERY_MS = 1_000
 /** How long the worker may take: it gives up on a meeting itself at three minutes. */
 const MEETING_PATIENCE_MS = 240_000
+
+/** Fails unless the meeting found as many decisions and actions as the sample's card promises. */
+function requirePromisedItems(sample: MeetingSample, found: Items): void {
+  const decisions = found.items.filter(item => item.kind === 'decision').length
+  const actions = found.items.length - decisions
+  if (decisions === sample.decisions && actions === sample.actions) return
+  throw new Error(`The meeting came out with ${decisions} decisions and ${actions} actions (${found.dropped} dropped by the checks), where its card promises ${sample.decisions} and ${sample.actions}, so it is not a recording worth showing. Look at the extraction and try again.`)
+}
 
 /** Keeps one request and its answer as the board would have seen them. */
 function exchangeOf(method: 'GET' | 'POST', path: string, body: unknown, answer: { status: number, body?: unknown }): Exchange {
@@ -67,7 +79,7 @@ export async function runLb09Sample(backend: Backend, sampleId: string): Promise
 
   const items = await backend.call('lb-09', 'GET', `${path}/items`)
   if (items.status !== 200) throw new Error(`Reading the items answered status ${items.status}.`)
-  itemsSchema.parse(items.body)
+  requirePromisedItems(sample, itemsSchema.parse(items.body))
   exchanges.push(exchangeOf('GET', `${path}/items`, undefined, items))
 
   return { language: sample.language, exchanges, runId: meeting.run_id }

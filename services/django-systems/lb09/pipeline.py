@@ -27,6 +27,7 @@ from core.structured import (
     ChatModels,
     Completion,
     GatewayChat,
+    ReasoningEffort,
     StructuredAnswer,
     StructuredOutputError,
     ask_for_json,
@@ -34,7 +35,7 @@ from core.structured import (
 from lb09.audio import AudioRefusedError, decode_recording
 from lb09.extraction import check_items
 from lb09.labelling import label_segments
-from lb09.limits import EXTRACT_MAX_TOKENS, LABEL_MAX_TOKENS
+from lb09.limits import EXTRACT_MAX_TOKENS, LABEL_MAX_TOKENS, LABEL_REASONING_EFFORT
 from lb09.models import Item, Meeting
 from lb09.models import Segment as SegmentRow
 from lb09.progress import record_stage
@@ -91,10 +92,16 @@ class CountedChat:
         self.chat = chat
         self.calls = 0
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
         """Count the call, then make it."""
         self.calls += 1
-        return self.chat.complete(alias, messages, max_tokens)
+        return self.chat.complete(alias, messages, max_tokens, reasoning)
 
 
 class MeetingPipeline:
@@ -213,7 +220,9 @@ class MeetingPipeline:
     def label(self, segments: list[Segment], chat: ChatModels) -> tuple[list[LabelledSegment], int]:
         """Ask the labeller which segments each voice said, and keep only the names the code can verify."""
         with self.tracer.span("label speakers") as span:
-            answer = ask_for_json(chat, LABEL_ALIAS, label_messages(segments), LabelAnswer, LABEL_MAX_TOKENS)
+            answer = ask_for_json(
+                chat, LABEL_ALIAS, label_messages(segments), LabelAnswer, LABEL_MAX_TOKENS, LABEL_REASONING_EFFORT
+            )
             labelled = label_segments(segments, answer.value)
             span.set("speakers", len({segment.speaker for segment in labelled}))
             span.set("named", len({segment.label for segment in labelled if not segment.label.startswith("Speaker ")}))

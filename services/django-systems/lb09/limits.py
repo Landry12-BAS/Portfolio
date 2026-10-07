@@ -10,6 +10,8 @@ gateway's quotas for LB-09 in routing.yaml leave room for them.
 from datetime import timedelta
 from typing import Final
 
+from core.structured import ReasoningEffort
+
 # The datasheet's limits.
 MAX_RECORDING_SECONDS: Final = 60.0
 RECORDINGS_PER_VISITOR_PER_DAY: Final = 5
@@ -63,9 +65,16 @@ MIN_EVIDENCE_WORDS: Final = 3
 # one call above, so a meeting is stopped by this code, never refused halfway by the gateway.
 CHAT_CALLS_AT_MOST: Final = 4
 MODEL_CALLS_AT_MOST: Final = CHAT_CALLS_AT_MOST + 1
-# Output caps, which the gateway counts against its token budgets.
-LABEL_MAX_TOKENS: Final = 700
-EXTRACT_MAX_TOKENS: Final = 1_200
+# Output caps, which the gateway counts against its token budgets; a reasoning model's thinking counts against
+# them too. The labeller is asked to think briefly: at its default effort gpt-oss-20b spent 929 to 1,022 of
+# lb-fast's 1,024 tokens thinking about the sample meetings and cut their labels off, and at low effort the
+# labels took 237 to 612. The extractor thinks at its default effort: at low effort it copied the speaker
+# labels into its quotes and lost every item of the Monday meeting to the evidence check, and at its default
+# effort it found every item of the three, in 507 to 955 tokens. Both caps are their aliases' own (measured
+# through the gateway on the samples' real transcripts, 2026-10-07).
+LABEL_MAX_TOKENS: Final = 1_024
+LABEL_REASONING_EFFORT: Final[ReasoningEffort] = "low"
+EXTRACT_MAX_TOKENS: Final = 2_048
 
 # Celery: how long a meeting's task may run before it is stopped (a private transcription is the slow part),
 # and how long a queued task may wait before it is dropped instead of run late.

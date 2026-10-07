@@ -16,6 +16,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
+from openai import omit
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
@@ -32,6 +33,9 @@ FENCED = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 MAX_ECHO_CHARS = 4_000
 # How many validation problems the repair request lists.
 MAX_PROBLEMS = 6
+# How long a reasoning model thinks before it answers, in the values the gateway accepts. The gateway drops it
+# for a model that doesn't reason.
+type ReasoningEffort = Literal["low", "medium", "high"]
 # What the model is told when its reply doesn't fit the schema.
 REPAIR_REQUEST = (
     "Your reply wasn't a JSON object matching the required format. Problems:\n{problems}\n"
@@ -58,8 +62,17 @@ class Completion:
 class ChatModels(Protocol):
     """Chat completions by virtual model alias, such as `lb-fast`."""
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
-        """Return the model's reply to the messages."""
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
+        """Return the model's reply to the messages; `reasoning` sets how long a reasoning model thinks first.
+
+        None leaves the provider's default.
+        """
         ...
 
 
@@ -70,13 +83,20 @@ class GatewayChat:
         """Send completions through `gateway`."""
         self.gateway = gateway
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
-        """Ask the alias for one reply, without streaming."""
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
+        """Ask the alias for one reply, without streaming, sending the reasoning effort only when one is asked for."""
         reply = self.gateway.openai.chat.completions.create(
             model=alias,
             messages=[openai_message(message) for message in messages],
             max_tokens=max_tokens,
             temperature=0,
+            reasoning_effort=reasoning if reasoning is not None else omit,
         )
         text = reply.choices[0].message.content if reply.choices else None
         return Completion(text=text or "", model=reply.model)
@@ -105,10 +125,19 @@ class StructuredAnswer[Answer: BaseModel]:
 
 
 def ask_for_json[Answer: BaseModel](
-    models: ChatModels, alias: str, messages: Sequence[ChatMessage], schema: type[Answer], max_tokens: int
+    models: ChatModels,
+    alias: str,
+    messages: Sequence[ChatMessage],
+    schema: type[Answer],
+    max_tokens: int,
+    reasoning: ReasoningEffort | None = None,
 ) -> StructuredAnswer[Answer]:
-    """Ask for a JSON answer that `schema` accepts, with one repair request if the first reply doesn't fit."""
-    first = models.complete(alias, messages, max_tokens)
+    """Ask for a JSON answer that `schema` accepts, with one repair request if the first reply doesn't fit.
+
+    A reasoning model's thinking counts against `max_tokens`, so a caller whose answers were cut off by it
+    asks for less thinking with `reasoning`; the repair is asked the same way.
+    """
+    first = models.complete(alias, messages, max_tokens, reasoning)
     try:
         return StructuredAnswer(parse_answer(first.text, schema), first.model, attempts=1)
     except (ValueError, ValidationError) as error:
@@ -118,7 +147,7 @@ def ask_for_json[Answer: BaseModel](
         ChatMessage("assistant", first.text[:MAX_ECHO_CHARS]),
         ChatMessage("user", REPAIR_REQUEST.format(problems=problems)),
     ]
-    second = models.complete(alias, repair, max_tokens)
+    second = models.complete(alias, repair, max_tokens, reasoning)
     try:
         return StructuredAnswer(parse_answer(second.text, schema), second.model, attempts=2)
     except (ValueError, ValidationError) as error:

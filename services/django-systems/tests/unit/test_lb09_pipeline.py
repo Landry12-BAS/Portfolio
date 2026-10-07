@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from lb09.evaluation import evaluate_pipeline, script_transcript
 from lb09.golden import GoldenSet, read_golden_set
-from lb09.limits import CHAT_CALLS_AT_MOST
+from lb09.limits import CHAT_CALLS_AT_MOST, EXTRACT_MAX_TOKENS, LABEL_MAX_TOKENS
 from lb09.scripts import Script, read_scripts
 from lb09.storage import AudioStore
 from lb09.tts import Manifest, read_manifest
@@ -73,6 +73,10 @@ def test_the_pipeline_passes_the_golden_set_when_the_model_answers_as_expected(
     assert len(report.grades) == len(golden.cases)
     # Two chat calls a case, under a run of their own, each step a span.
     assert len(chat.requests) == 2 * len(golden.cases)
+    # The labeller is asked to think briefly, so its thinking leaves room for the labels; the extractor thinks
+    # at its default effort, which keeps its quotes to the words that were said.
+    assert chat.output_caps == {"lb-fast": LABEL_MAX_TOKENS, "lb-tools": EXTRACT_MAX_TOKENS}
+    assert chat.efforts == {"lb-fast": "low", "lb-tools": None}
     assert all(run is not None and run.system == "lb-09" and run.data_class == "synthetic" for run in chat.runs)
     assert spans.names()[:4] == ["label speakers", "extract items", "align evidence", "golden case"]
 

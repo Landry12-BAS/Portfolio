@@ -6,12 +6,14 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from openai import omit
 from pydantic import BaseModel, ConfigDict
 
 from core.structured import (
     ChatMessage,
     Completion,
     GatewayChat,
+    ReasoningEffort,
     StructuredOutputError,
     ask_for_json,
     json_object_in,
@@ -36,11 +38,19 @@ class ScriptedChat:
     replies: list[str]
     requests: list[list[ChatMessage]] = field(default_factory=list)
     output_caps: list[int] = field(default_factory=list)
+    efforts: list[ReasoningEffort | None] = field(default_factory=list)
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
-        """Return the next scripted reply, remembering the request and its output cap."""
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
+        """Return the next scripted reply, remembering the request, its output cap and its reasoning effort."""
         self.requests.append(list(messages))
         self.output_caps.append(max_tokens)
+        self.efforts.append(reasoning)
         return Completion(text=self.replies.pop(0), model=f"test/{alias}")
 
 
@@ -81,11 +91,22 @@ def test_a_malformed_reply_gets_one_repair_that_says_what_was_wrong() -> None:
 
     assert answer.attempts == 2
     assert chat.output_caps == [100, 100]
+    assert chat.efforts == [None, None]
     repair = chat.requests[1]
     assert repair[:2] == QUESTION
     assert repair[2].role == "assistant"
     assert "count: Input should be a valid integer" in repair[3].content
     assert "mood: Extra inputs are not permitted" in repair[3].content
+
+
+def test_the_reasoning_effort_goes_with_the_question_and_its_repair() -> None:
+    """A caller that asks a reasoning model to think briefly asks the repair the same way."""
+    chat = ScriptedChat(["not yet", '{"category": "late", "count": 1}'])
+
+    answer = ask_for_json(chat, "lb-fast", QUESTION, Answer, max_tokens=100, reasoning="low")
+
+    assert answer.attempts == 2
+    assert chat.efforts == ["low", "low"]
 
 
 def test_a_second_malformed_reply_is_an_error() -> None:
@@ -131,3 +152,9 @@ def test_gateway_chat_asks_the_alias_at_temperature_zero() -> None:
     assert calls[0]["temperature"] == 0
     assert calls[0]["max_tokens"] == 300
     assert calls[0]["messages"][1] == {"role": "user", "content": "Classify this."}
+    # No effort asked for, none sent: the SDK leaves an omitted field out of the request.
+    assert calls[0]["reasoning_effort"] is omit
+
+    GatewayChat(cast(Gateway, gateway)).complete("lb-fast", QUESTION, max_tokens=300, reasoning="low")
+
+    assert calls[1]["reasoning_effort"] == "low"

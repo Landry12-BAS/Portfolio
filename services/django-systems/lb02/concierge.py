@@ -36,7 +36,15 @@ from django.utils import timezone
 from openai import OpenAIError
 from redis import Redis
 
-from core.structured import ChatMessage, ChatModels, Completion, GatewayChat, StructuredOutputError, ask_for_json
+from core.structured import (
+    ChatMessage,
+    ChatModels,
+    Completion,
+    GatewayChat,
+    ReasoningEffort,
+    StructuredOutputError,
+    ask_for_json,
+)
 from core.tool_chat import GatewayToolChat, ToolChat, ToolChatMessage, ToolReply
 from lb02.booking import DATABASE, BookingService, CalendarNotifier, Clock, bookable_days, local_day
 from lb02.conversations import (
@@ -157,11 +165,17 @@ class BudgetedChat:
         self.chat = chat
         self.conversation = conversation
 
-    def complete(self, alias: str, messages: Sequence[ChatMessage], max_tokens: int) -> Completion:
+    def complete(
+        self,
+        alias: str,
+        messages: Sequence[ChatMessage],
+        max_tokens: int,
+        reasoning: ReasoningEffort | None = None,
+    ) -> Completion:
         """Ask the alias for a reply, unless the conversation has no calls left."""
         if not spend_call(self.conversation):
             raise BudgetSpentError
-        return self.chat.complete(alias, messages, max_tokens)
+        return self.chat.complete(alias, messages, max_tokens, reasoning)
 
 
 def clean_reply(text: str) -> str:

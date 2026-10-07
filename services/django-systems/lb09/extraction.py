@@ -5,8 +5,9 @@ for in the transcript (folded, so punctuation and case count for nothing; lb09/t
 time span is the span of the segments the quote falls in. The model never supplies a time. An item whose
 quote cannot be found, that repeats another, whose quote is too short to be found only where it was said,
 or that is an instruction spoken to an assistant, is dropped and counted, so the page can say how many
-the checks removed. An owner must be a speaker's label or a name said in the meeting, or it is dropped
-to nobody: the model may not invent one.
+the checks removed. A segment number or a speaker label the model copied in front of a quote was never said,
+so it is taken off first, and the rest must still be found word for word. An owner must be a speaker's label
+or a name said in the meeting, or it is dropped to nobody: the model may not invent one.
 """
 
 import re
@@ -24,6 +25,10 @@ SPOKEN_TO_ASSISTANT = re.compile(
     r"|\bignore (?:the |your |all |any )?(?:previous |above |earlier |other |rest of the )?"
     r"(?:instructions|notes|rules)\b"
 )
+
+
+# The number in front of a line of the transcript as the extractor reads it: "[3] Hannah: Good. Then we roast".
+LINE_NUMBER = re.compile(r"\[\d{1,3}\]\s*")
 
 
 @dataclass(frozen=True)
@@ -76,6 +81,22 @@ def place_quote(quote: str, transcript: FoldedTranscript) -> Placed | None:
     return Placed(first=transcript.segment_at(start), last=transcript.segment_at(end))
 
 
+def spoken_words(quote: str, labels: set[str]) -> str:
+    """Return a quote without the segment number or the speaker label a model may copy in front of it.
+
+    The extractor reads each line as "[3] Hannah: Good. Then we roast", and at a low reasoning effort it copied
+    the label into every quote. Only a label of this transcript, written as it is, is taken off.
+    """
+    text = quote.strip()
+    numbered = LINE_NUMBER.match(text)
+    if numbered:
+        text = text[numbered.end() :]
+    label, colon, rest = text.partition(":")
+    if colon and label.strip() in labels:
+        return rest.strip()
+    return text
+
+
 def is_spoken_to_assistant(quote: str) -> bool:
     """Tell whether a quote is an instruction to an assistant, which no meeting agreed to."""
     return SPOKEN_TO_ASSISTANT.search(fold(quote)) is not None
@@ -114,6 +135,7 @@ def check_items(answer: ExtractAnswer, segments: list[LabelledSegment]) -> Check
     """Verify every item the model gave against the transcript, place it in time, and drop what fails."""
     transcript = fold_transcript(segments)
     names = spoken_names(segments)
+    labels = {segment.label for segment in segments}
     seen: set[tuple[str, str]] = set()
     checked = Checked(items=[], dropped=0)
     proposed: list[tuple[ItemKind, DecisionAnswer]] = [
@@ -121,20 +143,26 @@ def check_items(answer: ExtractAnswer, segments: list[LabelledSegment]) -> Check
         *(("action", item) for item in answer.actions[:MAX_ACTIONS]),
     ]
     for kind, item in proposed:
-        placed = place_quote(item.evidence, transcript)
+        evidence = spoken_words(item.evidence, labels)
+        placed = place_quote(evidence, transcript)
         key = (kind, fold(item.text))
-        if placed is None or key in seen or is_spoken_to_assistant(item.evidence) or is_spoken_to_assistant(item.text):
+        if placed is None or key in seen or is_spoken_to_assistant(evidence) or is_spoken_to_assistant(item.text):
             checked.dropped += 1
             continue
         seen.add(key)
-        checked.items.append(found_item(kind, item, placed, segments, names))
+        checked.items.append(found_item(kind, item, evidence, placed, segments, names))
     return checked
 
 
 def found_item(
-    kind: ItemKind, item: DecisionAnswer, placed: Placed, segments: list[LabelledSegment], names: set[str]
+    kind: ItemKind,
+    item: DecisionAnswer,
+    evidence: str,
+    placed: Placed,
+    segments: list[LabelledSegment],
+    names: set[str],
 ) -> FoundItem:
-    """Build the item the page shows: the model's words, the checked owner, and the seconds derived in code."""
+    """Build the item the page shows: the model's words, the words said, the checked owner, the seconds from code."""
     owner = checked_owner(item.owner, names) if isinstance(item, ActionAnswer) else None
     deadline = item.deadline if isinstance(item, ActionAnswer) else None
     return FoundItem(
@@ -142,7 +170,7 @@ def found_item(
         text=item.text,
         owner=owner,
         deadline=deadline,
-        evidence=item.evidence,
+        evidence=evidence,
         start=segments[placed.first].start,
         end=segments[placed.last].end,
         first_segment=placed.first,

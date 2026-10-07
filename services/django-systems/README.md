@@ -319,9 +319,27 @@ LB-09's grading is tested the same way: a scripted model that answers what the g
 passes every check at 1.0 on every case through the real pipeline, timed by the committed audio's
 manifest, which proves the server's own alignment turns the model's quotes into the right seconds;
 models that paraphrase a quote, invent an item, obey the line spoken to the assistant or name a
-speaker who never introduced themselves are caught by the code. **The live eval and fast mode's word
-error rate have not been run**: no provider key was available, so no score and no fast-mode rate is
-claimed anywhere; the gate's numbers are targets.
+speaker who never introduced themselves are caught by the code.
+
+The live eval was first run on 7 October 2026, through the gateway on a development machine, with the
+labeller on `lb-fast` (gpt-oss-20b) at low reasoning effort and the extractor on `lb-tools`
+(gpt-oss-120b) at its default effort. It is **under its gate**:
+
+| Recall | Precision | Owner | Deadline | Span | Labels | Evidence |
+|---|---|---|---|---|---|---|
+| 1.00 | 0.93 | 0.75 (gate 0.90) | 0.88 (gate 0.90) | 1.00 | 0.71 (gate 0.80) | 1.00 |
+
+Every expected item is found, with its evidence, in the turns it was said in. What falls short is the
+speaker labels, and the owners that follow them: on the Monday meeting the labeller put the names on the
+wrong voices. Graded on the labels alone, `lb-fast` scored 0.70 at low effort and about the same at its
+default effort (which needs more than the alias's 1,024 tokens, so it was given 2,048 for the test),
+`lb-tools` 0.75 at low effort and 0.85 at its default effort (five of the six meetings: the sixth hit a
+spent budget). So the next step is the labeller on `lb-tools` at its default effort, which spends about
+1,400 more gpt-oss-120b tokens a meeting, measured on the full set before it is switched. Two earlier
+settings were measured and dropped: both calls at default effort cut the labels off at `lb-fast`'s cap,
+and both at low effort had the extractor copy the speaker labels into its quotes, which the evidence check
+rejected (the check now takes off a copied segment number or label, and the prompt says not to copy them).
+Fast mode's word error rate has not been measured yet (`just wer-lb09 --mode fast`).
 
 Private mode's word error rate was measured with `just wer-lb09 --mode private` on 5 October 2026,
 on a development machine (x86-64, 4 shared cores), not on the box (an Ampere A1), with faster-whisper's

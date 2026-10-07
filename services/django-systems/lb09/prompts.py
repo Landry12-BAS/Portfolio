@@ -56,8 +56,10 @@ in the transcript, or the name used for them in the meeting; null when nobody wa
 none was said. Never invent an owner or a deadline.
 
 Rules:
-- "evidence" is one sentence copied word for word from the transcript that shows the item. Copy it \
-exactly: no paraphrase, no words added or removed. An item without such a sentence is not an item.
+- "evidence" is one sentence copied word for word from what was said that shows the item, without the \
+segment number or the speaker label. Copy it exactly: no paraphrase, no words added or removed. An item \
+without such a sentence is not an item.
+- A job someone takes on is an action item only, not a decision as well.
 - A joke, a suggestion that was turned down, and a question that got no answer are not items.
 - Write "text" as a short, plain summary of the item, in English.
 
