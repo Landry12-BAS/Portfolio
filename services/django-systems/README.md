@@ -354,9 +354,11 @@ whatever ends the process that holds it. The child that ran one is above the wor
 `--max-memory-per-child` of 300,000 KB and is replaced after the meeting, on purpose: the model
 is loaded again for the next private meeting (0.4 to 2.9 seconds), and the worker never keeps one.
 
-Search recall today, keyword search only: 1.000 at 4 when searching by the classifier's
-English query, 0.441 when searching by the customer's own words, and 0 of 14 Czech
-tickets. The hybrid numbers join the gate once `just embed` has recorded the vectors.
+Search recall on the 34 golden tickets, measured on 2026-10-07 with the vectors `just embed`
+recorded through `lb-embed` (Workers AI's `bge-m3`): searching by the classifier's English
+query, 1.000 at 4 for keyword and hybrid alike; searching by the customer's own words, 0.441
+at 4 and 0.500 at 8 for keyword, and 0.823 at 4 and 0.941 at 8 for hybrid. The keywords find
+none of the 14 Czech tickets at 4, and hybrid finds 10. Both are in the gate.
 
 ## Running it locally
 
@@ -416,8 +418,9 @@ Known gaps, measured or stated rather than hidden:
   approves still stand behind it.
 - Names and street addresses aren't redacted: no pattern finds them reliably. Only
   providers that never train on inputs read visitor tickets.
-- Until the vectors are recorded, search runs on keywords, and Czech tickets depend on
-  the classifier's English query.
+- Four of the 14 Czech tickets are still missed at 4 by hybrid search (`cancel-after-roast`,
+  `cancel-order`, `refund-not-received`, `where-is-my-order`); for them the classifier's
+  English query, which finds every policy, is what reaches the right passage.
 
 ## LB-02 threat model
 

@@ -26,3 +26,6 @@ data/generated/
 .output-e2e/
 # Checkouts that coding agents make for parallel work: local, never part of the repository.
 .claude/worktrees/
+
+# Celery beat keeps its schedule next to where `just worker` runs.
+services/django-systems/celerybeat-schedule*
