@@ -38,7 +38,12 @@ const balanced = computed(() => props.journal !== null && props.journal.total_de
       <p class="about">
         {{ t('lb03.journal.about', { reference: journal.reference, date: journal.date, currency: journal.currency }) }}
       </p>
-      <div class="scroll">
+      <div
+        class="scroll"
+        role="region"
+        tabindex="0"
+        :aria-label="t('lb03.journal.title')"
+      >
         <table class="table">
           <caption class="lb-sr-only">
             {{ t('lb03.journal.caption') }}

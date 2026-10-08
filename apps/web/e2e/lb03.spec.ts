@@ -520,7 +520,7 @@ test.describe('reading modes, the datasheet link and the page', () => {
   test('shows less in the Brief reading, and the datasheet links to the board in both languages', async ({ page }) => {
     await page.goto('/systems/lb-03')
     await expect(page.getByText('The evaluation board for this part is open.')).toBeVisible()
-    await page.getByRole('link', { name: 'Open the evaluation board' }).click()
+    await page.getByRole('link', { name: 'Open the evaluation board' }).first().click()
     await expect(page).toHaveURL(/\/systems\/lb-03\/board$/)
     await expect(page.getByTestId('quota')).toContainText('10 of 10')
 
@@ -536,7 +536,7 @@ test.describe('reading modes, the datasheet link and the page', () => {
     await expect(page.getByTestId('quota')).toBeVisible()
 
     await page.goto('/cs/systems/lb-03')
-    await page.getByRole('link', { name: 'Otevřít vývojovou desku' }).click()
+    await page.getByRole('link', { name: 'Otevřít vývojovou desku' }).first().click()
     await expect(page).toHaveURL(/\/cs\/systems\/lb-03\/board$/)
   })
 

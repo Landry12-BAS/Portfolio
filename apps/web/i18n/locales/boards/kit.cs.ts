@@ -31,6 +31,7 @@ const kit = {
     time: 'Čas',
     timeSoFar: 'Čas zatím',
     tableLabel: 'Záznam běhu',
+    scrollHint: 'Tabulku posuňte do strany: uvidíte druh, model a tokeny každého kroku.',
     caption: 'Každý krok, volání nástroje a volání modelu v běhu, s modelem, tokeny a časem',
     columns: {
       step: 'Krok',

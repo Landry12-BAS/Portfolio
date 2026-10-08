@@ -19,6 +19,19 @@ test.describe('datasheet', () => {
     await expect(page.getByRole('heading', { name: 'Signal chain' })).toBeHidden()
   })
 
+  test('opens the evaluation board from the top of the sheet, before anything else to read', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/systems/lb-06')
+    const action = page.getByRole('link', { name: 'Open the evaluation board' }).first()
+    await expect(action).toBeInViewport()
+    const actionTop = (await action.boundingBox())!.y
+    const modesTop = (await page.getByRole('group', { name: 'Reading mode' }).boundingBox())!.y
+    expect(actionTop).toBeLessThan(modesTop)
+
+    await action.click()
+    await expect(page).toHaveURL(/\/systems\/lb-06\/board$/)
+  })
+
   test('steps to the next part', async ({ page }) => {
     await page.goto('/systems/lb-01')
     await page.getByRole('navigation', { name: 'Other parts' }).getByRole('link', { name: /LB-02 Booking Concierge/ }).click()

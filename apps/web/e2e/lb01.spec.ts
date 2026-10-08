@@ -270,7 +270,7 @@ test.describe('reading modes, the datasheet link and the headers', () => {
   test('shows less in the Brief reading, and the datasheet links to the board in both languages', async ({ page }) => {
     await page.goto('/systems/lb-01')
     await expect(page.getByText('The evaluation board for this part is open.')).toBeVisible()
-    await page.getByRole('link', { name: 'Open the evaluation board' }).click()
+    await page.getByRole('link', { name: 'Open the evaluation board' }).first().click()
     await expect(page).toHaveURL(/\/systems\/lb-01\/board$/)
     await expect(page.getByTestId('quota')).toContainText('20 of 20')
     await expect(page.locator('.pipeline')).toBeVisible()
@@ -281,7 +281,7 @@ test.describe('reading modes, the datasheet link and the headers', () => {
     await expect(page.getByTestId('quota')).toBeVisible()
 
     await page.goto('/cs/systems/lb-01')
-    await page.getByRole('link', { name: 'Otevřít vývojovou desku' }).click()
+    await page.getByRole('link', { name: 'Otevřít vývojovou desku' }).first().click()
     await expect(page).toHaveURL(/\/cs\/systems\/lb-01\/board$/)
   })
 
@@ -317,6 +317,18 @@ test.describe('reading modes, the datasheet link and the headers', () => {
     await expect(page.getByTestId('ticket-status')).toHaveText('Waiting for approval', { timeout: 15_000 })
     await page.goto('/runs/run-doesnotexist0000')
     expect((await context.cookies()).map(cookie => cookie.name)).toEqual(['__Host-lb_session'])
+  })
+
+  test('says on a phone that the trace scrolls sideways, and not where it fits', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openBoard(page)
+    await page.getByTestId('start-sample').click()
+    await expect(page.getByTestId('scope-row').first()).toContainText('support ticket', { timeout: 15_000 })
+    const hint = page.getByText('Scroll the table sideways for each step’s kind, model and tokens.')
+    await expect(hint).toBeVisible()
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await expect(hint).toBeHidden()
   })
 
   test('does not scroll sideways on a phone', async ({ page }) => {

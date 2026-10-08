@@ -168,6 +168,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.getByTestId('start-sample').click()
         await waitForReading(page)
         await expectNoViolations(page)
+        // A table wider than a phone scrolls in its own frame, which a keyboard reaches by its name: whether it
+        // scrolls depends on the reading's values, so the frame is checked here and not only through axe.
+        const fields = page.getByTestId('fields').getByRole('region')
+        await expect(fields).toHaveAttribute('tabindex', '0')
+        await expect(fields).toHaveAccessibleName(language.code === 'en' ? 'Fields of the document' : 'Pole dokumentu')
       })
     })
   }

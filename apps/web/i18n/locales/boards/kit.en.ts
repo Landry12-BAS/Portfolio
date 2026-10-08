@@ -31,6 +31,7 @@ const kit = {
     time: 'Time',
     timeSoFar: 'Time so far',
     tableLabel: 'Trace of the run',
+    scrollHint: 'Scroll the table sideways for each step’s kind, model and tokens.',
     caption: 'Every step, tool call and model call of the run, with its model, its tokens and its time',
     columns: {
       step: 'Step',

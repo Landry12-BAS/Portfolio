@@ -162,6 +162,7 @@ const lb03 = {
       amount: 'VAT',
     },
     caption: 'Fields of the document, with their values, where they are on the page and how sure the reader is',
+    region: 'Fields of the document',
     columns: {
       field: 'Field',
       value: 'Value',

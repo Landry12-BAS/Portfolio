@@ -119,6 +119,13 @@ function tokens(row: TimelineRow): string {
       </div>
     </dl>
 
+    <p
+      v-if="hasRows && !brief"
+      class="scroll-hint"
+      aria-hidden="true"
+    >
+      {{ t('board.scope.scrollHint') }}
+    </p>
     <div
       v-if="hasRows && !brief"
       class="scroll"
@@ -239,9 +246,26 @@ function tokens(row: TimelineRow): string {
 
 <style scoped>
 .scope {
+  container: scope / inline-size;
   display: grid;
   gap: 10px;
   min-width: 0;
+}
+
+/* On a narrow frame the table scrolls sideways (below), and nothing else would say so: the time column
+   ends at the frame's edge as if it were the last. The hint is visual; a screen reader reads the table
+   by its columns and needs no scrolling. */
+.scroll-hint {
+  display: none;
+  margin: 0;
+  font-size: 12px;
+  color: var(--lb-graphite);
+}
+
+@container scope (max-width: 720px) {
+  .scroll-hint {
+    display: block;
+  }
 }
 
 .head {

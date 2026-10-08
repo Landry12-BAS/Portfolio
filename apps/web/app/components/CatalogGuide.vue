@@ -145,6 +145,10 @@ function techniqueList(keys: readonly Technique[]) {
                 :size="18"
               />
               {{ system.name }}
+              <span class="compact">
+                <span class="compact-action">{{ system.visitorAction }}</span>
+                <span class="compact-meta"><span class="compact-runtime">{{ system.runtime }}</span> · {{ techniqueList(system.techniques) }}</span>
+              </span>
             </td>
             <td>{{ system.visitorAction }}</td>
             <td class="be">
@@ -237,6 +241,7 @@ function techniqueList(keys: readonly Technique[]) {
 }
 
 .table-scroll {
+  container: catalog / inline-size;
   overflow-x: auto;
   border-top: 1.5px solid var(--lb-ink);
 }
@@ -301,5 +306,49 @@ td {
 .empty {
   font-style: italic;
   color: var(--lb-graphite);
+}
+
+/* What the compact table shows under a system's name, where the six columns don't fit. */
+.compact {
+  display: none;
+}
+
+/* Narrower than the full table (a phone, a tablet, a narrow window): two columns, and what a visitor
+   does, the back end and the techniques under each name, rather than four columns hidden behind a
+   sideways scroll that nothing points to. The filters above still choose by back end and technique. */
+@container catalog (max-width: 919px) {
+  table {
+    min-width: 0;
+  }
+
+  th:nth-child(n + 3),
+  td:nth-child(n + 3) {
+    display: none;
+  }
+
+  .sys {
+    white-space: normal;
+  }
+
+  .compact {
+    display: block;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  .compact-action,
+  .compact-meta {
+    display: block;
+  }
+
+  .compact-meta {
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--lb-graphite);
+  }
+
+  .compact-runtime {
+    font-weight: 600;
+  }
 }
 </style>

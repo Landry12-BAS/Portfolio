@@ -160,6 +160,7 @@ const lb03 = {
       amount: 'DPH',
     },
     caption: 'Pole dokumentu s jejich hodnotami, místem na stránce a jistotou čtečky',
+    region: 'Pole dokumentu',
     columns: {
       field: 'Pole',
       value: 'Hodnota',

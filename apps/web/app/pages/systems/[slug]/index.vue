@@ -57,6 +57,19 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
         <p class="fn">
           {{ system.function }}
         </p>
+        <!-- The datasheet's one action, where the eye lands: the status line at the foot of the page
+             repeats it for a visitor who read to the end. -->
+        <NuxtLinkLocale
+          v-if="board"
+          :to="`/systems/${system.slug}/board`"
+          class="board-cta"
+        >
+          {{ t('datasheet.openBoard') }}
+          <LbIcon
+            name="arrow-right"
+            :size="16"
+          />
+        </NuxtLinkLocale>
       </div>
       <div class="meta">
         <LbPill :variant="phaseVariant">
@@ -357,6 +370,24 @@ h1 {
   align-items: center;
   gap: 6px;
   font-weight: 700;
+}
+
+.board-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 16px;
+  font: 600 14px/1 var(--lb-font-sans);
+  color: var(--lb-sheet);
+  text-decoration: none;
+  background: var(--lb-ink);
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.board-cta:hover {
+  background: var(--lb-ink-hover);
 }
 
 .pager {
