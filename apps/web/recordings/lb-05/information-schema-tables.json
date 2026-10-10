@@ -1,0 +1,173 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "information-schema-tables",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:42:25.005Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "List every table in the database."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [],
+          "chart": null,
+          "elapsed_ms": 1300,
+          "explanation": null,
+          "explanation_source": null,
+          "message": "No table contains the list of table names, and metadata tables are not allowed",
+          "model_calls": 1,
+          "outcome": "declined",
+          "remaining_questions": 24,
+          "result": null,
+          "run_id": "BPpeZQP4uelGqEjVj9uDKQ"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "ab65e5d4406a8b2f",
+        "parentId": "6441263c9fe4dd2b",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373343678,
+        "endMs": 1791373343678,
+        "attrs": {
+          "metrics": "",
+          "dimensions": "",
+          "ranges": ""
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "531fd4a524a0b6a9",
+        "parentId": "f9d2fb6b56b98d37",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373343687,
+        "endMs": 1791373343687,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "0e2e28e023345af7",
+        "parentId": "f9d2fb6b56b98d37",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373343687,
+        "endMs": 1791373343687,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "9c820592bcdfe032",
+        "parentId": "f9d2fb6b56b98d37",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373343687,
+        "endMs": 1791373344974,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "f9d2fb6b56b98d37",
+        "parentId": "5d38f461d48b814d",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373343686,
+        "endMs": 1791373344975,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2129,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1833,
+          "outputTokens": 289
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "5d38f461d48b814d",
+        "parentId": "6441263c9fe4dd2b",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373343681,
+        "endMs": 1791373344978,
+        "attrs": {
+          "attempts": 1,
+          "answerable": false,
+          "sql_chars": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "BPpeZQP4uelGqEjVj9uDKQ",
+        "system": "lb-05",
+        "spanId": "6441263c9fe4dd2b",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373343678,
+        "endMs": 1791373344978,
+        "attrs": {
+          "outcome": "declined",
+          "model_calls": 1,
+          "queries": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 1,
+    "steps": 2,
+    "durationMs": 1300
+  }
+}

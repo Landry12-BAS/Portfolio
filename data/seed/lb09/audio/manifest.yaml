@@ -1,0 +1,78 @@
+# Made by `just tts-lb09` from the scripts in data/seed/lb09: do not edit by hand.
+# It says what each committed audio file is, and when each turn of its script is spoken.
+engine: flite-2.2-current
+sample_rate: 16000
+meetings:
+  grinder-repair:
+    file: grinder-repair.mp3
+    bytes: 96848
+    sha256: f04dcba9974816bca814b9badecf51f12ae75bb398583101f18f8eaac2470997
+    seconds: 24.078
+    turns:
+    - {start: 0.3, end: 4.14}
+    - {start: 4.54, end: 7.47}
+    - {start: 7.87, end: 11.008}
+    - {start: 11.408, end: 14.623}
+    - {start: 15.023, end: 19.553}
+    - {start: 19.953, end: 23.778}
+  monday-roasting-plan:
+    file: monday-roasting-plan.mp3
+    bytes: 164960
+    sha256: 47d01fe2c29be907b21884bbd41ec050e18e81168359bda66847420ec9f4eeda
+    seconds: 41.085
+    turns:
+    - {start: 0.3, end: 4.325}
+    - {start: 4.725, end: 10.95}
+    - {start: 11.35, end: 14.94}
+    - {start: 15.34, end: 19.7}
+    - {start: 20.1, end: 23.79}
+    - {start: 24.19, end: 28.33}
+    - {start: 28.73, end: 31.205}
+    - {start: 31.605, end: 34.56}
+    - {start: 34.96, end: 38.56}
+    - {start: 38.96, end: 40.785}
+  newsletter-draft:
+    file: newsletter-draft.mp3
+    bytes: 90656
+    sha256: 273e41ca69d3422ee7c030b7ff1bb5d5efbb94a05f2760b4cb0036d621f423dd
+    seconds: 22.525
+    turns:
+    - {start: 0.3, end: 4.875}
+    - {start: 5.275, end: 8.415}
+    - {start: 8.815, end: 14.535}
+    - {start: 14.935, end: 16.725}
+    - {start: 17.125, end: 18.725}
+    - {start: 19.125, end: 22.225}
+  quarterly-check-in:
+    file: quarterly-check-in.mp3
+    bytes: 112400
+    sha256: 1b4744a5f5e2adc98f6c2df075f726f122d4a19e0bad23b859b9900977bd1a6f
+    seconds: 27.96
+    turns:
+    - {start: 0.3, end: 4.73}
+    - {start: 5.13, end: 9.945}
+    - {start: 10.345, end: 15.01}
+    - {start: 15.41, end: 19.65}
+    - {start: 20.05, end: 23.72}
+    - {start: 24.12, end: 27.66}
+  tasting-notes-overlap:
+    file: tasting-notes-overlap.mp3
+    bytes: 54656
+    sha256: e8fd20d0010c4f3ff820f1d2c38a3b7b789c875bebaf3d30c0f07357bcc5b134
+    seconds: 13.525
+    turns:
+    - {start: 0.3, end: 5.3}
+    - {start: 4.1, end: 7.435}
+    - {start: 6.435, end: 8.93}
+    - {start: 9.33, end: 13.225}
+  weekend-staffing:
+    file: weekend-staffing.mp3
+    bytes: 80144
+    sha256: 23bc4f4f24f294edf43743ae09d89e34b157120335a613dd79911fa1b8b78d62
+    seconds: 19.891
+    turns:
+    - {start: 0.3, end: 4.225}
+    - {start: 4.625, end: 6.837}
+    - {start: 7.237, end: 13.167}
+    - {start: 13.567, end: 16.682}
+    - {start: 17.082, end: 19.591}

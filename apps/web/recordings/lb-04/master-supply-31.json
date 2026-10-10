@@ -1,0 +1,105 @@
+{
+  "v": 1,
+  "system": "lb-04",
+  "sample": "master-supply-31",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:39:58.169Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb04/contracts",
+        "body": {
+          "from": "sample",
+          "sampleId": "master-supply-31"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "6a473243-3b34-4744-b60e-c1973866ad7a",
+          "runId": "6a473243-3b34-4744-b60e-c1973866ad7a",
+          "title": "Master supply agreement, 31 pages",
+          "origin": "sample",
+          "sampleId": "master-supply-31",
+          "state": "queued",
+          "failure": null,
+          "pages": null,
+          "createdAt": "2026-10-07T11:39:56.609Z",
+          "expiresAt": "2026-10-07T12:39:56.609Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/6a473243-3b34-4744-b60e-c1973866ad7a"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "6a473243-3b34-4744-b60e-c1973866ad7a",
+          "runId": "6a473243-3b34-4744-b60e-c1973866ad7a",
+          "title": "Master supply agreement, 31 pages",
+          "origin": "sample",
+          "sampleId": "master-supply-31",
+          "state": "failed",
+          "failure": {
+            "code": "too_many_pages",
+            "message": "The contract has more than 30 pages."
+          },
+          "pages": null,
+          "createdAt": "2026-10-07T11:39:56.609Z",
+          "expiresAt": "2026-10-07T12:39:56.609Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "6a473243-3b34-4744-b60e-c1973866ad7a",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "6a473243-3b34-4744-b60e-c1973866ad7a",
+        "system": "lb-04",
+        "spanId": "93a15ff7eaa3c721",
+        "parentId": "7b368c8281d3986d",
+        "kind": "system.step",
+        "name": "extract text",
+        "status": "ok",
+        "startMs": 1791373196641,
+        "endMs": 1791373197133,
+        "attrs": {
+          "refused": "too_many_pages"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "6a473243-3b34-4744-b60e-c1973866ad7a",
+        "system": "lb-04",
+        "spanId": "7b368c8281d3986d",
+        "kind": "system.run",
+        "name": "contract review",
+        "status": "error",
+        "startMs": 1791373196609,
+        "endMs": 1791373197150,
+        "attrs": {
+          "outcome": "too_many_pages",
+          "origin": "sample",
+          "pages": 0,
+          "model_calls": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 1,
+    "durationMs": 541
+  }
+}

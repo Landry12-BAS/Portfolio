@@ -1,0 +1,5 @@
+/* Self-hosted variable fonts with the width axis: headings use Archivo expanded. */
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/martian-mono/wdth.css";
+@import "./tokens.css";
+@import "./base.css";

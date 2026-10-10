@@ -1,0 +1,588 @@
+{
+  "v": 1,
+  "system": "lb-09",
+  "sample": "monday-roasting-plan",
+  "origin": "live",
+  "recordedAt": "2026-10-07T15:29:28.453Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb09/meetings",
+        "body": {
+          "source": "sample",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "language": "en"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "vul2izUr5sXujged",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "status": "received",
+          "stage": "received",
+          "failure": null,
+          "run_id": "9etJlCKhenk-MU8GMl0v1Q",
+          "language": "en",
+          "heard_language": "",
+          "transcriber": "",
+          "duration_seconds": 0,
+          "source_bytes": 164960,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-07T15:29:17.659Z",
+          "updated_at": "2026-10-07T15:29:17.659Z",
+          "expires_at": "2026-10-08T15:29:17.658Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "vul2izUr5sXujged",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "transcribing",
+          "failure": null,
+          "run_id": "9etJlCKhenk-MU8GMl0v1Q",
+          "language": "en",
+          "heard_language": "",
+          "transcriber": "",
+          "duration_seconds": 41.085,
+          "source_bytes": 164960,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-07T15:29:17.659Z",
+          "updated_at": "2026-10-07T15:29:18.756Z",
+          "expires_at": "2026-10-08T15:29:17.658Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "vul2izUr5sXujged",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "labelling",
+          "failure": null,
+          "run_id": "9etJlCKhenk-MU8GMl0v1Q",
+          "language": "en",
+          "heard_language": "English",
+          "transcriber": "lb-stt",
+          "duration_seconds": 41.085,
+          "source_bytes": 164960,
+          "model_calls": 0,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-07T15:29:17.659Z",
+          "updated_at": "2026-10-07T15:29:22.251Z",
+          "expires_at": "2026-10-08T15:29:17.658Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "vul2izUr5sXujged",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "status": "processing",
+          "stage": "extracting",
+          "failure": null,
+          "run_id": "9etJlCKhenk-MU8GMl0v1Q",
+          "language": "en",
+          "heard_language": "English",
+          "transcriber": "lb-stt",
+          "duration_seconds": 41.085,
+          "source_bytes": 164960,
+          "model_calls": 1,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-07T15:29:17.659Z",
+          "updated_at": "2026-10-07T15:29:23.342Z",
+          "expires_at": "2026-10-08T15:29:17.658Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "vul2izUr5sXujged",
+          "sample": "monday-roasting-plan",
+          "mode": "fast",
+          "status": "done",
+          "stage": "done",
+          "failure": null,
+          "run_id": "9etJlCKhenk-MU8GMl0v1Q",
+          "language": "en",
+          "heard_language": "English",
+          "transcriber": "lb-stt",
+          "duration_seconds": 41.085,
+          "source_bytes": 164960,
+          "model_calls": 2,
+          "dropped_items": 0,
+          "labels_inferred_from_text": true,
+          "created_at": "2026-10-07T15:29:17.659Z",
+          "updated_at": "2026-10-07T15:29:27.756Z",
+          "expires_at": "2026-10-08T15:29:17.658Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged/transcript"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "meeting": "vul2izUr5sXujged",
+          "labels_note": "Speaker labels are inferred from the words, not matched to voices.",
+          "segments": [
+            {
+              "position": 0,
+              "start": 0,
+              "end": 4.14,
+              "text": "Good morning everyone, this is Hannah. Let's plan Monday's roast.",
+              "speaker": 0,
+              "label": "Hannah"
+            },
+            {
+              "position": 1,
+              "start": 4.9,
+              "end": 10.72,
+              "text": "Peter here. The Colombian green beans arrived on Friday, so we can start with those.",
+              "speaker": 1,
+              "label": "Peter"
+            },
+            {
+              "position": 2,
+              "start": 11.52,
+              "end": 14.62,
+              "text": "Good. Then we roast the Colombian first on Monday.",
+              "speaker": 0,
+              "label": "Hannah"
+            },
+            {
+              "position": 3,
+              "start": 15.56,
+              "end": 19.42,
+              "text": "I'm David. I run packaging. We are short of 12-ounce bags.",
+              "speaker": 2,
+              "label": "David"
+            },
+            {
+              "position": 4,
+              "start": 20.08,
+              "end": 23.48,
+              "text": "I will order 2,000 more 12-ounce bags by Wednesday.",
+              "speaker": 2,
+              "label": "David"
+            },
+            {
+              "position": 5,
+              "start": 24.42,
+              "end": 27.96,
+              "text": "Kevin, can you rate-profile the Colombian on the small roaster?",
+              "speaker": 0,
+              "label": "Hannah"
+            },
+            {
+              "position": 6,
+              "start": 28.78,
+              "end": 31.04,
+              "text": "Sure, I'll do it on Sunday evening.",
+              "speaker": 3,
+              "label": "Speaker 1"
+            },
+            {
+              "position": 7,
+              "start": 31.76,
+              "end": 34.2,
+              "text": "And the Ethiopian moves to Tuesday, agreed?",
+              "speaker": 0,
+              "label": "Hannah"
+            },
+            {
+              "position": 8,
+              "start": 35.02,
+              "end": 38.36,
+              "text": "Agreed. I'll update the label template by Friday.",
+              "speaker": 1,
+              "label": "Peter"
+            },
+            {
+              "position": 9,
+              "start": 39.12,
+              "end": 40.4,
+              "text": "Great, thanks everyone.",
+              "speaker": 0,
+              "label": "Hannah"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb09/meetings/vul2izUr5sXujged/items"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "meeting": "vul2izUr5sXujged",
+          "dropped": 0,
+          "items": [
+            {
+              "position": 0,
+              "kind": "decision",
+              "text": "Roast the Colombian first on Monday.",
+              "owner": null,
+              "deadline": null,
+              "evidence": "Then we roast the Colombian first on Monday.",
+              "start": 11.52,
+              "end": 14.62,
+              "first_segment": 2,
+              "last_segment": 2
+            },
+            {
+              "position": 1,
+              "kind": "decision",
+              "text": "Move the Ethiopian roast to Tuesday.",
+              "owner": null,
+              "deadline": null,
+              "evidence": "And the Ethiopian moves to Tuesday, agreed?",
+              "start": 31.76,
+              "end": 34.2,
+              "first_segment": 7,
+              "last_segment": 7
+            },
+            {
+              "position": 2,
+              "kind": "action",
+              "text": "Order 2,000 more 12‑ounce bags.",
+              "owner": "David",
+              "deadline": "Wednesday",
+              "evidence": "I will order 2,000 more 12-ounce bags by Wednesday.",
+              "start": 20.08,
+              "end": 23.48,
+              "first_segment": 4,
+              "last_segment": 4
+            },
+            {
+              "position": 3,
+              "kind": "action",
+              "text": "Rate‑profile the Colombian on the small roaster.",
+              "owner": "Speaker 1",
+              "deadline": "Sunday evening",
+              "evidence": "Sure, I'll do it on Sunday evening.",
+              "start": 28.78,
+              "end": 31.04,
+              "first_segment": 6,
+              "last_segment": 6
+            },
+            {
+              "position": 4,
+              "kind": "action",
+              "text": "Update the label template.",
+              "owner": "Peter",
+              "deadline": "Friday",
+              "evidence": "I'll update the label template by Friday.",
+              "start": 35.02,
+              "end": 38.36,
+              "first_segment": 8,
+              "last_segment": 8
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "9etJlCKhenk-MU8GMl0v1Q",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "b95500f949f298ba",
+        "parentId": "16e13a51a9d8e1e5",
+        "kind": "system.step",
+        "name": "decode audio",
+        "status": "ok",
+        "startMs": 1791386957970,
+        "endMs": 1791386958749,
+        "attrs": {
+          "bytes": 164960,
+          "seconds": 41.085
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "c06f99ce5c81df19",
+        "parentId": "b939b212d921a3f4",
+        "kind": "gateway.attempt",
+        "name": "groq/whisper-large-v3-turbo",
+        "status": "ok",
+        "startMs": 1791386958821,
+        "endMs": 1791386962236,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/whisper-large-v3-turbo",
+          "modelId": "whisper-large-v3-turbo",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "b939b212d921a3f4",
+        "parentId": "8706d328964d57d8",
+        "kind": "gateway.call",
+        "name": "lb-stt",
+        "status": "ok",
+        "startMs": 1791386958817,
+        "endMs": 1791386962241,
+        "attrs": {
+          "alias": "lb-stt",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 0,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "groq",
+          "model": "groq/whisper-large-v3-turbo",
+          "audioSeconds": 41.09,
+          "segments": 10
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "8706d328964d57d8",
+        "parentId": "16e13a51a9d8e1e5",
+        "kind": "system.step",
+        "name": "transcribe",
+        "status": "ok",
+        "startMs": 1791386958770,
+        "endMs": 1791386962248,
+        "attrs": {
+          "mode": "fast",
+          "seconds": 41.085,
+          "segments": 10,
+          "model": "lb-stt"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "dcb95adc6a97dd23",
+        "parentId": "f8aa6229cafaeece",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791386962579,
+        "endMs": 1791386963316,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "f8aa6229cafaeece",
+        "parentId": "fa936bb770f4a1e2",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791386962578,
+        "endMs": 1791386963322,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 489,
+          "maxOutputTokens": 1024,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 482,
+          "outputTokens": 361
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "fa936bb770f4a1e2",
+        "parentId": "16e13a51a9d8e1e5",
+        "kind": "system.step",
+        "name": "label speakers",
+        "status": "ok",
+        "startMs": 1791386962264,
+        "endMs": 1791386963341,
+        "attrs": {
+          "speakers": 4,
+          "named": 3,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "dfd5c0260a86e7d5",
+        "parentId": "229aeeafcecb7bd6",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791386963358,
+        "endMs": 1791386963358,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "50f9e6cf36076fc4",
+        "parentId": "229aeeafcecb7bd6",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791386963358,
+        "endMs": 1791386967717,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "229aeeafcecb7bd6",
+        "parentId": "a0b768dc439d9b6e",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791386963357,
+        "endMs": 1791386967719,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 675,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 644,
+          "outputTokens": 887
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "a0b768dc439d9b6e",
+        "parentId": "16e13a51a9d8e1e5",
+        "kind": "system.step",
+        "name": "extract items",
+        "status": "ok",
+        "startMs": 1791386963352,
+        "endMs": 1791386967721,
+        "attrs": {
+          "decisions": 2,
+          "actions": 3,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "46c5ee83c6543704",
+        "parentId": "16e13a51a9d8e1e5",
+        "kind": "system.step",
+        "name": "align evidence",
+        "status": "ok",
+        "startMs": 1791386967732,
+        "endMs": 1791386967733,
+        "attrs": {
+          "kept": 5,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "9etJlCKhenk-MU8GMl0v1Q",
+        "system": "lb-09",
+        "spanId": "16e13a51a9d8e1e5",
+        "kind": "system.run",
+        "name": "meeting recording",
+        "status": "ok",
+        "startMs": 1791386957934,
+        "endMs": 1791386967768,
+        "attrs": {
+          "mode": "fast",
+          "status": "done",
+          "items": 5,
+          "dropped": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 3,
+    "steps": 5,
+    "durationMs": 9834
+  }
+}

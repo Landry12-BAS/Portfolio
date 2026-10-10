@@ -1,0 +1,70 @@
+{
+  "id": "5k0JM7SPtpQqeCAs",
+  "customer": {
+    "key": "cus-0001",
+    "name": "Sam Carter",
+    "language": "en"
+  },
+  "language": "en",
+  "status": "awaiting_approval",
+  "category": "damaged",
+  "created_at": "2026-10-02T03:01:50.756Z",
+  "body": "My order BB-1040 arrived with a torn bag and I would like a refund.",
+  "order_number": "BB-1040",
+  "escalation_reason": "",
+  "run_id": "KIZrxjoKdlmBGWdl5Yc5Dw",
+  "expires_at": "2026-10-03T03:01:50.755Z",
+  "draft": {
+    "sentences": [
+      {
+        "text": "Hello,",
+        "citations": [],
+        "supported": true,
+        "problem": null
+      },
+      {
+        "text": "I'm sorry that a bag from order BB-1040 arrived torn.",
+        "citations": [
+          "order:BB-1040"
+        ],
+        "supported": true,
+        "problem": null
+      },
+      {
+        "text": "Send us a photo of the bag and the box within 14 days of delivery, and we will send a replacement.",
+        "citations": [
+          "passage:damaged.torn-bags"
+        ],
+        "supported": true,
+        "problem": null
+      },
+      {
+        "text": "We will refund you today.",
+        "citations": [],
+        "supported": false,
+        "problem": "states a fact without citing a source"
+      },
+      {
+        "text": "Basalt & Bean support",
+        "citations": [],
+        "supported": true,
+        "problem": null
+      }
+    ],
+    "claims_supported": false,
+    "model": "test/lb-tools",
+    "sources": [
+      {
+        "id": "order:BB-1040",
+        "title": "Order BB-1040",
+        "text": "Order BB-1040: delivered. Dates: placed 2026-09-23, roasted 2026-09-25, shipped 2026-09-26, delivered 2026-09-29. Ships to CZ with Vltava Post, tracking number VP481920337CZ. Items: 2 x Basalt Blend, whole-bean, 250 g, at 289 CZK each. Delivery 89 CZK. Total 667 CZK."
+      },
+      {
+        "id": "passage:damaged.torn-bags",
+        "title": "Damaged, stale or wrong items §1: Torn or crushed bags",
+        "text": "If a bag arrives torn, punctured or crushed, send us a photo of the bag and the outer box within 14 days of delivery. We send a replacement free of charge, and you don't need to return the damaged bag."
+      }
+    ]
+  },
+  "decision": null
+}

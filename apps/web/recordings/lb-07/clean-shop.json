@@ -1,0 +1,2183 @@
+{
+  "v": 1,
+  "system": "lb-07",
+  "sample": "clean-shop",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:52:10.970Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb07/runs",
+        "body": {
+          "from": "sample",
+          "sampleId": "clean-shop"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "queued",
+          "failure": null,
+          "queuePosition": 0,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 0,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": null,
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "planning",
+          "failure": null,
+          "queuePosition": null,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 0,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 66,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 126,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 55,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 102,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 66,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 126,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 55,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 102,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 74,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 5,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 9,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 41,
+              "outcome": "ok"
+            },
+            {
+              "index": 10,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 11,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 12,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 14,
+              "outcome": "ok"
+            },
+            {
+              "index": 13,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 82,
+              "outcome": "ok"
+            },
+            {
+              "index": 14,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 15,
+              "step": {
+                "action": "expectText",
+                "text": "Total charged €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 6,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "cross_checking",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 66,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 126,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 55,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 102,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 74,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 5,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 9,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 41,
+              "outcome": "ok"
+            },
+            {
+              "index": 10,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 11,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 12,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 14,
+              "outcome": "ok"
+            },
+            {
+              "index": 13,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 82,
+              "outcome": "ok"
+            },
+            {
+              "index": 14,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 15,
+              "step": {
+                "action": "expectText",
+                "text": "Total charged €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 6,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "verifying",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 66,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 126,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 55,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 102,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 74,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 5,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 9,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 41,
+              "outcome": "ok"
+            },
+            {
+              "index": 10,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 11,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 12,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 14,
+              "outcome": "ok"
+            },
+            {
+              "index": 13,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 82,
+              "outcome": "ok"
+            },
+            {
+              "index": 14,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 15,
+              "step": {
+                "action": "expectText",
+                "text": "Total charged €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 6,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "origin": "sample",
+          "sampleId": "clean-shop",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "state": "done",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 66,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 126,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 55,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 102,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 74,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 5,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 9,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 41,
+              "outcome": "ok"
+            },
+            {
+              "index": 10,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 11,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 26,
+              "outcome": "ok"
+            },
+            {
+              "index": 12,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 14,
+              "outcome": "ok"
+            },
+            {
+              "index": 13,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 82,
+              "outcome": "ok"
+            },
+            {
+              "index": 14,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 31,
+              "outcome": "ok"
+            },
+            {
+              "index": 15,
+              "step": {
+                "action": "expectText",
+                "text": "Total charged €26.10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 6,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:52:02.934Z",
+          "startedAt": "2026-10-07T11:52:02.944Z",
+          "endedAt": "2026-10-07T11:52:10.664Z",
+          "expiresAt": "2026-10-07T12:52:02.934Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe/report"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+          "goal": "Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.",
+          "bugs": [],
+          "reading": "Buy two Ethiopia Guji bags, apply coupon WELCOME10, verify total €26.10, checkout as Ada Lovelace, and confirm the order.",
+          "findings": [],
+          "findingsDropped": 0,
+          "reports": [],
+          "reportsDropped": 0,
+          "verification": {
+            "verdict": "passing",
+            "red": null,
+            "cross": null,
+            "green": {
+              "engine": "chromium",
+              "bugsOn": false,
+              "stepsPassed": true,
+              "findings": 0,
+              "durationMs": 1642
+            }
+          },
+          "engines": [
+            "chromium",
+            "firefox-ua"
+          ],
+          "modelCalls": 1,
+          "replans": 0,
+          "durationMs": 7706
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe/test"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "filename": "buy-two-bags-of-ethiopia-guji-with-welco.spec.ts",
+          "language": "typescript",
+          "source": "// Generated by LB-07 QA Engineer from a plan over a closed vocabulary (goto, click by role and name,\n// fill by label, select, expect text, expect count). Every string below is a JSON literal written by a\n// template; no model wrote any code here. Run it with Playwright against the staging shop:\n//   npx playwright test --config=<your config with baseURL http://127.0.0.1:8007>\nimport AxeBuilder from '@axe-core/playwright'\nimport { expect, test } from '@playwright/test'\n\n// goal: Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, check out as Ada Lovelace, ada@example.test, 1 Rue du Café, Prague and confirm the order.\ntest(\"Buy two bags of Ethiopia Guji with WELCOME10, check the total is €26.10, chec...\", async ({ page }) => {\n  // Everything the page logs as an error or throws, and every request answered with an error status.\n  const consoleErrors: string[] = []\n  page.on('console', (message) => {\n    if (message.type() === 'error') consoleErrors.push(message.text())\n  })\n  page.on('pageerror', error => consoleErrors.push(error.message))\n  const failedRequests: string[] = []\n  page.on('response', (response) => {\n    if (response.status() >= 400) failedRequests.push(`${response.status()} ${new URL(response.url()).pathname}`)\n  })\n\n  // step 1: go to /\n  await page.goto(\"/\")\n  // step 2: click the button \\\"Add Ethiopia Guji to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Ethiopia Guji to cart\", exact: true }).click()\n  // step 3: go to /\n  await page.goto(\"/\")\n  // step 4: click the button \\\"Add Ethiopia Guji to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Ethiopia Guji to cart\", exact: true }).click()\n  // step 5: fill \\\"Coupon code\\\"\n  await page.getByLabel(\"Coupon code\", { exact: true }).fill(\"WELCOME10\")\n  // step 6: click the button \\\"Apply coupon\\\"\n  await page.getByRole(\"button\", { name: \"Apply coupon\", exact: true }).click()\n  // step 7: expect the text \\\"Total €26.10\\\"\n  await expect(page.getByText(\"Total €26.10\", { exact: false }).first()).toBeVisible()\n  // step 8: expect the text \\\"2 items\\\"\n  await expect(page.getByText(\"2 items\", { exact: false }).first()).toBeVisible()\n  // step 9: click the link \\\"Go to checkout\\\"\n  await page.getByRole(\"link\", { name: \"Go to checkout\", exact: true }).click()\n  // step 10: fill \\\"Full name\\\"\n  await page.getByLabel(\"Full name\", { exact: true }).fill(\"Ada Lovelace\")\n  // step 11: fill \\\"Email address\\\"\n  await page.getByLabel(\"Email address\", { exact: true }).fill(\"ada@example.test\")\n  // step 12: fill \\\"Street address\\\"\n  await page.getByLabel(\"Street address\", { exact: true }).fill(\"1 Rue du Café\")\n  // step 13: fill \\\"City\\\"\n  await page.getByLabel(\"City\", { exact: true }).fill(\"Prague\")\n  // step 14: click the button \\\"Place order\\\"\n  await page.getByRole(\"button\", { name: \"Place order\", exact: true }).click()\n  // step 15: expect the text \\\"is confirmed\\\"\n  await expect(page.getByText(\"is confirmed\", { exact: false }).first()).toBeVisible()\n  // step 16: expect the text \\\"Total charged €26.10\\\"\n  await expect(page.getByText(\"Total charged €26.10\", { exact: false }).first()).toBeVisible()\n\n  // The checks code made during the run: accessibility, the console and the requests.\n  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()\n  expect(axe.violations.map(violation => violation.id)).toEqual([])\n  expect(consoleErrors).toEqual([])\n  expect(failedRequests).toEqual([])\n})\n",
+          "verdict": "passing"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe/evidence/e1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e1",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "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EAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQCAEAAAAAEAgBAAAAABAIAQAAAAAQyP8fAAD//9ijGxcAAAAGSURBVAMAOHi1ik3AsgsAAAAASUVORK5CYII=",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4c989520-1e78-4e88-9ad3-6a7403803dbe/evidence/e2"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e2",
+          "kind": "snapshot",
+          "text": "- banner:\n  - link \"Basalt & Bean shop\":\n    - /url: /\n    - strong: Basalt & Bean shop\n  - navigation \"Shop\":\n    - link \"Shop\":\n      - /url: /\n    - text: ·\n    - link \"Cart\":\n      - /url: /cart\n    - text: ·\n    - link \"About\":\n      - /url: /about\n  - text: 0 items\n- main:\n  - heading \"Thank you!\" [level=1]\n  - status: Order bb-1435708 is confirmed.\n  - paragraph: 2 items on their way. Total charged €26.10.\n  - paragraph:\n    - link \"Back to the shop\":\n      - /url: /\n- contentinfo:\n  - paragraph: A synthetic staging shop for the LB-07 demo. Nothing here is for sale.",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "78561b2a4feee3e3",
+        "parentId": "e216d240829636fe",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373922967,
+        "endMs": 1791373922967,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "e0b7d7b448e224be",
+        "parentId": "e216d240829636fe",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373922967,
+        "endMs": 1791373926193,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "e216d240829636fe",
+        "parentId": "ede9d046662e1330",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791373922966,
+        "endMs": 1791373926194,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1372,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1315,
+          "outputTokens": 1063
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "ede9d046662e1330",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "plan the test",
+        "status": "ok",
+        "startMs": 1791373922960,
+        "endMs": 1791373926199,
+        "attrs": {
+          "attempts": 1,
+          "steps": 16
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "398d91afcba0f421",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373926256,
+        "endMs": 1791373926326,
+        "attrs": {
+          "index": 0,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "9aadb3b03f9ecf42",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373926648,
+        "endMs": 1791373926777,
+        "attrs": {
+          "index": 1,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "541dc1a92bcff9bd",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373926787,
+        "endMs": 1791373926846,
+        "attrs": {
+          "index": 2,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "74f293237020fe04",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373927062,
+        "endMs": 1791373927167,
+        "attrs": {
+          "index": 3,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "05d06ae885b231a9",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373927189,
+        "endMs": 1791373927243,
+        "attrs": {
+          "index": 4,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "febe9ca1eaa1d517",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373927253,
+        "endMs": 1791373927330,
+        "attrs": {
+          "index": 5,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "905b3419fad16470",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373927342,
+        "endMs": 1791373927375,
+        "attrs": {
+          "index": 6,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "2e28d71db464bdb9",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373927389,
+        "endMs": 1791373927397,
+        "attrs": {
+          "index": 7,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "5c39ef8f55970e2d",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373927409,
+        "endMs": 1791373927462,
+        "attrs": {
+          "index": 8,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "2dc15dab75738fd1",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373927471,
+        "endMs": 1791373927516,
+        "attrs": {
+          "index": 9,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "11b9e47fc4c1ae0d",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373927528,
+        "endMs": 1791373927556,
+        "attrs": {
+          "index": 10,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "1e10efed97b5188a",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373927584,
+        "endMs": 1791373927613,
+        "attrs": {
+          "index": 11,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "50ee229caa298567",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373927633,
+        "endMs": 1791373927650,
+        "attrs": {
+          "index": 12,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "eafe4929962b0b12",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373927665,
+        "endMs": 1791373927749,
+        "attrs": {
+          "index": 13,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "45ede0c2aec1c3e9",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373927764,
+        "endMs": 1791373927799,
+        "attrs": {
+          "index": 14,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "200248cfed32fb2e",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373927812,
+        "endMs": 1791373927821,
+        "attrs": {
+          "index": 15,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "c6a7d7e14cde68d3",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373928127,
+        "endMs": 1791373928199,
+        "attrs": {
+          "index": 16,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "34eaa4ee256d633b",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373928199,
+        "endMs": 1791373928327,
+        "attrs": {
+          "index": 17,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "5924edc5215376fe",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373928328,
+        "endMs": 1791373928392,
+        "attrs": {
+          "index": 18,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "35a4c7c961d6d46a",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373928393,
+        "endMs": 1791373928496,
+        "attrs": {
+          "index": 19,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "8c42a4b462803949",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373928497,
+        "endMs": 1791373928554,
+        "attrs": {
+          "index": 20,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "799ce5e20841f41b",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373928554,
+        "endMs": 1791373928647,
+        "attrs": {
+          "index": 21,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "d0159258e9d9f248",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373928648,
+        "endMs": 1791373928684,
+        "attrs": {
+          "index": 22,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "e156ea67fed90643",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373928686,
+        "endMs": 1791373928694,
+        "attrs": {
+          "index": 23,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "556aa322a430dba4",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373928696,
+        "endMs": 1791373928764,
+        "attrs": {
+          "index": 24,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "230e9f0743538247",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373928764,
+        "endMs": 1791373928810,
+        "attrs": {
+          "index": 25,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "cd826a04fd207870",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373928811,
+        "endMs": 1791373928828,
+        "attrs": {
+          "index": 26,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "ba30261b18a9f92f",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373928828,
+        "endMs": 1791373928845,
+        "attrs": {
+          "index": 27,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "e7d09b4483cab963",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373928846,
+        "endMs": 1791373928863,
+        "attrs": {
+          "index": 28,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "8cc6434cc97b28a2",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373928864,
+        "endMs": 1791373928960,
+        "attrs": {
+          "index": 29,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "9cd17ff1df6df04a",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373928963,
+        "endMs": 1791373928996,
+        "attrs": {
+          "index": 30,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "127b1826abb6adab",
+        "parentId": "b8b6ad0698a93692",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373928997,
+        "endMs": 1791373929004,
+        "attrs": {
+          "index": 31,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "b8b6ad0698a93692",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "cross-check in the second engine",
+        "status": "ok",
+        "startMs": 1791373928070,
+        "endMs": 1791373929012,
+        "attrs": {
+          "bug_findings": 0,
+          "steps_passed": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "a785165c97fc39df",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "write bug reports",
+        "status": "skipped",
+        "startMs": 1791373929015,
+        "endMs": 1791373929018,
+        "attrs": {
+          "outcome": "nothing to report"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "07d27f66710c66fd",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373929070,
+        "endMs": 1791373929151,
+        "attrs": {
+          "index": 32,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "d9d63b4e1b5d96d0",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373929476,
+        "endMs": 1791373929614,
+        "attrs": {
+          "index": 33,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "880d0c3ea8fdb3fa",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373929615,
+        "endMs": 1791373929676,
+        "attrs": {
+          "index": 34,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "84095f3cdae0d357",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373929870,
+        "endMs": 1791373929991,
+        "attrs": {
+          "index": 35,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "63b18cb3ab3e8601",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373929991,
+        "endMs": 1791373930042,
+        "attrs": {
+          "index": 36,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "15a949310c45a23f",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373930043,
+        "endMs": 1791373930133,
+        "attrs": {
+          "index": 37,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "44cc3111ce8d94d2",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373930134,
+        "endMs": 1791373930174,
+        "attrs": {
+          "index": 38,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "957487ecd45d6dc3",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373930175,
+        "endMs": 1791373930183,
+        "attrs": {
+          "index": 39,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "d9a33ea1e193e66f",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373930183,
+        "endMs": 1791373930263,
+        "attrs": {
+          "index": 40,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "b968b1d9a44d6329",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373930264,
+        "endMs": 1791373930311,
+        "attrs": {
+          "index": 41,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "21c1c7eee4d50366",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373930312,
+        "endMs": 1791373930327,
+        "attrs": {
+          "index": 42,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "d0d543e8b9f9c30c",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373930327,
+        "endMs": 1791373930344,
+        "attrs": {
+          "index": 43,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "c64ac3a144bdc185",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373930344,
+        "endMs": 1791373930360,
+        "attrs": {
+          "index": 44,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "e92279debbd17a1c",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373930360,
+        "endMs": 1791373930446,
+        "attrs": {
+          "index": 45,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "37f8313e96ffd39d",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373930447,
+        "endMs": 1791373930482,
+        "attrs": {
+          "index": 46,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "cff64c7777c1aa8a",
+        "parentId": "5645611887353ffb",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373930483,
+        "endMs": 1791373930491,
+        "attrs": {
+          "index": 47,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "5645611887353ffb",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "verify the test on the clean shop",
+        "status": "ok",
+        "startMs": 1791373929020,
+        "endMs": 1791373930663,
+        "attrs": {
+          "steps_passed": true,
+          "bug_findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "b3535c005bf3d49c",
+        "parentId": "99340100e7a9b5a5",
+        "kind": "system.step",
+        "name": "generate the test",
+        "status": "ok",
+        "startMs": 1791373930664,
+        "endMs": 1791373930664,
+        "attrs": {
+          "verdict": "passing",
+          "chars": 3488
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4c989520-1e78-4e88-9ad3-6a7403803dbe",
+        "system": "lb-07",
+        "spanId": "99340100e7a9b5a5",
+        "kind": "system.run",
+        "name": "qa run",
+        "status": "ok",
+        "startMs": 1791373922934,
+        "endMs": 1791373930671,
+        "attrs": {
+          "outcome": "done",
+          "origin": "sample",
+          "model_calls": 1,
+          "findings": 0,
+          "replans": 0,
+          "bugs_on": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 1,
+    "steps": 53,
+    "durationMs": 7737
+  }
+}

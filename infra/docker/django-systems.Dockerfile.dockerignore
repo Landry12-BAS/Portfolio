@@ -1,0 +1,24 @@
+# What the Django systems image's build may see. Everything is excluded unless listed, and
+# then what no image needs is excluded again: tests, caches, environments, .env files and
+# service keys never reach an image.
+*
+!pyproject.toml
+!uv.lock
+!python/**
+!services/*/pyproject.toml
+!services/django-systems/**
+!data/seed/**
+!infra/docker/python-entrypoint.sh
+!infra/docker/python-healthcheck.py
+
+**/tests
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.env
+**/.env.*
+**/*.jwk.json

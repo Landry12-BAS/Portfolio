@@ -1,0 +1,6 @@
+# How to report a security problem with this site (RFC 9116). The full policy is in the
+# repository's SECURITY.md, and the design it protects is in docs/SECURITY.md.
+Contact: https://github.com/Landry12-BAS/Portfolio/security/advisories/new
+Expires: 2027-09-30T00:00:00.000Z
+Preferred-Languages: en, cs
+Policy: https://github.com/Landry12-BAS/Portfolio/blob/main/SECURITY.md

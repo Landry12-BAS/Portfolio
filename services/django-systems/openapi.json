@@ -1,0 +1,2428 @@
+{
+  "components": {
+    "schemas": {
+      "BookingOut": {
+        "description": "A conversation's booking, and the address its mock confirmation was made out to.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "party_size": {
+            "title": "Party Size",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "party_size",
+          "to"
+        ],
+        "title": "BookingOut",
+        "type": "object"
+      },
+      "CalendarOut": {
+        "description": "A snapshot of the calendar. `as_of` is the server's time, for ordering it against live changes.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "last_day": {
+            "format": "date",
+            "title": "Last Day",
+            "type": "string"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "first_day",
+          "last_day",
+          "slots"
+        ],
+        "title": "CalendarOut",
+        "type": "object"
+      },
+      "CalendarQuery": {
+        "description": "Which days of the calendar to show, and which conversation's point of view to show them from.",
+        "properties": {
+          "conversation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation"
+          },
+          "days": {
+            "default": 14,
+            "maximum": 14,
+            "minimum": 1,
+            "title": "Days",
+            "type": "integer"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          }
+        },
+        "title": "CalendarQuery",
+        "type": "object"
+      },
+      "ConfirmationOut": {
+        "description": "The confirmation email as it would have been sent. `delivery` is always `mock`: nothing is ever sent.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "delivery": {
+            "const": "mock",
+            "title": "Delivery",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "body",
+          "language",
+          "delivery",
+          "recorded_at"
+        ],
+        "title": "ConfirmationOut",
+        "type": "object"
+      },
+      "ConversationOut": {
+        "description": "A conversation in full: the transcript, where the booking stands, and what a person would receive.",
+        "properties": {
+          "booking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "confirmation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandoffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hold": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HoldOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "messages_left": {
+            "title": "Messages Left",
+            "type": "integer"
+          },
+          "messages_used": {
+            "title": "Messages Used",
+            "type": "integer"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/LineOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "language",
+          "messages_used",
+          "messages_left",
+          "closed",
+          "created_at",
+          "expires_at",
+          "run_id",
+          "model_calls",
+          "transcript",
+          "options",
+          "hold",
+          "booking",
+          "confirmation",
+          "handoff"
+        ],
+        "title": "ConversationOut",
+        "type": "object"
+      },
+      "ConversationSummary": {
+        "description": "A conversation as the visitor's list shows it.",
+        "properties": {
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "messages_left": {
+            "title": "Messages Left",
+            "type": "integer"
+          },
+          "messages_used": {
+            "title": "Messages Used",
+            "type": "integer"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "language",
+          "messages_used",
+          "messages_left",
+          "closed",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ConversationSummary",
+        "type": "object"
+      },
+      "CustomerOut": {
+        "description": "A synthetic customer a visitor can file a ticket as.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "language"
+        ],
+        "title": "CustomerOut",
+        "type": "object"
+      },
+      "DecisionIn": {
+        "description": "What the person at the agent console does with a draft. Only an edit carries its own text.",
+        "properties": {
+          "action": {
+            "enum": [
+              "approve",
+              "edit",
+              "escalate"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "DecisionIn",
+        "type": "object"
+      },
+      "DecisionOut": {
+        "description": "What the person decided, and the reply that was sent, if any.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "final_text": {
+            "title": "Final Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "final_text",
+          "decided_at"
+        ],
+        "title": "DecisionOut",
+        "type": "object"
+      },
+      "DraftOut": {
+        "description": "A cited draft waiting for, or past, a person's decision.",
+        "properties": {
+          "claims_supported": {
+            "title": "Claims Supported",
+            "type": "boolean"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/SentenceOut"
+            },
+            "title": "Sentences",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sentences",
+          "claims_supported",
+          "model",
+          "sources"
+        ],
+        "title": "DraftOut",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "What went wrong, as a stable code and a sentence for people.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorOut": {
+        "description": "The error shape the whole platform answers with.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorOut",
+        "type": "object"
+      },
+      "ExportOut": {
+        "description": "An export: its format, a file name to save it as, and its content.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "filename",
+          "content_type",
+          "content"
+        ],
+        "title": "ExportOut",
+        "type": "object"
+      },
+      "HandoffOut": {
+        "description": "A conversation handed to a person: why, what was collected, and every line said.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/LineOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reason",
+          "summary",
+          "created_at",
+          "transcript"
+        ],
+        "title": "HandoffOut",
+        "type": "object"
+      },
+      "HoldOut": {
+        "description": "The slot a conversation holds, and when the hold runs out.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "expires_at"
+        ],
+        "title": "HoldOut",
+        "type": "object"
+      },
+      "ItemOut": {
+        "description": "A decision or an action item, with its verbatim evidence and the seconds it was said in.",
+        "properties": {
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline"
+          },
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "first_segment": {
+            "title": "First Segment",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_segment": {
+            "title": "Last Segment",
+            "type": "integer"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "kind",
+          "text",
+          "owner",
+          "deadline",
+          "evidence",
+          "start",
+          "end",
+          "first_segment",
+          "last_segment"
+        ],
+        "title": "ItemOut",
+        "type": "object"
+      },
+      "ItemsOut": {
+        "description": "A finished meeting's items, and how many the checks dropped.",
+        "properties": {
+          "dropped": {
+            "title": "Dropped",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meeting": {
+            "title": "Meeting",
+            "type": "string"
+          }
+        },
+        "required": [
+          "meeting",
+          "dropped",
+          "items"
+        ],
+        "title": "ItemsOut",
+        "type": "object"
+      },
+      "LimitsOut": {
+        "description": "What is left of the visitor's day, and the datasheet's limits the service enforces.",
+        "properties": {
+          "left_today": {
+            "title": "Left Today",
+            "type": "integer"
+          },
+          "max_recording_seconds": {
+            "title": "Max Recording Seconds",
+            "type": "number"
+          },
+          "max_upload_bytes": {
+            "title": "Max Upload Bytes",
+            "type": "integer"
+          },
+          "recordings_per_day": {
+            "title": "Recordings Per Day",
+            "type": "integer"
+          },
+          "resets_at": {
+            "format": "date-time",
+            "title": "Resets At",
+            "type": "string"
+          },
+          "used_today": {
+            "title": "Used Today",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recordings_per_day",
+          "used_today",
+          "left_today",
+          "resets_at",
+          "max_recording_seconds",
+          "max_upload_bytes"
+        ],
+        "title": "LimitsOut",
+        "type": "object"
+      },
+      "LineOut": {
+        "description": "One line of a transcript.",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "visitor",
+              "concierge",
+              "action"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "role",
+          "text",
+          "at"
+        ],
+        "title": "LineOut",
+        "type": "object"
+      },
+      "LocalizedOut": {
+        "description": "A text in each of the site's two languages.",
+        "properties": {
+          "cs": {
+            "title": "Cs",
+            "type": "string"
+          },
+          "en": {
+            "title": "En",
+            "type": "string"
+          }
+        },
+        "required": [
+          "en",
+          "cs"
+        ],
+        "title": "LocalizedOut",
+        "type": "object"
+      },
+      "MeetingIn": {
+        "description": "A meeting to start: a visitor's own recording, or a curated sample, in fast or private mode.",
+        "properties": {
+          "audio": {
+            "anyOf": [
+              {
+                "maxLength": 4198400,
+                "minLength": 4,
+                "pattern": "^[A-Za-z0-9+/=\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "en",
+                  "cs"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "mode": {
+            "enum": [
+              "fast",
+              "private"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample"
+          },
+          "source": {
+            "enum": [
+              "upload",
+              "sample"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "mode"
+        ],
+        "title": "MeetingIn",
+        "type": "object"
+      },
+      "MeetingOut": {
+        "description": "A meeting: where it stands, what was measured, which model ran, and the counters the page shows.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dropped_items": {
+            "title": "Dropped Items",
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "title": "Duration Seconds",
+            "type": "number"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "heard_language": {
+            "title": "Heard Language",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "labels_inferred_from_text": {
+            "title": "Labels Inferred From Text",
+            "type": "boolean"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "model_calls": {
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample"
+          },
+          "source_bytes": {
+            "title": "Source Bytes",
+            "type": "integer"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "transcriber": {
+            "title": "Transcriber",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sample",
+          "mode",
+          "status",
+          "stage",
+          "failure",
+          "run_id",
+          "language",
+          "heard_language",
+          "transcriber",
+          "duration_seconds",
+          "source_bytes",
+          "model_calls",
+          "dropped_items",
+          "labels_inferred_from_text",
+          "created_at",
+          "updated_at",
+          "expires_at"
+        ],
+        "title": "MeetingOut",
+        "type": "object"
+      },
+      "OfferingOut": {
+        "description": "Something a visitor can book: what it is, how long it takes, how many it takes, and what it costs.",
+        "properties": {
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "duration_minutes": {
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "price_czk": {
+            "title": "Price Czk",
+            "type": "integer"
+          },
+          "room": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          },
+          "title": {
+            "$ref": "#/components/schemas/LocalizedOut"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "summary",
+          "room",
+          "duration_minutes",
+          "capacity",
+          "price_czk"
+        ],
+        "title": "OfferingOut",
+        "type": "object"
+      },
+      "OptionOut": {
+        "description": "A slot the concierge has on offer, by the number it holds it with.\n\nA slot keeps the number it was first shown with for the whole conversation and numbers are\nnever reused, so the numbers on offer are not always 1, 2, 3.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "slot",
+          "offering",
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
+      "SampleOut": {
+        "description": "A curated sample meeting the demo opens on, and the committed audio file the page plays.",
+        "properties": {
+          "about": {
+            "title": "About",
+            "type": "string"
+          },
+          "file": {
+            "title": "File",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "number"
+          },
+          "speakers": {
+            "title": "Speakers",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "about",
+          "file",
+          "seconds",
+          "speakers"
+        ],
+        "title": "SampleOut",
+        "type": "object"
+      },
+      "SegmentOut": {
+        "description": "One stretch of speech, with the speaker the words suggest.",
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "speaker": {
+            "title": "Speaker",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "start",
+          "end",
+          "text",
+          "speaker",
+          "label"
+        ],
+        "title": "SegmentOut",
+        "type": "object"
+      },
+      "SentenceOut": {
+        "description": "One sentence of a draft, its citations, and why the claim check failed it, if it did.",
+        "properties": {
+          "citations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "supported": {
+            "title": "Supported",
+            "type": "boolean"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "citations",
+          "supported",
+          "problem"
+        ],
+        "title": "SentenceOut",
+        "type": "object"
+      },
+      "SlotOut": {
+        "description": "One slot of the calendar, as one visitor sees it; `mine` is true for the slot their conversation holds or has.",
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "offering": {
+            "title": "Offering",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SlotStatus"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "id",
+          "offering",
+          "starts_at",
+          "ends_at",
+          "status",
+          "mine",
+          "until"
+        ],
+        "title": "SlotOut",
+        "type": "object"
+      },
+      "SlotStatus": {
+        "enum": [
+          "free",
+          "held",
+          "booked"
+        ],
+        "type": "string"
+      },
+      "SourceOut": {
+        "description": "A source a draft cites: a policy passage, or what the order tool reported, in the ticket's language.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
+      "StatsOut": {
+        "description": "The counters the demo shows as the visitor works.\n\n`deflection` is the share of decided tickets answered by the draft (approved or\nedited) rather than escalated; `accuracy` is the share of sent replies approved\nwithout an edit. Both are null until there is something to count.",
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "awaiting_approval": {
+            "title": "Awaiting Approval",
+            "type": "integer"
+          },
+          "deflection": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deflection"
+          },
+          "escalated": {
+            "title": "Escalated",
+            "type": "integer"
+          },
+          "sent": {
+            "title": "Sent",
+            "type": "integer"
+          },
+          "sent_unedited": {
+            "title": "Sent Unedited",
+            "type": "integer"
+          },
+          "tickets": {
+            "title": "Tickets",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tickets",
+          "awaiting_approval",
+          "sent",
+          "sent_unedited",
+          "escalated",
+          "deflection",
+          "accuracy"
+        ],
+        "title": "StatsOut",
+        "type": "object"
+      },
+      "TicketIn": {
+        "description": "A new ticket: who files it, in which language the reply should be, and what it says.",
+        "properties": {
+          "body": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "customer": {
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "title": "Customer",
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "en",
+              "cs"
+            ],
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer",
+          "language",
+          "body"
+        ],
+        "title": "TicketIn",
+        "type": "object"
+      },
+      "TicketOut": {
+        "description": "A ticket in full: what the customer wrote, what the pipeline decided, the draft and the decision.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerOut"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "escalation_reason": {
+            "title": "Escalation Reason",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customer",
+          "language",
+          "status",
+          "category",
+          "created_at",
+          "body",
+          "order_number",
+          "escalation_reason",
+          "run_id",
+          "expires_at",
+          "draft",
+          "decision"
+        ],
+        "title": "TicketOut",
+        "type": "object"
+      },
+      "TicketSummary": {
+        "description": "A ticket as the agent console's queue lists it.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerOut"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customer",
+          "language",
+          "status",
+          "category",
+          "created_at"
+        ],
+        "title": "TicketSummary",
+        "type": "object"
+      },
+      "TranscriptOut": {
+        "description": "A finished meeting's transcript, segment by segment, and the note about its labels.",
+        "properties": {
+          "labels_note": {
+            "title": "Labels Note",
+            "type": "string"
+          },
+          "meeting": {
+            "title": "Meeting",
+            "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentOut"
+            },
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "meeting",
+          "labels_note",
+          "segments"
+        ],
+        "title": "TranscriptOut",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "VisitorBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "The API behind the LB systems built on Django.",
+    "title": "LB Django systems",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/healthz": {
+      "get": {
+        "description": "Report that the process is up. It checks nothing else, so a database blip never restarts it.",
+        "operationId": "config_api_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/lb01/customers": {
+      "get": {
+        "description": "List the synthetic customers a visitor can file a ticket as.",
+        "operationId": "lb01_api_list_customers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Customers",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/stats": {
+      "get": {
+        "description": "Count the visitor's tickets and decisions, for the demo's deflection and accuracy counters.",
+        "operationId": "lb01_api_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Stats",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets": {
+      "get": {
+        "description": "List the visitor's own tickets, newest first, for the agent console's queue.",
+        "operationId": "lb01_api_list_tickets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TicketSummary"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Tickets",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      },
+      "post": {
+        "description": "File a ticket as one of the synthetic customers, and queue it for the pipeline.",
+        "operationId": "lb01_api_file_ticket",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "File Ticket",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets/{ticket_id}": {
+      "get": {
+        "description": "Show one of the visitor's tickets in full, with its cited draft and the decision.",
+        "operationId": "lb01_api_get_ticket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Ticket",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb01/tickets/{ticket_id}/decision": {
+      "post": {
+        "description": "Approve, edit or escalate a draft that waits for a person, once.",
+        "operationId": "lb01_api_decide",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Decide",
+        "tags": [
+          "LB-01 Support Desk"
+        ]
+      }
+    },
+    "/api/lb02/calendar": {
+      "get": {
+        "description": "Show the slots of some days, each free, held or booked, and which of them the conversation holds or has.",
+        "operationId": "lb02_api_calendar",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "maximum": 14,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "conversation",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Calendar",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/conversations": {
+      "get": {
+        "description": "List the visitor's own conversations, newest first.",
+        "operationId": "lb02_api_list_conversations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummary"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Conversations",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/conversations/{conversation_id}": {
+      "get": {
+        "description": "Show one of the visitor's own conversations in full.",
+        "operationId": "lb02_api_get_conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Conversation",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb02/offerings": {
+      "get": {
+        "description": "List what can be booked, in both languages.",
+        "operationId": "lb02_api_list_offerings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfferingOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Offerings",
+        "tags": [
+          "LB-02 Booking Concierge"
+        ]
+      }
+    },
+    "/api/lb09/limits": {
+      "get": {
+        "description": "Say how many meetings the visitor may still start today, and the limits every recording is held to.",
+        "operationId": "lb09_api_limits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Limits",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings": {
+      "get": {
+        "description": "List the visitor's own meetings, newest first.",
+        "operationId": "lb09_api_list_meetings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MeetingOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Meetings",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      },
+      "post": {
+        "description": "Start a meeting from the visitor's recording or a sample, and queue it for the worker.",
+        "operationId": "lb09_api_start",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Start",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}": {
+      "get": {
+        "description": "Show where one of the visitor's meetings stands: the polling fallback for the WebSocket.",
+        "operationId": "lb09_api_get_meeting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Meeting",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/export": {
+      "get": {
+        "description": "Export a finished meeting as JSON, CSV, or the plain-English follow-up for Automation Studio (LB-08).",
+        "operationId": "lb09_api_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "enum": [
+                "json",
+                "csv",
+                "text"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Export",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/items": {
+      "get": {
+        "description": "Show a finished meeting's decisions and action items, each with its evidence and its seconds.",
+        "operationId": "lb09_api_get_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Items",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/meetings/{meeting_id}/transcript": {
+      "get": {
+        "description": "Show a finished meeting's transcript with its inferred speaker labels.",
+        "operationId": "lb09_api_get_transcript",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "Get Transcript",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/lb09/samples": {
+      "get": {
+        "description": "List the curated sample meetings, with the audio file the page plays for each.",
+        "operationId": "lb09_api_list_samples",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SampleOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "VisitorBearer": []
+          }
+        ],
+        "summary": "List Samples",
+        "tags": [
+          "LB-09 Meeting Recorder"
+        ]
+      }
+    },
+    "/api/readyz": {
+      "get": {
+        "description": "Report whether every system can reach its schema, for the container's readiness check.",
+        "operationId": "config_api_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "servers": []
+}

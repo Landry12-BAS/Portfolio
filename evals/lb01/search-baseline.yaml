@@ -1,0 +1,15 @@
+# The retrieval gate: search's recall on the golden set may not fall below these numbers
+# (services/django-systems/tests/integration/test_search_recall.py). `just eval-search`
+# measures them against the seeded database; lb01/search_eval.py explains each one.
+# Raise a number when search improves. Lowering one needs a reason in the pull request.
+#
+# query:  searched by the English query a good classifier writes.
+# ticket: searched by the customer's own words, in English or Czech.
+# Hybrid numbers use the vectors `just embed` recorded through lb-embed (Workers AI's bge-m3)
+# on 2026-10-07, which data/seed/lb01/embeddings.json and evals/lb01/query-embeddings.json hold.
+query:
+  keyword: {recall_at_4: 1.0, recall_at_8: 1.0}
+  hybrid: {recall_at_4: 1.0, recall_at_8: 1.0}
+ticket:
+  keyword: {recall_at_4: 0.441, recall_at_8: 0.5}
+  hybrid: {recall_at_4: 0.823, recall_at_8: 0.941}

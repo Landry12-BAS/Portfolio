@@ -1,0 +1,454 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "monthly-revenue-last-year",
+  "origin": "live",
+  "recordedAt": "2026-10-07T15:36:08.000Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Show revenue by month for last year."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT DATE_TRUNC('month', orders.ordered_at) AS month, SUM(order_lines.line_total_czk) AS revenue FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id WHERE orders.ordered_at BETWEEN DATE '2025-01-01' AND DATE '2025-12-31' AND orders.status NOT IN ('cancelled', 'lost') GROUP BY month ORDER BY month",
+              "stopped_by": null
+            }
+          ],
+          "chart": {
+            "kind": "line",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "data": {
+                "values": [
+                  {
+                    "x": "2025-01-01T00:00:00",
+                    "y": 83881929
+                  },
+                  {
+                    "x": "2025-02-01T00:00:00",
+                    "y": 76790429
+                  },
+                  {
+                    "x": "2025-03-01T00:00:00",
+                    "y": 87264371
+                  },
+                  {
+                    "x": "2025-04-01T00:00:00",
+                    "y": 88978198
+                  },
+                  {
+                    "x": "2025-05-01T00:00:00",
+                    "y": 94102658
+                  },
+                  {
+                    "x": "2025-06-01T00:00:00",
+                    "y": 93979818
+                  },
+                  {
+                    "x": "2025-07-01T00:00:00",
+                    "y": 99482301
+                  },
+                  {
+                    "x": "2025-08-01T00:00:00",
+                    "y": 103069113
+                  },
+                  {
+                    "x": "2025-09-01T00:00:00",
+                    "y": 103452135
+                  },
+                  {
+                    "x": "2025-10-01T00:00:00",
+                    "y": 110570491
+                  },
+                  {
+                    "x": "2025-11-01T00:00:00",
+                    "y": 122627181
+                  },
+                  {
+                    "x": "2025-12-01T00:00:00",
+                    "y": 136482391
+                  }
+                ]
+              },
+              "description": "A line chart of revenue by month.",
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "title": "month",
+                  "type": "temporal"
+                },
+                "y": {
+                  "field": "y",
+                  "title": "revenue",
+                  "type": "quantitative"
+                }
+              },
+              "height": 280,
+              "mark": {
+                "tooltip": true,
+                "type": "line"
+              },
+              "width": "container"
+            }
+          },
+          "elapsed_ms": 5782,
+          "explanation": "Revenue for 2025 ranged from 83881929 CZK in January to 136482391 CZK in December. Each month’s revenue is listed in the table, covering the period 2025-01-01 to 2025-12-31.",
+          "explanation_source": "model",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "date",
+                "name": "month"
+              },
+              {
+                "kind": "integer",
+                "name": "revenue"
+              }
+            ],
+            "elapsed_ms": 1215,
+            "joins": 1,
+            "row_count": 12,
+            "rows": [
+              [
+                "2025-01-01T00:00:00",
+                83881929
+              ],
+              [
+                "2025-02-01T00:00:00",
+                76790429
+              ],
+              [
+                "2025-03-01T00:00:00",
+                87264371
+              ],
+              [
+                "2025-04-01T00:00:00",
+                88978198
+              ],
+              [
+                "2025-05-01T00:00:00",
+                94102658
+              ],
+              [
+                "2025-06-01T00:00:00",
+                93979818
+              ],
+              [
+                "2025-07-01T00:00:00",
+                99482301
+              ],
+              [
+                "2025-08-01T00:00:00",
+                103069113
+              ],
+              [
+                "2025-09-01T00:00:00",
+                103452135
+              ],
+              [
+                "2025-10-01T00:00:00",
+                110570491
+              ],
+              [
+                "2025-11-01T00:00:00",
+                122627181
+              ],
+              [
+                "2025-12-01T00:00:00",
+                136482391
+              ]
+            ],
+            "sql": "SELECT\n  DATE_TRUNC('MONTH', orders.ordered_at) AS month,\n  SUM(order_lines.line_total_czk) AS revenue\nFROM orders AS orders\nJOIN order_lines AS order_lines\n  ON order_lines.order_id = orders.order_id\nWHERE\n  orders.ordered_at BETWEEN CAST('2025-01-01' AS DATE) AND CAST('2025-12-31' AS DATE)\n  AND NOT orders.status IN ('cancelled', 'lost')\nGROUP BY\n  DATE_TRUNC('MONTH', orders.ordered_at)\nORDER BY\n  month\nLIMIT 1000",
+            "tables": [
+              "order_lines",
+              "orders"
+            ],
+            "truncated": false
+          },
+          "run_id": "zgO4zB8JCLW5IRvCD09spA"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "zgO4zB8JCLW5IRvCD09spA",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "be4fa0e76b66043b",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791387362171,
+        "endMs": 1791387362172,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "month",
+          "ranges": "last_year"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "41e10f42dd75ee36",
+        "parentId": "505e8498dbacd2d1",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791387362178,
+        "endMs": 1791387362178,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "c4fef54bbf38d8cd",
+        "parentId": "505e8498dbacd2d1",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791387362178,
+        "endMs": 1791387362178,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "d8f954c9e5d723bf",
+        "parentId": "505e8498dbacd2d1",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791387362178,
+        "endMs": 1791387364762,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "505e8498dbacd2d1",
+        "parentId": "34fcfce6148c0f07",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791387362178,
+        "endMs": 1791387364764,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2205,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1907,
+          "outputTokens": 344
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "34fcfce6148c0f07",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791387362172,
+        "endMs": 1791387364766,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 318
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "b4d0d309545838c2",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791387364767,
+        "endMs": 1791387364783,
+        "attrs": {
+          "tables": "order_lines,orders",
+          "joins": 1,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "504cb2afc8c304a3",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791387364784,
+        "endMs": 1791387364801,
+        "attrs": {
+          "operators": 5,
+          "estimated_rows": 3119287
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "9aab6b16c752665a",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791387364802,
+        "endMs": 1791387366021,
+        "attrs": {
+          "rows": 12,
+          "columns": 2,
+          "elapsed_ms": 1215,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "a908c993b08ed4b1",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791387366022,
+        "endMs": 1791387366022,
+        "attrs": {
+          "kind": "line",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "2da03930a16c7803",
+        "parentId": "bc79cfba2e3613f1",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791387366028,
+        "endMs": 1791387367946,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "bc79cfba2e3613f1",
+        "parentId": "68e3ec10b3cd02bc",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791387366027,
+        "endMs": 1791387367948,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 434,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 568,
+          "outputTokens": 410
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "68e3ec10b3cd02bc",
+        "parentId": "105f1d8aabfd3974",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791387366023,
+        "endMs": 1791387367951,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "zgO4zB8JCLW5IRvCD09spA",
+        "system": "lb-05",
+        "spanId": "105f1d8aabfd3974",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791387362171,
+        "endMs": 1791387367953,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 12
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 5782
+  }
+}

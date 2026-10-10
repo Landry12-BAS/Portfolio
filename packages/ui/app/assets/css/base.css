@@ -1,0 +1,93 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The toolbar sticks to the top of every page, so what scrolls into view because it took the focus (moving up with
+   Shift+Tab, or a player after a result) or because a link names it must stop below the toolbar, not under it
+   (WCAG 2.2, 2.4.11 Focus Not Obscured). The boards' own `scroll-margin-top` of 72px is the same measure. */
+html {
+  scroll-padding-top: calc(72px + env(safe-area-inset-top, 0px));
+}
+
+body {
+  margin: 0;
+  background: var(--lb-desk);
+  color: var(--lb-ink);
+  font-family: var(--lb-font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  text-wrap: balance;
+}
+
+p,
+ul,
+ol,
+dl,
+figure {
+  margin: 0;
+}
+
+a {
+  color: var(--lb-signal);
+  text-underline-offset: 3px;
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--lb-font-mono);
+  font-size: 0.86em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+mark {
+  background: var(--lb-marker);
+  color: inherit;
+  padding: 0 0.14em;
+  box-decoration-break: clone;
+}
+
+.lb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lb-label {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

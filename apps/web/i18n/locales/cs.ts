@@ -1,0 +1,184 @@
+// Czech interface text (čeština), the site's second language. `satisfies Messages`
+// makes TypeScript refuse a missing or extra key, so the two languages can't drift.
+// Datasheet content lives in shared/data/systems.cs.ts.
+//
+// vue-i18n reads { } as placeholders and @ and | as syntax, so plain text avoids them.
+import { vlnaDeep } from '#shared/typography'
+import kit from './boards/kit.cs'
+import lb01 from './boards/lb-01.cs'
+import lb02 from './boards/lb-02.cs'
+import lb05 from './boards/lb-05.cs'
+import lb08 from './boards/lb-08.cs'
+import lb03 from './boards/lb-03.cs'
+import lb04 from './boards/lb-04.cs'
+import lb06 from './boards/lb-06.cs'
+import lb07 from './boards/lb-07.cs'
+import lb09 from './boards/lb-09.cs'
+import lb10 from './boards/lb-10.cs'
+import type { Messages } from './en'
+
+const cs = {
+  site: {
+    description: 'Deset živých AI systémů, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
+    skip: 'Přejít na obsah',
+  },
+  toolbar: {
+    sections: 'Oddíly',
+    systems: 'Systémy',
+    build: 'Pořadí vývoje',
+    language: 'Jazyk',
+    theme: {
+      group: 'Motiv',
+      light: 'Světlý motiv',
+      dark: 'Tmavý motiv',
+      system: 'Auto',
+    },
+  },
+  footer: {
+    folder: 'Katalog dílů',
+    allParts: 'Všechny díly',
+    note: 'Landry Bodjona · LB. Basalt & Bean Coffee Co. je smyšlená firma a všechna dema běží na syntetických datech.',
+  },
+  home: {
+    title: 'Deset živých AI systémů',
+    kicker: 'Deset živých AI systémů · Jedna smyšlená firma',
+    heading: 'Portfolio, které si můžete vyzkoušet',
+    lede: 'Deset AI systémů v produkční kvalitě, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
+    quickref: {
+      label: 'Stručný přehled',
+      stamp: 'Všech deset systémů hotovo',
+      owner: 'Autor',
+      systems: 'Systémy',
+      systemsValue: '10 na jedné sdílené platformě (LB-00)',
+      backends: 'Backendy',
+      backendsValue: 'Django, Flask (synchronní i asynchronní), Node + TypeScript',
+      frontend: 'Frontend',
+      frontendValue: 'Nuxt (Vue 3) + Pinia v TypeScriptu',
+      ai: 'AI',
+      aiValue: 'Bezplatné tarify Groq, Workers AI a OpenRouter za jedinou bránou',
+      languages: 'Jazyky',
+      languagesValue: 'Angličtina a čeština',
+      accounts: 'Účty',
+      accountsValue: 'Žádné. Návštěvníci zůstávají anonymní',
+    },
+    guide: {
+      title: 'Průvodce výběrem',
+      intro: 'Vyfiltrujte si deset systémů podle backendu nebo techniky, tak jako inženýři hledají součástky u distributora. Kliknutím na číslo dílu otevřete jeho katalogový list.',
+    },
+    anatomy: {
+      title: 'Co ukazuje stránka každého systému',
+      datasheet: 'Katalogový list',
+      datasheetText: 'Co systém dělá, jaký problém řeší a jaké má provozní limity – ve stručné třicetisekundové verzi, nebo v plné technické.',
+      board: 'Vývojová deska',
+      boardText: 'Živé demo. Otevře se na vybraných ukázkách s uloženými výsledky; vlastní vstup běží naostro v rámci denní kvóty návštěvníka.',
+      scope: 'Scope',
+      scopeText: 'Záznam každého běhu: každý krok, volání nástroje, token i model, s latencí a poskytovatelem, který odpověděl.',
+    },
+    build: {
+      title: 'Pořadí vývoje',
+      phase: 'Fáze {n}',
+      platform: 'Platforma',
+      foundation: 'Základy',
+      foundationText: 'Tyto systémy pokrývají všechny tři backendy, bránu, trasování, kvóty i evaluační sadu. Všechno další na nich staví.',
+      breadth: 'Šíře',
+      breadthText: 'Chat v reálném čase, zpracování obrazu, dlouhé dokumenty a automatizace prohlížeče na stabilním základu.',
+      showpieces: 'Vlajkové lodě',
+      showpiecesText: 'Nejsložitější systémy přijdou nakonec. Eval Lab dorazí se zlatými sadami, které rostou už od fáze 1.',
+    },
+  },
+  catalog: {
+    backend: 'Backend',
+    technique: 'Technika',
+    all: 'Vše',
+    filterBackend: 'Filtrovat podle backendu',
+    filterTechnique: 'Filtrovat podle techniky',
+    showing: 'Zobrazeno {visible} z {total} systémů',
+    clear: 'Zrušit filtry',
+    region: 'Systémy',
+    caption: 'Deset systémů s jejich backendem, technikami a fází vývoje',
+    part: 'Díl',
+    system: 'Systém',
+    visitorAction: 'Co návštěvník udělá',
+    techniques: 'Techniky',
+    phase: 'Fáze',
+    empty: 'Oběma filtrům neodpovídá žádný systém. Zrušte jeden z nich a uvidíte víc.',
+    backends: {
+      django: 'Django',
+      flask: 'Flask',
+      node: 'Node + TypeScript',
+    },
+    techniqueNames: {
+      rag: 'RAG',
+      tool: 'Volání nástrojů',
+      multi: 'Více agentů',
+      vision: 'Zpracování obrazu',
+      voice: 'Hlas',
+      browser: 'Agent v prohlížeči',
+      structured: 'Strukturovaný výstup',
+      citations: 'Citace',
+      evals: 'Evaluace',
+      multiprovider: 'Více poskytovatelů',
+      realtime: 'Reálný čas',
+      local: 'Lokální model',
+    },
+  },
+  datasheet: {
+    phase: 'Fáze {n}',
+    size: 'Velikost {size}',
+    readingMode: 'Režim čtení',
+    technical: 'Technický',
+    brief: 'Stručný',
+    problem: 'Problém',
+    tryIt: 'Vyzkoušejte naživo',
+    proves: 'Co dokazuje',
+    techniques: 'Techniky',
+    chain: 'Signálový řetězec',
+    stack: 'Technologie',
+    highlights: 'Technické přednosti',
+    limit: 'Provozní limit',
+    value: 'Hodnota',
+    status: 'Stav',
+    statusText: 'Ve vývoji, fáze {n}. Živé demo, jeho vývojová deska a Scope se tu otevřou, jakmile bude díl hotový.',
+    otherParts: 'Další díly',
+    allSystems: 'Všechny systémy',
+    openBoard: 'Otevřít vývojovou desku',
+    boardOpen: 'Vývojová deska tohoto dílu je otevřená. Začíná na vybraných ukázkách a váš vlastní text běží naživo v rámci denní kvóty.',
+  },
+  boardPage: {
+    title: '{name}, vývojová deska',
+    back: 'Zpět na katalogový list',
+    missing: 'Tento díl zatím nemá vývojovou desku',
+    missingText: 'Jeho katalogový list je otevřený a živé demo přibude, jakmile bude díl hotový.',
+    loading: 'Načítám vývojovou desku…',
+  },
+  runs: {
+    title: 'Záznam běhu {id}',
+    heading: 'Záznam běhu',
+    lede: 'Záznam jednoho běhu ze Scope: každý krok, volání nástroje a volání modelu s časováním. Uchovávají se jen metadata, nikdy to, co se psalo nebo odpovídalo, a záznam se po 24 hodinách maže.',
+    system: 'Systém',
+    runId: 'ID běhu',
+    back: 'Zpět do katalogu',
+  },
+  board: kit,
+  lb01,
+  lb02,
+  lb05,
+  lb08,
+  lb03,
+  lb04,
+  lb06,
+  lb07,
+  lb09,
+  lb10,
+  error: {
+    code: 'Chyba {code}',
+    notFound: 'Díl nenalezen',
+    notFoundText: 'Žádný díl v tomto katalogu nemá takové číslo. Deset systémů má čísla LB-01 až LB-10.',
+    generic: 'Něco se pokazilo',
+    genericText: 'Stránku se nepodařilo zobrazit. Načtěte ji znovu, nebo se vraťte do katalogu.',
+    back: 'Zpět do katalogu',
+  },
+} satisfies Messages
+
+// Typeset for Czech: no line ends on a single-letter word such as "a" or "v".
+export default vlnaDeep(cs)

@@ -1,0 +1,61 @@
+{
+  "name": "@lb/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The portfolio site: the systems catalog, the datasheets and, as each system ships, its live demo.",
+  "type": "module",
+  "imports": {
+    "#shared/*": "./shared/*.ts"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "dev:mock": "node scripts/dev-with-mock.ts",
+    "build": "nuxt build",
+    "build:e2e": "LB_TEST_BUILD=1 nuxt build",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck && tsc -p tsconfig.tools.json",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "samples": "node scripts/samples.ts && node scripts/generate-lb02.ts && node scripts/samples-lb08.ts && node scripts/samples-lb03.ts && node scripts/samples-lb04.ts && node scripts/samples-lb06.ts && node scripts/samples-lb07.ts && node scripts/samples-lb09.ts && node scripts/samples-lb10.ts",
+    "check": "node scripts/samples.ts --check && node scripts/generate-lb02.ts --check && node scripts/samples-lb08.ts --check && node scripts/samples-lb03.ts --check && node scripts/samples-lb04.ts --check && node scripts/samples-lb06.ts --check && node scripts/samples-lb07.ts --check && node scripts/samples-lb09.ts --check && node scripts/samples-lb10.ts --check",
+    "record-sample": "node scripts/record-sample.ts",
+    "record:fixtures": "node scripts/record-fixtures.ts",
+    "check:build": "node scripts/check-production-build.ts"
+  },
+  "dependencies": {
+    "@lb/api-clients": "workspace:*",
+    "@lb/common": "workspace:*",
+    "@lb/contracts": "workspace:*",
+    "@lb/icons": "workspace:*",
+    "@lb/ui": "workspace:*",
+    "@nuxtjs/i18n": "^10.6.0",
+    "@pinia/nuxt": "^1.0.2",
+    "@vue-flow/core": "1.48.2",
+    "h3": "^1.15.11",
+    "nuxt": "^4.5.2",
+    "nuxt-security": "^2.6.0",
+    "pdfjs-dist": "^6.3.289",
+    "pinia": "^4.0.3",
+    "vega": "^6.4.0",
+    "vega-interpreter": "^2.3.2",
+    "vega-lite": "^6.4.3",
+    "vue": "^3.5.43",
+    "vue-i18n": "^11.4.12",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@testcontainers/redis": "^12.1.0",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^20.14.5",
+    "ioredis": "^6.0.0",
+    "vitest": "^5.0.2",
+    "vue-tsc": "^3.3.11",
+    "yaml": "^2.9.1"
+  }
+}

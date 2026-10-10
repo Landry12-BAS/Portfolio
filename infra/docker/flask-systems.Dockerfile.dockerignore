@@ -1,0 +1,31 @@
+# What the Flask systems image's build may see. Everything is excluded unless listed, and
+# then what no image needs is excluded again: tests, caches, environments, .env files and
+# service keys never reach an image, and nor does generated data (data/generated is
+# git-ignored, and the image makes its own on the box).
+*
+!pyproject.toml
+!uv.lock
+!python/**
+!services/*/pyproject.toml
+!services/flask-systems/**
+!data/seed/lb05/**
+!data/seed/lb03/chart_of_accounts.yaml
+!data/seed/lb03/manifest.json
+!evals/lb03/golden.yaml
+!evals/packs/**
+!evals/baselines/**
+!infra/docker/python-entrypoint.sh
+!infra/docker/python-healthcheck.py
+!infra/docker/flask-seed.py
+
+**/tests
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.env
+**/.env.*
+**/*.jwk.json

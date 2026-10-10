@@ -1,0 +1,1681 @@
+{
+  "v": 1,
+  "system": "lb-07",
+  "sample": "checkout-in-firefox",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:50:40.210Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb07/runs",
+        "body": {
+          "from": "sample",
+          "sampleId": "checkout-in-firefox"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "queued",
+          "failure": null,
+          "queuePosition": 0,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 0,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": null,
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "planning",
+          "failure": null,
+          "queuePosition": null,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 0,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 87,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Basalt Blend to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 136,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 105,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 56,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 20,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 15,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 21,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 86,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 39,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "cross_checking",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 87,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Basalt Blend to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 136,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 105,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 56,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 20,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 15,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 21,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 86,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 39,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "reporting",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 87,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Basalt Blend to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 136,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 105,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 56,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 20,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 15,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 21,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 86,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 39,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 2,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "verifying",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 87,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Basalt Blend to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 136,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 105,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 56,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 20,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 15,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 21,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 86,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 39,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 2,
+          "findings": 2,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "origin": "sample",
+          "sampleId": "checkout-in-firefox",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "state": "done",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 87,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Basalt Blend to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 136,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "link",
+                "name": "Go to checkout"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 105,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "fill",
+                "label": "Full name",
+                "value": "Ada Lovelace"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 56,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "fill",
+                "label": "Email address",
+                "value": "ada@example.test"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 20,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Street address",
+                "value": "1 Rue du Café"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 15,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "fill",
+                "label": "City",
+                "value": "Prague"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 21,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Place order"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 86,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "is confirmed"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 39,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 2,
+          "findings": 2,
+          "createdAt": "2026-10-07T11:50:27.872Z",
+          "startedAt": "2026-10-07T11:50:27.885Z",
+          "endedAt": "2026-10-07T11:50:40.008Z",
+          "expiresAt": "2026-10-07T12:50:27.872Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171/report"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+          "goal": "Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.",
+          "bugs": [
+            "checkout-engine"
+          ],
+          "reading": "The goal is to add one Basalt Blend bag, go to checkout, fill the required fields with Ada Lovelace’s data, place the order and verify the confirmation message.",
+          "findings": [
+            {
+              "id": "f1",
+              "kind": "failed_request",
+              "engine": "firefox-ua",
+              "stepIndex": 16,
+              "title": "A request was answered with 500",
+              "detail": "POST /checkout was answered with 500 (a page).",
+              "rule": null,
+              "path": "/checkout",
+              "evidenceIds": []
+            },
+            {
+              "id": "f2",
+              "kind": "expectation_failed",
+              "engine": "firefox-ua",
+              "stepIndex": 17,
+              "title": "The page does not say what was expected",
+              "detail": "expected \"is confirmed\"; the page says nothing like it",
+              "rule": null,
+              "path": "/checkout",
+              "evidenceIds": []
+            }
+          ],
+          "findingsDropped": 0,
+          "reports": [
+            {
+              "findingIds": [
+                "f1"
+              ],
+              "title": "Server error 500 on checkout POST request",
+              "steps": [
+                "Go to the home page.",
+                "Click the button \"Add Basalt Blend to cart\".",
+                "Click the link \"Go to checkout\".",
+                "Fill in the checkout form fields.",
+                "Click the button \"Place order\"."
+              ],
+              "expected": "Checkout POST request should succeed (200) and process the order.",
+              "actual": "POST /checkout returned HTTP 500 (internal server error).",
+              "severity": "high"
+            },
+            {
+              "findingIds": [
+                "f2"
+              ],
+              "title": "Order confirmation text not displayed after placing order",
+              "steps": [
+                "Go to the home page.",
+                "Add Basalt Blend to the cart.",
+                "Proceed to checkout.",
+                "Enter full name, email address, street address and city.",
+                "Click the button \"Place order\"."
+              ],
+              "expected": "The page should contain the text \"is confirmed\" indicating order confirmation.",
+              "actual": "The page after placing the order does not contain the expected confirmation text.",
+              "severity": "high"
+            }
+          ],
+          "reportsDropped": 0,
+          "verification": {
+            "verdict": "kept",
+            "red": {
+              "engine": "chromium",
+              "bugsOn": true,
+              "stepsPassed": true,
+              "findings": 0,
+              "durationMs": 1442
+            },
+            "cross": {
+              "engine": "firefox-ua",
+              "bugsOn": true,
+              "stepsPassed": false,
+              "findings": 2,
+              "durationMs": 4577
+            },
+            "green": {
+              "engine": "chromium",
+              "bugsOn": false,
+              "stepsPassed": true,
+              "findings": 0,
+              "durationMs": 1568
+            }
+          },
+          "engines": [
+            "chromium",
+            "firefox-ua"
+          ],
+          "modelCalls": 2,
+          "replans": 0,
+          "durationMs": 12083
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171/test"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "filename": "buy-one-bag-of-basalt-blend-fill-in-the.spec.ts",
+          "language": "typescript",
+          "source": "// Generated by LB-07 QA Engineer from a plan over a closed vocabulary (goto, click by role and name,\n// fill by label, select, expect text, expect count). Every string below is a JSON literal written by a\n// template; no model wrote any code here. Run it with Playwright against the staging shop:\n//   npx playwright test --config=<your config with baseURL http://127.0.0.1:8007>\nimport AxeBuilder from '@axe-core/playwright'\nimport { expect, test } from '@playwright/test'\n\n// goal: Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@example.test, 1 Rue du Café, Prague, place the order and check it is confirmed.\ntest(\"Buy one bag of Basalt Blend, fill in the checkout as Ada Lovelace at ada@exam...\", async ({ page }) => {\n  // Everything the page logs as an error or throws, and every request answered with an error status.\n  const consoleErrors: string[] = []\n  page.on('console', (message) => {\n    if (message.type() === 'error') consoleErrors.push(message.text())\n  })\n  page.on('pageerror', error => consoleErrors.push(error.message))\n  const failedRequests: string[] = []\n  page.on('response', (response) => {\n    if (response.status() >= 400) failedRequests.push(`${response.status()} ${new URL(response.url()).pathname}`)\n  })\n\n  // step 1: go to /\n  await page.goto(\"/\")\n  // step 2: click the button \\\"Add Basalt Blend to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Basalt Blend to cart\", exact: true }).click()\n  // step 3: click the link \\\"Go to checkout\\\"\n  await page.getByRole(\"link\", { name: \"Go to checkout\", exact: true }).click()\n  // step 4: fill \\\"Full name\\\"\n  await page.getByLabel(\"Full name\", { exact: true }).fill(\"Ada Lovelace\")\n  // step 5: fill \\\"Email address\\\"\n  await page.getByLabel(\"Email address\", { exact: true }).fill(\"ada@example.test\")\n  // step 6: fill \\\"Street address\\\"\n  await page.getByLabel(\"Street address\", { exact: true }).fill(\"1 Rue du Café\")\n  // step 7: fill \\\"City\\\"\n  await page.getByLabel(\"City\", { exact: true }).fill(\"Prague\")\n  // step 8: click the button \\\"Place order\\\"\n  await page.getByRole(\"button\", { name: \"Place order\", exact: true }).click()\n  // step 9: expect the text \\\"is confirmed\\\"\n  await expect(page.getByText(\"is confirmed\", { exact: false }).first()).toBeVisible()\n\n  // The checks code made during the run: accessibility, the console and the requests.\n  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()\n  expect(axe.violations.map(violation => violation.id)).toEqual([])\n  expect(consoleErrors).toEqual([])\n  expect(failedRequests).toEqual([])\n})\n",
+          "verdict": "kept"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171/evidence/e1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e1",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "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AAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAaEtY+QAABuxJREFUgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgRAAAAAAAIEQAAAAAACBEAAAAAAAgfz/AQAA///0FpY3AAAABklEQVQDACIcPWsZ7aahAAAAAElFTkSuQmCC",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/4f2e6571-6b1e-45e2-bfc6-09bc09a7e171/evidence/e2"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e2",
+          "kind": "snapshot",
+          "text": "- banner:\n  - link \"Basalt & Bean shop\":\n    - /url: /\n    - strong: Basalt & Bean shop\n  - navigation \"Shop\":\n    - link \"Shop\":\n      - /url: /\n    - text: ·\n    - link \"Cart\":\n      - /url: /cart\n    - text: ·\n    - link \"About\":\n      - /url: /about\n  - text: 0 items\n- main:\n  - heading \"Thank you!\" [level=1]\n  - status: Order bb-1656473 is confirmed.\n  - paragraph: 1 item on their way. Total charged €12.50.\n  - paragraph:\n    - link \"Back to the shop\":\n      - /url: /\n- contentinfo:\n  - paragraph: A synthetic staging shop for the LB-07 demo. Nothing here is for sale.",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "c6d9322e75391b19",
+        "parentId": "0304291943488dc0",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373827935,
+        "endMs": 1791373827935,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "bebe1a2d35940b33",
+        "parentId": "0304291943488dc0",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373827935,
+        "endMs": 1791373830229,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "0304291943488dc0",
+        "parentId": "0423e66e17453029",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791373827934,
+        "endMs": 1791373830230,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1369,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1309,
+          "outputTokens": 800
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "0423e66e17453029",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "plan the test",
+        "status": "ok",
+        "startMs": 1791373827929,
+        "endMs": 1791373830236,
+        "attrs": {
+          "attempts": 1,
+          "steps": 9
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "8477a705e4f4a759",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373830308,
+        "endMs": 1791373830398,
+        "attrs": {
+          "index": 0,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "10dc9a4a5d855e34",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373830817,
+        "endMs": 1791373830957,
+        "attrs": {
+          "index": 1,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "9a737e8b96808a7e",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373830970,
+        "endMs": 1791373831078,
+        "attrs": {
+          "index": 2,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "9c58d064b1469d25",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373831092,
+        "endMs": 1791373831151,
+        "attrs": {
+          "index": 3,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "0b1549af0490f2d8",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373831166,
+        "endMs": 1791373831190,
+        "attrs": {
+          "index": 4,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "fe300f6b53277b3c",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373831201,
+        "endMs": 1791373831220,
+        "attrs": {
+          "index": 5,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "c710f4bd9deb8dd4",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373831231,
+        "endMs": 1791373831255,
+        "attrs": {
+          "index": 6,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "0aba40bda6ffdfed",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373831270,
+        "endMs": 1791373831361,
+        "attrs": {
+          "index": 7,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "9d6ea55933341d1c",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373831377,
+        "endMs": 1791373831418,
+        "attrs": {
+          "index": 8,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "e63b8468314df25c",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373831741,
+        "endMs": 1791373831816,
+        "attrs": {
+          "index": 9,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "fe3aeaef0fcfa1c9",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373831817,
+        "endMs": 1791373831921,
+        "attrs": {
+          "index": 10,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "2d5ee4e0b30244d0",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373831922,
+        "endMs": 1791373832025,
+        "attrs": {
+          "index": 11,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "38691daf23b51327",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373832026,
+        "endMs": 1791373832081,
+        "attrs": {
+          "index": 12,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "285a01f1f0d19b64",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373832081,
+        "endMs": 1791373832105,
+        "attrs": {
+          "index": 13,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "5953ecfeae0c1171",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373832106,
+        "endMs": 1791373832127,
+        "attrs": {
+          "index": 14,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "4a0d3f177350cc4a",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373832127,
+        "endMs": 1791373832149,
+        "attrs": {
+          "index": 15,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "fd92efea24e95684",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373832149,
+        "endMs": 1791373832229,
+        "attrs": {
+          "index": 16,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "9987b335045a1d81",
+        "parentId": "b8320274fb7a0b7e",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373832236,
+        "endMs": 1791373836247,
+        "attrs": {
+          "index": 17,
+          "engine": "firefox-ua",
+          "outcome": "expectation",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "b8320274fb7a0b7e",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "cross-check in the second engine",
+        "status": "ok",
+        "startMs": 1791373831684,
+        "endMs": 1791373836261,
+        "attrs": {
+          "bug_findings": 2,
+          "steps_passed": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "76d8fb90125c5731",
+        "parentId": "4993a5a6df56a872",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373836272,
+        "endMs": 1791373836272,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "6dd257692f683436",
+        "parentId": "4993a5a6df56a872",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373836272,
+        "endMs": 1791373838429,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "4993a5a6df56a872",
+        "parentId": "5fb71af6b1b407f2",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791373836271,
+        "endMs": 1791373838430,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 614,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 647,
+          "outputTokens": 809
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "5fb71af6b1b407f2",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "write bug reports",
+        "status": "ok",
+        "startMs": 1791373836267,
+        "endMs": 1791373838435,
+        "attrs": {
+          "attempts": 1,
+          "reports": 2,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "6d9f39c26c05318a",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791373838558,
+        "endMs": 1791373838660,
+        "attrs": {
+          "index": 18,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "756cd1f8f5253c4f",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373839108,
+        "endMs": 1791373839275,
+        "attrs": {
+          "index": 19,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "20a4aba50ee55809",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373839276,
+        "endMs": 1791373839394,
+        "attrs": {
+          "index": 20,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "a888c9e1e944d9f8",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373839395,
+        "endMs": 1791373839453,
+        "attrs": {
+          "index": 21,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "4b20653cb6f118cc",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373839455,
+        "endMs": 1791373839472,
+        "attrs": {
+          "index": 22,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "3b44867ce94e9c7c",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373839473,
+        "endMs": 1791373839498,
+        "attrs": {
+          "index": 23,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "5b95e8d5af5bec43",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791373839498,
+        "endMs": 1791373839525,
+        "attrs": {
+          "index": 24,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "66594ac566de1df2",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791373839525,
+        "endMs": 1791373839626,
+        "attrs": {
+          "index": 25,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "3840a199ee29ab8a",
+        "parentId": "0505ef169705912d",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791373839627,
+        "endMs": 1791373839683,
+        "attrs": {
+          "index": 26,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "0505ef169705912d",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "verify the test on the clean shop",
+        "status": "ok",
+        "startMs": 1791373838438,
+        "endMs": 1791373840006,
+        "attrs": {
+          "steps_passed": true,
+          "bug_findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "54afb34be83699a3",
+        "parentId": "bfff35cb86c039e5",
+        "kind": "system.step",
+        "name": "generate the test",
+        "status": "ok",
+        "startMs": 1791373840007,
+        "endMs": 1791373840007,
+        "attrs": {
+          "verdict": "kept",
+          "chars": 2632
+        }
+      },
+      {
+        "v": 1,
+        "runId": "4f2e6571-6b1e-45e2-bfc6-09bc09a7e171",
+        "system": "lb-07",
+        "spanId": "bfff35cb86c039e5",
+        "kind": "system.run",
+        "name": "qa run",
+        "status": "ok",
+        "startMs": 1791373827872,
+        "endMs": 1791373840028,
+        "attrs": {
+          "outcome": "done",
+          "origin": "sample",
+          "model_calls": 2,
+          "findings": 2,
+          "replans": 0,
+          "bugs_on": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 32,
+    "durationMs": 12156
+  }
+}

@@ -1,0 +1,33 @@
+# A repair meeting where nobody volunteers and a decision changes.
+#
+# "Someone should call the service company this week" has no owner, and a good extractor says so
+# instead of inventing one. The roasting pause is first set for Tuesday and then moved: only the
+# last decision stands. See monday-roasting-plan.yaml for how scripts work.
+key: grinder-repair
+title: Grinder repair
+language: en
+about: >-
+  The big grinder keeps jamming: a job nobody takes, and a decision that is made twice.
+speakers:
+  - id: hannah
+    name: Hannah
+    voice: slt
+  - id: peter
+    name: Peter
+    voice: rms
+  - id: kevin
+    name: Kevin
+    voice: kal16
+turns:
+  - speaker: hannah
+    text: "The big grinder is jamming again. We need to get it repaired."
+  - speaker: peter
+    text: "Someone should call the service company this week."
+  - speaker: kevin
+    text: "Right. Whoever has time, I guess."
+  - speaker: hannah
+    text: "Let's pause roasting on Tuesday while the technician is here."
+  - speaker: peter
+    text: "Tuesday is bad, we have the wholesale order. Make it Wednesday."
+  - speaker: hannah
+    text: "OK, Wednesday then. The roasting pause is on Wednesday."

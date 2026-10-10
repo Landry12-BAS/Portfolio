@@ -1,0 +1,552 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "cancel-order",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:27:33.229Z",
+  "language": "cs",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0006",
+          "language": "cs",
+          "body": "Prosím, zrušte moji objednávku BB-1052, už ji nepotřebuji."
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "UvzCacdQ1uzScqJ0",
+          "customer": {
+            "key": "cus-0006",
+            "name": "Petra Svobodová",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-07T11:27:28.981Z",
+          "body": "Prosím, zrušte moji objednávku BB-1052, už ji nepotřebuji.",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "QAP0J-CcNSIPDOFz6Sd0DA",
+          "expires_at": "2026-10-08T11:27:28.981Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/UvzCacdQ1uzScqJ0"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "UvzCacdQ1uzScqJ0",
+          "customer": {
+            "key": "cus-0006",
+            "name": "Petra Svobodová",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-07T11:27:28.981Z",
+          "body": "Prosím, zrušte moji objednávku BB-1052, už ji nepotřebuji.",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "QAP0J-CcNSIPDOFz6Sd0DA",
+          "expires_at": "2026-10-08T11:27:28.981Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/UvzCacdQ1uzScqJ0"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "UvzCacdQ1uzScqJ0",
+          "customer": {
+            "key": "cus-0006",
+            "name": "Petra Svobodová",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "awaiting_approval",
+          "category": "order_change",
+          "created_at": "2026-10-07T11:27:28.981Z",
+          "body": "Prosím, zrušte moji objednávku BB-1052, už ji nepotřebuji.",
+          "order_number": "BB-1052",
+          "escalation_reason": "",
+          "run_id": "QAP0J-CcNSIPDOFz6Sd0DA",
+          "expires_at": "2026-10-08T11:27:28.981Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "Dobrý den, Petro Svobodová,",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Vaši objednávku BB-1052 jsme zrušili, protože se ještě neupražila a její stav byl „Zpracovává se“.",
+                "citations": [
+                  "passage:orders.before-roasting",
+                  "order:BB-1052"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "S pozdravem,\nBasalt & Bean support",
+                "citations": [],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "openai/gpt-oss-120b",
+            "sources": [
+              {
+                "id": "passage:orders.before-roasting",
+                "title": "Změna nebo zrušení objednávky §1: Před pražením",
+                "text": "Objednávku můžete zdarma změnit nebo zrušit, dokud není upražená. Do té doby má stav „Zpracovává se“."
+              },
+              {
+                "id": "order:BB-1052",
+                "title": "Order BB-1052",
+                "text": "Order BB-1052: processing. Dates: placed 2026-10-07. Ships to CZ with Kolo Courier. Items: 3 x Basalt Blend, espresso, 250 g, at 289 CZK each. Delivery 149 CZK. Total 1016 CZK."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "c3b64223f4603d33",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1791372449020,
+        "endMs": 1791372449020,
+        "attrs": {}
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "e91930341855b022",
+        "parentId": "3238c56816d6aaef",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372449026,
+        "endMs": 1791372449365,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "3238c56816d6aaef",
+        "parentId": "c073a847393e7a45",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372449025,
+        "endMs": 1791372449367,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 24,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 21,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0014813492307439446,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "c073a847393e7a45",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372449021,
+        "endMs": 1791372449368,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0015
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "1f675393ae7d070d",
+        "parentId": "330f9adad138ba71",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791372449373,
+        "endMs": 1791372449946,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "330f9adad138ba71",
+        "parentId": "c42fe80ec08f0ee7",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791372449372,
+        "endMs": 1791372449947,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 429,
+          "maxOutputTokens": 300,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 425,
+          "outputTokens": 167
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "c42fe80ec08f0ee7",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1791372449369,
+        "endMs": 1791372449949,
+        "attrs": {
+          "category": "order_change",
+          "senior_agent": "none",
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "6cf85c25fb74e423",
+        "parentId": "97ce343be581f933",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1791372449955,
+        "endMs": 1791372450186,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "modelId": "@cf/baai/bge-m3",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "97ce343be581f933",
+        "parentId": "09662976a83191dc",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1791372449954,
+        "endMs": 1791372450187,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 7,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "09662976a83191dc",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1791372449950,
+        "endMs": 1791372450204,
+        "attrs": {
+          "candidates": 8,
+          "used_vectors": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "12e3c8ea9bf7e02d",
+        "parentId": "a04d9faaae973dfa",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1791372450214,
+        "endMs": 1791372450569,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "modelId": "@cf/baai/bge-reranker-base",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "a04d9faaae973dfa",
+        "parentId": "21bfddec29c94f8f",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1791372450213,
+        "endMs": 1791372450569,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 517,
+          "maxOutputTokens": 0,
+          "usage": "estimated",
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "documents": 8
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "21bfddec29c94f8f",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1791372450206,
+        "endMs": 1791372450571,
+        "attrs": {
+          "reranked": true,
+          "top_relevance": 0.7004
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "ea643c34977d99fa",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1791372450572,
+        "endMs": 1791372450575,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "f492b5ec63205940",
+        "parentId": "a96051fe90fe5142",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372450585,
+        "endMs": 1791372450585,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "fac4bde96ecbeea4",
+        "parentId": "a96051fe90fe5142",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372450585,
+        "endMs": 1791372450585,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "76971f26952a9f9f",
+        "parentId": "a96051fe90fe5142",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372450585,
+        "endMs": 1791372452209,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "a96051fe90fe5142",
+        "parentId": "20157489ccbc7bd8",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372450584,
+        "endMs": 1791372452211,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 814,
+          "maxOutputTokens": 1000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 866,
+          "outputTokens": 377
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "20157489ccbc7bd8",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1791372450579,
+        "endMs": 1791372452214,
+        "attrs": {
+          "answerable": true,
+          "sentences": 3,
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "3094069c60c9c037",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1791372452215,
+        "endMs": 1791372452215,
+        "attrs": {
+          "supported": true,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "8c5b23e8a01d170b",
+        "parentId": "b3eafa33fba0412a",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1791372452215,
+        "endMs": 1791372452215,
+        "attrs": {
+          "status": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "QAP0J-CcNSIPDOFz6Sd0DA",
+        "system": "lb-01",
+        "spanId": "b3eafa33fba0412a",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1791372449020,
+        "endMs": 1791372452216,
+        "attrs": {
+          "language": "cs",
+          "status": "awaiting_approval"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 5,
+    "steps": 9,
+    "durationMs": 3196
+  }
+}

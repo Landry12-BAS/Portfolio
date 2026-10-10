@@ -1,0 +1,39 @@
+# One run of the nightly database backup: dump, encrypt with age, upload (infra/backup).
+# lb-backup.timer starts it; `sudo systemctl start lb-backup.service` runs it by hand and
+# `journalctl -u lb-backup.service` shows what it did.
+#
+# The job is the `backup` service of the live release's Compose file, run once as a
+# container of its own, so it has the same limits and network rules as everything else:
+# it reaches Postgres on the data network and R2 only through the egress proxy. It runs
+# under the deploy's lock (below), so it never runs beside a deploy's jobs.
+#
+# Install (docs/DEPLOY.md, Backups):
+#   sudo install -m 0644 infra/systemd/lb-backup.service infra/systemd/lb-backup.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now lb-backup.timer
+[Unit]
+Description=Back up the platform's database, encrypted, to R2
+Wants=lb-secrets.service
+After=docker.service lb-secrets.service
+ConditionPathExists=/opt/lb/current/infra/scripts/compose.sh
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+# The backup takes the lock that infra/scripts/deploy.sh holds from start to end: the memory
+# budget counts a deploy's jobs and the backup as groups that never run at the same time
+# (infra/docker-compose.yml, Resources). It waits for a deploy that is running, 20 minutes at
+# most, then fails without a dump and tries again the next night; --verbose puts the wait in the
+# journal. A deploy that starts while the backup runs is refused, and says so. The backup needs
+# the postgres and egress-systems containers, which are already running; --no-deps leaves them
+# alone. (infra/scripts/check.sh and test-deploy.sh fail a unit without the lock.)
+ExecStart=/usr/bin/flock --verbose --wait 1200 /opt/lb/deploy.lock /opt/lb/current/infra/scripts/compose.sh --profile backup run --rm --no-deps backup
+# A dump and an upload take minutes, not hours; a hung one must not pile up behind the next.
+# The wait for the lock counts in this time too, so it is shorter: a backup that waited for all
+# of it still has ten minutes.
+TimeoutStartSec=30min
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectControlGroups=yes

@@ -1,0 +1,442 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "revenue-by-product-last-quarter",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:40:26.621Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "What was the revenue of each product last quarter?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT products.name AS product,\n       SUM(order_lines.line_total_czk) AS revenue\nFROM order_lines\nJOIN orders ON order_lines.order_id = orders.order_id\nJOIN products ON order_lines.product_id = products.product_id\nWHERE orders.status NOT IN ('cancelled', 'lost')\n  AND orders.ordered_at BETWEEN DATE '2026-07-01' AND DATE '2026-09-30'\nGROUP BY products.name\nORDER BY revenue DESC",
+              "stopped_by": null
+            }
+          ],
+          "chart": {
+            "kind": "bar",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "data": {
+                "values": [
+                  {
+                    "x": "Ethiopia Guji",
+                    "y": 180381190
+                  },
+                  {
+                    "x": "Basalt Blend",
+                    "y": 105599910
+                  },
+                  {
+                    "x": "Colombia Huila",
+                    "y": 77684095
+                  },
+                  {
+                    "x": "Lava Decaf",
+                    "y": 48440612
+                  },
+                  {
+                    "x": "Kenya Nyeri",
+                    "y": 25572124
+                  },
+                  {
+                    "x": "Basalt Hand Grinder",
+                    "y": 14761430
+                  },
+                  {
+                    "x": "Gooseneck Kettle",
+                    "y": 9539040
+                  }
+                ]
+              },
+              "description": "A bar chart of revenue by product.",
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "sort": [
+                    "Ethiopia Guji",
+                    "Basalt Blend",
+                    "Colombia Huila",
+                    "Lava Decaf",
+                    "Kenya Nyeri",
+                    "Basalt Hand Grinder",
+                    "Gooseneck Kettle"
+                  ],
+                  "title": "product",
+                  "type": "nominal"
+                },
+                "y": {
+                  "field": "y",
+                  "title": "revenue",
+                  "type": "quantitative"
+                }
+              },
+              "height": 280,
+              "mark": {
+                "tooltip": true,
+                "type": "bar"
+              },
+              "width": "container"
+            }
+          },
+          "elapsed_ms": 5556,
+          "explanation": "The query returned 7 rows with the columns product, revenue.",
+          "explanation_source": "fallback",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "text",
+                "name": "product"
+              },
+              {
+                "kind": "integer",
+                "name": "revenue"
+              }
+            ],
+            "elapsed_ms": 108,
+            "joins": 2,
+            "row_count": 7,
+            "rows": [
+              [
+                "Ethiopia Guji",
+                180381190
+              ],
+              [
+                "Basalt Blend",
+                105599910
+              ],
+              [
+                "Colombia Huila",
+                77684095
+              ],
+              [
+                "Lava Decaf",
+                48440612
+              ],
+              [
+                "Kenya Nyeri",
+                25572124
+              ],
+              [
+                "Basalt Hand Grinder",
+                14761430
+              ],
+              [
+                "Gooseneck Kettle",
+                9539040
+              ]
+            ],
+            "sql": "SELECT\n  products.name AS product,\n  SUM(order_lines.line_total_czk) AS revenue\nFROM order_lines AS order_lines\nJOIN orders AS orders\n  ON order_lines.order_id = orders.order_id\nJOIN products AS products\n  ON order_lines.product_id = products.product_id\nWHERE\n  NOT orders.status IN ('cancelled', 'lost')\n  AND orders.ordered_at BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE)\nGROUP BY\n  products.name\nORDER BY\n  revenue DESC\nLIMIT 1000",
+            "tables": [
+              "order_lines",
+              "orders",
+              "products"
+            ],
+            "truncated": false
+          },
+          "run_id": "vfV0Ig9jOyng9OEtroNL2Q"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "eb6441a30e5dc858",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373221015,
+        "endMs": 1791373221015,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "product",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "140d386e4397b43b",
+        "parentId": "cfdc1028e00016ba",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373221022,
+        "endMs": 1791373221022,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "908e5a7e096529e2",
+        "parentId": "cfdc1028e00016ba",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373221022,
+        "endMs": 1791373221022,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "876697f1a19958c9",
+        "parentId": "cfdc1028e00016ba",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373221023,
+        "endMs": 1791373221023,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "930ba64ecd750e5b",
+        "parentId": "cfdc1028e00016ba",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373221023,
+        "endMs": 1791373225414,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "cfdc1028e00016ba",
+        "parentId": "6bd0f5c966e23f15",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373221021,
+        "endMs": 1791373225416,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2203,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1894,
+          "outputTokens": 351
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "6bd0f5c966e23f15",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373221016,
+        "endMs": 1791373225418,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 381
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "402632283b6bf5aa",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373225419,
+        "endMs": 1791373225434,
+        "attrs": {
+          "tables": "order_lines,orders,products",
+          "joins": 2,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "56349aed9406cdab",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791373225435,
+        "endMs": 1791373225439,
+        "attrs": {
+          "operators": 5,
+          "estimated_rows": 3119287
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "b81a4a32b57078c7",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791373225440,
+        "endMs": 1791373225548,
+        "attrs": {
+          "rows": 7,
+          "columns": 2,
+          "elapsed_ms": 108,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "1808bf3174257a2b",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791373225548,
+        "endMs": 1791373225549,
+        "attrs": {
+          "kind": "bar",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "0bdcb1c737a25448",
+        "parentId": "a34b526ba605d2b5",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791373225556,
+        "endMs": 1791373226566,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "a34b526ba605d2b5",
+        "parentId": "a8a1b896f4ee1e7d",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791373225555,
+        "endMs": 1791373226567,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 391,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 426,
+          "outputTokens": 500
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "a8a1b896f4ee1e7d",
+        "parentId": "72db2afca3b6b747",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791373225549,
+        "endMs": 1791373226570,
+        "attrs": {
+          "source": "fallback"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "vfV0Ig9jOyng9OEtroNL2Q",
+        "system": "lb-05",
+        "spanId": "72db2afca3b6b747",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373221015,
+        "endMs": 1791373226571,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 7
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 5556
+  }
+}

@@ -1,0 +1,325 @@
+/* The look LB-10's board parts share: sections and panels, buttons and fields, hints, chips, facts, quotes, tables,
+   the progress bar, the figures and the marks of a word-level difference. Every colour is a token of the design system
+   with a light and a dark value, a state is never shown by colour alone (it always has words, an icon or a shape
+   beside it), and the series tokens colour data marks only. The class names start with lb10- so they cannot meet
+   anything else on the page. */
+
+/* A section and a panel are one column that never grows past the board: a long line inside one (a prompt, a reply,
+   a case's inputs) wraps or scrolls where it is, and never widens the page. */
+.lb10-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  /* Leave room for the site's sticky toolbar when a section is scrolled into view. */
+  scroll-margin-top: 72px;
+}
+
+.lb10-section > h2,
+.lb10-panel > h2,
+.lb10-panel > h3,
+.lb10-label {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+.lb10-section > h2 {
+  font-size: 11px;
+}
+
+.lb10-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--lb-sheet);
+  border: 1px solid var(--lb-rule);
+  scroll-margin-top: 72px;
+}
+
+.lb10-subtitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lb10-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font: 600 13px/1.2 var(--lb-font-sans);
+  color: var(--lb-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.lb10-button:hover:not(:disabled) {
+  background: var(--lb-shade);
+}
+
+.lb10-button:focus-visible,
+.lb10-focusable:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb10-button--primary {
+  min-height: 36px;
+  padding: 9px 18px;
+  color: var(--lb-sheet);
+  background: var(--lb-ink);
+}
+
+.lb10-button--primary:hover:not(:disabled) {
+  background: var(--lb-ink-hover);
+}
+
+.lb10-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.lb10-button--quiet {
+  border-color: var(--lb-rule);
+}
+
+.lb10-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lb10-hint {
+  font-size: 12.5px;
+  color: var(--lb-graphite);
+}
+
+.lb10-mono {
+  font-family: var(--lb-font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.lb10-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.lb10-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  font-family: var(--lb-font-mono);
+  font-size: 11px;
+  color: var(--lb-ink);
+  background: var(--lb-shade);
+  border: 1px solid var(--lb-rule);
+  border-radius: 999px;
+}
+
+/* A chip for something that is wrong: drawn dashed and heavier, and it always carries a word too. */
+.lb10-chip--bad {
+  border: 1.5px dashed var(--lb-ink);
+}
+
+.lb10-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.lb10-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+/* Facts as a small grid of label above value, so a label never runs into its number. */
+.lb10-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.lb10-facts dt {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+.lb10-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb10-quote {
+  padding: 8px 10px;
+  margin: 0;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--lb-shade);
+  border-left: 3px solid var(--lb-rule);
+}
+
+/* Text that is data (a prompt, a reply, a case's inputs): kept exactly as written, wrapping where it must, in a box
+   that scrolls when it is long. A box that scrolls can take the focus, so a keyboard user can scroll it too. */
+.lb10-text {
+  max-height: 22rem;
+  padding: 10px 12px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--lb-font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--lb-shade);
+  border: 1px solid var(--lb-rule);
+}
+
+.lb10-text:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb10-details > summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lb10-details > summary:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb10-details[open] > summary {
+  margin-bottom: 8px;
+}
+
+.lb10-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lb10-table-wrap:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb10-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+/* A table's numbered title, above the box that scrolls the table sideways rather than inside it, so on a narrow screen
+   the title wraps in view instead of running off with the table; the table is named by it (aria-labelledby). */
+.lb10-caption {
+  margin: 0 0 -4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* A name written as code (a case, a pack, an alias) is never broken inside a table: the table scrolls instead. */
+.lb10-table .lb10-mono {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.lb10-table th,
+.lb10-table td {
+  padding: 6px 12px 6px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--lb-rule);
+}
+
+.lb10-table thead th {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+/* A row's heading names what the row is about, in the page's own type. */
+.lb10-table tbody th {
+  font-weight: 600;
+}
+
+.lb10-table td.lb10-num,
+.lb10-table th.lb10-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The progress of a run's calls: a bar whose fill is the share done, with its value in words beside it. */
+.lb10-bar {
+  height: 10px;
+  overflow: hidden;
+  background: var(--lb-shade);
+  border: 1px solid var(--lb-rule);
+  border-radius: 999px;
+}
+
+.lb10-bar-fill {
+  height: 100%;
+  background: var(--lb-ink);
+  transition: width 0.4s ease;
+}
+
+/* The marks of a word-level difference: struck through and underlined, so the change is never shown by colour alone. */
+.lb10-del {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  background: var(--lb-rule);
+}
+
+.lb10-ins {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  background: var(--lb-rule);
+}
+
+/* The titles inside a report's cases, which the site's base styles leave with the browser's margins. */
+.lb10-section h5,
+.lb10-section h6 {
+  margin: 0;
+}
+
+/* The data marks of the figures: production in the first series colour, the edited prompt in the second. */
+.lb10-mark--production {
+  color: var(--lb-series-1);
+}
+
+.lb10-mark--edited {
+  color: var(--lb-series-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb10-bar-fill {
+    transition: none;
+  }
+}

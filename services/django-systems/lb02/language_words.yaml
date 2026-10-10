@@ -1,0 +1,129 @@
+# The words and letters LB-02 reads a visitor's language from (lb02/languages.py), for the
+# Latin-script languages it knows. Checked by the strict reader in lb02/languages.py when
+# the module loads, so a typo stops the service at start-up.
+#
+# common   the commonest words of the language and the words of a booking, all lowercase,
+#          two letters or more (one-letter words belong to too many languages). Each is
+#          worth one point.
+# strong   greetings and words almost no other language here shares. Each is worth two.
+# letters  letters that, among these languages, belong to this one alone. Each is worth two.
+#
+# Czech and Slovak share most of their letters and many words, so their lists lean on the
+# words and letters that tell them apart: chci and chcem, pro and pre, děkuji and ďakujem.
+
+languages:
+  en:
+    common: [
+      the, an, and, or, but, if, so, to, of, for, in, "on", at, by, with, from, as, is, are, am, was, were, be, been,
+      being, me, my, mine, we, us, our, you, your, he, she, it, they, them, their, this, that, these, those, there,
+      here, what, when, where, who, how, which, why, can, could, would, should, will, shall, may, might, do, does,
+      did, done, have, has, had, not, "no", "yes", please, thanks, thank, hello, hi, hey, ok, okay, want, like, need,
+      book, booking, booked, reserve, reservation, session, tasting, cupping, workshop, roasting, people, person,
+      guests, guest, tomorrow, today, tonight, morning, afternoon, evening, time, day, week, next, any, name, email,
+      confirm, cancel, actually, instead, again, just, also, very, much, many, long, take, one, two, three, four,
+      five, six, seven, eight, nine, ten, something, someone, anyone, about, than, then, now, never, mind, let, go,
+    ]
+    strong: [hi, hello, hey, please, thanks, tomorrow, booking]
+  cs:
+    common: [
+      na, do, od, po, pro, za, se, si, je, jsem, jsi, jsme, jste, jsou, byl, byla, bylo, být, bude, budu, budeme,
+      budete, ne, ano, ale, nebo, že, co, jak, kdy, kde, kdo, proč, který, která, které, tento, tato, toto, ten, ta,
+      to, tady, tam, já, ty, my, vy, oni, mi, mě, mne, ti, tě, nám, nás, vám, vás, jim, jich, mu, ho, ji, jí, chci,
+      chtěl, chtěla, chtěli, bych, bys, by, bychom, byste, prosím, děkuji, děkuju, dobrý, den, dobrou, večer, ahoj,
+      zítra, dnes, dneska, ráno, dopoledne, odpoledne, noc, rezervovat, rezervaci, objednat, objednávka, degustace,
+      degustaci, kávu, kávy, káva, osoby, osob, osoba, lidí, lidi, jméno, jmenuji, jmenuju, potvrďte, potvrdit,
+      můžete, můžu, mohu, moct, musím, musíte, mám, máte, máme, chtít, také, ještě, už, jen, velmi, moc, jeden,
+      jedna, dva, dvě, tři, čtyři, pět, šest, sedm, osm, devět, deset,
+    ]
+    strong: [děkuji, děkuju, chci, chtěl, chtěla, zítra, prosím, jmenuji, dobrý]
+    letters: "ěřů"
+  sk:
+    common: [
+      na, do, od, po, pre, za, sa, si, je, som, sme, ste, sú, bol, bola, bolo, byť, bude, budem, budeme, budete, nie,
+      áno, ale, alebo, že, čo, ako, kedy, kde, kto, prečo, ktorý, ktorá, ktoré, tento, táto, toto, ten, tá, to, tu,
+      tam, ja, ty, my, vy, oni, mi, mňa, ti, ťa, nám, nás, vám, vás, im, ich, mu, ho, ju, jej, chcem, chcel, chcela,
+      chceli, by, prosím, ďakujem, dobrý, deň, večer, ahoj, zajtra, dnes, ráno, dopoludnia, popoludní, rezervovať,
+      rezerváciu, objednať, objednávka, degustáciu, degustácia, kávu, kávy, káva, osoby, osôb, osoba, ľudí, ľudia,
+      meno, volám, potvrďte, potvrdiť, môžete, môžem, môžeš, mám, máte, máme, chcieť, tiež, ešte, už, len, veľmi,
+      veľa, jeden, jedna, dva, dve, tri, štyri, päť, šesť, sedem, osem, deväť, desať,
+    ]
+    strong: [ďakujem, chcem, zajtra, áno, volám, dobrý, ľudí]
+    letters: "ĺľŕô"
+  de:
+    common: [
+      der, die, das, den, dem, des, ein, eine, einen, einem, einer, und, oder, aber, wenn, weil, dass, ist, sind,
+      war, waren, sein, bin, bist, seid, habe, hat, haben, hatte, nicht, kein, keine, ja, nein, bitte, danke, guten,
+      tag, morgen, abend, hallo, ich, du, er, sie, es, wir, ihr, mein, meine, meinen, name, möchte, möchten, würde,
+      würden, kann, können, muss, müssen, will, wollen, buchen, buchung, reservieren, reservierung, termin,
+      verkostung, workshop, personen, person, für, mit, von, zu, im, am, um, auf, aus, bei, nach, vor, über, heute,
+      übermorgen, nachmittag, vormittag, mittag, uhr, zwei, drei, vier, fünf, sechs, sieben, acht, neun, zehn,
+      gerne, bestätigen, bestätigt, stornieren, statt, auch, noch, schon, nur, sehr, mehr, wie, was, wann, wo, wer,
+      warum, welche, welcher, welches, dieser, diese, dieses,
+    ]
+    strong: [hallo, guten, danke, bitte, möchte, ich, übermorgen]
+    letters: "ß"
+  pl:
+    common: [
+      na, do, od, po, dla, za, się, jest, są, był, była, było, być, będzie, nie, tak, ale, lub, że, co, jak,
+      kiedy, gdzie, kto, dlaczego, który, która, które, ten, ta, to, tu, tam, ja, ty, my, wy, oni, mi, mnie, ci, cię,
+      nam, nas, wam, was, im, ich, mu, go, ją, jej, chcę, chciałbym, chciałabym, proszę, dziękuję, dzień, dobry,
+      wieczór, cześć, jutro, dziś, rano, popołudnie, wieczorem, rezerwację, zarezerwować, degustację, kawy, kawa,
+      osoby, osób, osoba, ludzi, imię, nazywam, potwierdzić, potwierdzam, możecie, mogę, muszę, mam, macie, mamy,
+      też, jeszcze, już, tylko, bardzo, jeden, jedna, dwa, dwie, trzy, cztery, pięć, sześć,
+    ]
+    strong: [cześć, dziękuję, proszę, jutro, chcę]
+    letters: "ąęłńśźżć"
+  es:
+    common: [
+      el, la, los, las, un, una, unos, unas, pero, si, porque, que, es, son, era, eran, ser, soy, eres, somos,
+      estoy, está, están, tengo, tiene, tienen, "no", sí, por, favor, gracias, hola, buenos, días, tarde, noche,
+      mañana, yo, tú, él, ella, nosotros, ellos, mi, mis, tu, tus, su, sus, nombre, quiero, quisiera, querría, puedo,
+      puede, pueden, reservar, reserva, cita, degustación, taller, personas, persona, para, con, de, del, al, en,
+      desde, hasta, hoy, pasado, mediodía, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, confirmar,
+      cancelar, también, todavía, solo, muy, más, cómo, qué, cuándo, dónde, quién, cuál,
+    ]
+    strong: [hola, gracias, quiero, mañana, buenos]
+    letters: "ñ¿¡"
+  fr:
+    common: [
+      le, la, les, un, une, des, et, ou, mais, si, parce, est, sont, était, être, suis, es, sommes, êtes, ai, avons,
+      avez, ont, non, oui, il, plaît, merci, bonjour, bonsoir, salut, demain, aujourd, hui, matin, après, midi, soir,
+      je, tu, elle, nous, vous, ils, mon, ma, mes, ton, ta, tes, son, sa, ses, nom, voudrais, voudrions, veux, peux,
+      peut, pouvez, réserver, réservation, créneau, dégustation, atelier, personnes, personne, pour, avec, de, du,
+      au, en, par, depuis, deux, trois, quatre, cinq, six, sept, huit, neuf, dix, confirmer, annuler, aussi, encore,
+      déjà, seulement, très, plus, comment, quoi, quand, où, qui, quel, quelle,
+    ]
+    strong: [bonjour, merci, demain, bonsoir, salut]
+    letters: "œèêùëïî"
+  it:
+    common: [
+      il, lo, la, gli, le, un, una, uno, ma, se, perché, che, sono, era, essere, sei, siamo, siete, ho, ha,
+      abbiamo, avete, hanno, non, "no", sì, per, favore, grazie, ciao, buongiorno, buonasera, domani, oggi, mattina,
+      pomeriggio, sera, io, tu, lui, lei, noi, voi, loro, mio, mia, miei, tuo, suo, nome, vorrei, vorremmo, voglio,
+      posso, può, possiamo, prenotare, prenotazione, appuntamento, degustazione, laboratorio, persone, persona, con,
+      di, del, al, in, da, fino, due, tre, quattro, cinque, sette, otto, nove, dieci, confermare, annullare, anche,
+      ancora, già, solo, molto, più, come, cosa, quando, dove, chi, quale,
+    ]
+    strong: [ciao, grazie, domani, buongiorno, vorrei]
+    letters: "ìò"
+  pt:
+    common: [
+      os, as, um, uma, uns, umas, ou, mas, se, porque, que, são, era, eram, ser, sou, és, somos, estou, está,
+      estão, tenho, tem, têm, não, sim, por, favor, obrigado, obrigada, olá, bom, dia, boa, tarde, noite, amanhã,
+      hoje, manhã, eu, tu, ele, ela, nós, eles, meu, minha, nome, queria, gostaria, quero, posso, pode, podem,
+      reservar, reserva, marcação, degustação, oficina, pessoas, pessoa, para, com, do, da, em, desde, até, dois,
+      duas, três, quatro, cinco, seis, sete, oito, nove, dez, confirmar, cancelar, também, ainda, já, só, muito, mais,
+      como, quando, onde, quem, qual,
+    ]
+    strong: [olá, obrigado, obrigada, amanhã, queria]
+    letters: "ãõ"
+  nl:
+    common: [
+      de, het, een, en, of, maar, als, omdat, dat, zijn, was, waren, ben, bent, heb, heeft, hebben, niet, geen, ja,
+      nee, alsjeblieft, alstublieft, dank, bedankt, goedendag, hallo, goedemorgen, morgen, vandaag, ochtend, middag,
+      avond, ik, jij, je, hij, zij, wij, jullie, mijn, naam, wil, willen, zou, graag, kan, kunnen, reserveren,
+      reservering, afspraak, proeverij, workshop, personen, persoon, voor, met, van, naar, op, in, uit, bij, tot,
+      twee, drie, vier, vijf, zes, zeven, acht, negen, tien, bevestigen, annuleren, ook, nog, al, alleen, heel,
+      meer, hoe, wat, wanneer, waar, wie, welke,
+    ]
+    strong: [alsjeblieft, bedankt, morgen, graag, goedendag]

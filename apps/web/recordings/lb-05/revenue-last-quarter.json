@@ -1,0 +1,328 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "revenue-last-quarter",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:40:14.770Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "What was our revenue last quarter?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT SUM(ol.line_total_czk) AS revenue FROM orders o JOIN order_lines ol ON ol.order_id = o.order_id WHERE o.ordered_at BETWEEN DATE '2026-07-01' AND DATE '2026-09-30' AND o.status NOT IN ('cancelled', 'lost')",
+              "stopped_by": null
+            }
+          ],
+          "chart": null,
+          "elapsed_ms": 2698,
+          "explanation": "Our revenue last quarter was 461978401 CZK. This covers the period from 2026-07-01 to 2026-09-30.",
+          "explanation_source": "model",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "integer",
+                "name": "revenue"
+              }
+            ],
+            "elapsed_ms": 41,
+            "joins": 1,
+            "row_count": 1,
+            "rows": [
+              [
+                461978401
+              ]
+            ],
+            "sql": "SELECT\n  SUM(ol.line_total_czk) AS revenue\nFROM orders AS o\nJOIN order_lines AS ol\n  ON ol.order_id = o.order_id\nWHERE\n  o.ordered_at BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE)\n  AND NOT o.status IN ('cancelled', 'lost')\nLIMIT 1000",
+            "tables": [
+              "order_lines",
+              "orders"
+            ],
+            "truncated": false
+          },
+          "run_id": "crMS7zFl76f3wIe5w-cfFA"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "crMS7zFl76f3wIe5w-cfFA",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "0db7d57c238bdfa4",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373212040,
+        "endMs": 1791373212041,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "6133a2942c8ead93",
+        "parentId": "c5ed75285a07842e",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373212047,
+        "endMs": 1791373212047,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "a314084f53e03541",
+        "parentId": "c5ed75285a07842e",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373212047,
+        "endMs": 1791373212047,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "dde001cbb35eb7ad",
+        "parentId": "c5ed75285a07842e",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373212047,
+        "endMs": 1791373213623,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "c5ed75285a07842e",
+        "parentId": "b249594f7a02768e",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373212046,
+        "endMs": 1791373213624,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2191,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1892,
+          "outputTokens": 252
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "b249594f7a02768e",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373212042,
+        "endMs": 1791373213627,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 211
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "39dbadb2cdb4c82e",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373213628,
+        "endMs": 1791373213638,
+        "attrs": {
+          "tables": "order_lines,orders",
+          "joins": 1,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "9b2e5ef7c97ace57",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791373213639,
+        "endMs": 1791373213749,
+        "attrs": {
+          "operators": 5,
+          "estimated_rows": 3119287
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "96a561b0ea6049bb",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791373213749,
+        "endMs": 1791373213791,
+        "attrs": {
+          "rows": 1,
+          "columns": 1,
+          "elapsed_ms": 41,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "f559264caa28db46",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791373213792,
+        "endMs": 1791373213792,
+        "attrs": {
+          "kind": "none",
+          "reason": "too_few_rows"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "5358da0524afcff8",
+        "parentId": "634d529458aedb4a",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791373213796,
+        "endMs": 1791373214733,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "634d529458aedb4a",
+        "parentId": "79232675c8ea9e5e",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791373213796,
+        "endMs": 1791373214734,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 278,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 316,
+          "outputTokens": 305
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "79232675c8ea9e5e",
+        "parentId": "b30c1aee86ba6dec",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791373213792,
+        "endMs": 1791373214737,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "crMS7zFl76f3wIe5w-cfFA",
+        "system": "lb-05",
+        "spanId": "b30c1aee86ba6dec",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373212040,
+        "endMs": 1791373214738,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 2698
+  }
+}

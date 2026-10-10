@@ -1,0 +1,97 @@
+name: Deploy
+
+# Puts the commit that just passed CI on main live on the box:
+#
+#   1. images.yml builds the images for linux/amd64 and linux/arm64, pushes them to GHCR
+#      under the commit's hash, scans them, and signs them keylessly with cosign;
+#   2. this workflow joins the owner's tailnet, sends the commit's infra/ folder to the box
+#      over Tailscale SSH, and runs deploy.sh there. The box decrypts the secrets, pulls the
+#      images, checks their signatures, starts the stack, waits for every health check, runs
+#      the smoke test, and goes back to the previous release by itself if anything fails.
+#
+# The box is never reachable from the internet (docs/DEPLOY.md): this job gets in through
+# Tailscale, as a node tagged tag:ci that the tailnet's policy lets reach the box's SSH as
+# the deploy user and nothing else. No SSH key and no age key is stored in GitHub.
+#
+# Settings it needs, all in docs/DEPLOY.md, GitHub:
+#   secrets   TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET   (the `production` environment)
+#   variable  LB_BOX_HOST                            the box's name on the tailnet
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+# Nothing by default: each job asks for exactly what it uses.
+permissions: {}
+
+# One deploy at a time, and one that has started is never cancelled halfway.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  images:
+    name: Build, push and sign the images
+    # Only a push to main in this repository that passed CI. A fork's branch can also be
+    # called main, so the repository is checked as well.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/images.yml
+    with:
+      ref: ${{ github.event.workflow_run.head_sha }}
+      push: true
+
+  deploy:
+    name: Deploy to the box
+    needs: images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # The production environment holds the Tailscale credentials, and can be set to wait for
+    # the owner's approval before this job starts (docs/DEPLOY.md, GitHub).
+    environment: production
+    permissions:
+      contents: read
+    env:
+      RELEASE: ${{ github.event.workflow_run.head_sha }}
+      BOX: ${{ vars.LB_BOX_HOST }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Check what is about to be deployed
+        run: |
+          [[ "$RELEASE" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::The release is not a commit hash."; exit 1; }
+          [ -n "$BOX" ] || { echo "::error::Set the repository variable LB_BOX_HOST (docs/DEPLOY.md, GitHub)."; exit 1; }
+
+      # The node is ephemeral: it is gone from the tailnet when the job ends. `ping` waits
+      # until the box answers, so the first SSH does not race the connection.
+      - name: Join the tailnet
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ vars.LB_BOX_HOST }}
+
+      # git archive sends only what the commit tracks: no plaintext secret can be in it. The
+      # box keeps each release in a folder of its own, so a rollback has its files.
+      - name: Send the release to the box
+        run: |
+          release_dir="/opt/lb/releases/${RELEASE}"
+          git archive --format=tar "$RELEASE" infra | tailscale ssh "deploy@${BOX}" \
+            "rm -rf '${release_dir}' && mkdir -p '${release_dir}' && tar -xf - -C '${release_dir}' && printf %s '${RELEASE}' > '${release_dir}/infra/RELEASE'"
+
+      # Exit status 1 means the release was refused or did not come up and the previous one
+      # runs again; 2 means the rollback failed too. Either fails this job.
+      - name: Deploy it
+        run: tailscale ssh "deploy@${BOX}" "'/opt/lb/releases/${RELEASE}/infra/scripts/deploy.sh' '${RELEASE}'"

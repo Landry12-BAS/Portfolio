@@ -1,0 +1,112 @@
+# The Python half of the monorepo: one uv workspace for the shared library and the
+# Django and Flask services, and the lint, type-check and test settings they share.
+# Run it through the root justfile: `just lint`, `just typecheck` and `just test` cover
+# Python and TypeScript together.
+
+[tool.uv]
+required-version = ">=0.12.19"
+# The box is an Ampere (aarch64) machine and development is on x86_64: a dependency with no wheel for
+# either one fails `uv lock`, instead of failing a deploy.
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+# RapidOCR asks for `opencv-python`, the build with a window system, which needs libGL and the
+# desktop libraries a slim image doesn't have. This makes that requirement never apply, and
+# flask-systems depends on `opencv-python-headless`, the same `cv2` module without them.
+override-dependencies = ["opencv-python; python_version < '0'"]
+
+[tool.uv.workspace]
+members = ["python/*", "services/django-systems", "services/flask-systems"]
+
+[dependency-groups]
+dev = [
+    "celery-types>=0.26.0",
+    "daphne>=4.2.3",
+    "django-stubs[compatible-mypy]>=6.0.9,<6.1",
+    "flask-cors>=6.0.0",
+    "moto[s3]>=5.1.0",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-django>=4.14.0",
+    "reportlab>=4.4.0",
+    "ruff>=0.16.9",
+    "testcontainers[postgres,redis]>=4.15.0",
+    "types-pyyaml>=6.0.12.20260906",
+    "types-jsonschema>=4.25.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "A",    # no shadowing of built-in names
+    "ARG",  # no unused arguments
+    "B",    # bugbear: likely bugs and design problems
+    "BLE",  # no blind `except Exception`
+    "C4",   # clear comprehensions
+    "D",    # docstrings on every module, class and function (the owner's rule)
+    "DTZ",  # no naive datetimes
+    "E",    # pycodestyle errors
+    "ERA",  # no commented-out code
+    "F",    # pyflakes
+    "G",    # logging calls with arguments, not formatted strings
+    "I",    # sorted imports
+    "LOG",  # logging mistakes
+    "N",    # PEP 8 names
+    "PIE",  # unnecessary code
+    "PT",   # pytest style
+    "PTH",  # pathlib over os.path
+    "RET",  # clear returns
+    "RUF",  # Ruff's own checks
+    "S",    # bandit: security problems
+    "SIM",  # simpler code
+    "T20",  # no print() left behind
+    "UP",   # modern Python syntax
+    "W",    # pycodestyle warnings
+]
+
+[tool.ruff.lint.flake8-unused-arguments]
+# Framework hooks (Django routers and signals, management commands) take *args and
+# **kwargs they may not need; a variadic parameter is never a forgotten leftover.
+ignore-variadic-names = true
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert, and their fixtures use fixed, obviously fake secrets.
+"**/tests/**" = ["S101", "S105", "S106"]
+# Django writes migrations; they are reviewed, not hand-formatted.
+"**/migrations/**" = ["D", "E501", "RUF012"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lb_common", "config", "core", "lb01", "lb02", "lb05", "lb03", "lb10"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# Testcontainers ships no type information.
+module = ["testcontainers.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config"]
+testpaths = ["python"]
+markers = [
+    "integration: needs a real Redis, and Node for the gateway contract tests",
+]
+xfail_strict = true
+filterwarnings = ["error"]

@@ -1,0 +1,75 @@
+# Routing for the tests that run LB-06's agents through the real gateway on a fake provider. It is the
+# real routing table in miniature: the three aliases have the real limits (lb-reason 4,000 tokens in and
+# 3,072 out, lb-tools 4,000 and 2,048, lb-guard 800 tokens in, read in overlapping segments), and the
+# lb-06 entry the real quotas, so a prompt that is too long, or an incident that makes a sixteenth call,
+# meets the gateway's own refusal here.
+version: 1
+
+budgets:
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  alertAt: 0.7
+
+timeouts:
+  firstTokenMs: 1000
+  responseMs: 2000
+  idleMs: 1000
+  deadlineMs: 6000
+
+providers:
+  alpha:
+    name: Alpha
+    baseUrl: ${ALPHA_URL}
+    keyEnv: ALPHA_KEY
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      small:
+        id: alpha/small-model
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 1000, tokens: 4000000 }
+          day: { requests: 10000, tokens: 40000000 }
+      guard:
+        id: alpha/guard-model
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 1000, tokens: 400000 }
+          day: { requests: 10000, tokens: 4000000 }
+
+aliases:
+  lb-reason:
+    description: SQL and planning
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 3072
+    chain: [alpha/small]
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    chain: [alpha/small]
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    maxInputTokens: 800
+    threshold: 0.9
+    chain: [alpha/guard]
+
+systems:
+  lb-06:
+    name: Incident Commander
+    service: node-systems
+    aliases: [lb-reason, lb-tools, lb-guard]
+    maxCallsPerRun: 15
+    sessionDailyCalls: 15
+    dailyCalls: 230
+
+traceReaders:
+  web:
+    name: The site's server
+    systems: [lb-06]

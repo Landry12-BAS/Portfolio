@@ -1,0 +1,993 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "handwritten-receipt",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:30:51.414Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "hand-cafe-luna-0187.jpg"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "byte_size": 254104,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:41.207683Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:41.207683Z",
+          "failure": null,
+          "fields": null,
+          "id": "GT3Wqf-xv4Xy9F4jJEkKMQ",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "hand-cafe-luna-0187.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": 0,
+          "run_id": null,
+          "state": "uploaded",
+          "steps": [],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:41.207683Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/GT3Wqf-xv4Xy9F4jJEkKMQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 254104,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:41.207683Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:41.207683Z",
+          "failure": null,
+          "fields": null,
+          "id": "GT3Wqf-xv4Xy9F4jJEkKMQ",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "hand-cafe-luna-0187.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "ocr",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 2
+              },
+              "ms": 2,
+              "name": "queue",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:41.215173Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/GT3Wqf-xv4Xy9F4jJEkKMQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 254104,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:41.207683Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:41.207683Z",
+          "failure": null,
+          "fields": null,
+          "id": "GT3Wqf-xv4Xy9F4jJEkKMQ",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "hand-cafe-luna-0187.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "extract",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 2
+              },
+              "ms": 2,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 32,
+                "worker_ms": 3943
+              },
+              "ms": 5083,
+              "name": "ocr",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:46.296960Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/GT3Wqf-xv4Xy9F4jJEkKMQ"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 254104,
+          "can_export": true,
+          "checks": [
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "required_fields",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "issue_date",
+                "due_date"
+              ],
+              "id": "dates_valid",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "currency"
+              ],
+              "id": "currency_known",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "signs_agree",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_items_sum",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_bases",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "total_reconciles",
+              "message": "The prices include VAT and there is no subtotal.",
+              "severity": "error",
+              "status": "skipped"
+            },
+            {
+              "actual": "11 found",
+              "expected": "16 values on the page",
+              "fields": [
+                "vendor",
+                "invoice_number",
+                "currency",
+                "line_items.0.quantity",
+                "line_items.0.unit_price"
+              ],
+              "id": "fields_on_page",
+              "message": "5 of 16 values were not found among the words read from the page.",
+              "severity": "warning",
+              "status": "failed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "vendor",
+                "invoice_number"
+              ],
+              "id": "not_duplicate",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            }
+          ],
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:41.207683Z",
+          "duplicate": null,
+          "elapsed_ms": 9767,
+          "expires_at": "2026-10-07T12:30:41.207683Z",
+          "failure": null,
+          "fields": [
+            {
+              "box": null,
+              "checks": [],
+              "edited": false,
+              "kind": "choice",
+              "path": "document_type",
+              "value": "receipt"
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "text",
+              "path": "vendor",
+              "value": "Cafe Luna"
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "text",
+              "path": "invoice_number",
+              "value": "0187"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9988,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.14623,
+                  0.35846,
+                  0.32862,
+                  0.36462,
+                  0.32626,
+                  0.41385,
+                  0.14387,
+                  0.40692
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "issue_date",
+              "value": "2026-09-12"
+            },
+            {
+              "box": null,
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "due_date",
+              "value": null
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "currency",
+              "path": "currency",
+              "value": "CZK"
+            },
+            {
+              "box": {
+                "band": "medium",
+                "confidence": 0.7914,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.21148,
+                  0.41923,
+                  0.42374,
+                  0.42231,
+                  0.42296,
+                  0.48231,
+                  0.21069,
+                  0.47846
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.0.description",
+              "value": "Flat white"
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.0.quantity",
+              "value": "2"
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.unit_price",
+              "value": "49.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.77673,
+                  0.45385,
+                  0.87893,
+                  0.45385,
+                  0.87893,
+                  0.50154,
+                  0.77673,
+                  0.50154
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.total",
+              "value": "98.00"
+            },
+            {
+              "box": {
+                "band": "low",
+                "confidence": 0.5969,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.20362,
+                  0.51538,
+                  0.39858,
+                  0.51923,
+                  0.3978,
+                  0.56846,
+                  0.20283,
+                  0.56462
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.1.description",
+              "value": "Croissant"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9805,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.12972,
+                  0.51462,
+                  0.18947,
+                  0.51538,
+                  0.18868,
+                  0.56462,
+                  0.12893,
+                  0.56385
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.1.quantity",
+              "value": "1"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9265,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.24528,
+                  0.56231,
+                  0.32233,
+                  0.56154,
+                  0.32311,
+                  0.60077,
+                  0.24607,
+                  0.60154
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.unit_price",
+              "value": "32.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.77987,
+                  0.54,
+                  0.87579,
+                  0.54154,
+                  0.875,
+                  0.59077,
+                  0.77909,
+                  0.59
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.total",
+              "value": "32.00"
+            },
+            {
+              "box": null,
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "subtotal",
+              "value": null
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9993,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.20597,
+                  0.62308,
+                  0.29717,
+                  0.62538,
+                  0.29481,
+                  0.69385,
+                  0.20362,
+                  0.69154
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "rate",
+              "path": "vat.0.rate",
+              "value": "12.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9991,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.42531,
+                  0.62923,
+                  0.53931,
+                  0.63231,
+                  0.53852,
+                  0.70077,
+                  0.42296,
+                  0.69769
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.base",
+              "value": "116.07"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.78931,
+                  0.65462,
+                  0.86871,
+                  0.65615,
+                  0.86714,
+                  0.70308,
+                  0.78774,
+                  0.70154
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.amount",
+              "value": "13.93"
+            },
+            {
+              "box": {
+                "band": "medium",
+                "confidence": 0.7813,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.61085,
+                  0.71692,
+                  0.87421,
+                  0.72769,
+                  0.87186,
+                  0.79231,
+                  0.60849,
+                  0.78231
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "total",
+              "value": "130.00"
+            }
+          ],
+          "id": "GT3Wqf-xv4Xy9F4jJEkKMQ",
+          "journal": {
+            "currency": "CZK",
+            "date": "2026-09-12",
+            "lines": [
+              {
+                "account": "5070",
+                "credit": "0.00",
+                "debit": "116.07",
+                "memo": "Cafe Luna 0187",
+                "name": "Food and drink"
+              },
+              {
+                "account": "1400",
+                "credit": "0.00",
+                "debit": "13.93",
+                "memo": "Cafe Luna 0187",
+                "name": "Input VAT receivable"
+              },
+              {
+                "account": "1010",
+                "credit": "130.00",
+                "debit": "0.00",
+                "memo": "Cafe Luna 0187",
+                "name": "Cash and card payments"
+              }
+            ],
+            "reference": "Cafe Luna 0187",
+            "total_credit": "130.00",
+            "total_debit": "130.00"
+          },
+          "journal_status": "made",
+          "kind": "jpeg",
+          "label": "hand-cafe-luna-0187.jpg",
+          "model": "@cf/meta/llama-4-scout-17b-16e-instruct",
+          "model_calls": 2,
+          "ocr_ms": 5070,
+          "pages": 1,
+          "prices_include_vat": true,
+          "queued_ahead": null,
+          "run_id": "mu1K8TfkUJnSUILX6f8_ig",
+          "state": "ready",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 2
+              },
+              "ms": 2,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 32,
+                "worker_ms": 3943
+              },
+              "ms": 5083,
+              "name": "ocr",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "flagged": false,
+                "score": 0.0006,
+                "segments": 1
+              },
+              "ms": 662,
+              "name": "injection check",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "alias": "lb-vision",
+                "attempts": 1,
+                "picture": true,
+                "text_chars": 165,
+                "text_cut": false
+              },
+              "ms": 3981,
+              "name": "extract",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "failed": 0,
+                "ran": 9
+              },
+              "ms": 1,
+              "name": "validate",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "expected": 16,
+                "found": 11
+              },
+              "ms": 12,
+              "name": "place fields",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "compared": 6,
+                "duplicate": false
+              },
+              "ms": 6,
+              "name": "check duplicates",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "lines": 3
+              },
+              "ms": 0,
+              "name": "journal entry",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:50.979351Z"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "mu1K8TfkUJnSUILX6f8_ig",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "e9f5bb20feb3511a",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1791372641213,
+        "endMs": 1791372646296,
+        "attrs": {
+          "pages": 1,
+          "words": 32,
+          "worker_ms": 3943,
+          "wall_ms": 5070,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 7,
+          "oom_score_adj": 1000
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "29d2556400c86681",
+        "parentId": "e938badfa1fa9c51",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372646313,
+        "endMs": 1791372646966,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "e938badfa1fa9c51",
+        "parentId": "4795eeb459a002f3",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372646312,
+        "endMs": 1791372646967,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 55,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 55,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0005821778904646635,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "4795eeb459a002f3",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "ok",
+        "startMs": 1791372646307,
+        "endMs": 1791372646969,
+        "attrs": {
+          "segments": 1,
+          "flagged": false,
+          "score": 0.0006
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "a4cbcdb57b68bcf9",
+        "parentId": "bfa0e8525fc40d2f",
+        "kind": "gateway.attempt",
+        "name": "openrouter/gemma-4-31b",
+        "status": "skipped",
+        "startMs": 1791372646988,
+        "endMs": 1791372646988,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/gemma-4-31b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "5a2ef2aa0c2644f3",
+        "parentId": "bfa0e8525fc40d2f",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/llama-4-scout",
+        "status": "ok",
+        "startMs": 1791372646988,
+        "endMs": 1791372650946,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/llama-4-scout",
+          "modelId": "@cf/meta/llama-4-scout-17b-16e-instruct",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "bfa0e8525fc40d2f",
+        "parentId": "e27b04fe0dbcd7e7",
+        "kind": "gateway.call",
+        "name": "lb-vision",
+        "status": "ok",
+        "startMs": 1791372646987,
+        "endMs": 1791372650947,
+        "attrs": {
+          "alias": "lb-vision",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2367,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/llama-4-scout",
+          "inputTokens": 3170,
+          "outputTokens": 182
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "e27b04fe0dbcd7e7",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.step",
+        "name": "extract",
+        "status": "ok",
+        "startMs": 1791372646969,
+        "endMs": 1791372650950,
+        "attrs": {
+          "alias": "lb-vision",
+          "picture": true,
+          "attempts": 1,
+          "text_cut": false,
+          "text_chars": 165
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "b56b5ccd9b6eb523",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.step",
+        "name": "validate",
+        "status": "ok",
+        "startMs": 1791372650960,
+        "endMs": 1791372650960,
+        "attrs": {
+          "failed": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "322be6aeb4def096",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.step",
+        "name": "place fields",
+        "status": "ok",
+        "startMs": 1791372650961,
+        "endMs": 1791372650972,
+        "attrs": {
+          "found": 11,
+          "expected": 16
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "d68fe1a1b046d3fa",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.step",
+        "name": "check duplicates",
+        "status": "ok",
+        "startMs": 1791372650973,
+        "endMs": 1791372650978,
+        "attrs": {
+          "compared": 6,
+          "duplicate": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "de3162a3db155170",
+        "parentId": "ce0a9696474e509f",
+        "kind": "system.step",
+        "name": "journal entry",
+        "status": "ok",
+        "startMs": 1791372650979,
+        "endMs": 1791372650979,
+        "attrs": {
+          "lines": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "mu1K8TfkUJnSUILX6f8_ig",
+        "system": "lb-03",
+        "spanId": "ce0a9696474e509f",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1791372641213,
+        "endMs": 1791372650988,
+        "attrs": {
+          "kind": "jpeg",
+          "outcome": "ready",
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 9775
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@lb/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LB-00 AI gateway: the one door for every model call, with routing, fallback, budgets, quotas and run spans.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/main.ts",
+    "start": "node src/main.ts",
+    "check": "node src/cli/check-routing.ts",
+    "token": "node src/cli/service-token.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "eventsource-parser": "^4.1.1",
+    "fastify": "^5.12.5",
+    "ioredis": "^6.0.0",
+    "jose": "^6.2.12",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@testcontainers/redis": "^12.1.0",
+    "@types/node": "^24.19.0",
+    "vitest": "^5.0.2"
+  }
+}

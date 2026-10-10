@@ -1,0 +1,105 @@
+{
+  "v": 1,
+  "system": "lb-04",
+  "sample": "scanned-supply",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:40:05.819Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb04/contracts",
+        "body": {
+          "from": "sample",
+          "sampleId": "scanned-supply"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+          "runId": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+          "title": "Scanned agreement",
+          "origin": "sample",
+          "sampleId": "scanned-supply",
+          "state": "queued",
+          "failure": null,
+          "pages": null,
+          "createdAt": "2026-10-07T11:40:04.257Z",
+          "expiresAt": "2026-10-07T12:40:04.257Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb04/contracts/554fd0ea-8448-476c-b05c-5a3e8ecb80ba"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+          "runId": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+          "title": "Scanned agreement",
+          "origin": "sample",
+          "sampleId": "scanned-supply",
+          "state": "failed",
+          "failure": {
+            "code": "no_text_layer",
+            "message": "The PDF has no text layer, as a scan has, and no OCR is done."
+          },
+          "pages": null,
+          "createdAt": "2026-10-07T11:40:04.257Z",
+          "expiresAt": "2026-10-07T12:40:04.257Z",
+          "redlinesLeft": 3,
+          "notLegalAdvice": "Not legal advice"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+        "system": "lb-04",
+        "spanId": "84b12c600a777168",
+        "parentId": "48a1cc32c1ff6d4b",
+        "kind": "system.step",
+        "name": "extract text",
+        "status": "ok",
+        "startMs": 1791373204280,
+        "endMs": 1791373204820,
+        "attrs": {
+          "refused": "no_text_layer"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "554fd0ea-8448-476c-b05c-5a3e8ecb80ba",
+        "system": "lb-04",
+        "spanId": "48a1cc32c1ff6d4b",
+        "kind": "system.run",
+        "name": "contract review",
+        "status": "error",
+        "startMs": 1791373204257,
+        "endMs": 1791373204829,
+        "attrs": {
+          "outcome": "no_text_layer",
+          "origin": "sample",
+          "pages": 0,
+          "model_calls": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 1,
+    "durationMs": 572
+  }
+}

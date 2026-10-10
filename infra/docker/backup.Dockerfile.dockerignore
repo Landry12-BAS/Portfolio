@@ -1,0 +1,6 @@
+# What the backup image's build may see: its script, the two files the script sources and
+# reads, and nothing else.
+*
+!infra/backup/backup.sh
+!infra/backup/lib.sh
+!infra/backup/excluded-data.txt

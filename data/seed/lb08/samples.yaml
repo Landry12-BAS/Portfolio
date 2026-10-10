@@ -1,0 +1,157 @@
+# The curated samples LB-08's demo opens on. Each has a plain-language description, the
+# workflow it should become and a test payload, so a visitor sees a result at once and no
+# model call is spent. The workflows are written by hand, not recorded from a model, and
+# the API labels them that way (`origin: sample`). Custom descriptions are the only path
+# that spends the free tiers' quota.
+#
+# Read strictly by services/node-systems/src/modules/lb08/data/samples.ts: every workflow
+# must pass the validator, and every payload must fit its trigger event. Every sample is
+# also a case in evals/lb08/golden.yaml, graded by the same rules as the live model.
+#
+# YAML note: the branch labels `true` and `false` are written in quotes. Unquoted, YAML
+# reads them as booleans, and the schema wants the words.
+samples:
+  - id: wholesale-order
+    title: Wholesale order over €500
+    language: en
+    description: >-
+      When a wholesale order over €500 arrives, check stock, alert the roastery on Slack
+      and email the café an ETA.
+    input: {orderId: WO-2041, cafe: Café Lumen, contactEmail: orders@lumen.test, totalEur: 640, sku: basalt-blend-1kg, quantityKg: 20}
+    graph:
+      name: Wholesale order over €500
+      nodes:
+        - {id: order_received, type: trigger, label: Wholesale order arrives, event: wholesale_order}
+        - {id: big_order, type: condition, label: 'Order over €500?', field: trigger.totalEur, op: gt, value: 500}
+        - {id: check_stock, type: action, label: Check stock, connector: stock_check, params: {sku: '{{trigger.sku}}', quantityKg: '{{trigger.quantityKg}}'}}
+        - id: alert_roastery
+          type: action
+          label: Alert the roastery
+          connector: slack_alert
+          params:
+            channel: '#roastery'
+            message: 'Wholesale order {{trigger.orderId}} from {{trigger.cafe}}: {{trigger.quantityKg}} kg of {{check_stock.productName}} (€{{trigger.totalEur}}).'
+        - id: email_cafe
+          type: action
+          label: Email the café
+          connector: email
+          params:
+            to: customer
+            subject: 'Your order {{trigger.orderId}}'
+            body: 'Thank you for your order. Based on our stock, it should reach you in {{check_stock.etaDays}} days.'
+      edges:
+        - {from: order_received, to: big_order}
+        - {from: big_order, to: check_stock, branch: 'true'}
+        - {from: check_stock, to: alert_roastery}
+        - {from: check_stock, to: email_cafe}
+
+  - id: low-stock-reorder
+    title: Low stock reorder
+    language: en
+    description: >-
+      When a product's stock drops below its alert level, tell purchasing on Slack and add
+      a reorder task to the purchasing board.
+    input: {sku: guji-filter-1kg, availableKg: 22, thresholdKg: 30}
+    graph:
+      name: Low stock reorder
+      nodes:
+        - {id: stock_alert, type: trigger, label: Stock runs low, event: stock_low}
+        - id: tell_purchasing
+          type: action
+          label: Tell purchasing
+          connector: slack_alert
+          params:
+            channel: '#purchasing'
+            message: '{{trigger.sku}} is down to {{trigger.availableKg}} kg (alert level {{trigger.thresholdKg}} kg).'
+        - {id: reorder_task, type: action, label: Add the reorder task, connector: create_task, params: {board: purchasing, title: 'Reorder {{trigger.sku}}', priority: high}}
+      edges:
+        - {from: stock_alert, to: tell_purchasing}
+        - {from: stock_alert, to: reorder_task}
+
+  - id: refund-approval
+    title: Refund approval
+    language: en
+    description: >-
+      When a customer asks for a refund over €100, ask finance to approve it. If they
+      approve, email the customer and tell accounting; if they reject it, email the
+      customer a polite no. Smaller refunds are confirmed to the customer right away.
+    input: {orderId: BB-1043, customerName: Priya Nair, contactEmail: priya.nair@example.test, amountEur: 120, reason: Wrong grind}
+    graph:
+      name: Refund approval
+      nodes:
+        - {id: refund_asked, type: trigger, label: Refund requested, event: refund_request}
+        - {id: over_100, type: condition, label: 'Over €100?', field: trigger.amountEur, op: gt, value: 100}
+        - {id: finance_ok, type: approval, label: Finance approves, approver: finance, message: 'Approve a refund of €{{trigger.amountEur}} for order {{trigger.orderId}}?'}
+        - id: tell_accounting
+          type: action
+          label: Tell accounting
+          connector: webhook
+          params:
+            endpoint: accounting
+            event: refund.approved
+            fields: {orderId: '{{trigger.orderId}}', amountEur: '{{trigger.amountEur}}'}
+        - id: email_refunded
+          type: action
+          label: 'Email: refund approved'
+          connector: email
+          params:
+            to: customer
+            subject: 'Your refund for {{trigger.orderId}}'
+            body: 'Hello {{trigger.customerName}}, your refund of €{{trigger.amountEur}} has been approved.'
+        - id: email_declined
+          type: action
+          label: 'Email: refund declined'
+          connector: email
+          params:
+            to: customer
+            subject: 'About your refund request'
+            body: 'Hello {{trigger.customerName}}, we could not approve the refund for order {{trigger.orderId}} this time. Our support team will be in touch.'
+        - id: email_small
+          type: action
+          label: 'Email: small refund'
+          connector: email
+          params:
+            to: customer
+            subject: 'Your refund for {{trigger.orderId}}'
+            body: 'Hello {{trigger.customerName}}, we are refunding €{{trigger.amountEur}} right away.'
+      edges:
+        - {from: refund_asked, to: over_100}
+        - {from: over_100, to: finance_ok, branch: 'true'}
+        - {from: over_100, to: email_small, branch: 'false'}
+        - {from: finance_ok, to: tell_accounting, branch: approved}
+        - {from: finance_ok, to: email_refunded, branch: approved}
+        - {from: finance_ok, to: email_declined, branch: rejected}
+
+  - id: wholesale-order-cs
+    title: Velkoobchodní objednávka nad 500 €
+    language: cs
+    description: >-
+      Když přijde velkoobchodní objednávka nad 500 €, zkontroluj sklad, upozorni pražírnu
+      na Slacku a pošli kavárně e-mail s předpokládaným termínem dodání.
+    input: {orderId: WO-2042, cafe: Kavárna U Mostu, contactEmail: objednavky@umostu.test, totalEur: 820, sku: huila-espresso-1kg, quantityKg: 15}
+    graph:
+      name: Velkoobchodní objednávka nad 500 €
+      nodes:
+        - {id: order_received, type: trigger, label: Přišla velkoobchodní objednávka, event: wholesale_order}
+        - {id: big_order, type: condition, label: 'Objednávka nad 500 €?', field: trigger.totalEur, op: gt, value: 500}
+        - {id: check_stock, type: action, label: Zkontrolovat sklad, connector: stock_check, params: {sku: '{{trigger.sku}}', quantityKg: '{{trigger.quantityKg}}'}}
+        - id: alert_roastery
+          type: action
+          label: Upozornit pražírnu
+          connector: slack_alert
+          params:
+            channel: '#roastery'
+            message: 'Velkoobchodní objednávka {{trigger.orderId}} od {{trigger.cafe}}: {{trigger.quantityKg}} kg, {{check_stock.productName}} ({{trigger.totalEur}} €).'
+        - id: email_cafe
+          type: action
+          label: E-mail kavárně
+          connector: email
+          params:
+            to: customer
+            subject: 'Vaše objednávka {{trigger.orderId}}'
+            body: 'Děkujeme za objednávku. Předpokládaná doba dodání ve dnech: {{check_stock.etaDays}}.'
+      edges:
+        - {from: order_received, to: big_order}
+        - {from: big_order, to: check_stock, branch: 'true'}
+        - {from: check_stock, to: alert_roastery}
+        - {from: check_stock, to: email_cafe}

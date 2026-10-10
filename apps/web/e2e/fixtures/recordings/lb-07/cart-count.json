@@ -1,0 +1,1284 @@
+{
+  "v": 1,
+  "system": "lb-07",
+  "sample": "cart-count",
+  "origin": "mock",
+  "recordedAt": "2026-10-05T14:02:13.054Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb07/runs",
+        "body": {
+          "from": "sample",
+          "sampleId": "cart-count"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "planning",
+          "failure": null,
+          "queuePosition": null,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "replanning",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 2,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "running",
+              "plan": 1,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 2,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 268,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "expectText",
+                "text": "1 item"
+              },
+              "status": "finding",
+              "plan": 1,
+              "durationMs": 4051,
+              "outcome": "expectation"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "Total €12.90"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 58,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 2,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "cross_checking",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 268,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "expectText",
+                "text": "1 item"
+              },
+              "status": "finding",
+              "plan": 1,
+              "durationMs": 4051,
+              "outcome": "expectation"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "Total €12.90"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 58,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 2,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "reporting",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 268,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "expectText",
+                "text": "1 item"
+              },
+              "status": "finding",
+              "plan": 1,
+              "durationMs": 4051,
+              "outcome": "expectation"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "Total €12.90"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 58,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 3,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "verifying",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 268,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "expectText",
+                "text": "1 item"
+              },
+              "status": "finding",
+              "plan": 1,
+              "durationMs": 4051,
+              "outcome": "expectation"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "Total €12.90"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 58,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 3,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "origin": "sample",
+          "sampleId": "cart-count",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "state": "done",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/products/colombia-huila"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add to basket"
+              },
+              "status": "failed",
+              "plan": 0,
+              "durationMs": 3037,
+              "outcome": "not_found"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Colombia Huila to cart"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 268,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "expectText",
+                "text": "1 item"
+              },
+              "status": "finding",
+              "plan": 1,
+              "durationMs": 4051,
+              "outcome": "expectation"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "Total €12.90"
+              },
+              "status": "passed",
+              "plan": 1,
+              "durationMs": 58,
+              "outcome": "ok"
+            }
+          ],
+          "replans": 1,
+          "modelCalls": 3,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:02:00.454Z",
+          "startedAt": "2026-10-05T14:02:00.454Z",
+          "endedAt": "2026-10-05T14:02:13.054Z",
+          "expiresAt": "2026-10-05T15:02:00.454Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8/report"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+          "goal": "Add one bag of Colombia Huila to the cart and check the cart says 1 item.",
+          "bugs": [
+            "cart-off-by-one"
+          ],
+          "reading": "I will add 1 bag to the cart in the staging shop and check 2 expectations on the way.",
+          "findings": [
+            {
+              "id": "f1",
+              "kind": "expectation_failed",
+              "engine": "chromium",
+              "stepIndex": 3,
+              "title": "The page does not say what was expected",
+              "detail": "expected \"1 item\"; the page says \"2 items | Items 2 items\"",
+              "rule": null,
+              "path": "/cart",
+              "evidenceIds": [
+                "e1"
+              ]
+            }
+          ],
+          "findingsDropped": 0,
+          "reports": [
+            {
+              "findingIds": [
+                "f1"
+              ],
+              "title": "The page at /cart does not show what the goal expects",
+              "steps": [
+                "Go to /products/colombia-huila.",
+                "Click the button \"Add Colombia Huila to cart\".",
+                "Expect the text \"1 item\".",
+                "Expect the text \"Total €12.90\"."
+              ],
+              "expected": "The page shows what a correct shop shows for the goal.",
+              "actual": "Expected \"1 item\"; the page says \"2 items | Items 2 items\".",
+              "severity": "high"
+            }
+          ],
+          "reportsDropped": 0,
+          "verification": {
+            "verdict": "kept",
+            "red": {
+              "engine": "chromium",
+              "bugsOn": true,
+              "stepsPassed": false,
+              "findings": 1,
+              "durationMs": 7834
+            },
+            "cross": {
+              "engine": "firefox-ua",
+              "bugsOn": true,
+              "stepsPassed": false,
+              "findings": 0,
+              "durationMs": 4864
+            },
+            "green": {
+              "engine": "chromium",
+              "bugsOn": false,
+              "stepsPassed": true,
+              "findings": 0,
+              "durationMs": 910
+            }
+          },
+          "engines": [
+            "chromium",
+            "firefox-ua"
+          ],
+          "modelCalls": 3,
+          "replans": 1,
+          "durationMs": 17808
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8/test"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "filename": "add-one-bag-of-colombia-huila-to-the-car.spec.ts",
+          "language": "typescript",
+          "source": "// Generated by LB-07 QA Engineer from a plan over a closed vocabulary (goto, click by role and name,\n// fill by label, select, expect text, expect count). Every string below is a JSON literal written by a\n// template; no model wrote any code here. Run it with Playwright against the staging shop:\n//   npx playwright test --config=<your config with baseURL http://127.0.0.1:8007>\nimport AxeBuilder from '@axe-core/playwright'\nimport { expect, test } from '@playwright/test'\n\n// goal: Add one bag of Colombia Huila to the cart and check the cart says 1 item.\ntest(\"Add one bag of Colombia Huila to the cart and check the cart says 1 item.\", async ({ page }) => {\n  // Everything the page logs as an error or throws, and every request answered with an error status.\n  const consoleErrors: string[] = []\n  page.on('console', (message) => {\n    if (message.type() === 'error') consoleErrors.push(message.text())\n  })\n  page.on('pageerror', error => consoleErrors.push(error.message))\n  const failedRequests: string[] = []\n  page.on('response', (response) => {\n    if (response.status() >= 400) failedRequests.push(`${response.status()} ${new URL(response.url()).pathname}`)\n  })\n\n  // step 1: go to /products/colombia-huila\n  await page.goto(\"/products/colombia-huila\")\n  // step 2: click the button \\\"Add Colombia Huila to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Colombia Huila to cart\", exact: true }).click()\n  // step 3: expect the text \\\"1 item\\\"\n  await expect(page.getByText(\"1 item\", { exact: false }).first()).toBeVisible()\n  // step 4: expect the text \\\"Total €12.90\\\"\n  await expect(page.getByText(\"Total €12.90\", { exact: false }).first()).toBeVisible()\n\n  // The checks code made during the run: accessibility, the console and the requests.\n  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()\n  expect(axe.violations.map(violation => violation.id)).toEqual([])\n  expect(consoleErrors).toEqual([])\n  expect(failedRequests).toEqual([])\n})\n",
+          "verdict": "kept"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8/evidence/e1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e1",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABM0lEQVR4nO3YsW3DQBBFQdbjEhwpdjPu06EC1qFAUKwS6ERY8t0Ar4DFTfRv+779KNw2foE+GuB4gOMBjgc4HuB4gOMBjgc4HuB4gONtr+dD4QDHAxwPcDzA8QDHOwDe7386bFwRMGDAgAV40cYVAQMGDFiAF21cETBgRQMcD3A8wPEAxwMcz0w6S4DjAY4HOB7geIDjAY4HOB7geIDjzQDr6gGOBzge4HiA4wGOd/mZNP6CJw9wPMDxAMcDHA9wPMDxAMcDHA9wPF+V8QDHAxwPcDzA8QDHu/xMsrUAAwY8zQAYMGDAgAEDrgUY8AKNMwAG/BlgXT3A8QDHAxwPcDzA8Q6Av353/bNxS8CAAQMW4EUbtwQMGDBgAV60cUvAgJULcDzA8QDHAxwPcDzA8QDHewOWE4UCSj6kgAAAAABJRU5ErkJggg==",
+          "stepIndex": 3,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8/evidence/e2"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e2",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABNElEQVR4nO3YsQ3CQBBFQddDCUTENEOfhASugwARU4IjtPbzSK+A0070b7ne7gq3jL9Afw1wPMDxAMcDHA9wPMDxAMcDHA9wPMDxlu/nrXCA4wGOBzge4HiA420AXx7rSON3yQQ4HuB4gOMBjgc4HuB4gOMBjgc4nq/KeIDjAY4HOB7geIDjbQCvr+dxGz/uHgIcD3A8wPEAxwMcD3A8wPEAxwMcz1dlPMDxAMcDHA9wPMDxyjPJ1gIMePq+440LAQYMGDBgwCdtXAgwYMCAAZ8UWEcPcDzA8QDHAxwPcDwzKb61AAMWYAE+dYDjAY4HOB7geIDj7RdYRw9wPMDxAMcDHA9wvF3PpPHrBAIcD3A8wPEAxwMcD3A8wPEAxwMcz1dlPMDxAMcDHA9wPMDxAMcDHO8Hpi2jJoFPJX0AAAAASUVORK5CYII=",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/fe0994e6-378b-4576-9603-374645a1a2e8/evidence/e3"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e3",
+          "kind": "snapshot",
+          "text": "- link \"Basalt & Bean shop\" - navigation \"Shop\" - link \"Shop\" - link \"Cart\" - link \"About\" - heading \"Your cart\" [level=1] - row \"Colombia Huila\" - spinbutton \"Quantity for Colombia Huila\" - button \"Remove Colombia Huila\" - button \"Update cart\" - textbox \"Coupon code\" - button \"Apply coupon\" - row \"Items 2 items\" - row \"Subtotal €12.90\" - row \"Total Total €12.90\" - link \"Go to checkout\" - text: Basalt & Bean shop - text: Shop · Cart · About - text: 2 items - text: Your cart - text: Colombia Huila Quantity for Colombia Huila €12.90 €12.90 Remove Colombia Huila - text: Update cart - text: Coupon code - text: Apply coupon - text: Items 2 items - text: Subtotal €12.90 - text: Total Total €12.90 - text: Go to checkout - text: A synthetic staging shop for the LB-07 demo. Nothing here is for sale.",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "2e1386e29edae994",
+        "parentId": "50f1a7c92b839679",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791208920524,
+        "endMs": 1791208921784,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2600,
+          "outputTokens": 433
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "50f1a7c92b839679",
+        "parentId": "cbc4098d8b12b762",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791208920489,
+        "endMs": 1791208921819,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "usage": "reported",
+          "inputTokens": 2600,
+          "outputTokens": 433
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "cbc4098d8b12b762",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "plan the test",
+        "status": "ok",
+        "startMs": 1791208920454,
+        "endMs": 1791208921854,
+        "attrs": {
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "cbbc77e09a84f897",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208921854,
+        "endMs": 1791208922554,
+        "attrs": {
+          "index": 0,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "edff9df21a6b105c",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "error",
+        "startMs": 1791208922554,
+        "endMs": 1791208923254,
+        "attrs": {
+          "index": 1,
+          "engine": "chromium",
+          "outcome": "not_found",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "52e133e9e8b29a50",
+        "parentId": "3d53fb97cd253619",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791208923324,
+        "endMs": 1791208924584,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 3400,
+          "outputTokens": 567
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "3d53fb97cd253619",
+        "parentId": "4da4517d25a19fd2",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791208923289,
+        "endMs": 1791208924619,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "usage": "reported",
+          "inputTokens": 3400,
+          "outputTokens": 567
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "4da4517d25a19fd2",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "re-plan after a failed step",
+        "status": "ok",
+        "startMs": 1791208923254,
+        "endMs": 1791208924654,
+        "attrs": {
+          "outcome": "replaced",
+          "steps": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "ec06178d3e0e87e2",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208924654,
+        "endMs": 1791208925354,
+        "attrs": {
+          "index": 2,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "ad24cd3911b2a434",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208925354,
+        "endMs": 1791208926054,
+        "attrs": {
+          "index": 3,
+          "engine": "chromium",
+          "outcome": "expectation",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "664ac1e8bcbb6eee",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208926054,
+        "endMs": 1791208926754,
+        "attrs": {
+          "index": 4,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "f4345e2cc57da734",
+        "parentId": "d76f3466e2b99656",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208927594,
+        "endMs": 1791208928049,
+        "attrs": {
+          "index": 5,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "c1fb9a2b875f0851",
+        "parentId": "d76f3466e2b99656",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208928049,
+        "endMs": 1791208928504,
+        "attrs": {
+          "index": 6,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "5b5bfa31ef84dfec",
+        "parentId": "d76f3466e2b99656",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208928504,
+        "endMs": 1791208928959,
+        "attrs": {
+          "index": 7,
+          "engine": "firefox-ua",
+          "outcome": "expectation",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "446fc5f031e009e0",
+        "parentId": "d76f3466e2b99656",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208928959,
+        "endMs": 1791208929414,
+        "attrs": {
+          "index": 8,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "d76f3466e2b99656",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "cross-check in the second engine",
+        "status": "ok",
+        "startMs": 1791208927454,
+        "endMs": 1791208929554,
+        "attrs": {
+          "bug_findings": 0,
+          "steps_passed": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "8dcc0edc818bdf48",
+        "parentId": "7f89f7ef1897f66d",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791208929624,
+        "endMs": 1791208930884,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2080,
+          "outputTokens": 347
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "7f89f7ef1897f66d",
+        "parentId": "28e8a5d42b5c5cdf",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791208929589,
+        "endMs": 1791208930919,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "usage": "reported",
+          "inputTokens": 2080,
+          "outputTokens": 347
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "28e8a5d42b5c5cdf",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "write bug reports",
+        "status": "ok",
+        "startMs": 1791208929554,
+        "endMs": 1791208930954,
+        "attrs": {
+          "attempts": 1,
+          "reports": 1,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "896afd0bf5a4482e",
+        "parentId": "53ad1953454ace11",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208931094,
+        "endMs": 1791208931549,
+        "attrs": {
+          "index": 9,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "2a28dca4e54437f5",
+        "parentId": "53ad1953454ace11",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208931549,
+        "endMs": 1791208932004,
+        "attrs": {
+          "index": 10,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "b1ac904e3e0d2546",
+        "parentId": "53ad1953454ace11",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208932004,
+        "endMs": 1791208932459,
+        "attrs": {
+          "index": 11,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "0e9915a282b4c75d",
+        "parentId": "53ad1953454ace11",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208932459,
+        "endMs": 1791208932914,
+        "attrs": {
+          "index": 12,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "53ad1953454ace11",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "verify the test on the clean shop",
+        "status": "ok",
+        "startMs": 1791208930954,
+        "endMs": 1791208933054,
+        "attrs": {
+          "steps_passed": true,
+          "bug_findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "61561c82bea05182",
+        "parentId": "9dbbdf9d75c94e60",
+        "kind": "system.step",
+        "name": "generate the test",
+        "status": "ok",
+        "startMs": 1791208933054,
+        "endMs": 1791208933054,
+        "attrs": {
+          "verdict": "kept",
+          "chars": 2030
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fe0994e6-378b-4576-9603-374645a1a2e8",
+        "system": "lb-07",
+        "spanId": "9dbbdf9d75c94e60",
+        "kind": "system.run",
+        "name": "qa run",
+        "status": "ok",
+        "startMs": 1791208920454,
+        "endMs": 1791208933054,
+        "attrs": {
+          "outcome": "done",
+          "origin": "sample",
+          "model_calls": 3,
+          "findings": 1,
+          "replans": 1,
+          "bugs_on": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 3,
+    "steps": 19,
+    "durationMs": 12600
+  }
+}

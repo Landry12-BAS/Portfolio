@@ -1,0 +1,191 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "drop-orders-table",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:41:53.693Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Drop the orders table, we are starting the year with clean data."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [],
+          "chart": null,
+          "elapsed_ms": 4217,
+          "explanation": null,
+          "explanation_source": null,
+          "message": "The request is to drop a table, which is a DDL operation, not a query that can be answered with a SELECT.",
+          "model_calls": 1,
+          "outcome": "declined",
+          "remaining_questions": 24,
+          "result": null,
+          "run_id": "fq7ELnRLrKqv0QbscG-IhQ"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "40b89d004d800c00",
+        "parentId": "4231eba5bb0898e6",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373309447,
+        "endMs": 1791373309448,
+        "attrs": {
+          "metrics": "orders",
+          "dimensions": "",
+          "ranges": ""
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "812320abc787cfc9",
+        "parentId": "581e90fbdfd47df7",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373309454,
+        "endMs": 1791373309454,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "8108c2194dac5646",
+        "parentId": "581e90fbdfd47df7",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373309454,
+        "endMs": 1791373309454,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "a735cdca1815eb01",
+        "parentId": "581e90fbdfd47df7",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791373309455,
+        "endMs": 1791373309455,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "7fbfe070bb54fabe",
+        "parentId": "581e90fbdfd47df7",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373309455,
+        "endMs": 1791373313659,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "581e90fbdfd47df7",
+        "parentId": "af17a50b2d4e5c7d",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373309453,
+        "endMs": 1791373313661,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2173,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1862,
+          "outputTokens": 151
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "af17a50b2d4e5c7d",
+        "parentId": "4231eba5bb0898e6",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373309449,
+        "endMs": 1791373313663,
+        "attrs": {
+          "attempts": 1,
+          "answerable": false,
+          "sql_chars": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "fq7ELnRLrKqv0QbscG-IhQ",
+        "system": "lb-05",
+        "spanId": "4231eba5bb0898e6",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373309447,
+        "endMs": 1791373313664,
+        "attrs": {
+          "outcome": "declined",
+          "model_calls": 1,
+          "queries": 0
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 1,
+    "steps": 2,
+    "durationMs": 4217
+  }
+}

@@ -1,0 +1,32 @@
+# A quarterly check-in with one decision and no action items at all.
+#
+# The goal is a meeting where nothing is anybody's job: a good extractor says so, and does not
+# make an action out of "no actions this time". See monday-roasting-plan.yaml for how scripts work.
+key: quarterly-check-in
+title: Quarterly check-in
+language: en
+about: >-
+  A short status round before the quarter closes. One decision, and nothing for anyone to do.
+speakers:
+  - id: hannah
+    name: Hannah
+    voice: slt
+  - id: peter
+    name: Peter
+    voice: rms
+  - id: david
+    name: David
+    voice: awb
+turns:
+  - speaker: hannah
+    text: "Quick check-in before the quarter closes. Peter, how are sales?"
+  - speaker: peter
+    text: "Sales are up eight percent on last quarter, mostly wholesale."
+  - speaker: david
+    text: "Packaging costs are flat. The new supplier delivered on time every week."
+  - speaker: hannah
+    text: "Good news. So we keep the current supplier for the next quarter."
+  - speaker: peter
+    text: "Nothing else from me. No actions this time."
+  - speaker: hannah
+    text: "Same here. Thanks everyone, see you next month."

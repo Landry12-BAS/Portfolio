@@ -1,0 +1,1783 @@
+{
+  "v": 1,
+  "system": "lb-07",
+  "sample": "coupon-double-discount",
+  "origin": "mock",
+  "recordedAt": "2026-10-05T14:02:14.088Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb07/runs",
+        "body": {
+          "from": "sample",
+          "sampleId": "coupon-double-discount"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "planning",
+          "failure": null,
+          "queuePosition": null,
+          "reading": null,
+          "steps": [],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "running",
+              "plan": 0,
+              "durationMs": null,
+              "outcome": null
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 0,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "running",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 324,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "Coupon WELCOME10 applied"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "finding",
+              "plan": 0,
+              "durationMs": 4056,
+              "outcome": "expectation"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "cross_checking",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 324,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "Coupon WELCOME10 applied"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "finding",
+              "plan": 0,
+              "durationMs": 4056,
+              "outcome": "expectation"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 1,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "reporting",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 324,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "Coupon WELCOME10 applied"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "finding",
+              "plan": 0,
+              "durationMs": 4056,
+              "outcome": "expectation"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 2,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "verifying",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 324,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "Coupon WELCOME10 applied"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "finding",
+              "plan": 0,
+              "durationMs": 4056,
+              "outcome": "expectation"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 2,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": null,
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "origin": "sample",
+          "sampleId": "coupon-double-discount",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "state": "done",
+          "failure": null,
+          "queuePosition": null,
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "steps": [
+            {
+              "index": 0,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 420,
+              "outcome": "ok"
+            },
+            {
+              "index": 1,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 314,
+              "outcome": "ok"
+            },
+            {
+              "index": 2,
+              "step": {
+                "action": "goto",
+                "path": "/"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 462,
+              "outcome": "ok"
+            },
+            {
+              "index": 3,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Add Ethiopia Guji to cart"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 342,
+              "outcome": "ok"
+            },
+            {
+              "index": 4,
+              "step": {
+                "action": "expectText",
+                "text": "2 items"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 58,
+              "outcome": "ok"
+            },
+            {
+              "index": 5,
+              "step": {
+                "action": "fill",
+                "label": "Coupon code",
+                "value": "WELCOME10"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 65,
+              "outcome": "ok"
+            },
+            {
+              "index": 6,
+              "step": {
+                "action": "click",
+                "role": "button",
+                "name": "Apply coupon"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 324,
+              "outcome": "ok"
+            },
+            {
+              "index": 7,
+              "step": {
+                "action": "expectText",
+                "text": "Coupon WELCOME10 applied"
+              },
+              "status": "passed",
+              "plan": 0,
+              "durationMs": 49,
+              "outcome": "ok"
+            },
+            {
+              "index": 8,
+              "step": {
+                "action": "expectText",
+                "text": "Total €26.10"
+              },
+              "status": "finding",
+              "plan": 0,
+              "durationMs": 4056,
+              "outcome": "expectation"
+            }
+          ],
+          "replans": 0,
+          "modelCalls": 2,
+          "findings": 1,
+          "createdAt": "2026-10-05T14:01:59.688Z",
+          "startedAt": "2026-10-05T14:01:59.688Z",
+          "endedAt": "2026-10-05T14:02:13.688Z",
+          "expiresAt": "2026-10-05T15:01:59.688Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f/report"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+          "goal": "Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.",
+          "bugs": [
+            "coupon-twice"
+          ],
+          "reading": "I will add 2 bags to the cart, apply WELCOME10 in the staging shop and check 3 expectations on the way.",
+          "findings": [
+            {
+              "id": "f1",
+              "kind": "expectation_failed",
+              "engine": "chromium",
+              "stepIndex": 8,
+              "title": "The page does not say what was expected",
+              "detail": "expected \"Total €26.10\"; the page says \"Total Total €23.20\"",
+              "rule": null,
+              "path": "/cart",
+              "evidenceIds": [
+                "e1"
+              ]
+            }
+          ],
+          "findingsDropped": 0,
+          "reports": [
+            {
+              "findingIds": [
+                "f1"
+              ],
+              "title": "The page at /cart does not show what the goal expects",
+              "steps": [
+                "Go to /.",
+                "Click the button \"Add Ethiopia Guji to cart\".",
+                "Go to /.",
+                "Click the button \"Add Ethiopia Guji to cart\".",
+                "Expect the text \"2 items\".",
+                "Fill \"Coupon code\".",
+                "Click the button \"Apply coupon\".",
+                "Expect the text \"Coupon WELCOME10 applied\".",
+                "Expect the text \"Total €26.10\"."
+              ],
+              "expected": "The page shows what a correct shop shows for the goal.",
+              "actual": "Expected \"Total €26.10\"; the page says \"Total Total €23.20\".",
+              "severity": "high"
+            }
+          ],
+          "reportsDropped": 0,
+          "verification": {
+            "verdict": "kept",
+            "red": {
+              "engine": "chromium",
+              "bugsOn": true,
+              "stepsPassed": false,
+              "findings": 1,
+              "durationMs": 6090
+            },
+            "cross": {
+              "engine": "firefox-ua",
+              "bugsOn": true,
+              "stepsPassed": false,
+              "findings": 0,
+              "durationMs": 6138
+            },
+            "green": {
+              "engine": "chromium",
+              "bugsOn": false,
+              "stepsPassed": true,
+              "findings": 0,
+              "durationMs": 2156
+            }
+          },
+          "engines": [
+            "chromium",
+            "firefox-ua"
+          ],
+          "modelCalls": 2,
+          "replans": 0,
+          "durationMs": 17184
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f/test"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "filename": "buy-two-bags-of-ethiopia-guji-with-the-c.spec.ts",
+          "language": "typescript",
+          "source": "// Generated by LB-07 QA Engineer from a plan over a closed vocabulary (goto, click by role and name,\n// fill by label, select, expect text, expect count). Every string below is a JSON literal written by a\n// template; no model wrote any code here. Run it with Playwright against the staging shop:\n//   npx playwright test --config=<your config with baseURL http://127.0.0.1:8007>\nimport AxeBuilder from '@axe-core/playwright'\nimport { expect, test } from '@playwright/test'\n\n// goal: Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart says 2 items and Total €26.10.\ntest(\"Buy two bags of Ethiopia Guji with the coupon WELCOME10 and check the cart sa...\", async ({ page }) => {\n  // Everything the page logs as an error or throws, and every request answered with an error status.\n  const consoleErrors: string[] = []\n  page.on('console', (message) => {\n    if (message.type() === 'error') consoleErrors.push(message.text())\n  })\n  page.on('pageerror', error => consoleErrors.push(error.message))\n  const failedRequests: string[] = []\n  page.on('response', (response) => {\n    if (response.status() >= 400) failedRequests.push(`${response.status()} ${new URL(response.url()).pathname}`)\n  })\n\n  // step 1: go to /\n  await page.goto(\"/\")\n  // step 2: click the button \\\"Add Ethiopia Guji to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Ethiopia Guji to cart\", exact: true }).click()\n  // step 3: go to /\n  await page.goto(\"/\")\n  // step 4: click the button \\\"Add Ethiopia Guji to cart\\\"\n  await page.getByRole(\"button\", { name: \"Add Ethiopia Guji to cart\", exact: true }).click()\n  // step 5: expect the text \\\"2 items\\\"\n  await expect(page.getByText(\"2 items\", { exact: false }).first()).toBeVisible()\n  // step 6: fill \\\"Coupon code\\\"\n  await page.getByLabel(\"Coupon code\", { exact: true }).fill(\"WELCOME10\")\n  // step 7: click the button \\\"Apply coupon\\\"\n  await page.getByRole(\"button\", { name: \"Apply coupon\", exact: true }).click()\n  // step 8: expect the text \\\"Coupon WELCOME10 applied\\\"\n  await expect(page.getByText(\"Coupon WELCOME10 applied\", { exact: false }).first()).toBeVisible()\n  // step 9: expect the text \\\"Total €26.10\\\"\n  await expect(page.getByText(\"Total €26.10\", { exact: false }).first()).toBeVisible()\n\n  // The checks code made during the run: accessibility, the console and the requests.\n  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()\n  expect(axe.violations.map(violation => violation.id)).toEqual([])\n  expect(consoleErrors).toEqual([])\n  expect(failedRequests).toEqual([])\n})\n",
+          "verdict": "kept"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f/evidence/e1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e1",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABNElEQVR4nO3YsW0CQRRF0a3HJTgidjP06dDB1kGAHLsEBMJ89s6RbgFfc6I32+fpS+G28Qv0rwGOBzge4HiA4wGOBzge4HiA4wGOBzje9nu9KBzgeIDjAY4HOB7geDeA959v3ds4KmDAgAEL8KKNowIGDBiwAC/aOCpgwKoEOB7geIDjAY4HOJ6Z9KYBjgc4HuB4gOMBjgc4HuB4gOMBjvciYB09wPEAxwMcD3A8wPFqM2n8Qd8twPEAxwMcD3A8wPEAxwMcD3A8wPF8VcYDHA9wPMDxAMcDHK82k2wtwIABT6sABgwYMGDAgA8fYMDrNa4CGPCTgHX0AMcDHA9wPMDxAMe7Afxx3vVY47SAAQMGLMCLNk4LGDBgwAK8aOO0gAHr+AGOBzge4HiA4wGOBzge4Hh/fG3szUyG9t4AAAAASUVORK5CYII=",
+          "stepIndex": 8,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f/evidence/e2"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e2",
+          "kind": "screenshot",
+          "contentType": "image/png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABNElEQVR4nO3YsQ3CQBBFQddDCUTENEOfhASugwARU4IjtPbzSK+A0070b7ne7gq3jL9Afw1wPMDxAMcDHA9wPMDxAMcDHA9wPMDxlu/nrXCA4wGOBzge4HiA420AXx7rSON3yQQ4HuB4gOMBjgc4HuB4gOMBjgc4nq/KeIDjAY4HOB7geIDjbQCvr+dxGz/uHgIcD3A8wPEAxwMcD3A8wPEAxwMcz1dlPMDxAMcDHA9wPMDxyjPJ1gIMePq+440LAQYMGDBgwCdtXAgwYMCAAZ8UWEcPcDzA8QDHAxwPcDwzKb61AAMWYAE+dYDjAY4HOB7geIDj7RdYRw9wPMDxAMcDHA9wvF3PpPHrBAIcD3A8wPEAxwMcD3A8wPEAxwMcz1dlPMDxAMcDHA9wPMDxAMcDHO8Hpi2jJoFPJX0AAAAASUVORK5CYII=",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb07/runs/3320818d-1426-4800-ab34-40e19e476d2f/evidence/e3"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e3",
+          "kind": "snapshot",
+          "text": "- link \"Basalt & Bean shop\" - navigation \"Shop\" - link \"Shop\" - link \"Cart\" - link \"About\" - heading \"Your cart\" [level=1] - row \"Ethiopia Guji\" - spinbutton \"Quantity for Ethiopia Guji\" - button \"Remove Ethiopia Guji\" - button \"Update cart\" - textbox \"Coupon code\" - button \"Apply coupon\" - row \"Items 2 items\" - row \"Subtotal €29.00\" - row \"Discount −€5.80\" - row \"Total Total €23.20\" - link \"Go to checkout\" - text: Basalt & Bean shop - text: Shop · Cart · About - text: 2 items - text: Your cart - text: Ethiopia Guji Quantity for Ethiopia Guji €14.50 €29.00 Remove Ethiopia Guji - text: Update cart - text: Coupon code - text: Apply coupon - text: Coupon WELCOME10 applied: 10% off. - text: Items 2 items - text: Subtotal €29.00 - text: Discount −€5.80 - text: Total Total €23.20 - text: Go to checkout - text: A synthetic staging shop for the LB-07 demo. Nothing here is for sale.",
+          "stepIndex": null,
+          "engine": "chromium"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "54831558b0613d83",
+        "parentId": "21ae62699de6838f",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791208919758,
+        "endMs": 1791208921018,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2600,
+          "outputTokens": 433
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "21ae62699de6838f",
+        "parentId": "18d1afbda77260cf",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791208919723,
+        "endMs": 1791208921053,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "usage": "reported",
+          "inputTokens": 2600,
+          "outputTokens": 433
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "18d1afbda77260cf",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "plan the test",
+        "status": "ok",
+        "startMs": 1791208919688,
+        "endMs": 1791208921088,
+        "attrs": {
+          "attempts": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "d6829bd9c7712a7e",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208921088,
+        "endMs": 1791208921788,
+        "attrs": {
+          "index": 0,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "7287541484ac0dbe",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208921788,
+        "endMs": 1791208922488,
+        "attrs": {
+          "index": 1,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "023581d975c9f3e4",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208922488,
+        "endMs": 1791208923188,
+        "attrs": {
+          "index": 2,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "00fa6f4e9271ba56",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208923188,
+        "endMs": 1791208923888,
+        "attrs": {
+          "index": 3,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "09af66fdee2bcd30",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208923888,
+        "endMs": 1791208924588,
+        "attrs": {
+          "index": 4,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "a52b01d7b82de99e",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791208924588,
+        "endMs": 1791208925288,
+        "attrs": {
+          "index": 5,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "50f5d255d71125c1",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208925288,
+        "endMs": 1791208925988,
+        "attrs": {
+          "index": 6,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "57d2990cd3e3d48d",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208925988,
+        "endMs": 1791208926688,
+        "attrs": {
+          "index": 7,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "70a0d71f7fa84bc6",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208926688,
+        "endMs": 1791208927388,
+        "attrs": {
+          "index": 8,
+          "engine": "chromium",
+          "outcome": "expectation",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "a51953de721eefc0",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208928228,
+        "endMs": 1791208928430,
+        "attrs": {
+          "index": 9,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "aefa319a500bbb95",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208928430,
+        "endMs": 1791208928632,
+        "attrs": {
+          "index": 10,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "dba2f6fb7951623b",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208928632,
+        "endMs": 1791208928835,
+        "attrs": {
+          "index": 11,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "19ec6e70953e1565",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208928835,
+        "endMs": 1791208929037,
+        "attrs": {
+          "index": 12,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "13fd51efcc45c4aa",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208929037,
+        "endMs": 1791208929239,
+        "attrs": {
+          "index": 13,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "79a0734f600b2fce",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791208929239,
+        "endMs": 1791208929441,
+        "attrs": {
+          "index": 14,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "cdb79ba3ec0f00cc",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208929441,
+        "endMs": 1791208929644,
+        "attrs": {
+          "index": 15,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "f39eed7acc995fe5",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208929644,
+        "endMs": 1791208929846,
+        "attrs": {
+          "index": 16,
+          "engine": "firefox-ua",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "3fe791bfbb60de62",
+        "parentId": "6c47d5ab6b390582",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208929846,
+        "endMs": 1791208930048,
+        "attrs": {
+          "index": 17,
+          "engine": "firefox-ua",
+          "outcome": "expectation",
+          "findings": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "6c47d5ab6b390582",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "cross-check in the second engine",
+        "status": "ok",
+        "startMs": 1791208928088,
+        "endMs": 1791208930188,
+        "attrs": {
+          "bug_findings": 0,
+          "steps_passed": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "3b21348acf9af357",
+        "parentId": "cddbd39d84f92999",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791208930258,
+        "endMs": 1791208931518,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2080,
+          "outputTokens": 347
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "cddbd39d84f92999",
+        "parentId": "ace260efcb4f0d85",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791208930223,
+        "endMs": 1791208931553,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "synthetic",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "usage": "reported",
+          "inputTokens": 2080,
+          "outputTokens": 347
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "ace260efcb4f0d85",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "write bug reports",
+        "status": "ok",
+        "startMs": 1791208930188,
+        "endMs": 1791208931588,
+        "attrs": {
+          "attempts": 1,
+          "reports": 1,
+          "dropped": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "4e5af6edaedca726",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208931728,
+        "endMs": 1791208931930,
+        "attrs": {
+          "index": 18,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "6d6b3be1dec48257",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208931930,
+        "endMs": 1791208932132,
+        "attrs": {
+          "index": 19,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "3819c4b95cc57508",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step goto",
+        "status": "ok",
+        "startMs": 1791208932132,
+        "endMs": 1791208932335,
+        "attrs": {
+          "index": 20,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "f64beed2964c1e6a",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208932335,
+        "endMs": 1791208932537,
+        "attrs": {
+          "index": 21,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "624c6b1619137685",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208932537,
+        "endMs": 1791208932739,
+        "attrs": {
+          "index": 22,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "284d076ef1e73495",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step fill",
+        "status": "ok",
+        "startMs": 1791208932739,
+        "endMs": 1791208932941,
+        "attrs": {
+          "index": 23,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "86cbb8ad1cc64925",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step click",
+        "status": "ok",
+        "startMs": 1791208932941,
+        "endMs": 1791208933144,
+        "attrs": {
+          "index": 24,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "ef14f564bec9d2d5",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208933144,
+        "endMs": 1791208933346,
+        "attrs": {
+          "index": 25,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "ea7f162795bcccd2",
+        "parentId": "1885292f2965e5ae",
+        "kind": "system.step",
+        "name": "step expectText",
+        "status": "ok",
+        "startMs": 1791208933346,
+        "endMs": 1791208933548,
+        "attrs": {
+          "index": 26,
+          "engine": "chromium",
+          "outcome": "ok",
+          "findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "1885292f2965e5ae",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "verify the test on the clean shop",
+        "status": "ok",
+        "startMs": 1791208931588,
+        "endMs": 1791208933688,
+        "attrs": {
+          "steps_passed": true,
+          "bug_findings": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "b82d6c0d126876f5",
+        "parentId": "5418112c60dd28e8",
+        "kind": "system.step",
+        "name": "generate the test",
+        "status": "ok",
+        "startMs": 1791208933688,
+        "endMs": 1791208933688,
+        "attrs": {
+          "verdict": "kept",
+          "chars": 2612
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3320818d-1426-4800-ab34-40e19e476d2f",
+        "system": "lb-07",
+        "spanId": "5418112c60dd28e8",
+        "kind": "system.run",
+        "name": "qa run",
+        "status": "ok",
+        "startMs": 1791208919688,
+        "endMs": 1791208933688,
+        "attrs": {
+          "outcome": "done",
+          "origin": "sample",
+          "model_calls": 2,
+          "findings": 1,
+          "replans": 0,
+          "bugs_on": 1
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 32,
+    "durationMs": 14000
+  }
+}

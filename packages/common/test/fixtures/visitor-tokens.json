@@ -1,0 +1,1585 @@
+{
+  "about": "Signed visitor tokens and the verdict every verifier must give each: the TypeScript check in packages/common and the Python check in python/lb-common, which the Django, Flask and Node systems use. Made by packages/common/scripts/visitor-token-corpus.ts; do not edit by hand.",
+  "rules": {
+    "T1": "A token is at most 2048 characters.",
+    "T2": "A token is three segments of letters, digits, \"-\" and \"_\", none empty, joined by dots: no padding, no spaces, nothing else.",
+    "T3": "Each segment is canonical base64url: it decodes, and encodes back to the same text.",
+    "T4": "The header is a UTF-8 JSON object with no byte order mark, whose members are strings, numbers, booleans or null; \"alg\" is exactly \"EdDSA\"; there is no \"crit\" member.",
+    "T5": "The signature is 64 bytes and verifies, as Ed25519 (RFC 8032, so with S reduced) with the site's key, over the first two segments as written.",
+    "T6": "The claims are a UTF-8 JSON object with no byte order mark, whose members are strings, numbers, booleans or null, except \"aud\", which may be a list of strings; \"iss\", \"aud\", \"sub\", \"iat\" and \"exp\" are all there.",
+    "T7": "\"iss\" is exactly \"lb-web\".",
+    "T8": "\"aud\" is the system's name, as a string or in a list that holds nothing but strings.",
+    "T9": "\"iat\", \"exp\" and \"nbf\" (when there) are JSON numbers with a whole value no bigger than 2^53 - 1: 1.0 and 1e9 are whole; 1.5, strings, booleans, null and lists are not.",
+    "T10": "\"exp\" is 1 to 300 seconds after \"iat\".",
+    "T11": "With 30 seconds of leeway, \"exp\" is later than now - 30, and \"iat\" and \"nbf\" are no later than now + 30.",
+    "T12": "\"sub\" is 16 to 128 letters, digits, \"-\" and \"_\".",
+    "T13": "Any other member is ignored, as long as its value is a string, number, boolean or null.",
+    "H1": "An Authorization header is stripped of leading and trailing spaces and tabs, and of nothing else.",
+    "H2": "What is left is \"Bearer\" in any case, one or more spaces, and a token (T1 to T13), with nothing after it.",
+    "K1": "The site's key is the unpadded, canonical base64url of exactly 32 bytes."
+  },
+  "now": 1790000000,
+  "publicKey": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkM",
+  "tokens": [
+    {
+      "name": "a token as the site mints it",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token of exactly 2048 characters",
+      "rule": "T1",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsInBhZCI6ImhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibm90ZSI6IiJ9.KDGYpxxw8K7-C44VelXwdqX8d0T3EGiTGt3UVQO0gutQ51Q7Utm_LwxT9zJGpb0vA-yTlWbcTvfUbiiJGHPCCQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token of 2049 characters, signed by the site",
+      "rule": "T1",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsInBhZCI6ImhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoIn0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibm90ZSI6ImMifQ.-yuXcyhvKXwMxtkELuvooq_NCWgYNBn5az7kZhBwE6Ue1vQI9ZXQ7EQVWLtdBEbWDD-Gz2MGe90e-8cofxiTCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token of 5000 characters",
+      "rule": "T1",
+      "system": "lb-01",
+      "token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty token",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "",
+      "expect": "refuse"
+    },
+    {
+      "name": "one segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "abc",
+      "expect": "refuse"
+    },
+    {
+      "name": "two segments",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0",
+      "expect": "refuse"
+    },
+    {
+      "name": "four segments",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ.extra",
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty header segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": ".eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty claims segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty signature segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.",
+      "expect": "refuse"
+    },
+    {
+      "name": "a space inside a segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9 .eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a space before the token",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": " eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a newline after the token",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ\n",
+      "expect": "refuse"
+    },
+    {
+      "name": "a letter outside the alphabet in a segment",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mAéfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a plus sign, from the standard base64 alphabet",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mA+fxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a slash, from the standard base64 alphabet",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mA/fxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a padded signature",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ==",
+      "expect": "refuse"
+    },
+    {
+      "name": "a padded header, signed as written",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImsiOiJhIn0=.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.qXQMy8nSEsNfm7fcYFyOqWPq9A-10mcw8Wj93f0e3wc0YVEztcsVnMawWsDFGnXePKh1HHlJZ8qBwtUnzLO3Bg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a padded claims segment, signed as written",
+      "rule": "T2",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibm90ZSI6InAifQ==.rGfTpUc1UCHgyu0DzNXrmdH-BUjo1k7Krl8TefnX7OhEyGFmWZL7KDAp3d-X2G-ZHFepfYJ1v3oemBTWWeHyBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature whose spare bits are not zero",
+      "rule": "T3",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCR",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header whose spare bits are not zero, signed as written",
+      "rule": "T3",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImsiOiJhIn1.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Xl21QE4bFPzDMfel_K52z6s6RGJ9Fh6QaTjCx_D3hO4VJ32JI8EQHMlWDb8JxuvVKIMl9uRIC5mK9s0Hx6QjAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a claims segment whose spare bits are not zero, signed as written",
+      "rule": "T3",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibm90ZSI6InEifR.9OZbqBfzlK5NzXwHkFX-9P8LMP3r7XFWZB4jLFqBiPqMTgQwhxMkGqttBTajewAAfP_tXS-k9d_f2v4MYatiAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a claims segment that is not a whole number of bytes, signed as written",
+      "rule": "T3",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibm90ZSI6IiJ9A.HLNuCv9MHkK-rqL5x4iLt_7eTVjPoWOLAJrLdmf_X0Y_6NYsUNjxhch_d7O5sNc57m8f8kpqIjuIBJK80jZUDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with members nothing reads",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImtpZCI6InNpdGUtMSIsImV4dHJhIjp0cnVlLCJub25lIjpudWxsLCJjb3VudCI6M30.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.hPC6f3nQgpoDL78VYomcdPFA3AVrKwAMO7lmwG5h4ieijkHVXxCRIE88xPecVJpxKbc0ACjJX7ryTEtiUH-tAA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a header with no \"typ\"",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Cz96fN4gM_k_qaUgl7NFTOHTbHQ2riVxH_e3mRgleBXFcR6LG8TmJL22TfuRoWsGHWPZTBD3Eot58mFPrs-0Aw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a header that repeats \"alg\", where the last one counts",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJub25lIiwiYWxnIjoiRWREU0EifQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Zlq9MupGC0lZeYYWkDZ0urx2AhxkQWhabTdpY1TJhwPPBnLvNXVVg9_fjTPkMNgVLTtFkk_1XSJvXC2YPPc5BQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "the algorithm \"none\"",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm \"none\", with a signature",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.RMjb_Ilx2tIpEcZMxkZd_ylVTNfNDeQAvwaGg5Okh73LIi6ZjizzGYghxYWEi2vYn4TTO9bCvxDxV-zPr5FdCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm HS256",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.ItnmsEJtYNNAhhxR47gvuync3LSdqxhXlJCpl_RjzM3KNbiom9dPIF5-APhy3O_loNp-meCxbbr3C8OuqZc8Cw",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm RS256",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.TTTsB_Vs64rPkIUc-pEqidoJB7pH-yLgVQMZjc6axxJIe1n73wefKLo-8CObw2V5eun32QtGB1qHVrQE8oa1BA",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm \"eddsa\" in lower case",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJlZGRzYSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.VgeKFoHQGeapFjfYnwsgTZ4IRk8i15xNuPix4owsV3uEL1a-ol0vLFD2HwDolOYgcVkkxUHSU68QIFfGVWXUBg",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm \"EdDSA \" with a space",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.1F6v0yBdqOFAQEk7RY4lH77YOGEfhCjrI306kwHXejzOM3cFl2tg6OhRmmQSeyah_dkLB_adiN-xCABjconSAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "the algorithm as a list",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOlsiRWREU0EiXSwidHlwIjoiSldUIn0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.NWRSrCAPtbkfyVU0-i3UVOwQUvzNA96W83rkQ5SXEl_oA7ormYBsd5zfqMLUNNCoLe_PL6LZaO7_RMikanlwAQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "no algorithm",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJ0eXAiOiJKV1QifQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.gDrzejPT7EOUs932eFgEMokhGx_pwWr5jLlBwUY1U-JqZfsxLTGZbFgCU_uHFtJffg7wWxVUbTx3CKyms7j8Bw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"crit\" member naming an extension",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiZXhwIl0sImV4cCI6MX0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.OXytcZJkNUZy7gx1P7MG0rW1ngoOGHH1M-EmorK_yAHaruslfaOksyuEEIHA80pK3cL6hK7BZtfk7vidti86Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty \"crit\" member",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImNyaXQiOltdfQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.VIxESkJYUS3GHurertmkHEChJxQc2MdSb57eqmwrpOUowjQHxdHoUgHghokrxANXejTz4h_ma8aywk9TVWnKAQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header that is a list",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "W10.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.9hahoGM-tGS-bf0ZBw4STFD2av1DbvYM9TIEsoK3Ivx6xxp1GZdyMOspX11z9IGRI1L9wGlP4-ZBvdM9q3G0Ag",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header that is a string",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "IkVkRFNBIg.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.VvXJHvpgvfLQp7F3epGxJDB9kwgOH8UNekJDsrQFPqJkkdcjuFe8qbp5mpjqTMJRMtMMcr5PkZh7O6G10rBbDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header that is a number",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "MQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.KJV0qksrfo05QIAnZGOdJJqVS-hECpLvtATkI3z8ZeWGPjoPFaDsYi9gBnwdx9fg8bsBrCRqXkZT2iFiB1L6DQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header that is not JSON",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "bm90IGpzb24.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.o5CAE8IPqH197B1MnG_RDqaj29-7PHngdbb9dURcIaPhFVo4z0blwCN_v-lb4Byj-0iB8eI7QtBbwtYdzY_MCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with a trailing comma",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsfQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.T2kBcD-bVHFcBolY8CViVL3N7HHxRimAtIWDH7LmFmGkF333kswglUcT63f96LcmmELW7AucnX6zwugCT-YqDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with a byte order mark",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "77u_eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.R4Nk8mLsCllf8mAkKPLKJvgEb4lnjZsP8nW7VD5u4x9EUfBkN7IAULZ1qb1Sf6blULvO55-yyRmCFtZC2_-RBA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header that is not UTF-8",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImsiOiL__iJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.TQqSwTENNoZtnEweiTl9ie8d6MiBiFfQ3nus6-oLlRraHNyWkrLJuOy9z1CHnHEUffS2VMhcLYKNFcoeRrhmDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with NaN in it",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImsiOk5hTn0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.ZN1LeqQWAkOdR5klOu6WDz2GkDEppxjdFP-ymXuVfIa6x1IRPhaRTJyp0B7I464xzQxFEJlzFw-_3AHj0OQtDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with an embedded key",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImp3ayI6eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5IiwieCI6ImpoY0xvYWgwSzlQX0I0SEN5SlNIczlnNVNCa3BHbjZiT2VlVEhMcU5ya00ifX0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.LxVBsUkS2pE_tTXjfr6Vc7yilazdLNRbXU_YBDXeJoFFlz6jy65KQymYN9Bt0HSuw1zpO1Q5hRN7tn8PkCssBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header with a list in it",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImsiOlsxXX0.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.gUTuiA4hHPXv-Vm6dA64yYIWrL6xWj_SUIMUHNrsb7Qi5gbkTvn3YDLxnPkMb2QWtrFp_OaJBnOyP92FmYnFAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header nested five hundred deep",
+      "rule": "T4",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsImsiOltbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV19.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.wRyBhY0T27xdAM6Vb6IhcXd5aqHCt2kbK83VeybtgRjfIsBjImEG72TfizXViA1GLEKPFCa_n-D7RrDNP-TOAQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "signed by another key",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Ob3a0ceOY-S-kYduFM7gffk0AmQr6zMX-jDtDBgfYi-A8ewbBkQ7Yt6xeWqH01KzP_prQdMS5KfXkYV9j3IyAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims changed after signing",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6InNvbWVvbmUtZWxzZS0wMTIzNDU2Nzg5IiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a header changed after signing",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImtpZCI6IngifQ.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature of 63 bytes",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature of 65 bytes",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature of 64 zero bytes",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature with its last byte changed",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a signature whose S is not reduced (S + L)",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yH5vXzqTlY_xkYhv-EnC-bG_ZKTK9C89dobkZ1I2KxJGQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with members nothing reads",
+      "rule": "T13",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwianRpIjoib25lLXVzZSIsInNjb3BlIjoiZGVtbyIsInJldHJ5IjpmYWxzZSwibm9uZSI6bnVsbCwibGV2ZWwiOjN9.Zi6QzGlS2ULeDv2Nb69yNQfuG2VM32m_F_p6UvmoRmb5nH_g78u-UkQVvbMwrC-VNgCz4ekWBEdMK4Nb76xdCw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "claims written with spaces and lines",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.ewogICJpc3MiOiAibGItd2ViIiwKICAiYXVkIjogImxiLTAxIiwKICAic3ViIjogIlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLAogICJpYXQiOiAxNzkwMDAwMDAwLAogICJleHAiOiAxNzkwMDAwMzAwCn0.4S15vLGtCXXkF_EP8Y__blI7eJA58bT01DDtGcWMD3q7NZPInoj3-Kn1pU7YrQT9P0bzOZS8caaGDjr4zReQCw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "claims that repeat \"sub\", where the last one counts",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9ydCIsImlzcyI6ImxiLXdlYiIsImF1ZCI6ImxiLTAxIiwic3ViIjoiWmszbVE5dlAyeFQ3YUIxY0Q0ZUY2Z0g4aUowa0w1bk8tX3NVdld4WXpBQiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.MmFkrq1qoHZUxeW5jExvhBejjfa1W6csC2LzalQYCNPRwSo1jzir4s_glAoi3lWMxldE4zaqMJS0oC9evWnRDg",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "member names written with escapes",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJcdTAwNjlzcyI6ImxiLXdlYiIsImF1ZCI6ImxiLTAxIiwic3ViIjoiWmszbVE5dlAyeFQ3YUIxY0Q0ZUY2Z0g4aUowa0w1bk8tX3NVdld4WXpBQiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.9IDzuopAJsOz3S8Cl_o2c-4TpbpBDJEb8d05GkzZnMrIrVIxNJcYDL1nHCh-WIn-lvOM3o6lG_GxIhOEKaGCCg",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "claims that are a list",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.W10.ZmVESM3j61Gg6hksEiN0nkRrxh0wb9Li-FbOXgONwtinoXTdLglbCtWtMJc0t4RgezFJsTluS6czJ1UHdvZKCg",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims that are null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.bnVsbA.e37XRhxEtrM0PzzqeX9LMYlDAhr_jfCzeYysm76-qd8lQwhoojsmjHEfPZ0oHzNQFak2wSrveD8JFRodbS2sBA",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims that are a number",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.MQ.rMdZz0rCclgXmcGNqbiGApSWZLrUWj2_ESzzTYHuOFZ3NbpFmEA0Y_crsOPxYYmgcfyOjEbsAe025v4VfRvTDQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims that are not JSON",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.bm90IGpzb24.HZRdim-2M97MVs89N6H9ig4LD7QuDkayqDoL_z4QcNlskCrtD6JMeMDXDP4aTB5OMYFk8Q-VRIzk7_oPAw7BBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with a trailing comma",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCx9.nWXDSlfCAyN4xBi_2r_xEu6LjxHyPxoT8rRIKiqybC_03ZHjRwytJlhLxGkuHvfx6M3RTPpqOccfIi5Ai3L0Cw",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims cut short",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprMw.82_pe41-GQBHab4YTxv1OSYP3KYF3uF7UYSWR36djbfcpi73BYGQ1d3M6groBKJsLK52X0pmAVR72ZS9mAeYBg",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with single quotes",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eydpc3MnOidsYi13ZWInLCdhdWQnOidsYi0wMScsJ3N1Yic6J1prM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUInLCdpYXQnOjE3OTAwMDAwMDAsJ2V4cCc6MTc5MDAwMDMwMH0.Ns6Xl30_xGz4rczfU2XUFxfwnoPP_UfnYbVSVFeyrVziKdGXggp9R44x2n5REch4tg-IIxunMwAL8PEW6dLgCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with a byte order mark",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.77u_eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.7AV18v8uDAMyCel6x1MAJ0Y01DMDOgfCUFrYdNRdyxUTEMsKmI1cxDwpGNilzJisWjLgk2Zv6bh9SZGNkcTHCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims that are not UTF-8",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiayI6IsMoIn0.5nrRZ2QzqGeF07OKicqUBAJN2vAsy6gD5MWbC0M8A4aOAFi-bNpuWxDgrdywUHk_tC0GJVKJ7ScyoKIASEYUBg",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with NaN in an unread member",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiayI6TmFOfQ.dPjtLIMJo1_wtWKHnCrcAV-SWw6haMPrCrb35tc60EJ5ZzAydaEuXX5cuL72bomBCSCiwBfJty7BA5GebBw3CA",
+      "expect": "refuse"
+    },
+    {
+      "name": "claims with Infinity in an unread member",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiayI6SW5maW5pdHl9.SOhjDE9TQwH2ZrMvecNKCe7FM_cQ7OE8zGA4esYLWXgksgbjXEHIimn6gP_faobKZ3vTc2Wg9rvDf106KDVJBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an unread member that is an object",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiZXh0cmEiOnsiYSI6MX19.SrGfjmDYOO8wduk-Y5RjzwoddsyN-58TDl515TNmHN-WIhC_ILeS0m0Gxxj4ctozKmWpO8MzlAn63AUukMjwDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an unread member that is a list",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiZXh0cmEiOlsxLDJdfQ.QYbhqEMiC_sKeHReidL3jJNjSGOZQK8BMCTy5pmFxUOIJgHKqSgXajqeMKUSL4Wbotj_CGI7k6x7ul7PAxw9DA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an unread member nested five hundred deep",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwiayI6W1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tdXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXX0.zDW5nna4hoUuLN40_usdxme_IpkE1e4qjNajx-3vPCqNnDJLXcwj6xR93Otn12LpTP_YuvttUylVsgksllGnCg",
+      "expect": "refuse"
+    },
+    {
+      "name": "empty claims",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.e30.iiaLV9_PCgELvGjbQI8W5yxkwz8fY1QrQr876wB-p9b46n9hfObAJ6CJLGyPlP6fM9Kq58xQa7NUK5BOv0E8CA",
+      "expect": "refuse"
+    },
+    {
+      "name": "no \"iss\"",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.ORhDkSZ9ZjTFIkVu3DJaZkuWhiMzLlJ2v-aY4jxZdcl0270A69GmkgQgswbBuR8wkIQNQJpQE1qEIScLaX8VCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "\"iss\" that is null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOm51bGwsImF1ZCI6ImxiLTAxIiwic3ViIjoiWmszbVE5dlAyeFQ3YUIxY0Q0ZUY2Z0g4aUowa0w1bk8tX3NVdld4WXpBQiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.JXK2ymdEMe1RwFuDXI6B2JRffjrbCeg0xMTRER-W4JkIzE19O8rSzVYo1JSZKDSNOo7SqkPNIo2Ut9f08WXBAw",
+      "expect": "refuse"
+    },
+    {
+      "name": "no \"aud\"",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.1L6Xev86TZ1DG9CWrvqarCFT-1KGXcfGdjY-epPbVLtC5DVAtRhK9zTSxzJpcMDyGOGO6orKW7FFdo_TZOBqAw",
+      "expect": "refuse"
+    },
+    {
+      "name": "\"aud\" that is null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOm51bGwsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.TNq15NAWR35n1UHOk_v5Aponogk6rFYRFda1RhiR-9LcWfPn23hLy_wVa1k_peoYCmUtOSo9IrzSrEqrw0Q5AQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "no \"sub\"",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.1XpaDcFxoGwyeE9YsAQyyn0QbIGjFHqJsIdT8FiuiLdM7yaY1Nq3nfwLbuE-Swurjwr_xwN_M8J3AjvLswG1CA",
+      "expect": "refuse"
+    },
+    {
+      "name": "\"sub\" that is null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6bnVsbCwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.HJBTje98LL51mhKFR3Lb9aH_vk0zExX1lPbQ3yEjE8NAAVqdMsgQTEfEsCAKS5V51aRPl9P53M9-6_KMUu-QBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "no \"iat\"",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJleHAiOjE3OTAwMDAzMDB9.ORCde9uBs1yXxCQPnxaljXcnQ6PfB4EhOnDbKwxZ1KKxrRsGAPnXTzhZRr94rb3vM4vk209sQbazbz9ROZh8Bg",
+      "expect": "refuse"
+    },
+    {
+      "name": "\"iat\" that is null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOm51bGwsImV4cCI6MTc5MDAwMDMwMH0.yexG6mhWNULxxSBob7-MwRw5o1adsPCBdMFRZ60rjLEcWlL6V7ojdG2mTQBdMjZnUG9CYUZZh8-fOzFru8J9BA",
+      "expect": "refuse"
+    },
+    {
+      "name": "no \"exp\"",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDB9.Bi92ui4uyg2wW8wixbup39Epwj0HW8NsuE7CVV4eK6b6gzMTwBJ5ZfM41v9y9e21tmClFJaJborPbNRacWPbCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "\"exp\" that is null",
+      "rule": "T6",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6bnVsbH0.Cu2u46uk0fBisJEZ06ozuv-icATn769j8o3jJbamQNTm31c0S3UDwnhwWNzUPGMRimU-yxRjolBj4bWrb05BDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an issuer that is someone else",
+      "rule": "T7",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzb21lb25lLWVsc2UiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.yvv14WM2hDrC8Bg7X3t8SbPSOMvxXkmjA-PR3TVSazWqHr0cV04HARNnus2viT1TwlyWEDEMjHk_K4uePhZ9Bw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an issuer in capitals",
+      "rule": "T7",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJMQi1XRUIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.acB4mC4I0wSx4crSjVN3j-niAAdsRxDcfLuPQJ5f11xhNvDJl2kr5BHtiOZ4N1pLKg2Mz351UvJW3We6_liqBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "an issuer with a space after it",
+      "rule": "T7",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIgIiwiYXVkIjoibGItMDEiLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.LhGexZJLC1Q5uNG2T-7L47SrZ643MUewtUbBVcSPNAU19MI-1pe7Gm_0THr-ioyocs4ObqjvNMS4WBxf17sGBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an issuer that is a list",
+      "rule": "T7",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOlsibGItd2ViIl0sImF1ZCI6ImxiLTAxIiwic3ViIjoiWmszbVE5dlAyeFQ3YUIxY0Q0ZUY2Z0g4aUowa0w1bk8tX3NVdld4WXpBQiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.uKsvFAHnvrgWCTLj_MioQgsfprYS1mUsHG5tP7zUkqnKRZwLABXH0yJA3cDg_UTQkzW0brX7eC19pRmmqouQDg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a list holding the system",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDIiLCJsYi0wMSJdLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.bVLjFwOj571yzibKc4uZooXIEcG_IAGZQtERLwudCCJu2OhO9zU-c8Z2pKjeBrzbjtsWKeT3KubKvXMsdt_mBA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "an audience that is a list of the system alone",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDEiXSwic3ViIjoiWmszbVE5dlAyeFQ3YUIxY0Q0ZUY2Z0g4aUowa0w1bk8tX3NVdld4WXpBQiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.XgfKd-NqIcrEcQzdk9RquFGcKxBA12j1MVuRh_uA44gOyMfaJHolGD9hhoDv2qr6689fEkQgOWLjyXfM8L4LDQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token for another system",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a list without the system",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDIiLCJsYi0wNSJdLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.TbkiKely7SiTwy4XfIUjbCE_rcg6ElBW4shzFrSTbt_zK9i73vVFjPMWP353BX2YKiC2eSRwp5mgUgungDK1Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a list of the system and a number",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDEiLDFdLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.gXWyAuytU8rXJSEdcZXlt9qRDtVqEIZZpOBnjeBh6NqgloDX6AoKSW-MiZtB-TwAwSR7bBJprgnUbjqsxlHICg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a list of the system and null",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDEiLG51bGxdLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.YYUmDDX2F_4VcgZ4c0QhbHT_YDJMIjliO1x6FQITGzj14QpekK1nAWraj1nRMi_EIrKvQYZiKpuzeQEoHdxRBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a list of the system and a list",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOlsibGItMDEiLFsibGItMDEiXV0sInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.r5hcCHLXYp9HXqoQBBt7Qfaht8RUHb9O-v4Du5h9sdqsNtuU0eYxEs3BFpc7XFFEGMBjjKkQ0VZE53SXbgwFDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is an empty list",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOltdLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.XO3rKbjC7goaiTytiEY3B-fgip-Ia5riIMp9Z3jbXoYWS00g2NTw_CXKEmUsySH9Id4fVV14Ym_O9h6o7R6ABA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is a number",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOjEsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.tBGlU_tZnxrq00PC7MFyipGXzRf9Rc8z878nrenDRC3Ivqlnr1RVfWVlWnAByYowVThvfDLFbTSIfWsf32JlBA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is true",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOnRydWUsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.mFMed8FDD--8_mG2nSBRNxHO69s4L3I0dpVacvphrIahdjuC6YAyJ4IVUEJMFta2fNKlNHqnTSGKlNdnE9ksAw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience that is an object",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOnsibGItMDEiOnRydWV9LCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.47kPNjtui6gHiH70mzcpmxYb8xdOzx63c_NbUO6cUHjk047kQRw3ciKTsNhoRvCh0Qh9Pi9Qqf-26Jt7Xu_MCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience with a space after the system",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSAiLCJzdWIiOiJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.BqJMr9Ap6WOwiNKlF10RLOiZ3unKDtpG9Xbu-u8DvBgpokJZ0CPefYENqszSO7xKc_1OH-PM6qvug9pbW-60BQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "an audience in capitals",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJMQi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.2TTgXJ6xm2J79hV1e7PhsRlpdk1_NPzajmLH3O-LArWdT4XU4puMuKgn07WjxWBcP3kX7lYUAVnOlOB2Gfy3Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "times written with a zero fraction",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAuMCwiZXhwIjoxNzkwMDAwMzAwLjB9.F0_OmZu8tGI9qby2OeYvWrpIB5-Byso6hFtU-MdpTEijYjkl9uMwmf3oSXlbTjeWhvxzCDDvmsXOkYhpTY7ZBA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "times written with an exponent",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjEuNzllOSwiZXhwIjoxLjc5MDAwMDNlOX0.GGLuw7jFZLbmmT81cOm-iNvicmHHUURNVOW0kApy7QbNieCV1o0x4MjWgUW2linzD9zn68sCPH-hLhm594hEBg",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a time written as -0 where the other is later",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjotMH0.B6PT7JIXN21HBSFVFlU8Xo1M3cWEMuQpB4pCKgNlAJAOY111w3uIeMv3RqtkHoAFLh2cqcTwUhjgPW4nzVd_DQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a \"nbf\" written with a zero fraction",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzkwMDAwMDAwLjB9.JqDkpUOgRRFUYrCvUUVBB6o_cYCW4s_c96gTgX0hExQsPK7HRbDvLmIUridRZGrnxq7DwN3RpHdhZLt1L-q0BA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "an \"iat\" with a fraction",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAuNSwiZXhwIjoxNzkwMDAwMzAwLjV9.0McVSXK3_tSnbLBWqPZANe7qnX-5wodRMMvK_6c9wm5t6yRJIKpmI9wyJMP0lOYVsERjnTf1Lu1TLbdGty_aDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" with a fraction",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDEwMC41fQ.acwDtQv_WcgLhxL5HhhXorNgDno5aE3LvoERfwfv7XUVs1eOjVq0fJNAlCq2QQbKYtSzgkpWgNqWB2IXbueNDg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" written as a fraction by exponent",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MS43OTAwMDAxMDAwNWU5fQ.cJG613JMVEEX_P4PaBZrnmBDQr4boUbNbb1fu2w6yMI6fEzE9IfC4DKxVHHNWejxrQ6Z3rrfxkYNvSQCY8QRDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"iat\" that is text",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOiIxNzkwMDAwMDAwIiwiZXhwIjoxNzkwMDAwMzAwfQ.ac5qEKjHvOab1uL7GO7hAXbofGU2td-77FNBWB_K9txdxV0TRC0YcjKA8pT11u4lcBY4v7FPQ6oVx9PXhgiHDg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" that is text",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6IjE3OTAwMDAzMDAifQ.mKjCVbGPtAnYiy5RYb7ttQ4MrKBQSfckm4JnsRFcJH_303ZDbQTdno_idL-m86X6nYsc5hPhyy8-14oNHtr4Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"iat\" that is true",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOnRydWUsImV4cCI6MTc5MDAwMDMwMH0.x9tcQ3Z3nXbCDyoQi9rqyiBulFOUo3xf01NcaIGKEXUOWL52Yoo49UG8_OwIjmGhAJjym5P7scuRcHWCxURZCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" that is true",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6dHJ1ZX0.gqJJ7y1rpaZChhOnBmvDA3kj6FylEDwcaRid7Qf7_-Ixp80kbFA5nCVCe2bAwQSay9sM0MHFfLmK4LXACD5BAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"iat\" that is a list",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOlsxNzkwMDAwMDAwXSwiZXhwIjoxNzkwMDAwMzAwfQ.Odefd9EYwJXFh1FqloKNFgsXyhC0knCel7Sju_Jot_X8ETkhsxvDWrEWKjxSy-jZYqMn63hZpgNLTKWQ10txBA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" that is a list",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6WzE3OTAwMDAzMDBdfQ.RqKoehgZiVQ5Jh5PSASqumHDpK5rVMMYpGXrzRUlXDd1xe4afgU0jQmKpJuXcPYamKIpo6HcV8lBX9ZX-m9pAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"iat\" that is NaN",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOk5hTiwiZXhwIjoxNzkwMDAwMzAwfQ.z_uwpc4JtGnr8nKOvp2akzKHts8f-ELmCaBnVrL6044Mir_lyBk4JoduF1Chbe5f7AvNdS3kET0YH1rao9A4Cg",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" that is Infinity",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6SW5maW5pdHl9.XCHax_OGr044EQT0vZdirtCIqZ8KrjhIN4YDjxxg_jUsgNw7P0SsPiafaZgpQLvMbn7o4OYZXOAkOJ6T29_QDw",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" bigger than any whole number a double holds",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MWUzMH0.gqlq-C00h5ABu0rEdxrDBb3AtCWZ7RiWkKjIE2-yVaTPi7_MPkO7bZrysUd8MPw-cdnwkSpRMuaVyOz5vXoCDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "an \"exp\" of 2^53",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjkwMDcxOTkyNTQ3NDAwMDAsImV4cCI6OTAwNzE5OTI1NDc0MDk5Mn0.HWVgaOM-nLR884Y4CY_Z7K3QLKyGwTXQGNOXmE6FBUxuJXzGMuA-xcqc7G2uMvGZjK0ipeKshOVelIm0DR22AA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a negative \"iat\"",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOi0xNzkwMDAwMDAwLCJleHAiOi0xNzg5OTk5NzAwfQ.Z_PkukMyatgIxi89-bpVqZHUzbmTND1wbrt5WKwJL3YSAxlC5lMfC18jg3H56WQv7lsIbteRJoM5ehQGyon6Cg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" with a fraction",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzg5OTk5OTkwLjV9.AgUp8X6jfT0DoqJfKStw3SQ9cs4E2a_4w6E7TTIcJENtNS_zOraqKqNDKmkTLV5taSDD_FCIEAlGo3_QgY_nBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" that is text",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoiMTc4OTk5OTk5MCJ9.9nY8moLSK-pf0YsssS1ioxzuYJuHYvNThOzmZ3uMx4ui65MtF13uBmj1JsdXX_LzfDlzEgVX_XaEHI6P3oF_Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" that is true",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjp0cnVlfQ.eitIjmwsri8L3XmcV9CfZwrBR0vhZsVhTcZw4fzLuMtQfTJtPrPxJDgLiOv5JuMc7IHKig-s6BjJYuBWYB5IDQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" that is null",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjpudWxsfQ.ghDWTg3MA51sd4hfiSqk1pYmaCU54y7dwm9BZSjRhKmjeihO-6wm2fZTTTccwTBQM0jjf35R5ioPr8_BAeo5DQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" that is a list",
+      "rule": "T9",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjpbMTc4OTk5OTk5MF19.qiGRHHMMqkZEcwrDEvXXfcYz9gqXpqSlkENfiCSfNarA5JgLgJo72Xs-8ayPyz3ISd2LPQKI75rpKUdAkIniBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that lives one second",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDAwMX0.4U8YGDNQYlqxqBWfFkkYOjcaSwtiz0D7pLJ7xIaTdqMeUJDquB7cCB_ERd97gxkdPi70qCOvwQmZIVHBP6pRCQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token that lives 300 seconds",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token a hundred seconds old",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk5MDAsImV4cCI6MTc5MDAwMDIwMH0.GUyjGigARCE3mt9ojsXv19sZa_X0ki0oz1RLJ-WhB804HiWab2mk7VItulVrlvi9sHfXrF6YxvgaBMm4kps8Bw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token that expired 29 seconds ago",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk2NzEsImV4cCI6MTc4OTk5OTk3MX0._gz3XY0bzNV0p3fDw1CvA2cL9JoMMVWIO5m8KPG5W5AagVswyxn6dZHA6kdMoyxBtz0emrUZvuBBtViOXmyACA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token issued 30 seconds ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMzAsImV4cCI6MTc5MDAwMDMzMH0.Q2ww6CCIbj4MP3kgbLOhLFdpSXCCKp6SonOqjstGEdL-Bg5PX8BwsTAkDL_Fbfhlt4xezJvOWUZrXh8U5b_nDw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a \"nbf\" that has passed",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzg5OTk5OTkwfQ.Egb8wKMmRlsXDpZfhBJxdyA6OsrstXO5W9pP2j3jz5c3lBn_l2Qs6z3nlcGWBx_FtMscTTI0vnQVWJet2rxuCg",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a \"nbf\" 30 seconds ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzkwMDAwMDMwfQ.UnewBehI5yMqpzjvwTdbivt3zfQqyvXvXyZo-E2IZUJ7NuM5eg9gy9or81YXS3xzDMDewDh_qcaiP_H6_PXIAg",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token that lives 301 seconds",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMX0.PpqC-fHTcbxbTWgyb7dZrTm65h_Ml8YudHyGuzEOfqLwNGgwPq8EqrZK9ZPq7uV81TsCr4U06offeZBDdouLCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that lives a day",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDA4NjQwMH0.lo9SYhrCZlWDRNoIhBHkCFmzM3io8phM5VjJbTTJTMZlVh5fxlxeKbFZUbAZHdSrd85o8lKMjWu1q1UxIEHdCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that expires when it was issued",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDAwMH0.doxWbwCe7okkJgDrzEBnXyH10u8V76ykFh3DJI9nN0BJC6i1M3KmOrkBqktHMDaztik-hLdUiCJOMB0UF5p3Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that expires before it was issued",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc4OTk5OTk5OX0.Q903eheepASFqlnF7Y_JEGXSGXlpogq98CYy3Z0MnwzjBbGZTkCfvEMHJdPBp_hs1tLZhKE_SbQC-QwpSV9zDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that expires before it was issued, still within the leeway",
+      "rule": "T10",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk5OTUsImV4cCI6MTc4OTk5OTk5MH0.6jhwqPMksYUcAyPkLLERr4Le7-fkFcjvWOlwAsuIpFn-reUv0KakzxAWMHaJPgapEVXWcZVZFu_2tQTNO1R4Aw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that expired 30 seconds ago",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk2NzAsImV4cCI6MTc4OTk5OTk3MH0.bdaH7XNsRopDykZ94m294O1b02Ts3MrIbuMSYAbm9jL2xt2dEArK8n_b4SeQPDGtBrPVOmPloLHZ1TGstApeBg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that expired a minute ago",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk2NDAsImV4cCI6MTc4OTk5OTk0MH0.-ektUF5SiiWxNKzoktMFn5zINqKRixiUO3p5syKuA9HbgZQ42PJIgTnm5XCb09S3E8-ofQ9ODAtN3nnFPhUjCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token issued 31 seconds ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMzEsImV4cCI6MTc5MDAwMDMzMX0.3IVtZbPYfNMEtF1Xecr3CXyFrCk91Ya9NXIBUPcCwBfiQwUN62nupQO-XCOu2sJkP6wwe0egcvtdQYHBuH91AQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token issued an hour ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDM2MDAsImV4cCI6MTc5MDAwMzkwMH0.YJh7EqsbVzP809gzpKKgBFRjQCZazuhmlAvcPNFNGBclM2r3P93WiYkQTqeRr48MeS4OuW-jzkWFncwpmChLCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" 31 seconds ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzkwMDAwMDMxfQ.-GWXqv5ljz0RVmAd8-B9Z1AAqmD4lwM9ZJ25cFIe885TCCZeK-gyNW68tCPmjHDRr58TNEZ3IkDk0z9o4wsSAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a \"nbf\" an hour ahead",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMCwibmJmIjoxNzkwMDAzNjAwfQ.id8fgG_W-Lbkcbeo12AWaILP5gh9bzRSnP2lY5poenE_NGIbohD2YvvaHKOuu9jiMxisr8w99v5cz_kTBzybCA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject of 16 characters",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImFiY2RlZmdoaWowMTIzNDUiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PG4y8aga35Wf9LiahbIBXClCZiRSN3s7TecTFKHdH8WlC5jWU66fWd1ZNmzfUeF2RY30IGy3la2mVvnYji8YBg",
+      "expect": "ok",
+      "sessionKey": "abcdefghij012345"
+    },
+    {
+      "name": "a subject of 128 characters",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExIiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.RGEgdujQydl0M6BBZwf9IB_uvD1Yvp1D75HHTlc_waTWw6ORSMo6174UV0cL5FGQ719d4OqL_DccDc72sQhRAQ",
+      "expect": "ok",
+      "sessionKey": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+    },
+    {
+      "name": "a subject with hyphens and underscores",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImEtYl9jLWRfZS1mX2ctaF9pLWoiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.B2k-VgjPD3ZtD553MVnaOuImpV4Q3JeWx8sn2Mjs3VU78Mr885tXQ7HPsY-YzFPxSyB9fG56mYIQRm4pOfd5Dw",
+      "expect": "ok",
+      "sessionKey": "a-b_c-d_e-f_g-h_i-j"
+    },
+    {
+      "name": "a subject of 15 characters",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImFiY2RlZmdoaWowMTIzNCIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.-MQU8u9W4Nx5DOzDm32_kPch7kgKu0lbUs_-ZHsigDFJrkOsX_GSsqaV-ZAsuma0pAC6Jci4AinQ5JBB66gKBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject of 129 characters",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYTFhMWExYSIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.TlR3tOcBJNX3sK8sRTT4J_SA5AK49bylitTRsuOyKsvtwiqTzsoWMQiuLvtZHDIHyOXmcS6LNKJNj1cPs2jiBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject that is empty",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.pynyiYjic4VzHb1JeJU1-ljX_nKwiU9QgCco5bsrH4Yu9q140rkTzvyauFzfm6jrJjIc6fc2DBd1zugJsvRcCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject with a space",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImhhcyBzcGFjZXMgYW5kIGlzIGxvbmcgZW5vdWdoISIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.GWxdQ_McEUeIS7UcCYUuptLhsemCsHRUoXv7eXSeWiBUJTO8y5Y4uQqXlXDq7P6NBhfPckjZigW1FogmE1OqBA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject with a dot",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6Imhhcy5hLmRvdC5hbmQuaXMubG9uZy5lbm91Z2giLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Yos508JvxQIHUkjuy4ac14KYriT0jzIvr-dYdde1CuVBf_74MGpwkmmOMs5_qT25r7FG--nfN3kJtT7Hu3Z8Cw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject with a letter outside ASCII",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6InNlc3Npb24tMDEyMzQ1Njc4OWFiY2TDqWYiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.VIy_53ngH61teogaanSXT1wA8PO6XN1F4_jo-ESWBIqYnFdoTClR1FXfAwZCbqPL3QtNlQjGRe9s9B-DCP3-Cw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject with a newline at the end",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6ImFiY2RlZmdoaWowMTIzNDVcbiIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.Ss5Z5nk2w5essN0eS_B14thX5kps9_cOV9p3lFSBYrr00TTOcim9cwW27W38_QxL8wEcn2qOl9x_oakvuyLFBQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject that is a number",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6MTIzNDU2Nzg5MDEyMzQ1NiwiaWF0IjoxNzkwMDAwMDAwLCJleHAiOjE3OTAwMDAzMDB9.SKALvq-O0oIfIW63lARpX62uMaCoGYgtp5sRr_7jjE0HFU88sCck2YrtCLNEevTU9bEZvQqKRN2Y1IM0Tx-_AA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a subject that is a list",
+      "rule": "T12",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6WyJaazNtUTl2UDJ4VDdhQjFjRDRlRjZnSDhpSjBrTDVuTy1fc1V2V3hZekFCIl0sImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMzAwfQ.5m9CPzieAtCMJr6c0r-IOHuaubhbo2cqkMWiWKCpdrcopGGWmmB-hn_40pu8UShKD286Qv2whgasj_CCmSgJCg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-01, at lb-01",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token for lb-01, expired, at lb-01",
+      "rule": "T11",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk0MDAsImV4cCI6MTc4OTk5OTcwMH0.kg7KlPsEhwbej7r7Avh8V3eva2yhp1UUcD-6kq96QVbLNZwzDVouwA9KfAoTYdDo5Ih3tNYPwviM9PoPfmBSCg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-01, signed by another key, at lb-01",
+      "rule": "T5",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.Ob3a0ceOY-S-kYduFM7gffk0AmQr6zMX-jDtDBgfYi-A8ewbBkQ7Yt6xeWqH01KzP_prQdMS5KfXkYV9j3IyAg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-01, at lb-02",
+      "rule": "T8",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-01, at lb-05",
+      "rule": "T8",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-01, at lb-08",
+      "rule": "T8",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-02, at lb-02",
+      "rule": "T8",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token for lb-02, expired, at lb-02",
+      "rule": "T11",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk0MDAsImV4cCI6MTc4OTk5OTcwMH0.6Q-AF9LyzQy09iYUvsKukMcocIJ9jEAo5wqz6VGHVJj26jgpJz12HxxFaVcAk_VIuP0Pf8VEmGqAUk_yUTvzDQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-02, signed by another key, at lb-02",
+      "rule": "T5",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.BuP119BT7bF_P3-zVlTMTQAkFBHD7UdmbHlCazKGXhtFeQnq55GHQs6A4zhpV9zqgRdVhTwVtrht2W3vWoCiDA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-02, at lb-01",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-02, at lb-05",
+      "rule": "T8",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-02, at lb-08",
+      "rule": "T8",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-05, at lb-05",
+      "rule": "T8",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.h9K0P-EX1iaEM9pOVsOggwrxiyeeP5urDw5WeX7uUQnKfhxc1RxfXJmLHYge2uUydONKLRZ915KPOM_jFNrNBw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token for lb-05, expired, at lb-05",
+      "rule": "T11",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk0MDAsImV4cCI6MTc4OTk5OTcwMH0.yYNSfkwuMhZsJQrMFVOtbbdIGArdoQnfafPUwQhtW1v8nnSEj_GCrswIKMSv-IKfQCJs7jqh0rHNzXnSicKyCg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-05, signed by another key, at lb-05",
+      "rule": "T5",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.0au--rNwTJnUCwpwYGtigC-jJABQzDfqv8GUllDmHrsJABl6t7vzjsBDG1Xi-7ZSKCKHeTJhJc9f_rUBGGVpAA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-05, at lb-01",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.h9K0P-EX1iaEM9pOVsOggwrxiyeeP5urDw5WeX7uUQnKfhxc1RxfXJmLHYge2uUydONKLRZ915KPOM_jFNrNBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-05, at lb-02",
+      "rule": "T8",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.h9K0P-EX1iaEM9pOVsOggwrxiyeeP5urDw5WeX7uUQnKfhxc1RxfXJmLHYge2uUydONKLRZ915KPOM_jFNrNBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-05, at lb-08",
+      "rule": "T8",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wNSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.h9K0P-EX1iaEM9pOVsOggwrxiyeeP5urDw5WeX7uUQnKfhxc1RxfXJmLHYge2uUydONKLRZ915KPOM_jFNrNBw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-08, at lb-08",
+      "rule": "T8",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.oYxe-VqYAZ-XhTKHltcKvGiPIMn9OandE02MFtrnnwFfZJc46DhBye6wHq6S_DLUtqby6VwkOLou8Acl-tPlCw",
+      "expect": "ok",
+      "sessionKey": "Zk3mQ9vP2xT7aB1cD4eF6gH8iJ0kL5nO-_sUvWxYzAB"
+    },
+    {
+      "name": "a token for lb-08, expired, at lb-08",
+      "rule": "T11",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3ODk5OTk0MDAsImV4cCI6MTc4OTk5OTcwMH0.HEBhnrQX_JU7YOgEyHv0jLSsyE6lAYtre4XLiEKIQYa0WsVN7-hR7FG-p5j6mLe2YyaJB9ZygFtanf7wEZi7BA",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-08, signed by another key, at lb-08",
+      "rule": "T5",
+      "system": "lb-08",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.sY8KuxV1qT6Xq2lSgYekQb1aIeJPY9nsDnR2k1xC-4CKXpJohuXI3DLW2EfXUhB9pMfckGVi48SjSoazuC16BQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-08, at lb-01",
+      "rule": "T8",
+      "system": "lb-01",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.oYxe-VqYAZ-XhTKHltcKvGiPIMn9OandE02MFtrnnwFfZJc46DhBye6wHq6S_DLUtqby6VwkOLou8Acl-tPlCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-08, at lb-02",
+      "rule": "T8",
+      "system": "lb-02",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.oYxe-VqYAZ-XhTKHltcKvGiPIMn9OandE02MFtrnnwFfZJc46DhBye6wHq6S_DLUtqby6VwkOLou8Acl-tPlCw",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token for lb-08, at lb-05",
+      "rule": "T8",
+      "system": "lb-05",
+      "token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wOCIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.oYxe-VqYAZ-XhTKHltcKvGiPIMn9OandE02MFtrnnwFfZJc46DhBye6wHq6S_DLUtqby6VwkOLou8Acl-tPlCw",
+      "expect": "refuse"
+    }
+  ],
+  "headers": [
+    {
+      "name": "Bearer and the token",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "bearer in lower case",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "BEARER in capitals",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "BEARER eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "bEaReR in mixed case",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "bEaReR eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "three spaces after the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer   eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "spaces before the scheme",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": "  Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "ok"
+    },
+    {
+      "name": "spaces after the token",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ  ",
+      "expect": "ok"
+    },
+    {
+      "name": "tabs around the header",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": "\tBearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ\t",
+      "expect": "ok"
+    },
+    {
+      "name": "spaces and tabs around the header",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": " \t Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ \t ",
+      "expect": "ok"
+    },
+    {
+      "name": "no header at all",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": null,
+      "expect": "refuse"
+    },
+    {
+      "name": "an empty header",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "",
+      "expect": "refuse"
+    },
+    {
+      "name": "the scheme alone",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer",
+      "expect": "refuse"
+    },
+    {
+      "name": "the scheme and a space",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer ",
+      "expect": "refuse"
+    },
+    {
+      "name": "the scheme and spaces",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer     ",
+      "expect": "refuse"
+    },
+    {
+      "name": "another scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Basic eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "the token alone",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a tab after the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer\teyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "spaces and then a tab before the token",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer  \teyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "no space after the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "BearereyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a word after the token",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ extra",
+      "expect": "refuse"
+    },
+    {
+      "name": "a newline after the token",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ\n",
+      "expect": "refuse"
+    },
+    {
+      "name": "a byte order mark before the scheme",
+      "rule": "H1",
+      "system": "lb-01",
+      "authorization": "﻿Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a no-break space after the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a colon after the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "another word for the scheme",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Token eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "the token in quotes",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer \"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ\"",
+      "expect": "refuse"
+    },
+    {
+      "name": "a dot after the token",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMSIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.m2f9NrY2mACfxP-ekr2BEjy1J63e8Kr21HS27d7F6yEM6oaNNPMsbnCExz5JEQey_ZKTK9C89dobkZ1I2KxJCQ.",
+      "expect": "refuse"
+    },
+    {
+      "name": "a token that is wrong",
+      "rule": "H2",
+      "system": "lb-01",
+      "authorization": "Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsYi13ZWIiLCJhdWQiOiJsYi0wMiIsInN1YiI6IlprM21ROXZQMnhUN2FCMWNENGVGNmdIOGlKMGtMNW5PLV9zVXZXeFl6QUIiLCJpYXQiOjE3OTAwMDAwMDAsImV4cCI6MTc5MDAwMDMwMH0.PrFNAObxHe_e7nhW6frTHOib1YdFK6OBtbLNbTaj_3xF02TnTihmvUmmlMu_FV9l1d2Iv-5b2gL5g4ekG55IAA",
+      "expect": "refuse"
+    }
+  ],
+  "keys": [
+    {
+      "name": "the key as `just gateway-token keygen` prints it",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "ok"
+    },
+    {
+      "name": "an empty key",
+      "rule": "K1",
+      "key": "",
+      "expect": "refuse"
+    },
+    {
+      "name": "a short key",
+      "rule": "K1",
+      "key": "c2hvcnQ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key of 31 bytes",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrg",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key of 33 bytes",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkMB",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with padding",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkM=",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a space in it",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSH s9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a space after it",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkM ",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a space before it",
+      "rule": "K1",
+      "key": " jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a plus sign",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSH+9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a slash",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSH/9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key with a letter outside ASCII",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHé9g5SBkpGn6bOeeTHLqNrkM",
+      "expect": "refuse"
+    },
+    {
+      "name": "a key whose spare bits are not zero",
+      "rule": "K1",
+      "key": "jhcLoah0K9P_B4HCyJSHs9g5SBkpGn6bOeeTHLqNrkN",
+      "expect": "refuse"
+    }
+  ]
+}

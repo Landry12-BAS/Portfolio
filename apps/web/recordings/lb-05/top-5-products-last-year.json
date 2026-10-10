@@ -1,0 +1,415 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "top-5-products-last-year",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:40:52.945Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Which 5 products earned the most revenue last year?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "SELECT p.product_id, p.name, SUM(ol.line_total_czk) AS revenue FROM order_lines ol JOIN orders o ON ol.order_id = o.order_id JOIN products p ON ol.product_id = p.product_id WHERE o.ordered_at BETWEEN DATE '2025-01-01' AND DATE '2025-12-31' AND o.status NOT IN ('cancelled', 'lost') GROUP BY p.product_id, p.name ORDER BY revenue DESC LIMIT 5",
+              "stopped_by": null
+            }
+          ],
+          "chart": {
+            "kind": "bar",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "data": {
+                "values": [
+                  {
+                    "x": "Kenya Nyeri",
+                    "y": 237198879
+                  },
+                  {
+                    "x": "Basalt Blend",
+                    "y": 214102845
+                  },
+                  {
+                    "x": "Ethiopia Guji",
+                    "y": 174681766
+                  },
+                  {
+                    "x": "Colombia Huila",
+                    "y": 153976016
+                  },
+                  {
+                    "x": "Lava Decaf",
+                    "y": 96709158
+                  }
+                ]
+              },
+              "description": "A bar chart of revenue by name.",
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "sort": [
+                    "Kenya Nyeri",
+                    "Basalt Blend",
+                    "Ethiopia Guji",
+                    "Colombia Huila",
+                    "Lava Decaf"
+                  ],
+                  "title": "name",
+                  "type": "nominal"
+                },
+                "y": {
+                  "field": "y",
+                  "title": "revenue",
+                  "type": "quantitative"
+                }
+              },
+              "height": 280,
+              "mark": {
+                "tooltip": true,
+                "type": "bar"
+              },
+              "width": "container"
+            }
+          },
+          "elapsed_ms": 3132,
+          "explanation": "The top five products by revenue last year were Kenya Nyeri with 237198879 CZK, Basalt Blend with 214102845 CZK, Ethiopia Guji with 174681766 CZK, Colombia Huila with 153976016 CZK, and Lava Decaf with 96709158 CZK. These figures cover the period from 2025-01-01 to 2025-12-31.",
+          "explanation_source": "model",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "integer",
+                "name": "product_id"
+              },
+              {
+                "kind": "text",
+                "name": "name"
+              },
+              {
+                "kind": "integer",
+                "name": "revenue"
+              }
+            ],
+            "elapsed_ms": 64,
+            "joins": 2,
+            "row_count": 5,
+            "rows": [
+              [
+                8,
+                "Kenya Nyeri",
+                237198879
+              ],
+              [
+                2,
+                "Basalt Blend",
+                214102845
+              ],
+              [
+                4,
+                "Ethiopia Guji",
+                174681766
+              ],
+              [
+                6,
+                "Colombia Huila",
+                153976016
+              ],
+              [
+                10,
+                "Lava Decaf",
+                96709158
+              ]
+            ],
+            "sql": "SELECT\n  p.product_id AS product_id,\n  p.name AS name,\n  SUM(ol.line_total_czk) AS revenue\nFROM order_lines AS ol\nJOIN orders AS o\n  ON ol.order_id = o.order_id\nJOIN products AS p\n  ON ol.product_id = p.product_id\nWHERE\n  o.ordered_at BETWEEN CAST('2025-01-01' AS DATE) AND CAST('2025-12-31' AS DATE)\n  AND NOT o.status IN ('cancelled', 'lost')\nGROUP BY\n  p.product_id,\n  p.name\nORDER BY\n  revenue DESC\nLIMIT 5",
+            "tables": [
+              "order_lines",
+              "orders",
+              "products"
+            ],
+            "truncated": false
+          },
+          "run_id": "K-jPE2bWVIAGrJ-Bz7SB3w"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "128368498a2c920f",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791373249773,
+        "endMs": 1791373249774,
+        "attrs": {
+          "metrics": "revenue",
+          "dimensions": "",
+          "ranges": "last_year"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "0da96ba25e233c97",
+        "parentId": "410e584e6eec65b4",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373249794,
+        "endMs": 1791373249794,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "8dbdf77ca1076d5c",
+        "parentId": "410e584e6eec65b4",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791373249794,
+        "endMs": 1791373249794,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "b53c1624e32b0413",
+        "parentId": "410e584e6eec65b4",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791373249794,
+        "endMs": 1791373251947,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "410e584e6eec65b4",
+        "parentId": "bf672ee491b4dc39",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791373249791,
+        "endMs": 1791373251954,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2195,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1896,
+          "outputTokens": 526
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "bf672ee491b4dc39",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791373249775,
+        "endMs": 1791373251957,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 341
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "3f2bf118f352830f",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791373251958,
+        "endMs": 1791373251973,
+        "attrs": {
+          "tables": "order_lines,orders,products",
+          "joins": 2,
+          "row_limit": 5,
+          "limit_applied": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "eed20cd7d95badb5",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791373251973,
+        "endMs": 1791373251976,
+        "attrs": {
+          "operators": 5,
+          "estimated_rows": 3119287
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "b5862648d37a1008",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791373251977,
+        "endMs": 1791373252041,
+        "attrs": {
+          "rows": 5,
+          "columns": 3,
+          "elapsed_ms": 64,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "57b3f3f6dec76b32",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791373252042,
+        "endMs": 1791373252042,
+        "attrs": {
+          "kind": "bar",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "7ade83a1c9421fe2",
+        "parentId": "5c3b9607d6ddd3cc",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791373252048,
+        "endMs": 1791373252899,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "5c3b9607d6ddd3cc",
+        "parentId": "b89dbd90d7e8f90c",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791373252047,
+        "endMs": 1791373252901,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 372,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 422,
+          "outputTokens": 445
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "b89dbd90d7e8f90c",
+        "parentId": "743c3f55396762e4",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791373252042,
+        "endMs": 1791373252905,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "K-jPE2bWVIAGrJ-Bz7SB3w",
+        "system": "lb-05",
+        "spanId": "743c3f55396762e4",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791373249773,
+        "endMs": 1791373252905,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 5
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 3132
+  }
+}

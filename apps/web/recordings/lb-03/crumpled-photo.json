@@ -1,0 +1,1071 @@
+{
+  "v": 1,
+  "system": "lb-03",
+  "sample": "crumpled-photo",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:30:34.950Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb03/documents",
+        "body": {
+          "file": "photo-crumpled-bohemia-2026-0620.jpg"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "byte_size": 160542,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:21.703788Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:21.703788Z",
+          "failure": null,
+          "fields": null,
+          "id": "M4wClKMayCO_wN7ch90R2A",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "photo-crumpled-bohemia-2026-0620.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": 0,
+          "run_id": null,
+          "state": "uploaded",
+          "steps": [],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:21.703788Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/M4wClKMayCO_wN7ch90R2A"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 160542,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:21.703788Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:21.703788Z",
+          "failure": null,
+          "fields": null,
+          "id": "M4wClKMayCO_wN7ch90R2A",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "photo-crumpled-bohemia-2026-0620.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "ocr",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 9
+              },
+              "ms": 9,
+              "name": "queue",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:21.718187Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/M4wClKMayCO_wN7ch90R2A"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 160542,
+          "can_export": false,
+          "checks": null,
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:21.703788Z",
+          "duplicate": null,
+          "elapsed_ms": null,
+          "expires_at": "2026-10-07T12:30:21.703788Z",
+          "failure": null,
+          "fields": null,
+          "id": "M4wClKMayCO_wN7ch90R2A",
+          "journal": null,
+          "journal_status": null,
+          "kind": "jpeg",
+          "label": "photo-crumpled-bohemia-2026-0620.jpg",
+          "model": null,
+          "model_calls": 0,
+          "ocr_ms": null,
+          "pages": null,
+          "prices_include_vat": null,
+          "queued_ahead": null,
+          "run_id": null,
+          "state": "extract",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 9
+              },
+              "ms": 9,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 99,
+                "worker_ms": 4236
+              },
+              "ms": 5291,
+              "name": "ocr",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:27.001052Z"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb03/documents/M4wClKMayCO_wN7ch90R2A"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "byte_size": 160542,
+          "can_export": true,
+          "checks": [
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "required_fields",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "issue_date",
+                "due_date"
+              ],
+              "id": "dates_valid",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "currency"
+              ],
+              "id": "currency_known",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "signs_agree",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "line_items_sum",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_math",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "vat_bases",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [],
+              "id": "total_reconciles",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            },
+            {
+              "actual": "17 found",
+              "expected": "18 values on the page",
+              "fields": [
+                "line_items.1.quantity"
+              ],
+              "id": "fields_on_page",
+              "message": "1 of 18 values were not found among the words read from the page.",
+              "severity": "warning",
+              "status": "failed"
+            },
+            {
+              "actual": null,
+              "expected": null,
+              "fields": [
+                "vendor",
+                "invoice_number"
+              ],
+              "id": "not_duplicate",
+              "message": "",
+              "severity": "error",
+              "status": "passed"
+            }
+          ],
+          "corrections": [],
+          "created_at": "2026-10-07T11:30:21.703788Z",
+          "duplicate": null,
+          "elapsed_ms": 13071,
+          "expires_at": "2026-10-07T12:30:21.703788Z",
+          "failure": null,
+          "fields": [
+            {
+              "box": null,
+              "checks": [],
+              "edited": false,
+              "kind": "choice",
+              "path": "document_type",
+              "value": "invoice"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.2,
+                  0.12143,
+                  0.42981,
+                  0.13429,
+                  0.42692,
+                  0.155,
+                  0.19808,
+                  0.14286
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "vendor",
+              "value": "Bohemia Packaging s.r.o."
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.8,
+                  0.18357,
+                  0.87212,
+                  0.18571,
+                  0.87115,
+                  0.20357,
+                  0.79904,
+                  0.20143
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "invoice_number",
+              "value": "2026-0620"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.79808,
+                  0.21429,
+                  0.86635,
+                  0.21429,
+                  0.86635,
+                  0.23143,
+                  0.79808,
+                  0.23143
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "issue_date",
+              "value": "2026-09-17"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.79904,
+                  0.23,
+                  0.8625,
+                  0.23071,
+                  0.86154,
+                  0.24571,
+                  0.79808,
+                  0.245
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "date",
+              "path": "due_date",
+              "value": "2026-10-17"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9965,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.83654,
+                  0.24429,
+                  0.85962,
+                  0.24571,
+                  0.85769,
+                  0.26214,
+                  0.83462,
+                  0.26143
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "currency",
+              "path": "currency",
+              "value": "CZK"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9985,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.16346,
+                  0.36357,
+                  0.34231,
+                  0.37,
+                  0.34135,
+                  0.38643,
+                  0.1625,
+                  0.38
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.0.description",
+              "value": "Kraft coffee bag 1 kg, box of 250"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.53654,
+                  0.39286,
+                  0.54904,
+                  0.39286,
+                  0.54904,
+                  0.40429,
+                  0.53654,
+                  0.40429
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.0.quantity",
+              "value": "6"
+            },
+            {
+              "box": {
+                "band": "medium",
+                "confidence": 0.796,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.63558,
+                  0.39143,
+                  0.69423,
+                  0.39286,
+                  0.69231,
+                  0.41071,
+                  0.63462,
+                  0.40857
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.unit_price",
+              "value": "1620.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.7875,
+                  0.40071,
+                  0.83942,
+                  0.40571,
+                  0.8375,
+                  0.42286,
+                  0.78462,
+                  0.41857
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.0.total",
+              "value": "9720.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9411,
+                "match": 0.9412,
+                "page": 1,
+                "quad": [
+                  0.15962,
+                  0.38357,
+                  0.28558,
+                  0.38786,
+                  0.28462,
+                  0.405,
+                  0.15865,
+                  0.4
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "text",
+              "path": "line_items.1.description",
+              "value": "Printed label roll 90x60 mm"
+            },
+            {
+              "box": null,
+              "checks": [
+                "fields_on_page"
+              ],
+              "edited": false,
+              "kind": "quantity",
+              "path": "line_items.1.quantity",
+              "value": "4"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.64615,
+                  0.41143,
+                  0.69423,
+                  0.41429,
+                  0.69231,
+                  0.43214,
+                  0.64423,
+                  0.42929
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.unit_price",
+              "value": "640.00"
+            },
+            {
+              "box": {
+                "band": "medium",
+                "confidence": 0.8236,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.78558,
+                  0.42214,
+                  0.83558,
+                  0.42429,
+                  0.83365,
+                  0.44214,
+                  0.78365,
+                  0.44
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "line_items.1.total",
+              "value": "2560.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.23846,
+                  0.43214,
+                  0.29231,
+                  0.43357,
+                  0.29135,
+                  0.44857,
+                  0.2375,
+                  0.44714
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "subtotal",
+              "value": "12280.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9922,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.14519,
+                  0.43143,
+                  0.17115,
+                  0.43143,
+                  0.17115,
+                  0.44643,
+                  0.14519,
+                  0.44643
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "rate",
+              "path": "vat.0.rate",
+              "value": "21.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9999,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.77115,
+                  0.45714,
+                  0.83077,
+                  0.46071,
+                  0.82885,
+                  0.47857,
+                  0.76923,
+                  0.475
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.base",
+              "value": "12280.00"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 0.9241,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.35673,
+                  0.43857,
+                  0.40288,
+                  0.44071,
+                  0.40096,
+                  0.45571,
+                  0.35481,
+                  0.45357
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "vat.0.amount",
+              "value": "2578.80"
+            },
+            {
+              "box": {
+                "band": "high",
+                "confidence": 1,
+                "match": 1,
+                "page": 1,
+                "quad": [
+                  0.75865,
+                  0.48357,
+                  0.82404,
+                  0.48643,
+                  0.82308,
+                  0.50357,
+                  0.75769,
+                  0.50071
+                ]
+              },
+              "checks": [],
+              "edited": false,
+              "kind": "amount",
+              "path": "total",
+              "value": "14858.80"
+            }
+          ],
+          "id": "M4wClKMayCO_wN7ch90R2A",
+          "journal": {
+            "currency": "CZK",
+            "date": "2026-09-17",
+            "lines": [
+              {
+                "account": "5020",
+                "credit": "0.00",
+                "debit": "12280.00",
+                "memo": "Bohemia Packaging s.r.o. 2026-0620",
+                "name": "Packaging materials"
+              },
+              {
+                "account": "1400",
+                "credit": "0.00",
+                "debit": "2578.80",
+                "memo": "Bohemia Packaging s.r.o. 2026-0620",
+                "name": "Input VAT receivable"
+              },
+              {
+                "account": "2100",
+                "credit": "14858.80",
+                "debit": "0.00",
+                "memo": "Bohemia Packaging s.r.o. 2026-0620",
+                "name": "Accounts payable, suppliers"
+              }
+            ],
+            "reference": "Bohemia Packaging s.r.o. 2026-0620",
+            "total_credit": "14858.80",
+            "total_debit": "14858.80"
+          },
+          "journal_status": "made",
+          "kind": "jpeg",
+          "label": "photo-crumpled-bohemia-2026-0620.jpg",
+          "model": "@cf/meta/llama-4-scout-17b-16e-instruct",
+          "model_calls": 2,
+          "ocr_ms": 5254,
+          "pages": 1,
+          "prices_include_vat": false,
+          "queued_ahead": null,
+          "run_id": "ZFa2F3oE4KcienYe-Yp1Hg",
+          "state": "ready",
+          "steps": [
+            {
+              "detail": {
+                "waited_ms": 9
+              },
+              "ms": 9,
+              "name": "queue",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "landlock_abi": 7,
+                "pages": 1,
+                "seccomp": true,
+                "words": 99,
+                "worker_ms": 4236
+              },
+              "ms": 5291,
+              "name": "ocr",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "flagged": false,
+                "score": 0.0007,
+                "segments": 1
+              },
+              "ms": 683,
+              "name": "injection check",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "alias": "lb-vision",
+                "attempts": 1,
+                "picture": true,
+                "text_chars": 560,
+                "text_cut": false
+              },
+              "ms": 6989,
+              "name": "extract",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "failed": 0,
+                "ran": 9
+              },
+              "ms": 1,
+              "name": "validate",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "expected": 18,
+                "found": 17
+              },
+              "ms": 83,
+              "name": "place fields",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "compared": 6,
+                "duplicate": false
+              },
+              "ms": 6,
+              "name": "check duplicates",
+              "status": "ok"
+            },
+            {
+              "detail": {
+                "lines": 3
+              },
+              "ms": 0,
+              "name": "journal entry",
+              "status": "ok"
+            }
+          ],
+          "text_cut": false,
+          "updated_at": "2026-10-07T11:30:34.779481Z"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "fbbf10dbe1187540",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.tool",
+        "name": "read pages",
+        "status": "ok",
+        "startMs": 1791372621709,
+        "endMs": 1791372627000,
+        "attrs": {
+          "pages": 1,
+          "words": 99,
+          "worker_ms": 4236,
+          "wall_ms": 5254,
+          "rlimits": true,
+          "no_new_privileges": true,
+          "seccomp": true,
+          "landlock_abi": 7,
+          "oom_score_adj": 1000
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "7414d1dcbb5eed24",
+        "parentId": "d5503b9510d53b3f",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372627015,
+        "endMs": 1791372627690,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "d5503b9510d53b3f",
+        "parentId": "c41bfd98ac0b6d02",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372627014,
+        "endMs": 1791372627691,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 204,
+          "maxOutputTokens": 16,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 167,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0006868584314361215,
+          "segments": 2
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "c41bfd98ac0b6d02",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.tool",
+        "name": "injection check",
+        "status": "ok",
+        "startMs": 1791372627010,
+        "endMs": 1791372627693,
+        "attrs": {
+          "segments": 1,
+          "flagged": false,
+          "score": 0.0007
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "7079df51a214bbbf",
+        "parentId": "c916c89d472a673d",
+        "kind": "gateway.attempt",
+        "name": "openrouter/gemma-4-31b",
+        "status": "skipped",
+        "startMs": 1791372627713,
+        "endMs": 1791372627713,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/gemma-4-31b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "86add0094f9f12a1",
+        "parentId": "c916c89d472a673d",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/llama-4-scout",
+        "status": "ok",
+        "startMs": 1791372627713,
+        "endMs": 1791372634678,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/llama-4-scout",
+          "modelId": "@cf/meta/llama-4-scout-17b-16e-instruct",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "c916c89d472a673d",
+        "parentId": "b089cabf1cf7bde8",
+        "kind": "gateway.call",
+        "name": "lb-vision",
+        "status": "ok",
+        "startMs": 1791372627712,
+        "endMs": 1791372634679,
+        "attrs": {
+          "alias": "lb-vision",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2480,
+          "maxOutputTokens": 2048,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/llama-4-scout",
+          "inputTokens": 3152,
+          "outputTokens": 244
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "b089cabf1cf7bde8",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.step",
+        "name": "extract",
+        "status": "ok",
+        "startMs": 1791372627693,
+        "endMs": 1791372634682,
+        "attrs": {
+          "alias": "lb-vision",
+          "picture": true,
+          "attempts": 1,
+          "text_cut": false,
+          "text_chars": 560
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "5d9842cab7192d0d",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.step",
+        "name": "validate",
+        "status": "ok",
+        "startMs": 1791372634690,
+        "endMs": 1791372634690,
+        "attrs": {
+          "failed": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "8ecf848be0aeb41f",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.step",
+        "name": "place fields",
+        "status": "ok",
+        "startMs": 1791372634690,
+        "endMs": 1791372634773,
+        "attrs": {
+          "found": 17,
+          "expected": 18
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "ec2a79cda9a56935",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.step",
+        "name": "check duplicates",
+        "status": "ok",
+        "startMs": 1791372634773,
+        "endMs": 1791372634778,
+        "attrs": {
+          "compared": 6,
+          "duplicate": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "880b306f76a9b6e8",
+        "parentId": "daf4c9543c3a7e44",
+        "kind": "system.step",
+        "name": "journal entry",
+        "status": "ok",
+        "startMs": 1791372634779,
+        "endMs": 1791372634779,
+        "attrs": {
+          "lines": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "ZFa2F3oE4KcienYe-Yp1Hg",
+        "system": "lb-03",
+        "spanId": "daf4c9543c3a7e44",
+        "kind": "system.run",
+        "name": "invoice reading",
+        "status": "ok",
+        "startMs": 1791372621709,
+        "endMs": 1791372634787,
+        "attrs": {
+          "kind": "jpeg",
+          "outcome": "ready",
+          "model_calls": 2
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 13078
+  }
+}

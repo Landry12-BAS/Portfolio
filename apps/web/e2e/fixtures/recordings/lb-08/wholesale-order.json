@@ -1,0 +1,769 @@
+{
+  "v": 1,
+  "system": "lb-08",
+  "sample": "wholesale-order",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T08:50:23.849Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows",
+        "body": {
+          "from": "sample",
+          "sampleId": "wholesale-order"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "9cf75257-6e88-4901-8570-a127e43928ff",
+          "name": "Wholesale order over €500",
+          "version": 1,
+          "createdAt": "2026-10-02T08:50:18.849Z",
+          "updatedAt": "2026-10-02T08:50:18.849Z",
+          "expiresAt": "2026-10-03T08:50:18.849Z",
+          "description": null,
+          "graph": {
+            "name": "Wholesale order over €500",
+            "nodes": [
+              {
+                "id": "order_received",
+                "label": "Wholesale order arrives",
+                "type": "trigger",
+                "event": "wholesale_order"
+              },
+              {
+                "id": "big_order",
+                "label": "Order over €500?",
+                "type": "condition",
+                "field": "trigger.totalEur",
+                "op": "gt",
+                "value": 500
+              },
+              {
+                "id": "check_stock",
+                "label": "Check stock",
+                "type": "action",
+                "connector": "stock_check",
+                "params": {
+                  "sku": "{{trigger.sku}}",
+                  "quantityKg": "{{trigger.quantityKg}}"
+                }
+              },
+              {
+                "id": "alert_roastery",
+                "label": "Alert the roastery",
+                "type": "action",
+                "connector": "slack_alert",
+                "params": {
+                  "channel": "#roastery",
+                  "message": "Wholesale order {{trigger.orderId}} from {{trigger.cafe}}: {{trigger.quantityKg}} kg of {{check_stock.productName}} (€{{trigger.totalEur}})."
+                }
+              },
+              {
+                "id": "email_cafe",
+                "label": "Email the café",
+                "type": "action",
+                "connector": "email",
+                "params": {
+                  "to": "customer",
+                  "subject": "Your order {{trigger.orderId}}",
+                  "body": "Thank you for your order. Based on our stock, it should reach you in {{check_stock.etaDays}} days."
+                }
+              }
+            ],
+            "edges": [
+              {
+                "from": "order_received",
+                "to": "big_order"
+              },
+              {
+                "from": "big_order",
+                "to": "check_stock",
+                "branch": "true"
+              },
+              {
+                "from": "check_stock",
+                "to": "alert_roastery"
+              },
+              {
+                "from": "check_stock",
+                "to": "email_cafe"
+              }
+            ]
+          },
+          "versions": [
+            {
+              "version": 1,
+              "origin": "sample",
+              "createdAt": "2026-10-02T08:50:18.849Z",
+              "modelCalls": 0,
+              "traceRunId": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows/9cf75257-6e88-4901-8570-a127e43928ff/runs",
+        "body": {
+          "input": {
+            "orderId": "WO-2041",
+            "cafe": "Café Lumen",
+            "contactEmail": "orders@lumen.test",
+            "totalEur": 640,
+            "sku": "basalt-blend-1kg",
+            "quantityKg": 20
+          },
+          "failures": [
+            {
+              "nodeId": "alert_roastery",
+              "times": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "workflowId": "9cf75257-6e88-4901-8570-a127e43928ff",
+          "workflowName": "Wholesale order over €500",
+          "version": 1,
+          "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "replayOf": null,
+          "status": "queued",
+          "createdAt": "2026-10-02T08:50:18.849Z",
+          "finishedAt": null,
+          "input": {
+            "orderId": "WO-2041",
+            "cafe": "Café Lumen",
+            "contactEmail": "orders@lumen.test",
+            "totalEur": 640,
+            "sku": "basalt-blend-1kg",
+            "quantityKg": 20
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "order_received",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "WO-2041",
+                "cafe": "Café Lumen",
+                "contactEmail": "orders@lumen.test",
+                "totalEur": 640,
+                "sku": "basalt-blend-1kg",
+                "quantityKg": 20
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
+            },
+            {
+              "nodeId": "big_order",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 640,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
+            },
+            {
+              "nodeId": "check_stock",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "alert_roastery",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_cafe",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "order_received",
+              "attempt": 0,
+              "output": {
+                "orderId": "WO-2041",
+                "cafe": "Café Lumen",
+                "contactEmail": "orders@lumen.test",
+                "totalEur": 640,
+                "sku": "basalt-blend-1kg",
+                "quantityKg": 20
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "big_order",
+              "attempt": 0,
+              "output": {
+                "checked": 640,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "running",
+          "events": [
+            {
+              "type": "run.started",
+              "seq": 4,
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "output": {
+                "inStock": true,
+                "availableKg": 180,
+                "etaDays": 2,
+                "productName": "Basalt Blend 1 kg"
+              },
+              "seq": 6,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "seq": 7,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "seq": 8,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 1000,
+              "seq": 9,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "email_cafe",
+              "connector": "email",
+              "messageId": "msg-336d6f96",
+              "seq": 10,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-336d6f96"
+              },
+              "seq": 11,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "succeeded",
+          "events": [
+            {
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 2,
+              "seq": 12,
+              "at": "2026-10-02T08:50:22.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "alert_roastery",
+              "connector": "slack_alert",
+              "messageId": "msg-1954d5db",
+              "seq": 13,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "alert_roastery",
+              "attempt": 2,
+              "output": {
+                "messageId": "msg-1954d5db"
+              },
+              "seq": 14,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 15,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/3b8acab3-9e9d-4392-825b-94a5563c68ff"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "workflowId": "9cf75257-6e88-4901-8570-a127e43928ff",
+          "workflowName": "Wholesale order over €500",
+          "version": 1,
+          "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+          "replayOf": null,
+          "status": "succeeded",
+          "createdAt": "2026-10-02T08:50:18.849Z",
+          "finishedAt": "2026-10-02T08:50:23.849Z",
+          "input": {
+            "orderId": "WO-2041",
+            "cafe": "Café Lumen",
+            "contactEmail": "orders@lumen.test",
+            "totalEur": 640,
+            "sku": "basalt-blend-1kg",
+            "quantityKg": 20
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "order_received",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "orderId": "WO-2041",
+                "cafe": "Café Lumen",
+                "contactEmail": "orders@lumen.test",
+                "totalEur": 640,
+                "sku": "basalt-blend-1kg",
+                "quantityKg": 20
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
+            },
+            {
+              "nodeId": "big_order",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "checked": 640,
+                "branch": "true"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:18.849Z",
+              "finishedAt": "2026-10-02T08:50:18.849Z"
+            },
+            {
+              "nodeId": "check_stock",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "inStock": true,
+                "availableKg": 180,
+                "etaDays": 2,
+                "productName": "Basalt Blend 1 kg"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:19.849Z",
+              "finishedAt": "2026-10-02T08:50:20.849Z"
+            },
+            {
+              "nodeId": "alert_roastery",
+              "status": "succeeded",
+              "attempts": 2,
+              "output": {
+                "messageId": "msg-1954d5db"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:20.849Z",
+              "finishedAt": "2026-10-02T08:50:23.849Z"
+            },
+            {
+              "nodeId": "email_cafe",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-336d6f96"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:20.849Z",
+              "finishedAt": "2026-10-02T08:50:21.849Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "order_received",
+              "attempt": 0,
+              "output": {
+                "orderId": "WO-2041",
+                "cafe": "Café Lumen",
+                "contactEmail": "orders@lumen.test",
+                "totalEur": 640,
+                "sku": "basalt-blend-1kg",
+                "quantityKg": 20
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "big_order",
+              "attempt": 0,
+              "output": {
+                "checked": 640,
+                "branch": "true"
+              },
+              "seq": 3,
+              "at": "2026-10-02T08:50:18.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "run.started",
+              "seq": 4,
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:19.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "output": {
+                "inStock": true,
+                "availableKg": 180,
+                "etaDays": 2,
+                "productName": "Basalt Blend 1 kg"
+              },
+              "seq": 6,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "seq": 7,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "seq": 8,
+              "at": "2026-10-02T08:50:20.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 1000,
+              "seq": 9,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "email_cafe",
+              "connector": "email",
+              "messageId": "msg-336d6f96",
+              "seq": 10,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-336d6f96"
+              },
+              "seq": 11,
+              "at": "2026-10-02T08:50:21.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 2,
+              "seq": 12,
+              "at": "2026-10-02T08:50:22.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "alert_roastery",
+              "connector": "slack_alert",
+              "messageId": "msg-1954d5db",
+              "seq": 13,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "alert_roastery",
+              "attempt": 2,
+              "output": {
+                "messageId": "msg-1954d5db"
+              },
+              "seq": 14,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 15,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/sent"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "1954d5db-3004-44a4-8043-80f7bed73ffd",
+            "connector": "slack_alert",
+            "nodeId": "alert_roastery",
+            "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+            "payload": {
+              "channel": "#roastery",
+              "message": "Wholesale order WO-2041 from Café Lumen: 20 kg of Basalt Blend 1 kg (€640)."
+            },
+            "sentAt": "2026-10-02T08:50:23.849Z"
+          },
+          {
+            "id": "336d6f96-8ee5-445f-b721-6b9b0bb723d8",
+            "connector": "email",
+            "nodeId": "email_cafe",
+            "rootRunId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+            "payload": {
+              "to": "orders@lumen.test",
+              "subject": "Your order WO-2041",
+              "body": "Thank you for your order. Based on our stock, it should reach you in 2 days."
+            },
+            "sentAt": "2026-10-02T08:50:21.849Z"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/dead-letters"
+      },
+      "response": {
+        "status": 200,
+        "body": []
+      }
+    }
+  ],
+  "trace": {
+    "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "7a0474a6323c40d0",
+        "parentId": "ccda89fafba00ae3",
+        "kind": "system.step",
+        "name": "step.check_stock",
+        "status": "ok",
+        "startMs": 1790931018849,
+        "endMs": 1790931018874,
+        "attrs": {
+          "connector": "stock_check",
+          "attempt": 1,
+          "outcome": "read"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "7eab7cc44645d4cd",
+        "parentId": "ccda89fafba00ae3",
+        "kind": "system.step",
+        "name": "step.alert_roastery",
+        "status": "error",
+        "startMs": 1790931018889,
+        "endMs": 1790931018914,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "6c95b8a3d1614775",
+        "parentId": "ccda89fafba00ae3",
+        "kind": "system.step",
+        "name": "step.email_cafe",
+        "status": "ok",
+        "startMs": 1790931018929,
+        "endMs": 1790931018954,
+        "attrs": {
+          "connector": "email",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "00754f39b18f81e9",
+        "parentId": "ccda89fafba00ae3",
+        "kind": "system.step",
+        "name": "step.alert_roastery",
+        "status": "ok",
+        "startMs": 1790931018969,
+        "endMs": 1790931018994,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 2,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "3b8acab3-9e9d-4392-825b-94a5563c68ff",
+        "system": "lb-08",
+        "spanId": "ccda89fafba00ae3",
+        "kind": "system.run",
+        "name": "workflow run",
+        "status": "ok",
+        "startMs": 1790931018849,
+        "endMs": 1790931023849,
+        "attrs": {
+          "outcome": "succeeded",
+          "steps": 5,
+          "attempts": 4,
+          "replay": false
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 4,
+    "durationMs": 5000
+  }
+}

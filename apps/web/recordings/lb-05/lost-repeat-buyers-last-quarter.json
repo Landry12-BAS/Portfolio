@@ -1,0 +1,406 @@
+{
+  "v": 1,
+  "system": "lb-05",
+  "sample": "lost-repeat-buyers-last-quarter",
+  "origin": "live",
+  "recordedAt": "2026-10-07T15:50:06.642Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb05/ask",
+        "body": {
+          "question": "Which coffees lost the most repeat buyers last quarter?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07",
+          "attempts": [
+            {
+              "message": null,
+              "rule": null,
+              "sql": "WITH purchases AS (\n  SELECT o.customer_id, p.name AS product, o.ordered_at AS day\n  FROM orders o\n  JOIN order_lines ol ON ol.order_id = o.order_id\n  JOIN products p ON p.product_id = ol.product_id\n  WHERE o.status NOT IN ('cancelled', 'lost')\n    AND p.kind = 'coffee'\n),\nearlier AS (\n  SELECT DISTINCT customer_id, product\n  FROM purchases\n  WHERE day BETWEEN DATE '2026-04-01' AND DATE '2026-06-30'\n),\nbefore_earlier AS (\n  SELECT DISTINCT customer_id, product\n  FROM purchases\n  WHERE day < DATE '2026-04-01'\n),\nasked AS (\n  SELECT DISTINCT customer_id, product\n  FROM purchases\n  WHERE day BETWEEN DATE '2026-07-01' AND DATE '2026-09-30'\n)\nSELECT earlier.product AS product,\n       COUNT(*) AS lost_repeat_buyers\nFROM earlier\nJOIN before_earlier\n  ON before_earlier.customer_id = earlier.customer_id\n AND before_earlier.product = earlier.product\nLEFT JOIN asked\n  ON asked.customer_id = earlier.customer_id\n AND asked.product = earlier.product\nWHERE asked.customer_id IS NULL\nGROUP BY earlier.product\nORDER BY lost_repeat_buyers DESC",
+              "stopped_by": null
+            }
+          ],
+          "chart": {
+            "kind": "bar",
+            "omitted_rows": 0,
+            "spec": {
+              "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+              "data": {
+                "values": [
+                  {
+                    "x": "Kenya Nyeri",
+                    "y": 10160
+                  },
+                  {
+                    "x": "Basalt Blend",
+                    "y": 7273
+                  },
+                  {
+                    "x": "Colombia Huila",
+                    "y": 4940
+                  },
+                  {
+                    "x": "Ethiopia Guji",
+                    "y": 4564
+                  },
+                  {
+                    "x": "Lava Decaf",
+                    "y": 3395
+                  }
+                ]
+              },
+              "description": "A bar chart of lost repeat buyers by product.",
+              "encoding": {
+                "x": {
+                  "field": "x",
+                  "sort": [
+                    "Kenya Nyeri",
+                    "Basalt Blend",
+                    "Colombia Huila",
+                    "Ethiopia Guji",
+                    "Lava Decaf"
+                  ],
+                  "title": "product",
+                  "type": "nominal"
+                },
+                "y": {
+                  "field": "y",
+                  "title": "lost repeat buyers",
+                  "type": "quantitative"
+                }
+              },
+              "height": 280,
+              "mark": {
+                "tooltip": true,
+                "type": "bar"
+              },
+              "width": "container"
+            }
+          },
+          "elapsed_ms": 7110,
+          "explanation": "Kenya Nyeri lost 10160 repeat buyers, Basalt Blend 7273, Colombia Huila 4940, Ethiopia Guji 4564, Lava Decaf 3395. These figures cover purchases from 2026‑04‑01 to 2026‑06‑30.",
+          "explanation_source": "model",
+          "message": null,
+          "model_calls": 2,
+          "outcome": "answered",
+          "remaining_questions": 24,
+          "result": {
+            "columns": [
+              {
+                "kind": "text",
+                "name": "product"
+              },
+              {
+                "kind": "integer",
+                "name": "lost_repeat_buyers"
+              }
+            ],
+            "elapsed_ms": 2651,
+            "joins": 4,
+            "row_count": 5,
+            "rows": [
+              [
+                "Kenya Nyeri",
+                10160
+              ],
+              [
+                "Basalt Blend",
+                7273
+              ],
+              [
+                "Colombia Huila",
+                4940
+              ],
+              [
+                "Ethiopia Guji",
+                4564
+              ],
+              [
+                "Lava Decaf",
+                3395
+              ]
+            ],
+            "sql": "WITH purchases AS (\n  SELECT\n    o.customer_id AS customer_id,\n    p.name AS product,\n    o.ordered_at AS day\n  FROM orders AS o\n  JOIN order_lines AS ol\n    ON ol.order_id = o.order_id\n  JOIN products AS p\n    ON p.product_id = ol.product_id\n  WHERE\n    NOT o.status IN ('cancelled', 'lost') AND p.kind = 'coffee'\n), earlier AS (\n  SELECT DISTINCT\n    purchases.customer_id AS customer_id,\n    purchases.product AS product\n  FROM purchases AS purchases\n  WHERE\n    purchases.day BETWEEN CAST('2026-04-01' AS DATE) AND CAST('2026-06-30' AS DATE)\n), before_earlier AS (\n  SELECT DISTINCT\n    purchases.customer_id AS customer_id,\n    purchases.product AS product\n  FROM purchases AS purchases\n  WHERE\n    purchases.day < CAST('2026-04-01' AS DATE)\n), asked AS (\n  SELECT DISTINCT\n    purchases.customer_id AS customer_id,\n    purchases.product AS product\n  FROM purchases AS purchases\n  WHERE\n    purchases.day BETWEEN CAST('2026-07-01' AS DATE) AND CAST('2026-09-30' AS DATE)\n)\nSELECT\n  earlier.product AS product,\n  COUNT(*) AS lost_repeat_buyers\nFROM earlier AS earlier\nJOIN before_earlier AS before_earlier\n  ON before_earlier.customer_id = earlier.customer_id\n  AND before_earlier.product = earlier.product\nLEFT JOIN asked AS asked\n  ON asked.customer_id = earlier.customer_id AND asked.product = earlier.product\nWHERE\n  asked.customer_id IS NULL\nGROUP BY\n  earlier.product\nORDER BY\n  lost_repeat_buyers DESC\nLIMIT 1000",
+            "tables": [
+              "order_lines",
+              "orders",
+              "products"
+            ],
+            "truncated": false
+          },
+          "run_id": "2TlnkOHdA0nphojLctm2sA"
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "2TlnkOHdA0nphojLctm2sA",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "757afa915aba04b9",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.step",
+        "name": "resolve metrics",
+        "status": "ok",
+        "startMs": 1791388199483,
+        "endMs": 1791388199484,
+        "attrs": {
+          "metrics": "lost_repeat_buyers",
+          "dimensions": "product",
+          "ranges": "last_quarter"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "a1460a6d76d97308",
+        "parentId": "108412edb3a3bdc0",
+        "kind": "gateway.attempt",
+        "name": "openrouter/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791388199492,
+        "endMs": 1791388199492,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/nemotron-3-super",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "e061300ac5609e4b",
+        "parentId": "108412edb3a3bdc0",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791388199492,
+        "endMs": 1791388199492,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "053f792f80ae10a4",
+        "parentId": "108412edb3a3bdc0",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791388199492,
+        "endMs": 1791388203221,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "108412edb3a3bdc0",
+        "parentId": "15afcb625c882214",
+        "kind": "gateway.call",
+        "name": "lb-reason",
+        "status": "ok",
+        "startMs": 1791388199491,
+        "endMs": 1791388203223,
+        "attrs": {
+          "alias": "lb-reason",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 2489,
+          "maxOutputTokens": 2000,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2121,
+          "outputTokens": 1376
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "15afcb625c882214",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.step",
+        "name": "write SQL",
+        "status": "ok",
+        "startMs": 1791388199485,
+        "endMs": 1791388203225,
+        "attrs": {
+          "attempts": 1,
+          "answerable": true,
+          "sql_chars": 1039
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "09761e2a9bbed9be",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.step",
+        "name": "parse and allowlist",
+        "status": "ok",
+        "startMs": 1791388203226,
+        "endMs": 1791388203269,
+        "attrs": {
+          "tables": "order_lines,orders,products",
+          "joins": 4,
+          "row_limit": 1000,
+          "limit_applied": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "04296ba15bbe668c",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.tool",
+        "name": "explain plan",
+        "status": "ok",
+        "startMs": 1791388203270,
+        "endMs": 1791388203275,
+        "attrs": {
+          "operators": 6,
+          "estimated_rows": 3119287
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "babcbe915e740d20",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.tool",
+        "name": "run read-only",
+        "status": "ok",
+        "startMs": 1791388203276,
+        "endMs": 1791388205927,
+        "attrs": {
+          "rows": 5,
+          "columns": 2,
+          "elapsed_ms": 2651,
+          "capped": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "0a41b177260fe883",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.step",
+        "name": "build chart",
+        "status": "ok",
+        "startMs": 1791388205931,
+        "endMs": 1791388205932,
+        "attrs": {
+          "kind": "bar",
+          "omitted_rows": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "3e421aaf2a27df96",
+        "parentId": "93d966dcda865654",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1791388205939,
+        "endMs": 1791388206588,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "modelId": "openai/gpt-oss-20b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "93d966dcda865654",
+        "parentId": "3341ff5d89ee0490",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1791388205939,
+        "endMs": 1791388206590,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 586,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 596,
+          "outputTokens": 327
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "3341ff5d89ee0490",
+        "parentId": "442aad6a54aba7cd",
+        "kind": "system.step",
+        "name": "explain result",
+        "status": "ok",
+        "startMs": 1791388205932,
+        "endMs": 1791388206592,
+        "attrs": {
+          "source": "model"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "2TlnkOHdA0nphojLctm2sA",
+        "system": "lb-05",
+        "spanId": "442aad6a54aba7cd",
+        "kind": "system.run",
+        "name": "data question",
+        "status": "ok",
+        "startMs": 1791388199483,
+        "endMs": 1791388206593,
+        "attrs": {
+          "outcome": "answered",
+          "model_calls": 2,
+          "queries": 1,
+          "rows": 5
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 2,
+    "steps": 7,
+    "durationMs": 7110
+  }
+}

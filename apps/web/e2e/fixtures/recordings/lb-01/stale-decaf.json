@@ -1,0 +1,498 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "stale-decaf",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T02:51:48.263Z",
+  "language": "cs",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0004",
+          "language": "cs",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "tkd6756a326aea",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-02T02:51:48.254Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "",
+          "expires_at": "2026-10-03T02:51:48.254Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/tkd6756a326aea"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "tkd6756a326aea",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-02T02:51:48.254Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "",
+          "expires_at": "2026-10-03T02:51:48.254Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/tkd6756a326aea"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "tkd6756a326aea",
+          "customer": {
+            "key": "cus-0004",
+            "name": "Eva Nováková",
+            "language": "cs"
+          },
+          "language": "cs",
+          "status": "awaiting_approval",
+          "category": "damaged",
+          "created_at": "2026-10-02T02:51:48.254Z",
+          "body": "Dobrý den, v objednávce BB-1046 mi přišel Lava Decaf s datem pražení starším než měsíc a káva je cítit zatuchle. Můžete s tím něco udělat?",
+          "order_number": "BB-1046",
+          "escalation_reason": "",
+          "run_id": "run-b831c1c3e60a5679e4e0",
+          "expires_at": "2026-10-03T02:51:48.254Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "Vaši objednávku BB-1046 jsme našli.",
+                "citations": [
+                  "order:BB-1046"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "Na každém sáčku je datum pražení.",
+                "citations": [
+                  "passage:damaged.stale-coffee"
+                ],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "mock/draft-model",
+            "sources": [
+              {
+                "id": "order:BB-1046",
+                "title": "Order BB-1046",
+                "text": "Order BB-1046: delivered, shipped by Vltava Post (VP481950061CZ); 2 x Lava Decaf 250 g; total 687 CZK."
+              },
+              {
+                "id": "passage:damaged.stale-coffee",
+                "title": "Poškozené, staré nebo chybné zboží §2: Stará káva",
+                "text": "Na každém sáčku je datum pražení. Pokud k vám sáček dorazí více než 30 dnů po datu pražení, dejte nám vědět do 14 dnů od doručení a my ho vyměníme, nebo vám vrátíme peníze, podle toho, co si vyberete."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-b831c1c3e60a5679e4e0",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "981fd9ebb00c101b",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1790909508254,
+        "endMs": 1790909508257,
+        "attrs": {
+          "redactions": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "cfc060fa0c74ecd3",
+        "parentId": "c55e074510399885",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1790909508264,
+        "endMs": 1790909508437,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 140,
+          "outputTokens": 18
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "c55e074510399885",
+        "parentId": "d6bf7b53306eaa73",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1790909508262,
+        "endMs": 1790909508439,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 140,
+          "outputTokens": 18,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "d6bf7b53306eaa73",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1790909508257,
+        "endMs": 1790909508444,
+        "attrs": {
+          "flagged": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "18763bb1fc7f9e4e",
+        "parentId": "f2293b7f7257ca77",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790909508451,
+        "endMs": 1790909508967,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 410,
+          "outputTokens": 51
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "f2293b7f7257ca77",
+        "parentId": "a0e4da6a589ca8db",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790909508449,
+        "endMs": 1790909508969,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 410,
+          "outputTokens": 51,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "a0e4da6a589ca8db",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1790909508444,
+        "endMs": 1790909508974,
+        "attrs": {
+          "category": "damaged"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "67367697d87ac559",
+        "parentId": "d782bb8ad0ee1bdf",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1790909508981,
+        "endMs": 1790909509092,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "inputTokens": 24,
+          "outputTokens": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "d782bb8ad0ee1bdf",
+        "parentId": "121b89ee0d1dfbfe",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1790909508979,
+        "endMs": 1790909509094,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "inputTokens": 24,
+          "outputTokens": 3,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "121b89ee0d1dfbfe",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1790909508974,
+        "endMs": 1790909509184,
+        "attrs": {
+          "chunks": 6,
+          "mode": "hybrid"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "22a3cc28486b3813",
+        "parentId": "bde3d7508efb4311",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1790909509191,
+        "endMs": 1790909509377,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "inputTokens": 1900,
+          "outputTokens": 238
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "bde3d7508efb4311",
+        "parentId": "eaf686d9df0428fd",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1790909509189,
+        "endMs": 1790909509379,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "inputTokens": 1900,
+          "outputTokens": 238,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "eaf686d9df0428fd",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1790909509184,
+        "endMs": 1790909509384,
+        "attrs": {
+          "candidates": 6
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "67adb843bf76e22b",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1790909509384,
+        "endMs": 1790909509394,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "656b318a6a866ec2",
+        "parentId": "6f80ee7352ca2117",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790909509401,
+        "endMs": 1790909510887,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2300,
+          "outputTokens": 288
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "6f80ee7352ca2117",
+        "parentId": "07d92396cb4ce345",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1790909509399,
+        "endMs": 1790909510889,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2300,
+          "outputTokens": 288,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "07d92396cb4ce345",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1790909509394,
+        "endMs": 1790909510894,
+        "attrs": {
+          "sources": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "04a64d5b5350e1cf",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1790909510894,
+        "endMs": 1790909510914,
+        "attrs": {
+          "sentences": 2,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "ec17f91b7f6914ce",
+        "parentId": "824fe659ec8c29bd",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1790909510914,
+        "endMs": 1790909510924,
+        "attrs": {
+          "outcome": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-b831c1c3e60a5679e4e0",
+        "system": "lb-01",
+        "spanId": "824fe659ec8c29bd",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1790909508254,
+        "endMs": 1790909510929,
+        "attrs": {
+          "language": "en"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 5,
+    "steps": 9,
+    "durationMs": 2675
+  }
+}

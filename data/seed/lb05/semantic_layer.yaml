@@ -1,0 +1,204 @@
+# LB-05's semantic layer: the one description of Basalt & Bean's sales data the model sees.
+#
+# The model never sees the database. It sees these tables, columns, joins, metrics and
+# dimensions, with the names and descriptions written here, and nothing else. The same
+# file is the allowlist: the SQL check refuses every table, column and join that is not
+# listed, so a question about something the layer leaves out cannot be answered, and
+# cannot be tried. The data holds two columns this file leaves out on purpose
+# (customers.email and orders.payment_reference); they are invisible and unreadable.
+#
+# lb05/semantic_layer.py reads the file strictly (an unknown field is an error), and
+# lb05/semantic_check.py runs every expression and pattern in it through the same SQL
+# check that guards visitors' questions, so a typo or an unsafe expression stops the
+# service at startup. Money is in Czech crowns (CZK). Dates in the data are relative to
+# the day it was generated (data/generated/lb05/meta.json), so "last quarter" always has
+# sales in it.
+version: 1
+
+tables:
+  - name: customers
+    description: "One row per registered customer."
+    columns:
+      - {name: customer_id, type: integer, description: "Customer number, unique."}
+      - {name: country, type: text, description: "Country of the customer's home address.", values: [CZ, SK, DE, AT, PL, HU]}
+      - {name: city, type: text, description: "City of the home address.", values: [Prague, Brno, Ostrava, Pilsen, Liberec, Olomouc, Bratislava, Kosice, Zilina, Berlin, Munich, Dresden, Hamburg, Vienna, Graz, Linz, Warsaw, Krakow, Wroclaw, Budapest, Debrecen]}
+      - {name: segment, type: text, description: "home is a household; business is a cafe, office or shop buying for its own use.", values: [home, business]}
+      - {name: signup_date, type: date, description: "Day the customer registered."}
+      - {name: acquisition_channel, type: text, description: "How the customer first found Basalt & Bean.", values: [search, instagram, referral, newsletter, market_stall, partner_cafe]}
+
+  - name: products
+    description: "One row per product and bag size. Coffee comes in 250 g and 1000 g bags under one name."
+    columns:
+      - {name: product_id, type: integer, description: "Product number, unique."}
+      - {name: name, type: text, description: "Product name; both bag sizes of a coffee share it.", values: [Basalt Blend, Ethiopia Guji, Colombia Huila, Kenya Nyeri, Lava Decaf, Basalt Hand Grinder, Gooseneck Kettle]}
+      - {name: kind, type: text, description: "coffee or equipment.", values: [coffee, equipment]}
+      - {name: bag_grams, type: integer, description: "Bag size in grams, 250 or 1000.", nullable: true}
+      - {name: price_czk, type: integer, description: "List price in CZK."}
+      - {name: roast, type: text, description: "Roast level of a coffee.", values: [light, medium, dark], nullable: true}
+      - {name: origin, type: text, description: "Where a coffee comes from.", values: [Ethiopia, Colombia, Kenya, Honduras, Blend], nullable: true}
+
+  - name: orders
+    description: "One row per order. Cancelled and lost orders bring in no sales."
+    columns:
+      - {name: order_id, type: integer, description: "Order number, unique."}
+      - {name: customer_id, type: integer, description: "The customer who ordered."}
+      - {name: ordered_at, type: date, description: "Day the order was placed."}
+      - {name: status, type: text, description: "processing is waiting to be roasted, roasted is packed, shipped is with the carrier, delivered is with the customer, cancelled was stopped before roasting, lost was lost by the carrier.", values: [processing, roasted, shipped, delivered, cancelled, lost]}
+      - {name: ship_country, type: text, description: "Country the order was sent to.", values: [CZ, SK, DE, AT, PL, HU]}
+      - {name: carrier, type: text, description: "Carrier that delivers the order.", values: [Vltava Post, Kolo Courier]}
+      - {name: source, type: text, description: "web is a one-off online order, subscription is a subscription delivery, market_stall is taken at the weekend stall.", values: [web, subscription, market_stall]}
+      - {name: subscription_id, type: integer, description: "The subscription the order was sent for.", nullable: true}
+      - {name: shipping_czk, type: integer, description: "Delivery cost in CZK."}
+      - {name: total_czk, type: integer, description: "What the customer paid in CZK, delivery included."}
+
+  - name: order_lines
+    description: "One row per product on an order."
+    columns:
+      - {name: line_id, type: integer, description: "Line number, unique."}
+      - {name: order_id, type: integer, description: "The order the line belongs to."}
+      - {name: product_id, type: integer, description: "The product bought."}
+      - {name: grind, type: text, description: "How the coffee was ground.", values: [whole-bean, espresso, moka, filter, french-press, cold-brew], nullable: true}
+      - {name: quantity, type: integer, description: "Items bought."}
+      - {name: unit_price_czk, type: integer, description: "Price of one item in CZK."}
+      - {name: discount_czk, type: integer, description: "Discount on the whole line in CZK."}
+      - {name: line_total_czk, type: integer, description: "Quantity times unit price, less the discount, in CZK."}
+
+  - name: subscriptions
+    description: "One row per coffee subscription."
+    columns:
+      - {name: subscription_id, type: integer, description: "Subscription number, unique."}
+      - {name: customer_id, type: integer, description: "The subscriber."}
+      - {name: product_id, type: integer, description: "The coffee and bag size sent."}
+      - {name: grind, type: text, description: "How the coffee is ground.", values: [whole-bean, espresso, moka, filter, french-press, cold-brew]}
+      - {name: frequency_days, type: integer, description: "Days between deliveries.", values: [7, 14, 28]}
+      - {name: started_at, type: date, description: "Day the subscription started."}
+      - {name: status, type: text, description: "active is running, paused is on hold, cancelled has ended.", values: [active, paused, cancelled]}
+      - {name: cancelled_at, type: date, description: "Day it was cancelled.", nullable: true}
+      - {name: cancel_reason, type: text, description: "Why the subscriber cancelled.", values: [price, too_much_coffee, taste, moved, other], nullable: true}
+
+# The only joins allowed. A query joins tables with JOIN ... ON one of these equalities
+# (and may add more conditions); a join on anything else is refused.
+joins:
+  - {left: orders.customer_id, right: customers.customer_id}
+  - {left: order_lines.order_id, right: orders.order_id}
+  - {left: order_lines.product_id, right: products.product_id}
+  - {left: orders.subscription_id, right: subscriptions.subscription_id}
+  - {left: subscriptions.customer_id, right: customers.customer_id}
+  - {left: subscriptions.product_id, right: products.product_id}
+
+# How each number is defined. A question that names a metric (or a synonym) gets its
+# exact expression, so "revenue" means the same thing in every answer. `needs` lists the
+# tables a query must join to use it.
+metrics:
+  - name: revenue
+    label: "Revenue"
+    description: "Money from products sold in CZK, without delivery. Cancelled and lost orders count for nothing."
+    expression: "SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders, order_lines]
+    synonyms: [sales, turnover, income, takings, earnings]
+  - name: orders
+    label: "Orders"
+    description: "Number of orders placed, not counting cancelled or lost ones."
+    expression: "COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders]
+    synonyms: [order count, number of orders, purchases]
+  - name: units_sold
+    label: "Units sold"
+    description: "Items sold, not counting cancelled or lost orders."
+    expression: "SUM(order_lines.quantity) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders, order_lines]
+    synonyms: [units, items sold, bags sold, quantity]
+  - name: average_order_value
+    label: "Average order value"
+    description: "Revenue divided by orders, in CZK."
+    expression: "SUM(order_lines.line_total_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost')) / COUNT(DISTINCT orders.order_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders, order_lines]
+    synonyms: [aov, basket size, average basket, average order]
+  - name: buyers
+    label: "Buyers"
+    description: "Different customers who placed an order, not counting cancelled or lost ones."
+    expression: "COUNT(DISTINCT orders.customer_id) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders]
+    synonyms: [active customers, customers who ordered, shoppers, purchasers]
+  - name: new_customers
+    label: "New customers"
+    description: "Customers who registered in the period, by signup date."
+    expression: "COUNT(customers.customer_id)"
+    needs: [customers]
+    synonyms: [signups, sign-ups, new signups, registrations, joined, signed up, registered]
+  - name: cancellation_rate
+    label: "Cancellation rate"
+    description: "Share of orders that were cancelled, as a fraction from 0 to 1."
+    expression: "COUNT(*) FILTER (WHERE orders.status = 'cancelled') / COUNT(*)"
+    needs: [orders]
+    synonyms: [cancelled orders, cancellations, cancel rate]
+  - name: shipping_revenue
+    label: "Delivery income"
+    description: "Delivery charges collected in CZK, not counting cancelled or lost orders."
+    expression: "SUM(orders.shipping_czk) FILTER (WHERE orders.status NOT IN ('cancelled', 'lost'))"
+    needs: [orders]
+    synonyms: [delivery income, shipping income, delivery charges, shipping fees]
+  - name: active_subscriptions
+    label: "Active subscriptions"
+    description: "Subscriptions that are running now."
+    expression: "COUNT(*) FILTER (WHERE subscriptions.status = 'active')"
+    needs: [subscriptions]
+    synonyms: [subscribers, live subscriptions, running subscriptions, subscription count]
+  - name: cancelled_subscriptions
+    label: "Cancelled subscriptions"
+    description: "Subscriptions that ended, counted by the day they were cancelled."
+    expression: "COUNT(*) FILTER (WHERE subscriptions.status = 'cancelled')"
+    needs: [subscriptions]
+    synonyms: [churn, churned subscriptions, subscription cancellations, unsubscribed]
+  - name: repeat_buyers
+    label: "Repeat buyers"
+    description: "Customers who bought a coffee in the period and had bought the same coffee, in any bag size, before the period began."
+    needs: [orders, order_lines, products]
+    synonyms: [returning buyers, repeat customers, returning customers, loyal customers, repurchase]
+    pattern: >-
+      WITH purchases AS (SELECT orders.customer_id AS customer_id, products.name AS product, orders.ordered_at AS day
+      FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND products.kind = 'coffee'),
+      in_period AS (SELECT DISTINCT customer_id, product FROM purchases WHERE day BETWEEN DATE '2026-04-01' AND DATE '2026-06-30'),
+      before_period AS (SELECT DISTINCT customer_id, product FROM purchases WHERE day < DATE '2026-04-01')
+      SELECT in_period.product AS product, COUNT(*) AS repeat_buyers
+      FROM in_period JOIN before_period ON before_period.customer_id = in_period.customer_id AND before_period.product = in_period.product
+      GROUP BY in_period.product
+  - name: lost_repeat_buyers
+    label: "Lost repeat buyers"
+    description: "Repeat buyers of a coffee in the period before the one asked about who did not buy that coffee at all in the period asked about."
+    needs: [orders, order_lines, products]
+    synonyms: [lost customers, lapsed buyers, lost buyers, churned buyers, stopped buying, lapsed customers, lost the most repeat buyers, lose repeat buyers, lost repeat customers, repeat buyers lost, lost the most repeat customers]
+    pattern: >-
+      WITH purchases AS (SELECT orders.customer_id AS customer_id, products.name AS product, orders.ordered_at AS day
+      FROM orders JOIN order_lines ON order_lines.order_id = orders.order_id
+      JOIN products ON products.product_id = order_lines.product_id
+      WHERE orders.status NOT IN ('cancelled', 'lost') AND products.kind = 'coffee'),
+      earlier AS (SELECT DISTINCT customer_id, product FROM purchases WHERE day BETWEEN DATE '2026-01-01' AND DATE '2026-03-31'),
+      before_earlier AS (SELECT DISTINCT customer_id, product FROM purchases WHERE day < DATE '2026-01-01'),
+      asked AS (SELECT DISTINCT customer_id, product FROM purchases WHERE day BETWEEN DATE '2026-04-01' AND DATE '2026-06-30')
+      SELECT earlier.product AS product, COUNT(*) AS lost_repeat_buyers
+      FROM earlier
+      JOIN before_earlier ON before_earlier.customer_id = earlier.customer_id AND before_earlier.product = earlier.product
+      LEFT JOIN asked ON asked.customer_id = earlier.customer_id AND asked.product = earlier.product
+      WHERE asked.customer_id IS NULL
+      GROUP BY earlier.product
+
+# Ways to slice the metrics. A question that says "by month" or "per country" gets the
+# matching expression, so the same slice reads the same everywhere.
+dimensions:
+  - {name: month, description: "Calendar month of the order date.", expression: "DATE_TRUNC('month', orders.ordered_at)", needs: [orders], synonyms: [monthly, per month, by month, each month]}
+  - {name: quarter, description: "Calendar quarter of the order date.", expression: "DATE_TRUNC('quarter', orders.ordered_at)", needs: [orders], synonyms: [quarterly, per quarter, by quarter, each quarter]}
+  - {name: year, description: "Calendar year of the order date.", expression: "YEAR(orders.ordered_at)", needs: [orders], synonyms: [yearly, annual, per year, by year, each year]}
+  - {name: weekday, description: "Day of the week of the order date, as a name such as Monday.", expression: "DAYNAME(orders.ordered_at)", needs: [orders], synonyms: [day of the week, per weekday, by weekday, weekdays]}
+  - {name: product, description: "Product name; both bag sizes of a coffee count as one.", expression: "products.name", needs: [products], synonyms: [coffee, coffees, per product, by product, each product]}
+  - {name: product_kind, description: "coffee or equipment.", expression: "products.kind", needs: [products], synonyms: [equipment, category, product type]}
+  - {name: bag_size, description: "Bag size in grams of a coffee.", expression: "products.bag_grams", needs: [products], synonyms: [bag sizes, 250 g, 1000 g, 1 kg, size]}
+  - {name: grind, description: "How the coffee was ground.", expression: "order_lines.grind", needs: [order_lines], synonyms: [grinds, grind size]}
+  - {name: customer_country, description: "Country of the customer's home address.", expression: "customers.country", needs: [customers], synonyms: [country, countries, per country, by country, market]}
+  - {name: customer_city, description: "City of the customer's home address.", expression: "customers.city", needs: [customers], synonyms: [city, cities, per city, by city]}
+  - {name: segment, description: "home or business customer.", expression: "customers.segment", needs: [customers], synonyms: [customer type, business customers, home customers, segments]}
+  - {name: acquisition_channel, description: "How the customer first found Basalt & Bean.", expression: "customers.acquisition_channel", needs: [customers], synonyms: [channel, channels, marketing channel, source of customers]}
+  - {name: carrier, description: "Carrier that delivers the order.", expression: "orders.carrier", needs: [orders], synonyms: [carriers, courier, delivery company]}
+  - {name: order_source, description: "web, subscription or market_stall.", expression: "orders.source", needs: [orders], synonyms: [order channel, where orders come from, sources]}

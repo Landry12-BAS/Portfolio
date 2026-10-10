@@ -1,0 +1,55 @@
+# The Django systems: LB-01 Support Desk today, then LB-02 Booking Concierge and LB-09
+# Meeting Recorder. One Django project; each system keeps its data in a Postgres schema
+# of its own. Run its checks from this folder: `uv run pytest`, `uv run mypy .`.
+[project]
+name = "django-systems"
+version = "0.1.0"
+description = "The LB systems built on Django: one project, one Postgres schema per system."
+requires-python = ">=3.13"
+dependencies = [
+    "av>=19.0.0",
+    "celery[redis]>=5.6.3",
+    "channels>=4.3.2",
+    "channels-redis>=4.3.0",
+    "django>=5.2.17,<5.3",
+    "django-ninja>=1.7.1",
+    "faster-whisper>=1.2.1",
+    "lb-common",
+    "numpy>=2.5.3",
+    "pgvector>=0.5.0",
+    "psycopg[binary]>=3.3.6",
+    "pyjwt[crypto]>=2.15.1",
+    "pyyaml>=6.0.3",
+    "uvicorn>=0.54.0",
+    "websockets>=15",
+]
+
+[tool.uv.sources]
+lb-common = { workspace = true }
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.test_settings"
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config"]
+testpaths = ["tests"]
+markers = [
+    "integration: needs a real Postgres with pgvector, and Redis or Node for some tests",
+]
+xfail_strict = true
+filterwarnings = ["error"]
+# The WebSocket tests are coroutines; pytest-asyncio runs every `async def` test without a marker.
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy", "mypy_django_plugin.main"]
+exclude = ["migrations/"]
+
+[[tool.mypy.overrides]]
+# Testcontainers, pgvector, Channels and its Redis layer, and faster-whisper ship no type information.
+module = ["testcontainers.*", "pgvector.*", "channels.*", "channels_redis.*", "faster_whisper.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.test_settings"

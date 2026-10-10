@@ -1,0 +1,2128 @@
+{
+  "v": 1,
+  "system": "lb-02",
+  "sample": "book-tasting-cs",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:28:13.527Z",
+  "language": "cs",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb02/calendar"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "as_of": "2026-10-07T11:28:04.155Z",
+          "first_day": "2026-10-08",
+          "last_day": "2026-10-21",
+          "slots": [
+            {
+              "id": 1,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T08:00:00Z",
+              "ends_at": "2026-10-08T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 85,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-08T08:00:00Z",
+              "ends_at": "2026-10-08T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 57,
+              "offering": "cupping",
+              "starts_at": "2026-10-08T09:30:00Z",
+              "ends_at": "2026-10-08T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 2,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T10:00:00Z",
+              "ends_at": "2026-10-08T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 86,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-08T12:00:00Z",
+              "ends_at": "2026-10-08T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 58,
+              "offering": "cupping",
+              "starts_at": "2026-10-08T12:30:00Z",
+              "ends_at": "2026-10-08T13:30:00Z",
+              "status": "booked",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 3,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T14:00:00Z",
+              "ends_at": "2026-10-08T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 4,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T16:00:00Z",
+              "ends_at": "2026-10-08T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 5,
+              "offering": "tasting",
+              "starts_at": "2026-10-09T08:00:00Z",
+              "ends_at": "2026-10-09T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 87,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-09T08:00:00Z",
+              "ends_at": "2026-10-09T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 59,
+              "offering": "cupping",
+              "starts_at": "2026-10-09T09:30:00Z",
+              "ends_at": "2026-10-09T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 6,
+              "offering": "tasting",
+              "starts_at": "2026-10-09T10:00:00Z",
+              "ends_at": "2026-10-09T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 88,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-09T12:00:00Z",
+              "ends_at": "2026-10-09T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 60,
+              "offering": "cupping",
+              "starts_at": "2026-10-09T12:30:00Z",
+              "ends_at": "2026-10-09T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 7,
+              "offering": "tasting",
+              "starts_at": "2026-10-09T14:00:00Z",
+              "ends_at": "2026-10-09T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 8,
+              "offering": "tasting",
+              "starts_at": "2026-10-09T16:00:00Z",
+              "ends_at": "2026-10-09T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 9,
+              "offering": "tasting",
+              "starts_at": "2026-10-10T08:00:00Z",
+              "ends_at": "2026-10-10T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 89,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-10T08:00:00Z",
+              "ends_at": "2026-10-10T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 61,
+              "offering": "cupping",
+              "starts_at": "2026-10-10T09:30:00Z",
+              "ends_at": "2026-10-10T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 10,
+              "offering": "tasting",
+              "starts_at": "2026-10-10T10:00:00Z",
+              "ends_at": "2026-10-10T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 90,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-10T12:00:00Z",
+              "ends_at": "2026-10-10T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 62,
+              "offering": "cupping",
+              "starts_at": "2026-10-10T12:30:00Z",
+              "ends_at": "2026-10-10T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 11,
+              "offering": "tasting",
+              "starts_at": "2026-10-10T14:00:00Z",
+              "ends_at": "2026-10-10T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 12,
+              "offering": "tasting",
+              "starts_at": "2026-10-10T16:00:00Z",
+              "ends_at": "2026-10-10T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 13,
+              "offering": "tasting",
+              "starts_at": "2026-10-11T08:00:00Z",
+              "ends_at": "2026-10-11T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 91,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-11T08:00:00Z",
+              "ends_at": "2026-10-11T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 63,
+              "offering": "cupping",
+              "starts_at": "2026-10-11T09:30:00Z",
+              "ends_at": "2026-10-11T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 14,
+              "offering": "tasting",
+              "starts_at": "2026-10-11T10:00:00Z",
+              "ends_at": "2026-10-11T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 92,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-11T12:00:00Z",
+              "ends_at": "2026-10-11T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 64,
+              "offering": "cupping",
+              "starts_at": "2026-10-11T12:30:00Z",
+              "ends_at": "2026-10-11T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 15,
+              "offering": "tasting",
+              "starts_at": "2026-10-11T14:00:00Z",
+              "ends_at": "2026-10-11T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 16,
+              "offering": "tasting",
+              "starts_at": "2026-10-11T16:00:00Z",
+              "ends_at": "2026-10-11T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 17,
+              "offering": "tasting",
+              "starts_at": "2026-10-12T08:00:00Z",
+              "ends_at": "2026-10-12T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 93,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-12T08:00:00Z",
+              "ends_at": "2026-10-12T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 65,
+              "offering": "cupping",
+              "starts_at": "2026-10-12T09:30:00Z",
+              "ends_at": "2026-10-12T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 18,
+              "offering": "tasting",
+              "starts_at": "2026-10-12T10:00:00Z",
+              "ends_at": "2026-10-12T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 94,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-12T12:00:00Z",
+              "ends_at": "2026-10-12T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 66,
+              "offering": "cupping",
+              "starts_at": "2026-10-12T12:30:00Z",
+              "ends_at": "2026-10-12T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 19,
+              "offering": "tasting",
+              "starts_at": "2026-10-12T14:00:00Z",
+              "ends_at": "2026-10-12T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 20,
+              "offering": "tasting",
+              "starts_at": "2026-10-12T16:00:00Z",
+              "ends_at": "2026-10-12T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 21,
+              "offering": "tasting",
+              "starts_at": "2026-10-13T08:00:00Z",
+              "ends_at": "2026-10-13T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 95,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-13T08:00:00Z",
+              "ends_at": "2026-10-13T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 67,
+              "offering": "cupping",
+              "starts_at": "2026-10-13T09:30:00Z",
+              "ends_at": "2026-10-13T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 22,
+              "offering": "tasting",
+              "starts_at": "2026-10-13T10:00:00Z",
+              "ends_at": "2026-10-13T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 96,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-13T12:00:00Z",
+              "ends_at": "2026-10-13T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 68,
+              "offering": "cupping",
+              "starts_at": "2026-10-13T12:30:00Z",
+              "ends_at": "2026-10-13T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 23,
+              "offering": "tasting",
+              "starts_at": "2026-10-13T14:00:00Z",
+              "ends_at": "2026-10-13T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 24,
+              "offering": "tasting",
+              "starts_at": "2026-10-13T16:00:00Z",
+              "ends_at": "2026-10-13T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 25,
+              "offering": "tasting",
+              "starts_at": "2026-10-14T08:00:00Z",
+              "ends_at": "2026-10-14T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 97,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-14T08:00:00Z",
+              "ends_at": "2026-10-14T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 69,
+              "offering": "cupping",
+              "starts_at": "2026-10-14T09:30:00Z",
+              "ends_at": "2026-10-14T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 26,
+              "offering": "tasting",
+              "starts_at": "2026-10-14T10:00:00Z",
+              "ends_at": "2026-10-14T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 98,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-14T12:00:00Z",
+              "ends_at": "2026-10-14T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 70,
+              "offering": "cupping",
+              "starts_at": "2026-10-14T12:30:00Z",
+              "ends_at": "2026-10-14T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 27,
+              "offering": "tasting",
+              "starts_at": "2026-10-14T14:00:00Z",
+              "ends_at": "2026-10-14T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 28,
+              "offering": "tasting",
+              "starts_at": "2026-10-14T16:00:00Z",
+              "ends_at": "2026-10-14T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 29,
+              "offering": "tasting",
+              "starts_at": "2026-10-15T08:00:00Z",
+              "ends_at": "2026-10-15T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 99,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-15T08:00:00Z",
+              "ends_at": "2026-10-15T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 71,
+              "offering": "cupping",
+              "starts_at": "2026-10-15T09:30:00Z",
+              "ends_at": "2026-10-15T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 30,
+              "offering": "tasting",
+              "starts_at": "2026-10-15T10:00:00Z",
+              "ends_at": "2026-10-15T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 100,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-15T12:00:00Z",
+              "ends_at": "2026-10-15T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 72,
+              "offering": "cupping",
+              "starts_at": "2026-10-15T12:30:00Z",
+              "ends_at": "2026-10-15T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 31,
+              "offering": "tasting",
+              "starts_at": "2026-10-15T14:00:00Z",
+              "ends_at": "2026-10-15T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 32,
+              "offering": "tasting",
+              "starts_at": "2026-10-15T16:00:00Z",
+              "ends_at": "2026-10-15T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 33,
+              "offering": "tasting",
+              "starts_at": "2026-10-16T08:00:00Z",
+              "ends_at": "2026-10-16T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 101,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-16T08:00:00Z",
+              "ends_at": "2026-10-16T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 73,
+              "offering": "cupping",
+              "starts_at": "2026-10-16T09:30:00Z",
+              "ends_at": "2026-10-16T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 34,
+              "offering": "tasting",
+              "starts_at": "2026-10-16T10:00:00Z",
+              "ends_at": "2026-10-16T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 102,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-16T12:00:00Z",
+              "ends_at": "2026-10-16T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 74,
+              "offering": "cupping",
+              "starts_at": "2026-10-16T12:30:00Z",
+              "ends_at": "2026-10-16T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 35,
+              "offering": "tasting",
+              "starts_at": "2026-10-16T14:00:00Z",
+              "ends_at": "2026-10-16T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 36,
+              "offering": "tasting",
+              "starts_at": "2026-10-16T16:00:00Z",
+              "ends_at": "2026-10-16T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 37,
+              "offering": "tasting",
+              "starts_at": "2026-10-17T08:00:00Z",
+              "ends_at": "2026-10-17T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 103,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-17T08:00:00Z",
+              "ends_at": "2026-10-17T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 75,
+              "offering": "cupping",
+              "starts_at": "2026-10-17T09:30:00Z",
+              "ends_at": "2026-10-17T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 38,
+              "offering": "tasting",
+              "starts_at": "2026-10-17T10:00:00Z",
+              "ends_at": "2026-10-17T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 104,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-17T12:00:00Z",
+              "ends_at": "2026-10-17T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 76,
+              "offering": "cupping",
+              "starts_at": "2026-10-17T12:30:00Z",
+              "ends_at": "2026-10-17T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 39,
+              "offering": "tasting",
+              "starts_at": "2026-10-17T14:00:00Z",
+              "ends_at": "2026-10-17T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 40,
+              "offering": "tasting",
+              "starts_at": "2026-10-17T16:00:00Z",
+              "ends_at": "2026-10-17T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 41,
+              "offering": "tasting",
+              "starts_at": "2026-10-18T08:00:00Z",
+              "ends_at": "2026-10-18T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 105,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-18T08:00:00Z",
+              "ends_at": "2026-10-18T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 77,
+              "offering": "cupping",
+              "starts_at": "2026-10-18T09:30:00Z",
+              "ends_at": "2026-10-18T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 42,
+              "offering": "tasting",
+              "starts_at": "2026-10-18T10:00:00Z",
+              "ends_at": "2026-10-18T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 106,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-18T12:00:00Z",
+              "ends_at": "2026-10-18T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 78,
+              "offering": "cupping",
+              "starts_at": "2026-10-18T12:30:00Z",
+              "ends_at": "2026-10-18T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 43,
+              "offering": "tasting",
+              "starts_at": "2026-10-18T14:00:00Z",
+              "ends_at": "2026-10-18T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 44,
+              "offering": "tasting",
+              "starts_at": "2026-10-18T16:00:00Z",
+              "ends_at": "2026-10-18T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 45,
+              "offering": "tasting",
+              "starts_at": "2026-10-19T08:00:00Z",
+              "ends_at": "2026-10-19T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 107,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-19T08:00:00Z",
+              "ends_at": "2026-10-19T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 79,
+              "offering": "cupping",
+              "starts_at": "2026-10-19T09:30:00Z",
+              "ends_at": "2026-10-19T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 46,
+              "offering": "tasting",
+              "starts_at": "2026-10-19T10:00:00Z",
+              "ends_at": "2026-10-19T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 108,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-19T12:00:00Z",
+              "ends_at": "2026-10-19T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 80,
+              "offering": "cupping",
+              "starts_at": "2026-10-19T12:30:00Z",
+              "ends_at": "2026-10-19T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 47,
+              "offering": "tasting",
+              "starts_at": "2026-10-19T14:00:00Z",
+              "ends_at": "2026-10-19T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 48,
+              "offering": "tasting",
+              "starts_at": "2026-10-19T16:00:00Z",
+              "ends_at": "2026-10-19T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 49,
+              "offering": "tasting",
+              "starts_at": "2026-10-20T08:00:00Z",
+              "ends_at": "2026-10-20T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 109,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-20T08:00:00Z",
+              "ends_at": "2026-10-20T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 81,
+              "offering": "cupping",
+              "starts_at": "2026-10-20T09:30:00Z",
+              "ends_at": "2026-10-20T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 50,
+              "offering": "tasting",
+              "starts_at": "2026-10-20T10:00:00Z",
+              "ends_at": "2026-10-20T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 110,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-20T12:00:00Z",
+              "ends_at": "2026-10-20T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 82,
+              "offering": "cupping",
+              "starts_at": "2026-10-20T12:30:00Z",
+              "ends_at": "2026-10-20T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 51,
+              "offering": "tasting",
+              "starts_at": "2026-10-20T14:00:00Z",
+              "ends_at": "2026-10-20T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 52,
+              "offering": "tasting",
+              "starts_at": "2026-10-20T16:00:00Z",
+              "ends_at": "2026-10-20T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 53,
+              "offering": "tasting",
+              "starts_at": "2026-10-21T08:00:00Z",
+              "ends_at": "2026-10-21T08:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 111,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-21T08:00:00Z",
+              "ends_at": "2026-10-21T10:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 83,
+              "offering": "cupping",
+              "starts_at": "2026-10-21T09:30:00Z",
+              "ends_at": "2026-10-21T10:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 54,
+              "offering": "tasting",
+              "starts_at": "2026-10-21T10:00:00Z",
+              "ends_at": "2026-10-21T10:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 112,
+              "offering": "roasting-workshop",
+              "starts_at": "2026-10-21T12:00:00Z",
+              "ends_at": "2026-10-21T14:00:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 84,
+              "offering": "cupping",
+              "starts_at": "2026-10-21T12:30:00Z",
+              "ends_at": "2026-10-21T13:30:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 55,
+              "offering": "tasting",
+              "starts_at": "2026-10-21T14:00:00Z",
+              "ends_at": "2026-10-21T14:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            },
+            {
+              "id": 56,
+              "offering": "tasting",
+              "starts_at": "2026-10-21T16:00:00Z",
+              "ends_at": "2026-10-21T16:45:00Z",
+              "status": "free",
+              "mine": false,
+              "until": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb02/socket/hello",
+        "body": {
+          "conversation": null
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "type": "ready",
+          "conversation": "P2lHZbXHVLxSYN3w",
+          "resumed": false,
+          "transcript": [],
+          "pending": false,
+          "step": "details",
+          "language": "en",
+          "messages_left": 30,
+          "closed": false,
+          "options": [],
+          "hold": null,
+          "booking": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb02/socket/message",
+        "body": {
+          "text": "Dobrý den, chtěl bych si rezervovat degustaci kávy pro čtyři osoby zítra večer. Jmenuji se Petr Dvořák, petr@example.test.",
+          "waitMinutes": 0
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "reply": {
+            "type": "reply",
+            "text": "Omlouvám se, ztratil se mi kontext. Můžete to prosím zopakovat?",
+            "receipt": "oops",
+            "tools": [
+              {
+                "name": "update_details",
+                "executed": true,
+                "ok": true,
+                "error": ""
+              }
+            ],
+            "model_calls": 3,
+            "step": "availability",
+            "language": "cs",
+            "messages_left": 29,
+            "closed": false,
+            "options": [
+              {
+                "number": 1,
+                "slot": 4,
+                "offering": "tasting",
+                "starts_at": "2026-10-08T16:00:00Z",
+                "ends_at": "2026-10-08T16:45:00Z"
+              }
+            ],
+            "hold": null,
+            "booking": null
+          },
+          "calendar": []
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb02/socket/message",
+        "body": {
+          "text": "Ano, ten večerní termín mi vyhovuje.",
+          "waitMinutes": 0
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "reply": {
+            "type": "reply",
+            "text": "Termín čt 8. 10., 18:00–18:45 (Degustace kávy) pro 4 osoby je pro vás podržen na 5 minut. Mám ho potvrdit? Stačí napsat „ano“. Pokud ne, dejte vědět a uvolním ho.",
+            "receipt": "hold_placed",
+            "tools": [
+              {
+                "name": "hold_slot",
+                "executed": true,
+                "ok": true,
+                "error": ""
+              }
+            ],
+            "model_calls": 5,
+            "step": "hold",
+            "language": "cs",
+            "messages_left": 28,
+            "closed": false,
+            "options": [],
+            "hold": {
+              "slot": 4,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T16:00:00Z",
+              "ends_at": "2026-10-08T16:45:00Z",
+              "expires_at": "2026-10-07T11:33:10.685457Z"
+            },
+            "booking": null
+          },
+          "calendar": [
+            {
+              "type": "calendar",
+              "changes": [
+                {
+                  "slot": 4,
+                  "offering": "tasting",
+                  "starts_at": "2026-10-08T16:00:00Z",
+                  "ends_at": "2026-10-08T16:45:00Z",
+                  "status": "held",
+                  "mine": true,
+                  "until": "2026-10-07T11:33:10.685457Z"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb02/socket/message",
+        "body": {
+          "text": "Ano, potvrďte to prosím.",
+          "waitMinutes": 0
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "reply": {
+            "type": "reply",
+            "text": "Hotovo, máte rezervováno: Degustace kávy, čt 8. 10., 18:00–18:45, pro 4 osoby. Kód rezervace: GTEM-6M4E. Potvrzení pro petr@example.test je zaznamenáno na této stránce; demo žádný e-mail doopravdy neposílá.",
+            "receipt": "booking_confirmed",
+            "tools": [
+              {
+                "name": "confirm_booking",
+                "executed": true,
+                "ok": true,
+                "error": ""
+              }
+            ],
+            "model_calls": 7,
+            "step": "done",
+            "language": "cs",
+            "messages_left": 27,
+            "closed": false,
+            "options": [],
+            "hold": null,
+            "booking": {
+              "code": "GTEM-6M4E",
+              "slot": 4,
+              "offering": "tasting",
+              "starts_at": "2026-10-08T16:00:00Z",
+              "ends_at": "2026-10-08T16:45:00Z",
+              "party_size": 4,
+              "to": "petr@example.test"
+            }
+          },
+          "calendar": [
+            {
+              "type": "calendar",
+              "changes": [
+                {
+                  "slot": 4,
+                  "offering": "tasting",
+                  "starts_at": "2026-10-08T16:00:00Z",
+                  "ends_at": "2026-10-08T16:45:00Z",
+                  "status": "booked",
+                  "mine": true,
+                  "until": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb02/conversations/P2lHZbXHVLxSYN3w"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "P2lHZbXHVLxSYN3w",
+          "step": "done",
+          "language": "cs",
+          "messages_used": 3,
+          "messages_left": 27,
+          "closed": false,
+          "created_at": "2026-10-07T11:28:04.223Z",
+          "expires_at": "2026-10-08T11:28:04.223Z",
+          "run_id": "P0mZgf-2DgdoshlCJ-xtug",
+          "model_calls": 7,
+          "transcript": [
+            {
+              "position": 1,
+              "role": "visitor",
+              "text": "Dobrý den, chtěl bych si rezervovat degustaci kávy pro čtyři osoby zítra večer. Jmenuji se Petr Dvořák, [email].",
+              "at": "2026-10-07T11:28:04.359Z"
+            },
+            {
+              "position": 2,
+              "role": "action",
+              "text": "Recorded offering, party_size, name, date_from, date_to, part_of_day.",
+              "at": "2026-10-07T11:28:06.611Z"
+            },
+            {
+              "position": 3,
+              "role": "concierge",
+              "text": "Omlouvám se, ztratil se mi kontext. Můžete to prosím zopakovat?",
+              "at": "2026-10-07T11:28:07.100Z"
+            },
+            {
+              "position": 4,
+              "role": "visitor",
+              "text": "Ano, ten večerní termín mi vyhovuje.",
+              "at": "2026-10-07T11:28:07.171Z"
+            },
+            {
+              "position": 5,
+              "role": "action",
+              "text": "Held tasting on Thu 8 Oct, 18:00–18:45 for 5 minutes.",
+              "at": "2026-10-07T11:28:10.713Z"
+            },
+            {
+              "position": 6,
+              "role": "concierge",
+              "text": "Termín čt 8. 10., 18:00–18:45 (Degustace kávy) pro 4 osoby je pro vás podržen na 5 minut. Mám ho potvrdit? Stačí napsat „ano“. Pokud ne, dejte vědět a uvolním ho.",
+              "at": "2026-10-07T11:28:10.722Z"
+            },
+            {
+              "position": 7,
+              "role": "visitor",
+              "text": "Ano, potvrďte to prosím.",
+              "at": "2026-10-07T11:28:10.777Z"
+            },
+            {
+              "position": 8,
+              "role": "action",
+              "text": "Booked tasting on Thu 8 Oct, 18:00–18:45, code GTEM-6M4E.",
+              "at": "2026-10-07T11:28:11.864Z"
+            },
+            {
+              "position": 9,
+              "role": "concierge",
+              "text": "Hotovo, máte rezervováno: Degustace kávy, čt 8. 10., 18:00–18:45, pro 4 osoby. Kód rezervace: GTEM-6M4E. Potvrzení pro petr@example.test je zaznamenáno na této stránce; demo žádný e-mail doopravdy neposílá.",
+              "at": "2026-10-07T11:28:11.871Z"
+            }
+          ],
+          "options": [],
+          "hold": null,
+          "booking": {
+            "code": "GTEM-6M4E",
+            "slot": 4,
+            "offering": "tasting",
+            "starts_at": "2026-10-08T16:00:00Z",
+            "ends_at": "2026-10-08T16:45:00Z",
+            "party_size": 4,
+            "to": "petr@example.test"
+          },
+          "confirmation": {
+            "to": "petr@example.test",
+            "subject": "Vaše rezervace v Basalt & Bean GTEM-6M4E",
+            "body": "Dobrý den, Petr Dvořák,\n\nvaše rezervace je potvrzena.\n\nDegustace kávy\nčt 8. 10., 18:00–18:45 (pražský čas)\nPro 4 osoby\nKód rezervace: GTEM-6M4E\n\nToto je ukázka: zpráva byla jen zaznamenána na stránce a nikdy nebyla odeslána na petr@example.test.\n\nBasalt & Bean Coffee Co.",
+            "language": "cs",
+            "delivery": "mock",
+            "recorded_at": "2026-10-07T11:28:11.844Z"
+          },
+          "handoff": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "P0mZgf-2DgdoshlCJ-xtug",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "d305d2744f1184ac",
+        "parentId": "b8b4634f4240a9ed",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372484374,
+        "endMs": 1791372485064,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "b8b4634f4240a9ed",
+        "parentId": "d1ae04ff2eb8a7fd",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372484373,
+        "endMs": 1791372485065,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 39,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 38,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0004074946336913854,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "d1ae04ff2eb8a7fd",
+        "parentId": "4daf709f71f95e67",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372484369,
+        "endMs": 1791372485066,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0004
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "d1d25f19144d3b9f",
+        "parentId": "9e7205cf83f9b336",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372485117,
+        "endMs": 1791372485117,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "4259f527374930bd",
+        "parentId": "9e7205cf83f9b336",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372485117,
+        "endMs": 1791372485117,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "0d7f64b8767daa9c",
+        "parentId": "9e7205cf83f9b336",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372485117,
+        "endMs": 1791372486558,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "modelId": "openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "9e7205cf83f9b336",
+        "parentId": "543d02814ca649b0",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372485116,
+        "endMs": 1791372486559,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1109,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 1001,
+          "outputTokens": 461
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "543d02814ca649b0",
+        "parentId": "4daf709f71f95e67",
+        "kind": "system.step",
+        "name": "converse",
+        "status": "ok",
+        "startMs": 1791372485111,
+        "endMs": 1791372486563,
+        "attrs": {
+          "step": "details",
+          "tool_calls": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "eaea1b7a945bf058",
+        "parentId": "f9bf98d00317015d",
+        "kind": "system.tool",
+        "name": "check availability",
+        "status": "ok",
+        "startMs": 1791372486585,
+        "endMs": 1791372486599,
+        "attrs": {
+          "automatic": true,
+          "found": 1,
+          "window_empty": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "f9bf98d00317015d",
+        "parentId": "4daf709f71f95e67",
+        "kind": "system.tool",
+        "name": "collect details",
+        "status": "ok",
+        "startMs": 1791372486574,
+        "endMs": 1791372486602,
+        "attrs": {
+          "tool": "update_details",
+          "ok": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "01c3cee9f0e96003",
+        "parentId": "1bf3430765e9037c",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372486643,
+        "endMs": 1791372486643,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "cc4f437e4a2ce7a4",
+        "parentId": "1bf3430765e9037c",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372486643,
+        "endMs": 1791372486643,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "8b113f33be6ef215",
+        "parentId": "1bf3430765e9037c",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791372486643,
+        "endMs": 1791372486643,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "da006d4b447b31af",
+        "parentId": "1bf3430765e9037c",
+        "kind": "gateway.attempt",
+        "name": "groq/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372486644,
+        "endMs": 1791372486644,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/qwen3.8-27b",
+          "outcome": "budget",
+          "meter": "model:groq/qwen3.8-27b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "feae2d0fc30e890f",
+        "parentId": "1bf3430765e9037c",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "error",
+        "startMs": 1791372486644,
+        "endMs": 1791372487092,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "rejected",
+          "httpStatus": 400
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "1bf3430765e9037c",
+        "parentId": "8735be6d77a799bf",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "error",
+        "startMs": 1791372486642,
+        "endMs": 1791372487092,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1461,
+          "maxOutputTokens": 500,
+          "usage": "estimated",
+          "error": "upstream_rejected"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "8735be6d77a799bf",
+        "parentId": "4daf709f71f95e67",
+        "kind": "system.step",
+        "name": "converse",
+        "status": "error",
+        "startMs": 1791372486638,
+        "endMs": 1791372487097,
+        "attrs": {
+          "step": "availability",
+          "error": "BadRequestError"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "4daf709f71f95e67",
+        "parentId": "794254021d4245a6",
+        "kind": "system.step",
+        "name": "visitor message",
+        "status": "ok",
+        "startMs": 1791372484357,
+        "endMs": 1791372487129,
+        "attrs": {
+          "step": "availability",
+          "calls": 3,
+          "tools": 1,
+          "receipt": "oops"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "ce8c9b6fdf3267f2",
+        "parentId": "02f9841017f742f7",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372487188,
+        "endMs": 1791372487496,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "02f9841017f742f7",
+        "parentId": "f39197ea48bb1997",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372487188,
+        "endMs": 1791372487497,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 18,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 13,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0003324109420645982,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "f39197ea48bb1997",
+        "parentId": "6766682fa9db29ae",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372487184,
+        "endMs": 1791372487498,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0003
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "95b3a9321debeee0",
+        "parentId": "afaca1cf61fa06c3",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372487553,
+        "endMs": 1791372487553,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "f50db007f3afcb80",
+        "parentId": "afaca1cf61fa06c3",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372487553,
+        "endMs": 1791372487553,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "77ec34eba62d5adc",
+        "parentId": "afaca1cf61fa06c3",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791372487554,
+        "endMs": 1791372487554,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "b0d48ebd6c7e8967",
+        "parentId": "afaca1cf61fa06c3",
+        "kind": "gateway.attempt",
+        "name": "groq/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372487554,
+        "endMs": 1791372487554,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/qwen3.8-27b",
+          "outcome": "budget",
+          "meter": "model:groq/qwen3.8-27b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "b0c907a8fc2cf9ea",
+        "parentId": "afaca1cf61fa06c3",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372487554,
+        "endMs": 1791372490672,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "afaca1cf61fa06c3",
+        "parentId": "489b249ee75ca651",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372487552,
+        "endMs": 1791372490674,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1375,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1156,
+          "outputTokens": 425
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "489b249ee75ca651",
+        "parentId": "6766682fa9db29ae",
+        "kind": "system.step",
+        "name": "converse",
+        "status": "ok",
+        "startMs": 1791372487546,
+        "endMs": 1791372490676,
+        "attrs": {
+          "step": "availability",
+          "tool_calls": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "76085f91cc3adc2e",
+        "parentId": "6766682fa9db29ae",
+        "kind": "system.tool",
+        "name": "hold slot",
+        "status": "ok",
+        "startMs": 1791372490683,
+        "endMs": 1791372490702,
+        "attrs": {
+          "tool": "hold_slot",
+          "ok": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "6766682fa9db29ae",
+        "parentId": "794254021d4245a6",
+        "kind": "system.step",
+        "name": "visitor message",
+        "status": "ok",
+        "startMs": 1791372487167,
+        "endMs": 1791372490745,
+        "attrs": {
+          "step": "hold",
+          "calls": 5,
+          "tools": 1,
+          "receipt": "hold_placed"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "21116f60d20c4de4",
+        "parentId": "8435c541e93a659f",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1791372490791,
+        "endMs": 1791372491101,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "modelId": "meta-llama/llama-prompt-guard-2-86m",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "8435c541e93a659f",
+        "parentId": "4ecfd7c01856a809",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1791372490790,
+        "endMs": 1791372491102,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 14,
+          "maxOutputTokens": 8,
+          "usage": "reported",
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 13,
+          "outputTokens": 0,
+          "flagged": false,
+          "score": 0.0005016250070184469,
+          "segments": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "4ecfd7c01856a809",
+        "parentId": "d44bcad666a70e05",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1791372490787,
+        "endMs": 1791372491105,
+        "attrs": {
+          "flagged": false,
+          "score": 0.0005
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "94e8494d94fe12b8",
+        "parentId": "13d1f112f1c0a5d5",
+        "kind": "gateway.attempt",
+        "name": "openrouter/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372491146,
+        "endMs": 1791372491146,
+        "attrs": {
+          "provider": "openrouter",
+          "model": "openrouter/qwen3.8-27b",
+          "outcome": "visitor-data"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "a23e6d9dcd6d6eea",
+        "parentId": "13d1f112f1c0a5d5",
+        "kind": "gateway.attempt",
+        "name": "nvidia/nemotron-3-super",
+        "status": "skipped",
+        "startMs": 1791372491146,
+        "endMs": 1791372491146,
+        "attrs": {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-super",
+          "outcome": "terms"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "2b2dda4d92a76b14",
+        "parentId": "13d1f112f1c0a5d5",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "skipped",
+        "startMs": 1791372491146,
+        "endMs": 1791372491146,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "outcome": "budget",
+          "meter": "model:groq/gpt-oss-120b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "521b7b2421167bfb",
+        "parentId": "13d1f112f1c0a5d5",
+        "kind": "gateway.attempt",
+        "name": "groq/qwen3.8-27b",
+        "status": "skipped",
+        "startMs": 1791372491147,
+        "endMs": 1791372491147,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/qwen3.8-27b",
+          "outcome": "budget",
+          "meter": "model:groq/qwen3.8-27b tokens per minute"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "0c866a4652435262",
+        "parentId": "13d1f112f1c0a5d5",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1791372491147,
+        "endMs": 1791372491809,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "modelId": "@cf/openai/gpt-oss-120b",
+          "outcome": "ok"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "13d1f112f1c0a5d5",
+        "parentId": "7de80e0986b6a310",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1791372491145,
+        "endMs": 1791372491811,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "estimatedInputTokens": 1559,
+          "maxOutputTokens": 500,
+          "usage": "reported",
+          "provider": "workers-ai",
+          "model": "workers-ai/gpt-oss-120b",
+          "inputTokens": 1318,
+          "outputTokens": 48
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "7de80e0986b6a310",
+        "parentId": "d44bcad666a70e05",
+        "kind": "system.step",
+        "name": "converse",
+        "status": "ok",
+        "startMs": 1791372491138,
+        "endMs": 1791372491813,
+        "attrs": {
+          "step": "hold",
+          "tool_calls": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "d7ee36956a42e1ad",
+        "parentId": "2a01474cd2c6e953",
+        "kind": "system.tool",
+        "name": "send confirmation",
+        "status": "ok",
+        "startMs": 1791372491844,
+        "endMs": 1791372491853,
+        "attrs": {
+          "mock": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "2a01474cd2c6e953",
+        "parentId": "d44bcad666a70e05",
+        "kind": "system.tool",
+        "name": "confirm",
+        "status": "ok",
+        "startMs": 1791372491821,
+        "endMs": 1791372491854,
+        "attrs": {
+          "tool": "confirm_booking",
+          "ok": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "P0mZgf-2DgdoshlCJ-xtug",
+        "system": "lb-02",
+        "spanId": "d44bcad666a70e05",
+        "parentId": "794254021d4245a6",
+        "kind": "system.step",
+        "name": "visitor message",
+        "status": "ok",
+        "startMs": 1791372490774,
+        "endMs": 1791372491892,
+        "attrs": {
+          "step": "done",
+          "calls": 7,
+          "tools": 1,
+          "receipt": "booking_confirmed"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 7,
+    "steps": 15,
+    "durationMs": 7535
+  }
+}

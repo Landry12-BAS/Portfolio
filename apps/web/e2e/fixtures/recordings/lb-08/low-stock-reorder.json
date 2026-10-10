@@ -1,0 +1,1042 @@
+{
+  "v": 1,
+  "system": "lb-08",
+  "sample": "low-stock-reorder",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T08:50:32.849Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows",
+        "body": {
+          "from": "sample",
+          "sampleId": "low-stock-reorder"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "d06e35f6-0332-42ea-8560-588c5162dd55",
+          "name": "Low stock reorder",
+          "version": 1,
+          "createdAt": "2026-10-02T08:50:23.849Z",
+          "updatedAt": "2026-10-02T08:50:23.849Z",
+          "expiresAt": "2026-10-03T08:50:23.849Z",
+          "description": null,
+          "graph": {
+            "name": "Low stock reorder",
+            "nodes": [
+              {
+                "id": "stock_alert",
+                "label": "Stock runs low",
+                "type": "trigger",
+                "event": "stock_low"
+              },
+              {
+                "id": "tell_purchasing",
+                "label": "Tell purchasing",
+                "type": "action",
+                "connector": "slack_alert",
+                "params": {
+                  "channel": "#purchasing",
+                  "message": "{{trigger.sku}} is down to {{trigger.availableKg}} kg (alert level {{trigger.thresholdKg}} kg)."
+                }
+              },
+              {
+                "id": "reorder_task",
+                "label": "Add the reorder task",
+                "type": "action",
+                "connector": "create_task",
+                "params": {
+                  "board": "purchasing",
+                  "title": "Reorder {{trigger.sku}}",
+                  "priority": "high"
+                }
+              }
+            ],
+            "edges": [
+              {
+                "from": "stock_alert",
+                "to": "tell_purchasing"
+              },
+              {
+                "from": "stock_alert",
+                "to": "reorder_task"
+              }
+            ]
+          },
+          "versions": [
+            {
+              "version": 1,
+              "origin": "sample",
+              "createdAt": "2026-10-02T08:50:23.849Z",
+              "modelCalls": 0,
+              "traceRunId": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows/d06e35f6-0332-42ea-8560-588c5162dd55/runs",
+        "body": {
+          "input": {
+            "sku": "guji-filter-1kg",
+            "availableKg": 22,
+            "thresholdKg": 30
+          },
+          "failures": [
+            {
+              "nodeId": "tell_purchasing",
+              "times": 3
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+          "workflowName": "Low stock reorder",
+          "version": 1,
+          "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "replayOf": null,
+          "status": "queued",
+          "createdAt": "2026-10-02T08:50:23.849Z",
+          "finishedAt": null,
+          "input": {
+            "sku": "guji-filter-1kg",
+            "availableKg": 22,
+            "thresholdKg": 30
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "stock_alert",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:23.849Z",
+              "finishedAt": "2026-10-02T08:50:23.849Z"
+            },
+            {
+              "nodeId": "tell_purchasing",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "reorder_task",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "stock_alert",
+              "attempt": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/32327f44-46f9-4bb9-9656-834b0116236d/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "running",
+          "events": [
+            {
+              "type": "run.started",
+              "seq": 3,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "seq": 4,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 1000,
+              "seq": 6,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "reorder_task",
+              "connector": "create_task",
+              "messageId": "task-5ec7fd46",
+              "seq": 7,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "seq": 8,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/32327f44-46f9-4bb9-9656-834b0116236d/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "running",
+          "events": [
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 2,
+              "seq": 9,
+              "at": "2026-10-02T08:50:26.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 2,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 2000,
+              "seq": 10,
+              "at": "2026-10-02T08:50:27.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/32327f44-46f9-4bb9-9656-834b0116236d/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "failed",
+          "events": [
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 3,
+              "seq": 11,
+              "at": "2026-10-02T08:50:29.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 3,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": null,
+              "seq": 12,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.dead_lettered",
+              "nodeId": "tell_purchasing",
+              "attempts": 3,
+              "seq": 13,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "run.failed",
+              "nodeId": "tell_purchasing",
+              "seq": 14,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/32327f44-46f9-4bb9-9656-834b0116236d"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+          "workflowName": "Low stock reorder",
+          "version": 1,
+          "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "replayOf": null,
+          "status": "failed",
+          "createdAt": "2026-10-02T08:50:23.849Z",
+          "finishedAt": "2026-10-02T08:50:30.849Z",
+          "input": {
+            "sku": "guji-filter-1kg",
+            "availableKg": 22,
+            "thresholdKg": 30
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "stock_alert",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:23.849Z",
+              "finishedAt": "2026-10-02T08:50:23.849Z"
+            },
+            {
+              "nodeId": "tell_purchasing",
+              "status": "failed",
+              "attempts": 3,
+              "output": null,
+              "error": {
+                "code": "connector_unavailable",
+                "message": "The connector is unavailable."
+              },
+              "startedAt": "2026-10-02T08:50:24.849Z",
+              "finishedAt": "2026-10-02T08:50:30.849Z"
+            },
+            {
+              "nodeId": "reorder_task",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:24.849Z",
+              "finishedAt": "2026-10-02T08:50:25.849Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null,
+              "seq": 1,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "stock_alert",
+              "attempt": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:23.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "run.started",
+              "seq": 3,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "seq": 4,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:24.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 1000,
+              "seq": 6,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "reorder_task",
+              "connector": "create_task",
+              "messageId": "task-5ec7fd46",
+              "seq": 7,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "seq": 8,
+              "at": "2026-10-02T08:50:25.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 2,
+              "seq": 9,
+              "at": "2026-10-02T08:50:26.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 2,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": 2000,
+              "seq": 10,
+              "at": "2026-10-02T08:50:27.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 3,
+              "seq": 11,
+              "at": "2026-10-02T08:50:29.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.failed",
+              "nodeId": "tell_purchasing",
+              "attempt": 3,
+              "maxAttempts": 3,
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable.",
+              "retryInMs": null,
+              "seq": 12,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "step.dead_lettered",
+              "nodeId": "tell_purchasing",
+              "attempts": 3,
+              "seq": 13,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            },
+            {
+              "type": "run.failed",
+              "nodeId": "tell_purchasing",
+              "seq": 14,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "32327f44-46f9-4bb9-9656-834b0116236d"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/sent"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "5ec7fd46-17af-4fda-9a48-763a55891fba",
+            "connector": "create_task",
+            "nodeId": "reorder_task",
+            "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+            "payload": {
+              "board": "purchasing",
+              "title": "Reorder guji-filter-1kg",
+              "priority": "high"
+            },
+            "sentAt": "2026-10-02T08:50:25.849Z"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/dead-letters"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "6647dd84-a2c3-445a-99a9-65b03602c5da",
+            "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+            "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+            "nodeId": "tell_purchasing",
+            "attempts": 3,
+            "error": {
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable."
+            },
+            "createdAt": "2026-10-02T08:50:30.849Z",
+            "replayedRunId": null
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/dead-letters/6647dd84-a2c3-445a-99a9-65b03602c5da/replay"
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "e0331b65-ca19-4584-8fcb-af127bbe473a",
+          "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+          "workflowName": "Low stock reorder",
+          "version": 1,
+          "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "replayOf": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "status": "queued",
+          "createdAt": "2026-10-02T08:50:30.849Z",
+          "finishedAt": null,
+          "input": {
+            "sku": "guji-filter-1kg",
+            "availableKg": 22,
+            "thresholdKg": 30
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "stock_alert",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:30.849Z",
+              "finishedAt": "2026-10-02T08:50:30.849Z"
+            },
+            {
+              "nodeId": "tell_purchasing",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "reorder_task",
+              "status": "ready",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": "32327f44-46f9-4bb9-9656-834b0116236d",
+              "seq": 1,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "stock_alert",
+              "attempt": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/e0331b65-ca19-4584-8fcb-af127bbe473a/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "succeeded",
+          "events": [
+            {
+              "type": "run.started",
+              "seq": 3,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "seq": 4,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "tell_purchasing",
+              "connector": "slack_alert",
+              "messageId": "msg-1e8d2847",
+              "seq": 6,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-1e8d2847"
+              },
+              "seq": 7,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "effect.duplicate_suppressed",
+              "nodeId": "reorder_task",
+              "connector": "create_task",
+              "messageId": "task-5ec7fd46",
+              "originalRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+              "seq": 8,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "seq": 9,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 10,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/e0331b65-ca19-4584-8fcb-af127bbe473a"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "e0331b65-ca19-4584-8fcb-af127bbe473a",
+          "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+          "workflowName": "Low stock reorder",
+          "version": 1,
+          "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "replayOf": "32327f44-46f9-4bb9-9656-834b0116236d",
+          "status": "succeeded",
+          "createdAt": "2026-10-02T08:50:30.849Z",
+          "finishedAt": "2026-10-02T08:50:32.849Z",
+          "input": {
+            "sku": "guji-filter-1kg",
+            "availableKg": 22,
+            "thresholdKg": 30
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "stock_alert",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:30.849Z",
+              "finishedAt": "2026-10-02T08:50:30.849Z"
+            },
+            {
+              "nodeId": "tell_purchasing",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-1e8d2847"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:31.849Z",
+              "finishedAt": "2026-10-02T08:50:32.849Z"
+            },
+            {
+              "nodeId": "reorder_task",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "error": null,
+              "startedAt": "2026-10-02T08:50:31.849Z",
+              "finishedAt": "2026-10-02T08:50:32.849Z"
+            }
+          ],
+          "events": [
+            {
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": "32327f44-46f9-4bb9-9656-834b0116236d",
+              "seq": 1,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "stock_alert",
+              "attempt": 0,
+              "output": {
+                "sku": "guji-filter-1kg",
+                "availableKg": 22,
+                "thresholdKg": 30
+              },
+              "seq": 2,
+              "at": "2026-10-02T08:50:30.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "run.started",
+              "seq": 3,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "seq": 4,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.started",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "seq": 5,
+              "at": "2026-10-02T08:50:31.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "effect.sent",
+              "nodeId": "tell_purchasing",
+              "connector": "slack_alert",
+              "messageId": "msg-1e8d2847",
+              "seq": 6,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "tell_purchasing",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-1e8d2847"
+              },
+              "seq": 7,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "effect.duplicate_suppressed",
+              "nodeId": "reorder_task",
+              "connector": "create_task",
+              "messageId": "task-5ec7fd46",
+              "originalRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+              "seq": 8,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "step.succeeded",
+              "nodeId": "reorder_task",
+              "attempt": 1,
+              "output": {
+                "taskId": "task-5ec7fd46"
+              },
+              "seq": 9,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            },
+            {
+              "type": "run.succeeded",
+              "seq": 10,
+              "at": "2026-10-02T08:50:32.849Z",
+              "runId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/sent"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "1e8d2847-1b41-4f99-8930-04a5f013888f",
+            "connector": "slack_alert",
+            "nodeId": "tell_purchasing",
+            "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+            "payload": {
+              "channel": "#purchasing",
+              "message": "guji-filter-1kg is down to 22 kg (alert level 30 kg)."
+            },
+            "sentAt": "2026-10-02T08:50:32.849Z"
+          },
+          {
+            "id": "5ec7fd46-17af-4fda-9a48-763a55891fba",
+            "connector": "create_task",
+            "nodeId": "reorder_task",
+            "rootRunId": "32327f44-46f9-4bb9-9656-834b0116236d",
+            "payload": {
+              "board": "purchasing",
+              "title": "Reorder guji-filter-1kg",
+              "priority": "high"
+            },
+            "sentAt": "2026-10-02T08:50:25.849Z"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/dead-letters"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "6647dd84-a2c3-445a-99a9-65b03602c5da",
+            "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+            "workflowId": "d06e35f6-0332-42ea-8560-588c5162dd55",
+            "nodeId": "tell_purchasing",
+            "attempts": 3,
+            "error": {
+              "code": "connector_unavailable",
+              "message": "The connector is unavailable."
+            },
+            "createdAt": "2026-10-02T08:50:30.849Z",
+            "replayedRunId": "e0331b65-ca19-4584-8fcb-af127bbe473a"
+          }
+        ]
+      }
+    }
+  ],
+  "trace": {
+    "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+        "system": "lb-08",
+        "spanId": "95888805767e3ac7",
+        "parentId": "fdcb523b16cd2a64",
+        "kind": "system.step",
+        "name": "step.tell_purchasing",
+        "status": "error",
+        "startMs": 1790931023849,
+        "endMs": 1790931023874,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+        "system": "lb-08",
+        "spanId": "326226e2ccfb10d2",
+        "parentId": "fdcb523b16cd2a64",
+        "kind": "system.step",
+        "name": "step.reorder_task",
+        "status": "ok",
+        "startMs": 1790931023889,
+        "endMs": 1790931023914,
+        "attrs": {
+          "connector": "create_task",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+        "system": "lb-08",
+        "spanId": "1df3e04703440d6c",
+        "parentId": "fdcb523b16cd2a64",
+        "kind": "system.step",
+        "name": "step.tell_purchasing",
+        "status": "error",
+        "startMs": 1790931023929,
+        "endMs": 1790931023954,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 2
+        }
+      },
+      {
+        "v": 1,
+        "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+        "system": "lb-08",
+        "spanId": "0e8af54be5d0ae66",
+        "parentId": "fdcb523b16cd2a64",
+        "kind": "system.step",
+        "name": "step.tell_purchasing",
+        "status": "error",
+        "startMs": 1790931023969,
+        "endMs": 1790931023994,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "32327f44-46f9-4bb9-9656-834b0116236d",
+        "system": "lb-08",
+        "spanId": "fdcb523b16cd2a64",
+        "kind": "system.run",
+        "name": "workflow run",
+        "status": "error",
+        "startMs": 1790931023849,
+        "endMs": 1790931030849,
+        "attrs": {
+          "outcome": "failed",
+          "steps": 3,
+          "attempts": 4,
+          "replay": false
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 4,
+    "durationMs": 7000
+  }
+}

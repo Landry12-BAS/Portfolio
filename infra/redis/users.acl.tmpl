@@ -1,0 +1,114 @@
+# Redis users (docs/SECURITY.md, section 5): one per service, each limited to the key
+# prefixes and the commands that service really uses, with everything else off. The
+# rules below come from what the services do, measured with MONITOR while their own test
+# suites and a real Celery worker ran (infra/redis/test-acl.sh repeats that proof).
+#
+# How to read a user:
+#   resetkeys resetchannels -@all   start from nothing: no keys, no channels, no commands
+#   +hello +ping ...                what any connection needs (ioredis and redis-py shake
+#                                   hands with HELLO and CLIENT SETINFO)
+#   ( ~keys +commands )             a selector: these commands, on these keys only. A
+#                                   command is allowed when a selector allows it, so each
+#                                   group of keys has its own list of commands, not one list
+#                                   for every key a service may touch.
+# __HASH_<NAME>__ is the SHA-256 of LB_REDIS_PASSWORD_<NAME> (infra/redis/entrypoint.sh).
+# The key prefix `lb:` is the platform's LB_REDIS_PREFIX default, shared by the gateway,
+# lb-common and Celery (global_keyprefix `lb:celery:`).
+# To add a service: add a user here, add its LB_REDIS_PASSWORD_<NAME> to
+# infra/secrets/redis.enc.env and its URL to its compose block (docs/DEPLOY.md).
+
+# Nobody connects without a name and a password.
+user default off
+
+# The container's health check: it may only ping.
+user health on #__HASH_HEALTH__ resetkeys resetchannels -@all +ping
+
+# The AI gateway.
+#   lb:gw:meter:*     budgets and quotas: counters read and moved by a Lua script (EVALSHA,
+#                     with EVAL as ioredis's fallback), by pipelines (INCRBYFLOAT, EXPIRE)
+#                     and by the usage report (MGET). INFO is ioredis's ready check.
+#   lb:run:*:spans    each run's span stream: written for every call, and read back for the
+#                     Scope (GET /v1/runs/{id}/spans, being added), so the reads stay
+#                     limited to these per-run streams.
+#   lb:spans          the stream of every run, which a persister will drain: append only.
+user gateway on #__HASH_GATEWAY__ resetkeys resetchannels -@all \
+    +hello +ping +info +quit +client|setinfo \
+    (~lb:gw:meter:* +get +mget +incrbyfloat +expire +eval +evalsha) \
+    (~lb:run:*:spans +xadd +expire +xrange +xrevrange +xread +xlen) \
+    (~lb:spans +xadd)
+
+# The Django systems (LB-01 and LB-02): the API (run spans through lb-common, and LB-02's
+# WebSocket conversations through Channels) and the Celery worker with its scheduler.
+#   lb:celery:*       Celery's Redis transport (kombu) keeps its queues, its unacknowledged
+#                     messages, its bindings and its locks here, and its remote control and
+#                     events on pub/sub channels under the same prefix, so this selector is
+#                     the only one with channels. Publishing uses concrete channel names,
+#                     which `&lb:celery:*` covers; but PSUBSCRIBE patterns are compared with
+#                     the allowed patterns letter for letter, so the two patterns the worker
+#                     subscribes to are listed as they are. The /0 is the Redis database in
+#                     LB_REDIS_URL, which kombu puts in every channel name.
+#   lb:channels:*     LB-02's Channels layer (channels_redis, prefix `lb:channels:`): a
+#                     sorted set per channel and per group, and a backup (`$inflight`) of the
+#                     message a consumer has taken. It does not use pub/sub: consumers block
+#                     on the sorted set (BZPOPMIN), and two Lua scripts, sent with EVAL and
+#                     with the keys passed as arguments, send to a group and give a dropped
+#                     consumer's message back. DEL runs only inside that second script. KEYS
+#                     is not here: it is the layer's flush(), which only tests call.
+user django-systems on #__HASH_DJANGO_SYSTEMS__ resetkeys resetchannels -@all \
+    +hello +ping +quit +client|setinfo \
+    (~lb:run:*:spans +xadd +expire) \
+    (~lb:spans +xadd) \
+    (~lb:celery:* &lb:celery:* &lb:celery:/0.celery.pidbox &lb:celery:/0.celeryev/worker.* \
+        +lpush +rpop +brpop +llen +lrem \
+        +hget +hset +hdel \
+        +zadd +zrem +zrange +zrangebyscore \
+        +sadd +srem +smembers \
+        +exists +del +pexpire +get +set \
+        +watch +unwatch +multi +exec +discard \
+        +evalsha +script|load \
+        +publish +subscribe +unsubscribe +psubscribe +punsubscribe) \
+    (~lb:channels:* \
+        +zadd +zrem +zrange +zremrangebyscore +zcount +zpopmin +bzpopmin \
+        +expire +del \
+        +multi +exec +discard \
+        +eval +evalsha)
+
+# LB-03 and LB-05 (Flask): the one thing they write to Redis is the run spans of a question or
+# a document, through lb-common, the same two selectors as the Django systems. LB-05's counters
+# and LB-03's documents, files' records and counters are in Postgres, LB-05's data in DuckDB
+# files and LB-03's files in a bucket, so it has no other key. LB-03's spans come from a thread
+# of its own (lb03/spans.py) and use the same two commands.
+user flask-systems on #__HASH_FLASK_SYSTEMS__ resetkeys resetchannels -@all \
+    +hello +ping +quit +client|setinfo \
+    (~lb:run:*:spans +xadd +expire) \
+    (~lb:spans +xadd)
+
+# LB-08, LB-04, LB-06 and LB-07 (Node): the API and the worker share this user. Run spans, as
+# above, BullMQ, and LB-06's feeds. BullMQ keeps each queue under `<prefix>:<queue>:` (the prefix
+# is `lb:bull`, the queues are lb08-steps, lb08-dead-letters and lb08-maintenance, LB-04's
+# lb04-reviews and lb04-maintenance, LB-06's lb06-incidents and lb06-maintenance, and LB-07's
+# lb07-runs and lb07-maintenance), and moves jobs with Lua scripts (EVALSHA, and EVAL when Redis
+# has not seen a script yet), so each system's queues are covered by one pattern,
+# `lb:bull:lb08-*`, `lb:bull:lb04-*`, `lb:bull:lb06-*` and `lb:bull:lb07-*`, and no other
+# system's queue is. The commands are the ones the scripts ran while the Node systems' whole
+# suites did (queueing, retries with backoff, a worker that dies, the sweep, clean-up by age); a
+# command BullMQ would need on a path the suites never take is refused and shows in ACL LOG, and
+# gets added here after a test covers it. INFO and CLIENT SETNAME are BullMQ's version check and
+# its connection names. LB-07's browser sandbox has no Redis login: only the worker drives it.
+user node-systems on #__HASH_NODE_SYSTEMS__ resetkeys resetchannels -@all \
+    +hello +ping +info +quit +client|setinfo +client|setname \
+    (~lb:run:*:spans +xadd +expire) \
+    (~lb:spans +xadd) \
+    (~lb:bull:lb08-* ~lb:bull:lb04-* ~lb:bull:lb06-* ~lb:bull:lb07-* \
+        +eval +evalsha \
+        +get +set +incr +exists +del \
+        +hget +hmget +hgetall +hset +hmset +hincrby +hdel \
+        +lpush +rpush +lpos +lindex +llen +lrange +lrem +rpoplpush \
+        +sadd +scard +smembers +srem \
+        +zadd +zcard +zscore +zrange +zrangebyscore +zrevrangebyscore +zrem +zpopmin +bzpopmin \
+        +xadd +xtrim) \
+    (~lb:lb06:feed:* +xadd +expire +xread +xrange +xlen)
+
+# The owner, for operating the box over Tailscale (`docker compose exec redis redis-cli
+# --user admin`). Every command, but DEBUG stays off (redis.conf).
+user admin on #__HASH_ADMIN__ ~* &* +@all

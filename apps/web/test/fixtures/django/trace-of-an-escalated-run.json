@@ -1,0 +1,69 @@
+{
+  "runId": "OVXhWeMEP5mQ3xYtkR8OfQ",
+  "spans": [
+    {
+      "v": 1,
+      "runId": "OVXhWeMEP5mQ3xYtkR8OfQ",
+      "system": "lb-01",
+      "spanId": "cc0c89af09e1e9b0",
+      "parentId": "15d5d19397e150db",
+      "kind": "system.step",
+      "name": "redact PII",
+      "status": "ok",
+      "startMs": 1790910119322,
+      "endMs": 1790910119322,
+      "attrs": {}
+    },
+    {
+      "v": 1,
+      "runId": "OVXhWeMEP5mQ3xYtkR8OfQ",
+      "system": "lb-01",
+      "spanId": "999b0478a9d85a19",
+      "parentId": "15d5d19397e150db",
+      "kind": "system.step",
+      "name": "screen for injection",
+      "status": "ok",
+      "startMs": 1790910119323,
+      "endMs": 1790910119724,
+      "attrs": {
+        "flagged": true,
+        "score": 0.99
+      }
+    },
+    {
+      "v": 1,
+      "runId": "OVXhWeMEP5mQ3xYtkR8OfQ",
+      "system": "lb-01",
+      "spanId": "a88ea29b675b987f",
+      "parentId": "15d5d19397e150db",
+      "kind": "system.step",
+      "name": "route",
+      "status": "ok",
+      "startMs": 1790910119725,
+      "endMs": 1790910119725,
+      "attrs": {
+        "status": "escalated",
+        "reason": "injection"
+      }
+    },
+    {
+      "v": 1,
+      "runId": "OVXhWeMEP5mQ3xYtkR8OfQ",
+      "system": "lb-01",
+      "spanId": "15d5d19397e150db",
+      "kind": "system.run",
+      "name": "support ticket",
+      "status": "ok",
+      "startMs": 1790910119322,
+      "endMs": 1790910119725,
+      "attrs": {
+        "language": "en",
+        "status": "escalated",
+        "reason": "injection"
+      }
+    }
+  ],
+  "cursor": "1790910119725-1",
+  "more": false,
+  "finished": true
+}

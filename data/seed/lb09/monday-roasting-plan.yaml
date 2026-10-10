@@ -1,0 +1,50 @@
+# LB-09's sample meeting: the Monday roasting-plan meeting at Basalt & Bean.
+#
+# A script is the source of truth for a meeting: who speaks, in which order, and what they say.
+# The words are all there is. The decisions and actions planted in them are written down in
+# evals/lb09/golden.yaml, which names the turns they are said in (the first turn is 0), and
+# `just tts-lb09` reads the speaking from here to make the committed audio with an offline
+# text-to-speech. Everything is synthetic: no real person or company is named.
+#
+# This one has two decisions and three actions, each with an owner and a deadline. Kevin never
+# says his own name, so a speaker label can only call him "Speaker N".
+key: monday-roasting-plan
+title: Monday roasting plan
+language: en
+about: >-
+  The roastery plans Monday's roast: which coffee goes first, who orders the bags and who
+  prepares the roast profile.
+speakers:
+  - id: hannah
+    name: Hannah
+    voice: slt
+  - id: peter
+    name: Peter
+    voice: rms
+  - id: david
+    name: David
+    voice: awb
+  - id: kevin
+    name: Kevin
+    voice: kal16
+turns:
+  - speaker: hannah
+    text: "Good morning everyone, this is Hannah. Let's plan Monday's roast."
+  - speaker: peter
+    text: "Peter here. The Colombian green beans arrived on Friday, so we can start with those."
+  - speaker: hannah
+    text: "Good. Then we roast the Colombian first on Monday."
+  - speaker: david
+    text: "I'm David, I run packaging. We are short of twelve ounce bags."
+  - speaker: peter
+    text: "I will order two thousand more twelve ounce bags by Wednesday."
+  - speaker: hannah
+    text: "Kevin, can you re-profile the Colombian on the small roaster?"
+  - speaker: kevin
+    text: "Sure, I'll do it on Sunday evening."
+  - speaker: hannah
+    text: "And the Ethiopian moves to Tuesday, agreed?"
+  - speaker: david
+    text: "Agreed. I'll update the label template by Friday."
+  - speaker: hannah
+    text: "Great, thanks everyone."

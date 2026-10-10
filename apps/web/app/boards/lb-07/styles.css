@@ -1,0 +1,260 @@
+/* The look LB-07's board parts share: buttons, inputs, hints, panels, chips, tables and the stepper. Every
+   colour is a token of the design system with a light and a dark value, and a state is never shown by colour
+   alone: it always has words or an icon beside it. The class names start with lb7- so they cannot meet
+   anything else on the page. */
+
+/* A section and a panel are one column that never grows past the board: a long line inside one (a page's
+   tree, a line of the generated test, a long address) scrolls or wraps where it is, and never widens the page. */
+.lb7-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.lb7-section > h2,
+.lb7-panel > h2,
+.lb7-panel > h3,
+.lb7-label {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+.lb7-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--lb-sheet);
+  border: 1px solid var(--lb-rule);
+  /* Leave room for the site's sticky toolbar when a panel is scrolled into view. */
+  scroll-margin-top: 72px;
+}
+
+.lb7-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font: 600 13px/1.2 var(--lb-font-sans);
+  color: var(--lb-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+.lb7-button:hover:not(:disabled) {
+  background: var(--lb-shade);
+}
+
+.lb7-button:focus-visible,
+.lb7-link:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb7-button--primary {
+  min-height: 36px;
+  padding: 9px 18px;
+  color: var(--lb-sheet);
+  background: var(--lb-ink);
+}
+
+.lb7-button--primary:hover:not(:disabled) {
+  background: var(--lb-ink-hover);
+}
+
+.lb7-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.lb7-button--quiet {
+  border-color: var(--lb-rule);
+}
+
+.lb7-link {
+  font-weight: 600;
+  color: var(--lb-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lb7-field {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.lb7-field > label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lb7-control {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  font: 400 14px/1.5 var(--lb-font-sans);
+  color: var(--lb-ink);
+  background: var(--lb-sheet);
+  border: 1.5px solid var(--lb-ink);
+  border-radius: 4px;
+}
+
+textarea.lb7-control {
+  resize: vertical;
+}
+
+.lb7-control[aria-invalid="true"] {
+  border-width: 2px;
+  border-style: dashed;
+}
+
+.lb7-control:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb7-mono {
+  font-family: var(--lb-font-mono);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.lb7-hint {
+  font-size: 12.5px;
+  color: var(--lb-graphite);
+}
+
+.lb7-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lb-ink);
+  background: var(--lb-shade);
+  border: 1px solid var(--lb-rule);
+  border-radius: 999px;
+}
+
+.lb7-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.lb7-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Facts as a small grid of label above value, so a label never runs into its number. */
+.lb7-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.lb7-facts dt {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+.lb7-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb7-quote {
+  padding: 8px 10px;
+  margin: 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+  background: var(--lb-shade);
+  border-left: 3px solid var(--lb-rule);
+}
+
+.lb7-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lb7-table-wrap:focus-visible {
+  outline: 2px solid var(--lb-signal);
+  outline-offset: 2px;
+}
+
+.lb7-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+/* A table's caption is centred by default; the captions here are notes that read from the left like the text around them. */
+.lb7-table caption {
+  padding-bottom: 6px;
+  text-align: left;
+}
+
+.lb7-table th,
+.lb7-table td {
+  padding: 6px 10px 6px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--lb-rule);
+}
+
+.lb7-table th {
+  font-family: var(--lb-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lb-graphite);
+}
+
+/* A row's heading is the pass it is about, in the page's own type, not a column heading. */
+.lb7-table tbody th {
+  font-family: var(--lb-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--lb-ink);
+  text-transform: none;
+}
+
+.lb7-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.lb7-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}

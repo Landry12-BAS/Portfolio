@@ -1,0 +1,65 @@
+packages:
+  - apps/*
+  - packages/*
+  - services/*
+
+# Install scripts this repo never needs:
+# - unrs-resolver (ESLint import rules) ships prebuilt binaries; its script only
+#   rebuilds from source.
+# - ssh2 and cpu-features (pulled in by Testcontainers) only compile optional native
+#   crypto speed-ups; ssh2 falls back to JavaScript, and tests never use SSH.
+# - protobufjs only runs a version notice for its CLI.
+# - msgpackr-extract (pulled in by BullMQ) only builds an optional native speed-up;
+#   without it msgpackr uses its JavaScript decoder.
+# - vue-demi (pulled in by Vue Flow) picks a Vue 2 or Vue 3 build by version in its script; its
+#   default files are the Vue 3 ones, which is all this site uses.
+ignoredBuiltDependencies:
+  - cpu-features
+  - msgpackr-extract
+  - protobufjs
+  - ssh2
+  - unrs-resolver
+  - vue-demi
+
+# esbuild's install script only verifies its prebuilt binary for this platform.
+onlyBuiltDependencies:
+  - esbuild
+
+# drizzle-kit, the tool that writes LB-08's migrations (a development tool: nothing serves
+# requests with it), still pulls in the retired @esbuild-kit loader, whose old esbuild has an
+# advisory about its development server, which nothing here starts. Pinning that one esbuild
+# to a patched release keeps `pnpm audit` clean.
+overrides:
+  '@esbuild-kit/core-utils>esbuild': ^0.25.0
+  # GHSA-x6jw-m9v5-85vh, GHSA-g4wm-2vf7-vfgr, GHSA-858h-whjf-mvg5 (simple-git up to 4.0.0) and
+  # GHSA-v5rq-49vh-5v5c (its argument parser): git options that slip past simple-git's checks run
+  # commands. Only simple-git 4 is fixed. Its one user here is nuxt > @nuxt/devtools 3.4.2, which
+  # imports simple-git's default export, gone in 4: so devtools stays off (`devtools: { enabled: false }`
+  # in apps/web/nuxt.config.ts, which returns before devtools loads the code that imports it). Pinning 4
+  # keeps the vulnerable code out of the install; turning devtools on needs a devtools release built on
+  # simple-git 4 (4.0 is in beta), and then this entry removed.
+  '@nuxt/devtools>simple-git': ^4.0.2
+  # GHSA-68fv-2mgg-jv7q: source-map-js before 1.2.2 spins on crafted indexed source-map sections. One
+  # copy serves the build and lint chains (Vue's compiler, PostCSS, Vite, ESLint's CSS parser), and the
+  # fix is a patch release.
+  source-map-js: ^1.2.2
+  # GHSA-pqg4-j6r4-53mv: shell-quote's quote() before 1.11.0 lets a line terminator through after a
+  # `{ comment }` token, so a quoted command can run a second one. Its one user here is
+  # nuxt > @nuxt/devtools > launch-editor, which the site keeps off (see simple-git above).
+  shell-quote: ^1.11.0
+
+# GHSA-86w9-cpqp-85rv: node-forge (up to 1.4.0, the newest release) accepts a forged RSA PKCS#1 v1.5
+# signature. It has no patched release yet, so no pin can fix it. The only way in is
+# nuxt > @nuxt/cli > listhen, the development server's helper that makes a self-signed certificate
+# for `nuxt dev --https`; nothing verifies a signature with it, and the production build does not
+# contain node-forge (`grep -r node-forge apps/web/.output` finds nothing). Remove this entry, and
+# run `pnpm audit`, when node-forge or listhen publishes a fix.
+# GHSA-vfj7-8cjw-p6xm: braces (up to 3.0.3, the newest release) can exhaust the stack on a deeply
+# nested brace pattern. It has no patched release yet, so no pin can fix it. The only way in is
+# @nuxtjs/i18n > @intlify/unplugin-vue-i18n > fast-glob, which expands the locale-file globs this
+# repository writes while the site is built; it runs on no visitor's input and serves no request.
+# Remove this entry, and run `pnpm audit`, when braces publishes a fix.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv
+    - GHSA-vfj7-8cjw-p6xm

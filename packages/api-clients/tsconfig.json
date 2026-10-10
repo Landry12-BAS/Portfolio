@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Node runs the scripts and the mock back end directly by stripping types, and the site
+    // bundles the rest, so only erasable syntax is allowed and every relative import names
+    // its .ts file.
+    "lib": ["ES2024", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
+  },
+  "include": ["src", "scripts", "test", "vitest.config.ts"]
+}

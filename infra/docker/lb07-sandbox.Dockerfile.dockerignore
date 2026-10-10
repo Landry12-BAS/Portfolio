@@ -1,0 +1,20 @@
+# What the LB-07 sandbox image's build may see. Everything is excluded unless listed, so a stray
+# .env file, a service key (*.jwk.json) or a test fixture can never reach an image. The sandbox
+# needs the Node systems' manifests (to install from the lockfile), its own code and
+# @lb/contracts' source, and the two files of its own in infra/docker.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!packages/common/package.json
+!packages/contracts/package.json
+!packages/contracts/src/**
+!services/node-systems/package.json
+!services/node-systems/src/**
+!infra/docker/lb07-sandbox-browser.sh
+!infra/docker/lb07-sandbox-healthcheck.mjs
+
+**/node_modules
+**/.env
+**/.env.*
+**/*.jwk.json

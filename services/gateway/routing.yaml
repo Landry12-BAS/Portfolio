@@ -1,0 +1,619 @@
+# LB-00 routing table: every provider, model, budget and virtual model the gateway
+# serves. The rules behind it are in docs/STACK.md (AI providers and routing).
+#
+# Provider limits were checked against each provider's documentation on 28 Sep 2026.
+# Free tiers change without notice: the weekly check in docs/PLAYBOOK.md updates this
+# file, and every model must pass its route's golden set before it serves visitors.
+#
+# Validate after editing: `pnpm --filter @lb/gateway check` (also part of `just check`).
+
+version: 1
+
+budgets:
+  # Share of each provider limit the gateway spends. Token counts are estimated before
+  # a call and corrected after it, so the minute ceiling leaves room for the estimate
+  # being low. At the day ceiling the route answers `budget_exhausted` and the system
+  # switches to replay mode (docs/PLAYBOOK.md, Operating on free tiers).
+  minuteCeiling: 0.9
+  dayCeiling: 0.95
+  # `/v1/usage` flags a daily budget from this share, for the daily usage alert.
+  alertAt: 0.7
+
+timeouts:
+  # Streams: time to the first event, per attempt. Past it, the next model is tried.
+  firstTokenMs: 10000
+  # Non-streamed calls: time to the complete response, per attempt.
+  responseMs: 30000
+  # Streams: the longest silence allowed once the answer is streaming.
+  idleMs: 20000
+  # The whole call, across every attempt and the full stream.
+  deadlineMs: 90000
+
+providers:
+  groq:
+    name: Groq
+    baseUrl: https://api.groq.com/openai/v1
+    keyEnv: GROQ_API_KEY
+    # Groq keeps abuse logs for up to 30 days and does not train on inputs.
+    trainsOnInputs: false
+    terms: production
+    maxTokensParam: max_completion_tokens
+    models:
+      gpt-oss-120b:
+        id: openai/gpt-oss-120b
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      gpt-oss-20b:
+        id: openai/gpt-oss-20b
+        context: 131072
+        capabilities: [chat, tools, json_schema, reasoning]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      # A Groq preview model: it can be withdrawn at short notice, so it is never first
+      # on a chain.
+      qwen3.8-27b:
+        id: qwen/qwen3.8-27b
+        context: 131072
+        capabilities: [chat, tools]
+        limits:
+          minute: { requests: 30, tokens: 8000 }
+          day: { requests: 1000, tokens: 200000 }
+      # Prompt-injection classifiers (Llama Prompt Guard 2), read 512 tokens at a time.
+      # Both are Groq preview models that can be withdrawn at short notice, and no free
+      # tier offers a production-grade one, so lb-guard fails closed when neither
+      # answers. The 86M model reads eight languages; the 22M one is English-first.
+      # Groq doesn't document their answer format: the gateway accepts a probability
+      # or a BENIGN / MALICIOUS label, and refuses anything else.
+      llama-prompt-guard-2-86m:
+        id: meta-llama/llama-prompt-guard-2-86m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
+      llama-prompt-guard-2-22m:
+        id: meta-llama/llama-prompt-guard-2-22m
+        context: 512
+        capabilities: [guard]
+        limits:
+          minute: { requests: 30, tokens: 15000 }
+          day: { requests: 14400, tokens: 500000 }
+      # Speech to text (LB-09's fast mode), on Groq's OpenAI-compatible transcription
+      # endpoint. Groq limits audio in seconds, not tokens: the free tier allows 20 requests
+      # a minute and 2,000 a day, 7,200 seconds of audio an hour and 28,800 a day (the
+      # 480 minutes of docs/STACK.md), checked against console.groq.com/docs/rate-limits on
+      # 2 Oct 2026. A request is billed at least 10 seconds, which the gateway counts too.
+      # `context` is Whisper's decoder window, kept for the record: no check uses it.
+      whisper-large-v3-turbo:
+        id: whisper-large-v3-turbo
+        context: 448
+        capabilities: [transcription]
+        limits:
+          minute: { requests: 20 }
+          hour: { audioSeconds: 7200 }
+          day: { requests: 2000, audioSeconds: 28800 }
+
+  workers-ai:
+    name: Cloudflare Workers AI
+    baseUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
+    # Workers AI's own endpoint, for the reranker its OpenAI-compatible API doesn't cover.
+    runUrl: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run
+    keyEnv: CLOUDFLARE_API_TOKEN
+    trainsOnInputs: false
+    terms: production
+    # Refuses an assistant turn whose content is null (a reply that only calls tools); the gateway sends "".
+    nullContent: false
+    # One free pool for every model: 10,000 Neurons a day, reset at 00:00 UTC. Each
+    # model below converts its tokens to Neurons at Cloudflare's published rates.
+    limits:
+      minute: { requests: 300 }
+      day: { neurons: 10000 }
+    models:
+      gpt-oss-120b:
+        id: '@cf/openai/gpt-oss-120b'
+        context: 128000
+        capabilities: [chat, tools]
+        neurons: { input: 31.818, output: 68.182 }
+      gpt-oss-20b:
+        id: '@cf/openai/gpt-oss-20b'
+        context: 128000
+        capabilities: [chat, tools]
+        neurons: { input: 18.182, output: 27.273 }
+      glm-4.7-flash:
+        id: '@cf/zai-org/glm-4.7-flash'
+        context: 131072
+        capabilities: [chat, tools]
+        neurons: { input: 5.5, output: 36.4 }
+      llama-4-scout:
+        id: '@cf/meta/llama-4-scout-17b-16e-instruct'
+        context: 131000
+        capabilities: [chat, tools, vision]
+        neurons: { input: 24.545, output: 77.273 }
+      gemma-4-26b:
+        id: '@cf/google/gemma-4-26b-a4b-it'
+        context: 256000
+        capabilities: [chat, tools, vision]
+        neurons: { input: 9.091, output: 27.273 }
+      bge-m3:
+        id: '@cf/baai/bge-m3'
+        context: 60000
+        capabilities: [embedding]
+        neurons: { input: 1.075, output: 0 }
+      # The only reranker Workers AI offers. It reads English and Chinese, so callers
+      # rerank in English. Its scores are raw logits; the gateway maps them to 0 to 1.
+      bge-reranker-base:
+        id: '@cf/baai/bge-reranker-base'
+        context: 512
+        capabilities: [rerank]
+        neurons: { input: 0.283, output: 0 }
+        scores: logits
+      # Speech to text, the fallback behind Groq. Cloudflare prices it at 46.63 Neurons a
+      # minute of audio ($0.0005, developers.cloudflare.com/workers-ai/platform/pricing,
+      # checked 2 Oct 2026), so a minute-long recording costs about half a percent of the
+      # day's 10,000. It has no OpenAI-compatible transcription endpoint: it is called on
+      # `runUrl`, with the audio in base64, and answers with segments that the gateway reads
+      # into the same shape Groq's answer takes.
+      whisper-large-v3-turbo:
+        id: '@cf/openai/whisper-large-v3-turbo'
+        context: 448
+        capabilities: [transcription]
+        api: run
+        neuronsPerAudioMinute: 46.63
+
+  openrouter:
+    name: OpenRouter
+    baseUrl: https://openrouter.ai/api/v1
+    keyEnv: OPENROUTER_API_KEY
+    # Free models are served by several hosts, and some of them may train on inputs,
+    # so visitor content never comes here: synthetic samples only.
+    trainsOnInputs: true
+    terms: production
+    # Free-model limits for the whole account. The one-time $10 credit is bought
+    # (decision D9), which lifts the day limit from 50 to 1,000 for good: the tier
+    # follows credits ever purchased, not the balance. Resets at 00:00 UTC.
+    limits:
+      minute: { requests: 20 }
+      day: { requests: 1000 }
+    headers:
+      X-Title: Landry Bodjona portfolio
+    # qwen/qwen3.8-27b:free was dropped from OpenRouter's catalogue (it answered 404, 2026-10-07); only
+    # its paid variant is left, so lb-tools falls back to nemotron-3-super here instead.
+    models:
+      nemotron-3-super:
+        id: nvidia/nemotron-3-super-120b-a12b:free
+        context: 262144
+        capabilities: [chat, tools, json_schema, reasoning]
+      nemotron-3-ultra:
+        id: nvidia/nemotron-3-ultra-550b-a55b:free
+        context: 1000000
+        capabilities: [chat, tools, reasoning]
+      gemma-4-31b:
+        id: google/gemma-4-31b-it:free
+        context: 262144
+        capabilities: [chat, tools, vision]
+
+  nvidia:
+    name: NVIDIA API catalog
+    baseUrl: https://integrate.api.nvidia.com/v1
+    keyEnv: NVIDIA_API_KEY
+    # The trial terms record inputs and outputs and forbid production use: private
+    # experiments in the dev profile only, never visitor traffic.
+    trainsOnInputs: true
+    terms: dev-only
+    limits:
+      minute: { requests: 40 }
+    models:
+      nemotron-3-super:
+        id: nvidia/nemotron-3-super-120b-a12b
+        context: 131072
+        capabilities: [chat, tools]
+
+# Virtual models. Services ask for an alias; the gateway walks its chain in order,
+# skipping any model the request's data class, the terms profile, the budgets or the
+# circuit breaker rules out.
+aliases:
+  lb-fast:
+    description: Classification and short JSON
+    kind: chat
+    maxInputTokens: 3000
+    maxOutputTokens: 1024
+    timeouts: { firstTokenMs: 6000, responseMs: 15000 }
+    chain:
+      - groq/gpt-oss-20b
+      - workers-ai/gpt-oss-20b
+      - workers-ai/glm-4.7-flash
+
+  lb-tools:
+    description: Chat and tool calls
+    kind: chat
+    # Prompt plus answer stays under Groq's 8K tokens-per-minute limit.
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    chain:
+      - groq/gpt-oss-120b
+      - groq/qwen3.8-27b
+      - workers-ai/gpt-oss-120b
+      - openrouter/nemotron-3-super
+      - nvidia/nemotron-3-super
+
+  lb-reason:
+    description: SQL and planning
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 3072
+    timeouts: { responseMs: 45000 }
+    chain:
+      - groq/gpt-oss-120b
+      - workers-ai/gpt-oss-120b
+      - openrouter/nemotron-3-super
+      - nvidia/nemotron-3-super
+
+  lb-long:
+    description: Long documents
+    kind: chat
+    maxInputTokens: 60000
+    maxOutputTokens: 4096
+    timeouts: { firstTokenMs: 30000, responseMs: 90000, deadlineMs: 180000 }
+    # Synthetic samples use the 1M-token context first; visitor uploads can only reach
+    # Workers AI.
+    chain:
+      - openrouter/nemotron-3-ultra
+      - workers-ai/gpt-oss-120b
+
+  lb-vision:
+    description: Invoices and screenshots
+    kind: chat
+    maxInputTokens: 8000
+    maxOutputTokens: 2048
+    timeouts: { firstTokenMs: 15000, responseMs: 45000 }
+    chain:
+      - workers-ai/llama-4-scout
+      - workers-ai/gemma-4-26b
+      - openrouter/gemma-4-31b
+
+  lb-judge:
+    description: Nightly evaluation grading
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 1024
+    chain:
+      - groq/gpt-oss-120b
+      - workers-ai/gpt-oss-120b
+
+  lb-embed:
+    description: Retrieval embeddings
+    kind: embedding
+    maxInputTokens: 8000
+    timeouts: { responseMs: 15000 }
+    # Pinned: vectors from different models don't mix. When it fails, retrieval falls
+    # back to Postgres full-text search in the calling system.
+    chain:
+      - workers-ai/bge-m3
+
+  lb-rerank:
+    description: Relevance scores for retrieval
+    kind: rerank
+    # Per query and document together: the reranker reads 512 tokens at a time.
+    maxInputTokens: 480
+    timeouts: { responseMs: 15000 }
+    # When it fails, the calling system keeps the hybrid search's own order.
+    chain:
+      - workers-ai/bge-reranker-base
+
+  lb-guard:
+    description: Prompt-injection check on visitor text
+    kind: guard
+    # The whole text. The gateway reads it in overlapping segments that fit the
+    # classifier's window, one request each.
+    maxInputTokens: 800
+    # Flag at an injection probability of 0.9, the block threshold of Meta's own
+    # LlamaFirewall. Eval Lab's red-team golden set will tune it.
+    threshold: 0.9
+    timeouts: { responseMs: 10000 }
+    chain:
+      - groq/llama-prompt-guard-2-86m
+      - groq/llama-prompt-guard-2-22m
+
+  lb-stt:
+    description: Speech to text for a recording of up to a minute (LB-09's fast mode)
+    kind: transcription
+    # Measured from the recording's own bytes (the route takes only 16-bit mono 16 kHz WAV,
+    # so a second is exactly 32,000 bytes), never from what the caller says about it. LB-09
+    # refuses anything longer on its own, from the audio it decoded, so this is the second line.
+    maxAudioSeconds: 60
+    # Groq transcribes a minute in about a second; Workers AI takes longer, and the first
+    # attempt must leave it time inside the call's deadline.
+    timeouts: { responseMs: 25000 }
+    # Private mode (faster-whisper on our own server) is not a route here: it never calls the
+    # gateway, so the audio never leaves the box.
+    chain:
+      - groq/whisper-large-v3-turbo
+      - workers-ai/whisper-large-v3-turbo
+
+  # Eval Lab's pinned aliases (LB-10, docs/STACK.md). An eval is about one model, so each of these has a
+  # chain of one: no fallback, and a call that fails is a failed call, never a different model's answer.
+  # There is one for every model on the lb-fast, lb-tools and lb-reason chains that LB-10 can score, so
+  # each fallback can be measured on its own. Only the flask-systems service may use them (the loader
+  # refuses a system of another service that lists one), through LB-10. The OpenRouter alias is
+  # synthetic only: that provider may train on inputs, so a visitor's prompt can never reach it, and
+  # it serves the curated nightly runs and CI. The sizes are lb-tools': a prompt plus its answer stays
+  # under Groq's 8K tokens a minute.
+  lb-eval-groq-120b:
+    description: Eval Lab, Groq gpt-oss-120b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/gpt-oss-120b
+
+  lb-eval-groq-20b:
+    description: Eval Lab, Groq gpt-oss-20b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/gpt-oss-20b
+
+  # A Groq preview model: it can be withdrawn at short notice, and its score is only as good as that.
+  lb-eval-groq-qwen:
+    description: Eval Lab, Groq qwen3.8-27b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - groq/qwen3.8-27b
+
+  lb-eval-cf-120b:
+    description: Eval Lab, Workers AI gpt-oss-120b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/gpt-oss-120b
+
+  lb-eval-cf-20b:
+    description: Eval Lab, Workers AI gpt-oss-20b, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/gpt-oss-20b
+
+  lb-eval-cf-glm:
+    description: Eval Lab, Workers AI glm-4.7-flash, pinned
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    services: [flask-systems]
+    chain:
+      - workers-ai/glm-4.7-flash
+
+  lb-eval-or-nemotron:
+    description: Eval Lab, OpenRouter nemotron-3-super, pinned, synthetic content only
+    kind: chat
+    maxInputTokens: 4000
+    maxOutputTokens: 2048
+    # Free OpenRouter models queue: they are given longer than the Groq and Workers AI ones.
+    timeouts: { responseMs: 60000 }
+    services: [flask-systems]
+    syntheticOnly: true
+    chain:
+      - openrouter/nemotron-3-super
+
+# The systems allowed to spend model calls, the service that calls for each, and
+# their quotas. A system joins this list in the same change that builds it
+# (docs/PLAYBOOK.md, Building one system, step 4).
+systems:
+  lb-01:
+    name: Support Desk Agent
+    service: django-systems
+    aliases: [lb-fast, lb-tools, lb-embed, lb-rerank, lb-guard]
+    # A ticket costs a guard check, a query embedding, a rerank and two chat calls
+    # (classify, draft), plus a third when a malformed answer gets its one repair. The
+    # order lookup is a tool the pipeline runs on its own database, with no model call.
+    # The cap leaves one call spare.
+    maxCallsPerRun: 7
+    # 20 tickets per visitor per day (the LB-01 datasheet), at up to 7 calls each.
+    sessionDailyCalls: 140
+    # 50 custom tickets a day. The guard, embedding and rerank calls run on budgets of
+    # their own; the chat calls stay within LB-01's share of the roughly 330 visitor
+    # calls a day Groq and Workers AI carry (docs/STACK.md, Capacity), rebalanced as
+    # each system ships.
+    dailyCalls: 350
+
+  lb-02:
+    name: Booking Concierge
+    service: django-systems
+    aliases: [lb-fast, lb-tools, lb-guard]
+    # A booking takes 7 calls: an injection check for each of the three messages the
+    # visitor writes (lb-guard), and four lb-tools calls (the details and the search, the
+    # answer that offers the slots, the hold, the confirmation). The hold and the
+    # confirmation are receipts the code writes itself, so they cost no second call. The
+    # datasheet's 6 to 10 leaves room for a changed mind. A conversation is held to 30
+    # messages, which at a check and a reply each is 60 calls: the service stops at 64
+    # and hands the visitor to a person (lb02/limits.py), so the cap here sits four calls
+    # above it and the gateway never refuses a call halfway through a turn.
+    maxCallsPerRun: 68
+    # Two conversations of 30 messages, or about eighteen bookings. A visitor may start
+    # ten conversations a day.
+    sessionDailyCalls: 128
+    # 25 bookings a day at 7 calls (175), plus the owner's golden-set run, which is
+    # synthetic and takes at most 247 calls (`just eval-lb02`; the sum of the cases' own
+    # ceilings). The guard calls run on a budget of their own; the chat calls stay within
+    # LB-02's share of the roughly 330 visitor calls a day (docs/STACK.md, Capacity),
+    # rebalanced as each system ships.
+    dailyCalls: 425
+  lb-05:
+    name: Data Analyst
+    service: flask-systems
+    aliases: [lb-reason, lb-fast]
+    # A question costs two chat calls (write the SQL on lb-reason, explain the result on
+    # lb-fast), a third when its first query is a mistake the checks can describe and it
+    # gets its one self-correction, and a fourth when a reply is not valid JSON and gets
+    # its one repair. Resolving metrics, the SQL checks and the chart need no model. The
+    # pipeline stops itself at five calls, so the cap is a second line, not the first.
+    maxCallsPerRun: 5
+    # 25 questions per visitor per day (the LB-05 datasheet), at up to 5 calls each. The
+    # service counts the 25 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 125
+    # About 50 custom questions a day at three calls each. The seven curated samples are
+    # cached and cost nothing. Together with LB-01 this is more than the roughly 330
+    # visitor calls a day the free tiers carry (docs/STACK.md, Capacity): these are
+    # ceilings, to be rebalanced from measured use once the systems run live.
+    dailyCalls: 150
+  lb-08:
+    name: Automation Studio
+    service: node-systems
+    aliases: [lb-tools]
+    # Describing a process costs one lb-tools call, plus a second when the first answer
+    # fails validation and gets its one repair. Everything after that (validation, the
+    # workflow engine, the sandboxed connectors, retries, replay) is the service's own code
+    # and database, with no model call. The cap leaves one call spare.
+    maxCallsPerRun: 3
+    # 10 described workflows per visitor per day (the LB-08 datasheet: 10 runs a day, 1 to 3
+    # calls each), at up to 3 calls each. Samples are ready-made graphs and cost nothing.
+    sessionDailyCalls: 30
+    # 40 custom descriptions a day at up to 2 calls each, and one full pass of the golden
+    # set (39 cases, at most 2 calls each) when a prompt changes. Rebalanced as each system
+    # ships (docs/STACK.md, Capacity).
+    dailyCalls: 160
+  lb-03:
+    name: Invoice Reader
+    service: flask-systems
+    aliases: [lb-fast, lb-vision, lb-guard]
+    # A document costs an injection check for each 2,800 characters of its text (one for almost
+    # every invoice, two at most: the service cuts longer text at 5,600), the extraction (lb-fast
+    # on the text, lb-vision with the picture for a photo), a second extraction call when the first
+    # reply is not the JSON asked for, and one targeted repair when a check fails. A clean
+    # document costs two calls. OCR, the arithmetic, the boxes, the duplicate check and the journal
+    # entry are the service's own code and need no model. The pipeline stops itself at five calls
+    # (lb03/limits.py), so this cap is a second line behind it.
+    maxCallsPerRun: 5
+    # 10 documents per visitor per day (the LB-03 datasheet), at up to 5 calls each. The service
+    # counts the 10 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 50
+    # About 30 custom documents a day at two to three calls each, and a pass of the golden set
+    # (43 documents; a clean one costs 2 calls, at most 5, `just eval-lb03`) when a prompt changes.
+    # The six samples are replayed from recordings and cost nothing. These are ceilings, to be rebalanced from
+    # measured use once the systems run live (docs/STACK.md, Capacity).
+    dailyCalls: 250
+  lb-04:
+    name: Contract Radar
+    service: node-systems
+    aliases: [lb-long, lb-reason, lb-fast, lb-guard]
+    # A contract costs an injection check on what it says to its reviewer (lb-guard), the
+    # cited analysis of the whole text (lb-long) and the rating of what the server verified
+    # (lb-reason): three calls, a fourth and a fifth when an answer fails its schema and gets
+    # its one repair, and none for the rating when there is nothing to rate. Each redline a
+    # visitor asks for is one lb-fast call with no repair (an answer that fails its schema is
+    # replaced by the playbook's own wording), at most three a contract: eight calls in all.
+    # The service holds itself to eight, so the cap is a second line, not the first.
+    maxCallsPerRun: 8
+    # 3 contracts per visitor per day (the LB-04 datasheet), at up to 8 calls each. The
+    # service counts the 3 itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 24
+    # About 25 custom contracts a day at five calls each, and one full pass of the golden set
+    # (four contracts a pass, at most five calls and one redline each) when a prompt changes.
+    # The call count is not the limit that binds: a 30-page contract is about 50,000 input
+    # tokens, which on Workers AI (the only provider a visitor's upload may reach) is about
+    # 1,900 of its 10,000 daily Neurons, so five of them spend the pool and the route answers
+    # `budget_exhausted` (the demo then says so, and the samples go on working).
+    dailyCalls: 160
+  lb-09:
+    name: Meeting Recorder
+    service: django-systems
+    aliases: [lb-stt, lb-fast, lb-tools]
+    # A meeting costs the transcription (fast mode only; private mode never calls the gateway)
+    # and two chat calls: the speaker labels on lb-fast and the extraction on lb-tools, plus
+    # one repair of each answer that doesn't fit its schema. The alignment of every item with
+    # the transcript is the service's own code, with no model call. The service stops itself
+    # at four chat calls (lb09/limits.py), so the cap sits one call above it and the gateway
+    # never refuses a meeting halfway.
+    maxCallsPerRun: 6
+    # 5 recordings per visitor per day (the LB-09 datasheet) at up to 5 calls each, with a
+    # little room for a repair on each.
+    sessionDailyCalls: 30
+    # 40 visitor meetings a day at up to 5 calls each (200), plus one full pass of the golden
+    # set (6 cases at up to 4 chat calls) when a prompt changes, and the word-error-rate run on
+    # the six committed recordings. Rebalanced as each system ships (docs/STACK.md, Capacity).
+    dailyCalls: 240
+
+  lb-06:
+    name: Incident Commander
+    service: node-systems
+    aliases: [lb-reason, lb-tools, lb-guard]
+    # An incident costs the injection screen on the visitor's own words, when there are any
+    # (lb-guard, 1), the commander's plan (lb-reason, 1), the three specialists' turns (lb-tools,
+    # at most 2 each: one that may call the read-only tools the server runs, and a last one that
+    # must answer), the ranking with its proposal (lb-reason, 1) and the postmortem's prose
+    # (lb-reason, 1): 9 or 10 calls on a clean run, plus one repair for any answer that fails its
+    # schema, and one more ranking for each proposal the visitor rejects or that does not bring
+    # the SLO back. The orchestrator stops asking at 15 (the datasheet's step cap) and never asks
+    # the model to count; the gateway's cap is the second line behind it.
+    maxCallsPerRun: 15
+    # 1 incident per visitor per day (the LB-06 datasheet), at up to 15 calls.
+    sessionDailyCalls: 15
+    # About 10 custom incidents a day at the cap, and one full pass of the golden set (eight
+    # incidents, about 72 calls) when a prompt changes. A curated sample's agents' work is cached
+    # by scenario after its first run, so the samples spend nothing after that.
+    dailyCalls: 230
+  lb-07:
+    name: QA Engineer
+    service: node-systems
+    aliases: [lb-tools, lb-guard]
+    # A run costs an injection check of a visitor's own goal (lb-guard; a curated sample's goal is
+    # the owner's and is not checked), the plan of the whole test in one lb-tools call (a second when
+    # the first answer fails the plan schema and gets its one repair), one lb-tools call for each
+    # re-plan after a step failed (at most two, with no repair), and the bug reports' prose (one
+    # call, a second with its repair; none when code found nothing). Running the plan in the browser,
+    # the findings (expectations, the console, failed requests, axe), the generated test and its
+    # red-then-green verification are the service's own code and cost no call. That is at most
+    # seven; the cap leaves one spare.
+    maxCallsPerRun: 8
+    # 2 runs per visitor per day (the LB-07 datasheet), at up to 8 calls each.
+    sessionDailyCalls: 16
+    # About 15 custom runs a day at up to 7 calls each, and one full pass of the golden set (eleven
+    # cases, at most 7 calls each) when a prompt changes. Rebalanced as each system ships
+    # (docs/STACK.md, Capacity).
+    dailyCalls: 200
+
+  lb-10:
+    name: Eval Lab
+    service: flask-systems
+    # The seven pinned eval aliases, and lb-judge for the nightly LLM judge. Visitor runs may only reach
+    # the Groq and Workers AI ones: the service offers no other, and the OpenRouter one refuses visitor
+    # content here as well.
+    aliases: [lb-eval-groq-120b, lb-eval-groq-20b, lb-eval-groq-qwen, lb-eval-cf-120b, lb-eval-cf-20b, lb-eval-cf-glm, lb-eval-or-nemotron, lb-judge]
+    # A visitor run is the 10 cases of the sample on the edited prompt, once for each of up to two
+    # providers (20 calls), plus the production prompt's 10 cases for each provider whose baseline is
+    # not cached yet (up to 20 more, once for everybody). A malformed answer is graded as it is and never
+    # repaired, so no call is spent twice. The cap is exactly that worst case.
+    maxCallsPerRun: 40
+    # One run per visitor per day (the LB-10 datasheet), at up to 40 calls. The service counts the run
+    # itself; this is the gateway's second line behind it.
+    sessionDailyCalls: 40
+    # At most 12 visitor runs a day at about 20 calls (240), the nightly runs on OpenRouter (two aliases,
+    # five packs, ten cases: 100), CI's gate (five packs, twenty cases: 100) and the judge (about 60).
+    # Groq and Workers AI carry the visitors; the budgets of their models are the hard cap, and this is
+    # a ceiling to be rebalanced from measured use (docs/STACK.md, Capacity).
+    dailyCalls: 600
+
+# The services that read run traces and do nothing else: the site's server, for the Scope
+# (GET /v1/runs/{runId}/spans). A reader may read the runs of the systems it lists, and it
+# owns no system above, so the model routes refuse it (system_not_allowed); a service that
+# owns a system never reads traces (permission_denied). `pnpm check` fails when a reader
+# owns a system or names one that isn't listed above. A system joins a reader's list in
+# the change that builds its demo.
+traceReaders:
+  web:
+    name: The site's server (the Scope)
+    systems: [lb-01, lb-02, lb-05, lb-08, lb-03, lb-04, lb-06, lb-07, lb-09, lb-10]

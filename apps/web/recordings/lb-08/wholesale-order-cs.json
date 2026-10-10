@@ -1,0 +1,693 @@
+{
+  "v": 1,
+  "system": "lb-08",
+  "sample": "wholesale-order-cs",
+  "origin": "live",
+  "recordedAt": "2026-10-07T11:44:00.959Z",
+  "language": "cs",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows",
+        "body": {
+          "from": "sample",
+          "sampleId": "wholesale-order-cs"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "42e7bae9-42d0-43b5-acce-a082ebbd7eea",
+          "name": "Velkoobchodní objednávka nad 500 €",
+          "version": 1,
+          "createdAt": "2026-10-07T11:43:59.795Z",
+          "updatedAt": "2026-10-07T11:43:59.795Z",
+          "expiresAt": "2026-10-08T11:43:59.795Z",
+          "description": null,
+          "graph": {
+            "name": "Velkoobchodní objednávka nad 500 €",
+            "nodes": [
+              {
+                "id": "order_received",
+                "label": "Přišla velkoobchodní objednávka",
+                "type": "trigger",
+                "event": "wholesale_order"
+              },
+              {
+                "id": "big_order",
+                "label": "Objednávka nad 500 €?",
+                "type": "condition",
+                "field": "trigger.totalEur",
+                "op": "gt",
+                "value": 500
+              },
+              {
+                "id": "check_stock",
+                "label": "Zkontrolovat sklad",
+                "type": "action",
+                "connector": "stock_check",
+                "params": {
+                  "sku": "{{trigger.sku}}",
+                  "quantityKg": "{{trigger.quantityKg}}"
+                }
+              },
+              {
+                "id": "alert_roastery",
+                "label": "Upozornit pražírnu",
+                "type": "action",
+                "connector": "slack_alert",
+                "params": {
+                  "channel": "#roastery",
+                  "message": "Velkoobchodní objednávka {{trigger.orderId}} od {{trigger.cafe}}: {{trigger.quantityKg}} kg, {{check_stock.productName}} ({{trigger.totalEur}} €)."
+                }
+              },
+              {
+                "id": "email_cafe",
+                "label": "E-mail kavárně",
+                "type": "action",
+                "connector": "email",
+                "params": {
+                  "to": "customer",
+                  "subject": "Vaše objednávka {{trigger.orderId}}",
+                  "body": "Děkujeme za objednávku. Předpokládaná doba dodání ve dnech: {{check_stock.etaDays}}."
+                }
+              }
+            ],
+            "edges": [
+              {
+                "from": "order_received",
+                "to": "big_order"
+              },
+              {
+                "from": "big_order",
+                "to": "check_stock",
+                "branch": "true"
+              },
+              {
+                "from": "check_stock",
+                "to": "alert_roastery"
+              },
+              {
+                "from": "check_stock",
+                "to": "email_cafe"
+              }
+            ]
+          },
+          "versions": [
+            {
+              "version": 1,
+              "origin": "sample",
+              "createdAt": "2026-10-07T11:43:59.795Z",
+              "modelCalls": 0,
+              "traceRunId": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb08/workflows/42e7bae9-42d0-43b5-acce-a082ebbd7eea/runs",
+        "body": {
+          "input": {
+            "orderId": "WO-2042",
+            "cafe": "Kavárna U Mostu",
+            "contactEmail": "objednavky@umostu.test",
+            "totalEur": 820,
+            "sku": "huila-espresso-1kg",
+            "quantityKg": 15
+          }
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+          "workflowId": "42e7bae9-42d0-43b5-acce-a082ebbd7eea",
+          "workflowName": "Velkoobchodní objednávka nad 500 €",
+          "version": 1,
+          "rootRunId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+          "replayOf": null,
+          "status": "queued",
+          "createdAt": "2026-10-07T11:43:59.836Z",
+          "finishedAt": null,
+          "input": {
+            "sku": "huila-espresso-1kg",
+            "cafe": "Kavárna U Mostu",
+            "orderId": "WO-2042",
+            "totalEur": 820,
+            "quantityKg": 15,
+            "contactEmail": "objednavky@umostu.test"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "order_received",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "huila-espresso-1kg",
+                "cafe": "Kavárna U Mostu",
+                "orderId": "WO-2042",
+                "totalEur": 820,
+                "quantityKg": 15,
+                "contactEmail": "objednavky@umostu.test"
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.836Z",
+              "finishedAt": "2026-10-07T11:43:59.836Z"
+            },
+            {
+              "nodeId": "big_order",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "branch": "true",
+                "checked": 820
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.836Z",
+              "finishedAt": "2026-10-07T11:43:59.836Z"
+            },
+            {
+              "nodeId": "check_stock",
+              "status": "queued",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "alert_roastery",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            },
+            {
+              "nodeId": "email_cafe",
+              "status": "pending",
+              "attempts": 0,
+              "output": null,
+              "error": null,
+              "startedAt": null,
+              "finishedAt": null
+            }
+          ],
+          "events": [
+            {
+              "seq": 1,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null
+            },
+            {
+              "seq": 2,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "order_received",
+              "attempt": 0,
+              "output": {
+                "sku": "huila-espresso-1kg",
+                "cafe": "Kavárna U Mostu",
+                "orderId": "WO-2042",
+                "totalEur": 820,
+                "quantityKg": 15,
+                "contactEmail": "objednavky@umostu.test"
+              }
+            },
+            {
+              "seq": 3,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "big_order",
+              "attempt": 0,
+              "output": {
+                "branch": "true",
+                "checked": 820
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/0f55c053-fb91-4a7e-9b66-11fb2e0449fc/events"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "succeeded",
+          "events": [
+            {
+              "seq": 4,
+              "at": "2026-10-07T11:43:59.862Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.started"
+            },
+            {
+              "seq": 5,
+              "at": "2026-10-07T11:43:59.862Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "check_stock",
+              "attempt": 1
+            },
+            {
+              "seq": 6,
+              "at": "2026-10-07T11:43:59.908Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "output": {
+                "etaDays": 2,
+                "inStock": true,
+                "availableKg": 64,
+                "productName": "Colombia Huila Espresso 1 kg"
+              }
+            },
+            {
+              "seq": 7,
+              "at": "2026-10-07T11:43:59.920Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 1
+            },
+            {
+              "seq": 8,
+              "at": "2026-10-07T11:43:59.928Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "email_cafe",
+              "attempt": 1
+            },
+            {
+              "seq": 9,
+              "at": "2026-10-07T11:43:59.946Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "effect.sent",
+              "nodeId": "alert_roastery",
+              "connector": "slack_alert",
+              "messageId": "msg-aaf1a88b"
+            },
+            {
+              "seq": 10,
+              "at": "2026-10-07T11:43:59.946Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-aaf1a88b"
+              }
+            },
+            {
+              "seq": 11,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "effect.sent",
+              "nodeId": "email_cafe",
+              "connector": "email",
+              "messageId": "msg-f8d27a59"
+            },
+            {
+              "seq": 12,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-f8d27a59"
+              }
+            },
+            {
+              "seq": 13,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.succeeded"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/runs/0f55c053-fb91-4a7e-9b66-11fb2e0449fc"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+          "workflowId": "42e7bae9-42d0-43b5-acce-a082ebbd7eea",
+          "workflowName": "Velkoobchodní objednávka nad 500 €",
+          "version": 1,
+          "rootRunId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+          "replayOf": null,
+          "status": "succeeded",
+          "createdAt": "2026-10-07T11:43:59.836Z",
+          "finishedAt": "2026-10-07T11:43:59.957Z",
+          "input": {
+            "sku": "huila-espresso-1kg",
+            "cafe": "Kavárna U Mostu",
+            "orderId": "WO-2042",
+            "totalEur": 820,
+            "quantityKg": 15,
+            "contactEmail": "objednavky@umostu.test"
+          },
+          "replayedBy": null,
+          "steps": [
+            {
+              "nodeId": "order_received",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "sku": "huila-espresso-1kg",
+                "cafe": "Kavárna U Mostu",
+                "orderId": "WO-2042",
+                "totalEur": 820,
+                "quantityKg": 15,
+                "contactEmail": "objednavky@umostu.test"
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.836Z",
+              "finishedAt": "2026-10-07T11:43:59.836Z"
+            },
+            {
+              "nodeId": "big_order",
+              "status": "succeeded",
+              "attempts": 0,
+              "output": {
+                "branch": "true",
+                "checked": 820
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.836Z",
+              "finishedAt": "2026-10-07T11:43:59.836Z"
+            },
+            {
+              "nodeId": "check_stock",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "etaDays": 2,
+                "inStock": true,
+                "availableKg": 64,
+                "productName": "Colombia Huila Espresso 1 kg"
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.862Z",
+              "finishedAt": "2026-10-07T11:43:59.908Z"
+            },
+            {
+              "nodeId": "alert_roastery",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-aaf1a88b"
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.920Z",
+              "finishedAt": "2026-10-07T11:43:59.946Z"
+            },
+            {
+              "nodeId": "email_cafe",
+              "status": "succeeded",
+              "attempts": 1,
+              "output": {
+                "messageId": "msg-f8d27a59"
+              },
+              "error": null,
+              "startedAt": "2026-10-07T11:43:59.928Z",
+              "finishedAt": "2026-10-07T11:43:59.957Z"
+            }
+          ],
+          "events": [
+            {
+              "seq": 1,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.queued",
+              "version": 1,
+              "replayOf": null
+            },
+            {
+              "seq": 2,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "order_received",
+              "attempt": 0,
+              "output": {
+                "sku": "huila-espresso-1kg",
+                "cafe": "Kavárna U Mostu",
+                "orderId": "WO-2042",
+                "totalEur": 820,
+                "quantityKg": 15,
+                "contactEmail": "objednavky@umostu.test"
+              }
+            },
+            {
+              "seq": 3,
+              "at": "2026-10-07T11:43:59.836Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "big_order",
+              "attempt": 0,
+              "output": {
+                "branch": "true",
+                "checked": 820
+              }
+            },
+            {
+              "seq": 4,
+              "at": "2026-10-07T11:43:59.862Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.started"
+            },
+            {
+              "seq": 5,
+              "at": "2026-10-07T11:43:59.862Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "check_stock",
+              "attempt": 1
+            },
+            {
+              "seq": 6,
+              "at": "2026-10-07T11:43:59.908Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "check_stock",
+              "attempt": 1,
+              "output": {
+                "etaDays": 2,
+                "inStock": true,
+                "availableKg": 64,
+                "productName": "Colombia Huila Espresso 1 kg"
+              }
+            },
+            {
+              "seq": 7,
+              "at": "2026-10-07T11:43:59.920Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "alert_roastery",
+              "attempt": 1
+            },
+            {
+              "seq": 8,
+              "at": "2026-10-07T11:43:59.928Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.started",
+              "nodeId": "email_cafe",
+              "attempt": 1
+            },
+            {
+              "seq": 9,
+              "at": "2026-10-07T11:43:59.946Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "effect.sent",
+              "nodeId": "alert_roastery",
+              "connector": "slack_alert",
+              "messageId": "msg-aaf1a88b"
+            },
+            {
+              "seq": 10,
+              "at": "2026-10-07T11:43:59.946Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "alert_roastery",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-aaf1a88b"
+              }
+            },
+            {
+              "seq": 11,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "effect.sent",
+              "nodeId": "email_cafe",
+              "connector": "email",
+              "messageId": "msg-f8d27a59"
+            },
+            {
+              "seq": 12,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "step.succeeded",
+              "nodeId": "email_cafe",
+              "attempt": 1,
+              "output": {
+                "messageId": "msg-f8d27a59"
+              }
+            },
+            {
+              "seq": 13,
+              "at": "2026-10-07T11:43:59.957Z",
+              "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+              "type": "run.succeeded"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/sent"
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": "f8d27a59-bdce-4b78-b74a-3731b9c7a7f5",
+            "connector": "email",
+            "nodeId": "email_cafe",
+            "rootRunId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+            "payload": {
+              "to": "objednavky@umostu.test",
+              "body": "Děkujeme za objednávku. Předpokládaná doba dodání ve dnech: 2.",
+              "subject": "Vaše objednávka WO-2042"
+            },
+            "sentAt": "2026-10-07T11:43:59.949Z"
+          },
+          {
+            "id": "aaf1a88b-fee2-40fc-838d-53295d75bdb7",
+            "connector": "slack_alert",
+            "nodeId": "alert_roastery",
+            "rootRunId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+            "payload": {
+              "channel": "#roastery",
+              "message": "Velkoobchodní objednávka WO-2042 od Kavárna U Mostu: 15 kg, Colombia Huila Espresso 1 kg (820 €)."
+            },
+            "sentAt": "2026-10-07T11:43:59.940Z"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb08/dead-letters"
+      },
+      "response": {
+        "status": 200,
+        "body": []
+      }
+    }
+  ],
+  "trace": {
+    "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+        "system": "lb-08",
+        "spanId": "1265c98732417da9",
+        "parentId": "53f5981b4a40c568",
+        "kind": "system.step",
+        "name": "step.check_stock",
+        "status": "ok",
+        "startMs": 1791373439895,
+        "endMs": 1791373439900,
+        "attrs": {
+          "connector": "stock_check",
+          "attempt": 1,
+          "outcome": "read"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+        "system": "lb-08",
+        "spanId": "871c073ae840569b",
+        "parentId": "53f5981b4a40c568",
+        "kind": "system.step",
+        "name": "step.alert_roastery",
+        "status": "ok",
+        "startMs": 1791373439934,
+        "endMs": 1791373439941,
+        "attrs": {
+          "connector": "slack_alert",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+        "system": "lb-08",
+        "spanId": "3939623a419c9426",
+        "parentId": "53f5981b4a40c568",
+        "kind": "system.step",
+        "name": "step.email_cafe",
+        "status": "ok",
+        "startMs": 1791373439943,
+        "endMs": 1791373439951,
+        "attrs": {
+          "connector": "email",
+          "attempt": 1,
+          "outcome": "sent"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "0f55c053-fb91-4a7e-9b66-11fb2e0449fc",
+        "system": "lb-08",
+        "spanId": "53f5981b4a40c568",
+        "kind": "system.run",
+        "name": "workflow run",
+        "status": "ok",
+        "startMs": 1791373439836,
+        "endMs": 1791373439957,
+        "attrs": {
+          "outcome": "succeeded",
+          "steps": 5,
+          "attempts": 3,
+          "replay": false
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 0,
+    "steps": 3,
+    "durationMs": 121
+  }
+}

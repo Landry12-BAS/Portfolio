@@ -1,0 +1,20 @@
+# SOPS settings: who can decrypt the files in infra/secrets (see infra/secrets/README.md).
+#
+# Every file there is encrypted to each public age key listed at the end of this file, and
+# any one of the matching private keys opens it. The list starts empty and fails closed:
+# SOPS refuses to encrypt anything until a key is listed. Two keys belong here:
+#
+#   owner  made by `just secrets-init`, which keeps the private half OUTSIDE the repository
+#          (~/.config/sops/age/keys.txt) and lists only the public half
+#   box    made on the VM in part 4 of docs/DEPLOY.md; `just secrets-add-recipient box <key>`
+#          lists it and re-encrypts every file, so the deploy can decrypt them on the box
+#
+# List the owner's key first: `just secrets-init` lists it only while the list is empty, and
+# a file made while the box's key is the only one listed could be opened by the box alone.
+#
+# A public key is not a secret. A private key (AGE-SECRET-KEY-...) never goes in this file.
+creation_rules:
+  - path_regex: ^infra/secrets/[^/]+\.enc\.env$
+    key_groups:
+      - age:
+          # One recipient per line, written as "- <public key>  # <who it belongs to>".

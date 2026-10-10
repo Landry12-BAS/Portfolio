@@ -1,0 +1,322 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege (docs/SECURITY.md, section 7): CI only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NUXT_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  web:
+    name: Lint, types and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    # The gateway's and the Node systems' integration tests need Redis, and the Node systems'
+    # also Postgres with pgvector: the versions production runs, as in the python job. Each
+    # test file makes a database and a key prefix of its own on them.
+    services:
+      redis:
+        image: redis:8.10-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: lb
+          POSTGRES_PASSWORD: lb-ci-only
+          POSTGRES_DB: lb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lb"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      LB_TEST_REDIS_URL: redis://127.0.0.1:6379
+      LB_TEST_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+    steps:
+      # Actions are pinned by commit SHA; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - name: No high or critical advisories in dependencies
+        run: pnpm audit --audit-level high
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Generated files are up to date
+        run: pnpm check
+
+      # The production build must hold no trace of the stand-in the test build accepts in place of a
+      # Turnstile token, and the same check must find it in the test build, or it looks at nothing.
+      - run: pnpm --filter @lb/web build
+      - name: The production build holds no trace of the test build's Turnstile stand-in
+        run: pnpm --filter @lb/web check:build
+      - run: pnpm --filter @lb/web build:e2e
+      - name: The check does find the stand-in in the test build
+        run: pnpm --filter @lb/web exec node scripts/check-production-build.ts .output-e2e --expect-test-code
+
+  # The end-to-end suite is the longest thing CI runs (over 500 journeys and axe checks, about twenty minutes on
+  # four cores, and it grows with every board), so it runs in shards, each on its own runner, against its own copy
+  # of the test build and the mock back end. A shard needs nothing but the site: no Redis, no Postgres.
+  e2e:
+    name: End-to-end, accessibility and security headers (${{ matrix.shard }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { index: 1, shard: 1/4 }
+          - { index: 2, shard: 2/4 }
+          - { index: 3, shard: 3/4 }
+          - { index: 4, shard: 4/4 }
+    steps:
+      # Actions are pinned by commit SHA; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lb/web build:e2e
+      - run: pnpm --filter @lb/web exec playwright install --with-deps chromium
+      - name: End-to-end, accessibility and security headers, against the test build and the mock back end
+        run: pnpm --filter @lb/web exec playwright test --shard=${{ matrix.shard }}
+
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report-${{ matrix.index }}
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  python:
+    name: Python lint, types and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # The Python integration tests, and the real gateway the contract tests start, need
+    # a Redis. The version matches the gateway's own integration tests. The Django and
+    # Flask tests need Postgres with pgvector, the version production runs; the Flask
+    # tests make a database of their own on it and drop it, so the user needs CREATEDB.
+    services:
+      redis:
+        image: redis:8.10-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: lb
+          POSTGRES_PASSWORD: lb-ci-only
+          POSTGRES_DB: lb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lb"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      LB_TEST_REDIS_URL: redis://127.0.0.1:6379
+      LB_TEST_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+      # Every uv command fails rather than change uv.lock.
+      UV_LOCKED: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Node runs the real gateway for the contract tests.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      # Pinned to the version that wrote uv.lock; uv then fetches Python 3.13 (.python-version).
+      - name: Install uv
+        run: pipx install uv==0.12.19
+      - run: uv sync
+      - name: No known vulnerabilities in Python dependencies
+        run: uv audit --preview-features audit-command
+      - run: uv run ruff check python scripts services/django-systems services/flask-systems infra
+      - run: uv run ruff format --check python scripts services/django-systems services/flask-systems infra
+      - name: Every module, class and function has a docstring
+        run: uv run python scripts/check_docstrings.py
+      - run: uv run mypy python/lb-common scripts infra/docker/python-healthcheck.py infra/caddy/test-upstream.py
+      - name: Django systems type-check, with the Django plugin
+        run: uv run --directory services/django-systems mypy .
+      - name: Flask systems type-check, with the image's data job that imports the service
+        run: uv run --directory services/flask-systems mypy . ../../infra/docker/flask-seed.py
+      - name: Unit, integration and gateway contract tests
+        run: uv run pytest
+      - name: Django systems migrations match their models
+        working-directory: services/django-systems
+        env:
+          DJANGO_SETTINGS_MODULE: config.test_settings
+          LB_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Django systems unit and integration tests
+        run: uv run --directory services/django-systems pytest
+      - name: Eval packs match the production prompts and golden sets (LB-01, LB-02, LB-05)
+        env:
+          DJANGO_SETTINGS_MODULE: config.test_settings
+          LB_DATABASE_URL: postgres://lb:lb-ci-only@127.0.0.1:5432/lb
+          FLASK_ALLOWED_HOSTS: localhost
+          LB_REDIS_URL: redis://127.0.0.1:6379/0
+        run: |
+          uv run --directory services/django-systems python manage.py export_packs_lb01 --check
+          uv run --directory services/django-systems python manage.py export_pack_lb02 --check
+          uv run --directory services/flask-systems python manage.py export_pack_lb05 --check
+      - name: Flask systems unit and integration tests
+        run: uv run --directory services/flask-systems pytest
+
+  infra:
+    name: Infrastructure checks and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # sops, hadolint and actionlint come from pinned releases whose checksums
+      # install-tool.sh verifies; age comes from Ubuntu. shellcheck, jq and Docker are on the runner.
+      - name: Install the tools the checks need
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age
+          sudo infra/scripts/install-tool.sh sops hadolint actionlint
+
+      - name: Shell scripts, Dockerfiles, workflows, image pins, Compose rules, Caddyfile, units
+        run: infra/scripts/check.sh
+      - name: Secrets tooling, with the real sops and age
+        run: infra/scripts/test-secrets.sh
+      - name: Deploy decisions, with stand-ins for Docker and cosign
+        run: infra/scripts/test-deploy.sh
+      - name: Image pinning
+        run: infra/scripts/test-pin-images.sh
+
+  infra-containers:
+    name: Postgres roles, Redis ACL and Caddy routing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      UV_LOCKED: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The Redis ACL proof runs the gateway's, lb-common's, LB-02's WebSocket, the Flask systems'
+      # and the Node systems' own tests, and a Celery worker, against a Redis that enforces the
+      # production ACL (a throwaway Postgres serves the suites that need one).
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install uv
+        run: pipx install uv==0.12.19
+      - run: uv sync
+
+      - name: Each Postgres role sees its own schema and no other
+        run: infra/postgres/test-roles.sh
+      - name: Caddy routes what it should and nothing else
+        run: infra/caddy/test.sh
+      - name: Redis refuses what a service must not do, and the services still work
+        run: infra/redis/test-acl.sh
+
+  # LB-07's browser sandbox, built from this commit for this runner's architecture and started by
+  # Compose from the real file, so it runs with every flag of the policy: Chromium runs golden
+  # plans called from another container, the container reaches nothing but its own shop, five runs
+  # of the heaviest plan stay inside its memory limit, and it restarts after its share of runs.
+  sandbox:
+    name: LB-07's browser sandbox under the Compose policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The stand-in for the worker imports the service's own runner client, and the throwaway
+      # secrets Compose resolves against need age.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age
+
+      - name: The sandbox runs golden plans under the policy, reaches nothing, and restarts after its share of runs
+        run: infra/sandbox/test.sh
+
+  # A Dockerfile that breaks, on either architecture, fails the pull request. Pushes to main
+  # are built, pushed and signed by deploy.yml, so building them here too would only repeat it.
+  images:
+    name: Images build
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/images.yml
+    with:
+      ref: ${{ github.sha }}
+      push: false

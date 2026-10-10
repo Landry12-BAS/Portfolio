@@ -1,0 +1,498 @@
+{
+  "v": 1,
+  "system": "lb-01",
+  "sample": "torn-bag",
+  "origin": "mock",
+  "recordedAt": "2026-10-02T02:51:48.230Z",
+  "language": "en",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/lb01/tickets",
+        "body": {
+          "customer": "cus-0001",
+          "language": "en",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?"
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "id": "tk4ba65a6b56a4",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "received",
+          "category": "",
+          "created_at": "2026-10-02T02:51:48.190Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "",
+          "expires_at": "2026-10-03T02:51:48.190Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/tk4ba65a6b56a4"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "tk4ba65a6b56a4",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "processing",
+          "category": "",
+          "created_at": "2026-10-02T02:51:48.190Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "",
+          "escalation_reason": "",
+          "run_id": "",
+          "expires_at": "2026-10-03T02:51:48.190Z",
+          "draft": null,
+          "decision": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/lb01/tickets/tk4ba65a6b56a4"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "tk4ba65a6b56a4",
+          "customer": {
+            "key": "cus-0001",
+            "name": "Sam Carter",
+            "language": "en"
+          },
+          "language": "en",
+          "status": "awaiting_approval",
+          "category": "damaged",
+          "created_at": "2026-10-02T02:51:48.190Z",
+          "body": "Hi, my order BB-1040 came a few days ago and one of the two bags of Basalt Blend was ripped open. There were beans all over the box. What can you do?",
+          "order_number": "BB-1040",
+          "escalation_reason": "",
+          "run_id": "run-26e4c1485122be11aafb",
+          "expires_at": "2026-10-03T02:51:48.190Z",
+          "draft": {
+            "sentences": [
+              {
+                "text": "We found your order BB-1040.",
+                "citations": [
+                  "order:BB-1040"
+                ],
+                "supported": true,
+                "problem": null
+              },
+              {
+                "text": "If a bag arrives torn, punctured or crushed, send us a photo of the bag and the outer box within 14 days of delivery.",
+                "citations": [
+                  "passage:damaged.torn-bags"
+                ],
+                "supported": true,
+                "problem": null
+              }
+            ],
+            "claims_supported": true,
+            "model": "mock/draft-model",
+            "sources": [
+              {
+                "id": "order:BB-1040",
+                "title": "Order BB-1040",
+                "text": "Order BB-1040: delivered, shipped by Vltava Post (VP481920337CZ); 2 x Basalt Blend 250 g; total 667 CZK."
+              },
+              {
+                "id": "passage:damaged.torn-bags",
+                "title": "Damaged, stale or wrong items §1: Torn or crushed bags",
+                "text": "If a bag arrives torn, punctured or crushed, send us a photo of the bag and the outer box within 14 days of delivery. We send a replacement free of charge, and you don't need to return the damaged bag."
+              }
+            ]
+          },
+          "decision": null
+        }
+      }
+    }
+  ],
+  "trace": {
+    "runId": "run-26e4c1485122be11aafb",
+    "spans": [
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "fe1c361b59422950",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "redact PII",
+        "status": "ok",
+        "startMs": 1790909508190,
+        "endMs": 1790909508193,
+        "attrs": {
+          "redactions": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "c8aa65a337faab2e",
+        "parentId": "df00d136746e4f2c",
+        "kind": "gateway.attempt",
+        "name": "groq/llama-prompt-guard-2-86m",
+        "status": "ok",
+        "startMs": 1790909508200,
+        "endMs": 1790909508373,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 140,
+          "outputTokens": 18
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "df00d136746e4f2c",
+        "parentId": "3404a3da5e80bf9c",
+        "kind": "gateway.call",
+        "name": "lb-guard",
+        "status": "ok",
+        "startMs": 1790909508198,
+        "endMs": 1790909508375,
+        "attrs": {
+          "alias": "lb-guard",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/llama-prompt-guard-2-86m",
+          "inputTokens": 140,
+          "outputTokens": 18,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "3404a3da5e80bf9c",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "screen for injection",
+        "status": "ok",
+        "startMs": 1790909508193,
+        "endMs": 1790909508380,
+        "attrs": {
+          "flagged": false
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "d9b1ff0c998267fa",
+        "parentId": "ed271c304e1324e3",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-20b",
+        "status": "ok",
+        "startMs": 1790909508387,
+        "endMs": 1790909508903,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 410,
+          "outputTokens": 51
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "ed271c304e1324e3",
+        "parentId": "e742214f0fa47e70",
+        "kind": "gateway.call",
+        "name": "lb-fast",
+        "status": "ok",
+        "startMs": 1790909508385,
+        "endMs": 1790909508905,
+        "attrs": {
+          "alias": "lb-fast",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-20b",
+          "inputTokens": 410,
+          "outputTokens": 51,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "e742214f0fa47e70",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "classify",
+        "status": "ok",
+        "startMs": 1790909508380,
+        "endMs": 1790909508910,
+        "attrs": {
+          "category": "damaged"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "724cb01054b1ee36",
+        "parentId": "b794302a86e311ea",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-m3",
+        "status": "ok",
+        "startMs": 1790909508917,
+        "endMs": 1790909509028,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "inputTokens": 24,
+          "outputTokens": 3
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "b794302a86e311ea",
+        "parentId": "344b5244524942da",
+        "kind": "gateway.call",
+        "name": "lb-embed",
+        "status": "ok",
+        "startMs": 1790909508915,
+        "endMs": 1790909509030,
+        "attrs": {
+          "alias": "lb-embed",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-m3",
+          "inputTokens": 24,
+          "outputTokens": 3,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "344b5244524942da",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "hybrid search",
+        "status": "ok",
+        "startMs": 1790909508910,
+        "endMs": 1790909509120,
+        "attrs": {
+          "chunks": 6,
+          "mode": "hybrid"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "bc2bbc974202f4c6",
+        "parentId": "9d3e35d9b15a4327",
+        "kind": "gateway.attempt",
+        "name": "workers-ai/bge-reranker-base",
+        "status": "ok",
+        "startMs": 1790909509127,
+        "endMs": 1790909509313,
+        "attrs": {
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "inputTokens": 1900,
+          "outputTokens": 238
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "9d3e35d9b15a4327",
+        "parentId": "bb57d7f40937db49",
+        "kind": "gateway.call",
+        "name": "lb-rerank",
+        "status": "ok",
+        "startMs": 1790909509125,
+        "endMs": 1790909509315,
+        "attrs": {
+          "alias": "lb-rerank",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "workers-ai",
+          "model": "workers-ai/bge-reranker-base",
+          "inputTokens": 1900,
+          "outputTokens": 238,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "bb57d7f40937db49",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "rerank",
+        "status": "ok",
+        "startMs": 1790909509120,
+        "endMs": 1790909509320,
+        "attrs": {
+          "candidates": 6
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "e058f4d64c7e3fcd",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.tool",
+        "name": "look up order",
+        "status": "ok",
+        "startMs": 1790909509320,
+        "endMs": 1790909509330,
+        "attrs": {
+          "found": true
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "6533b5a9032efbf1",
+        "parentId": "f697fe86cb7407bb",
+        "kind": "gateway.attempt",
+        "name": "groq/gpt-oss-120b",
+        "status": "ok",
+        "startMs": 1790909509337,
+        "endMs": 1790909510823,
+        "attrs": {
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2300,
+          "outputTokens": 288
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "f697fe86cb7407bb",
+        "parentId": "dd0605035e537a82",
+        "kind": "gateway.call",
+        "name": "lb-tools",
+        "status": "ok",
+        "startMs": 1790909509335,
+        "endMs": 1790909510825,
+        "attrs": {
+          "alias": "lb-tools",
+          "dataClass": "visitor",
+          "stream": false,
+          "attempts": 1,
+          "provider": "groq",
+          "model": "groq/gpt-oss-120b",
+          "inputTokens": 2300,
+          "outputTokens": 288,
+          "usage": "reported"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "dd0605035e537a82",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "draft with citations",
+        "status": "ok",
+        "startMs": 1790909509330,
+        "endMs": 1790909510830,
+        "attrs": {
+          "sources": 1
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "f5c19272a075cf52",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "check claims",
+        "status": "ok",
+        "startMs": 1790909510830,
+        "endMs": 1790909510850,
+        "attrs": {
+          "sentences": 2,
+          "unsupported": 0
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "18a211d2ffcad897",
+        "parentId": "764d6f66f26973d2",
+        "kind": "system.step",
+        "name": "route",
+        "status": "ok",
+        "startMs": 1790909510850,
+        "endMs": 1790909510860,
+        "attrs": {
+          "outcome": "awaiting_approval"
+        }
+      },
+      {
+        "v": 1,
+        "runId": "run-26e4c1485122be11aafb",
+        "system": "lb-01",
+        "spanId": "764d6f66f26973d2",
+        "kind": "system.run",
+        "name": "support ticket",
+        "status": "ok",
+        "startMs": 1790909508190,
+        "endMs": 1790909510865,
+        "attrs": {
+          "language": "en"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "modelCalls": 5,
+    "steps": 9,
+    "durationMs": 2675
+  }
+}

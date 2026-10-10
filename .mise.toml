@@ -1,0 +1,6 @@
+# Tool versions for every contributor and CI (docs/STACK.md, Tooling).
+[tools]
+node = "24"
+pnpm = "10.33.0"
+python = "3.13"
+uv = "0.12.19"

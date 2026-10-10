@@ -1,0 +1,44 @@
+# The curated starting points of Eval Lab's board (apps/web/app/boards/lb-10): each one a target with a
+# prepared edit of its production prompt, so a visitor sees a report without writing anything. An edit is
+# written against the production prompt the pack carries (evals/packs): `insert` adds a line after a line
+# of production's, `replace` swaps a passage that production holds once, `remove-lines` drops the lines
+# that start with each prefix (one line each), and `unchanged` runs production's prompt as it is, which the
+# service runs once. apps/web/scripts/samples-lb10.ts applies each edit, checks the result by the service's
+# own rules (the length, plain text, the pack's variables) and writes apps/web/shared/data/samples/lb10.ts;
+# `pnpm check` fails when a pack's prompt changes under an edit. What a sample's run comes to is not
+# written here: its report is whatever the run measures.
+samples:
+  - id: drafter-word-limit
+    pack: lb01-drafter
+    providers: [groq]
+    edit:
+      kind: insert
+      after: "- If the sources don't answer the ticket, set \"answerable\" to false and leave \"sentences\" empty: a person will take over."
+      line: "- Keep the whole reply under 80 words."
+  - id: classifier-without-json
+    pack: lb01-classifier
+    providers: [groq, workers-ai]
+    edit:
+      kind: replace
+      text: "Reply with one JSON object and nothing else, with exactly these fields:"
+      with: "Describe the ticket under these headings:"
+  - id: planner-records-later
+    pack: lb02-planner
+    providers: [groq]
+    edit:
+      kind: replace
+      text: "Record each with update_details as soon as you have it, and never ask twice for what you have."
+      with: "Record them with update_details once you have all of them."
+  - id: sql-writer-unchanged
+    pack: lb05-sql-writer
+    providers: [groq]
+    edit:
+      kind: unchanged
+  - id: generator-without-example
+    pack: lb08-generator
+    providers: [workers-ai]
+    edit:
+      kind: remove-lines
+      prefixes:
+        - "Example. Description:"
+        - "Reply: {\"name\":\"Pickup approval\""

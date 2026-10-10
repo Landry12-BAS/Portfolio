@@ -1,0 +1,968 @@
+# The platform on one box: the gateway, the Django, Flask and Node systems, Postgres, Redis,
+# the edge and the proxies that are the only way out. docs/DEPLOY.md is the owner's runbook; docs/SECURITY.md,
+# sections 5 and 6, says why it is shaped this way.
+#
+# Run it through infra/scripts/compose.sh, which hands compose the decrypted secrets
+# (/run/lb/secrets, a tmpfs; see infra/secrets). Every ${VARIABLE} below comes from there
+# or from the deploy: LB_TAG is the release, LB_API_HOST and LB_SITE_ORIGIN are the public
+# names, LB_PG_PASSWORD_* and LB_REDIS_PASSWORD_* are each service's own credentials.
+#
+# --- Networks: nothing reaches the internet except by the two doors named at the end ------
+#   edge             cloudflared <-> caddy. Internal: no route out.
+#   app              caddy, the gateway and the systems' APIs. Internal.
+#   data             postgres, redis and the services that use them. Internal.
+#   egress-gateway   the gateway <-> its proxy. Internal.
+#   egress-systems   the Django systems, the Flask API (LB-03's files go to R2) and the backup
+#                    <-> their proxy. Internal. (The Node systems reach no outside host:
+#                    their model calls go through the gateway, and so do the Flask API's.
+#                    LB-05's data job has no network at all.)
+#   sandbox          LB-07's browser sandbox <-> the Node worker, which calls its runner, and
+#                    nothing else. Internal, and its bridge has no address on the host either,
+#                    so the browser's container reaches neither the internet nor the box's own
+#                    services (the shop it tests is on its own loopback interface).
+#   outbound         the only network with a route to the internet: cloudflared (the
+#                    tunnel to Cloudflare) and the two egress proxies (Squid, each with its
+#                    own host allowlist). An internal network resolves no outside name and
+#                    reaches no outside address, so a compromised container can't dial out.
+#
+# --- Resources: one 2-OCPU, 12 GB Ampere A1 box shared by everything ----------------------
+#   Limits, not reservations: a service is capped at its limit and takes only what it uses,
+#   and they rarely peak together. Memory is capped without swap. compose-policy.jq holds the
+#   budget below and fails the checks (`just infra-check`) when a change breaks it.
+#
+#   The budget is one rule: what runs all the time, plus the larger of a deploy's biggest wave
+#   of jobs and the nightly backup, must fit in 11264 MiB (12 GiB, less 1 for the host). The
+#   jobs are counted as they run, not as a sum:
+#     - a deploy runs its one-shot jobs in three waves that never overlap, each job waiting for
+#       every job of the waves before it to finish (`service_completed_successfully`): wave 1,
+#       postgres-provision 128; wave 2, django-migrate 384, flask-migrate 256 and node-migrate
+#       256 = 896; wave 3, flask-seed 1280 and node-seed 256 = 1536;
+#     - the nightly backup, 768, runs under the deploy's lock (infra/systemd/lb-backup.service;
+#       the lb.runs-under-deploy-lock label on its block), so never beside a deploy's jobs.
+#   Memory of what runs all the time, in MiB: flask-api 2048, postgres 2048, django-worker
+#   1024, node-worker 768, django-api 512, redis 512, gateway 384, node-api 384, lb07-sandbox
+#   384, caddy 128, cloudflared 128, the two egress proxies 128 each = 8576. At the peak:
+#   8576 + 1536 = 10112, which leaves 1152 MiB (about 1.1 GiB) for what comes next; LB-10
+#   needs no new container. A system that needs more needs a decision (a smaller limit
+#   elsewhere, or a heavy job given a wave of its own), not a bigger number.
+#   This way of counting was the lead engineer's decision, when LB-09's private transcriber
+#   took django-worker from 768 to 1024 and the sums of the old rule no longer fitted; it also
+#   gave postgres and the backup back the ceilings that LB-07's sandbox had taken from them. The
+#   owner can revisit it: docs/DEPLOY.md, "The memory budget", has the reasons, the cost and
+#   the options not taken.
+#   The sandbox's own number is measured: Chromium and the runner peaked at 263 to 271 MiB
+#   under that limit over five runs in a row of the heaviest golden plan (three measurements,
+#   the kernel's count with page cache), and at 327 to 332 MiB with no limit at all (Chrome
+#   Headless Shell 153, x86-64; infra/sandbox/test.sh repeats the runs). django-worker's 1024
+#   holds two Celery processes and LB-09's private transcriber (faster-whisper, the base model
+#   in int8), which has not been measured yet.
+#   Where the numbers come from: on a local stack the same services idle at about 0.7 GiB
+#   (without cloudflared and the proxies). LB-05's data job peaks at 923 MB when it makes the
+#   full dataset, and the service's warehouse code at 452 MB while it answers the 100
+#   reference questions on that dataset, with DuckDB's own limit of 1 GB. LB-03's OCR worker,
+#   a process inside flask-api's container, peaks at 692 MiB over the seed documents, 747 MiB
+#   on a PDF of five pages (the most it reads) and 837 MiB on the biggest image the reader
+#   accepts (measured, x86-64: services/flask-systems/README.md, "Measured, and not").
+#   flask-api's 2048 is DuckDB's 1 GB limit, a margin for the Python process and what the
+#   limit does not cap, and most of the worker's peak. Both at their peak at once would be
+#   more than that, so the worker makes itself the kernel's first victim (its OOM score), and
+#   a document then fails as ocr_failed, its place given back, and the service stays up.
+#   flask-seed's 1280 is DuckDB's 1 GB limit and a margin of 256 MiB over its measured peak
+#   of 923 MB. The Node API gets 384, because V8 lets a heap
+#   grow to 259 MB whatever the container's size, and the process needs room beside it. The
+#   Node worker gets 768: it opens LB-04's PDFs in threads of their own (two at a time, each
+#   limited to 192 MB of old and 32 MB of young heap), which measured 291 MB at the peak for two
+#   30-page contracts at once, and up to about 760 MB if hostile files took all the limits allow.
+#   CPU limits cap a service at that many cores. They add up to 11 for the services and 16
+#   with the jobs, on 2 cores, on purpose: services rarely use their cap together, and when
+#   they contend, cpu_shares decides: 1536 for the request path (the databases, the gateway,
+#   the APIs and the edge) against 1024 for the workers, LB-07's browser, the tunnel and the
+#   jobs.
+#   Process limits (a runaway service cannot fill the process table) add up to 1836 for the
+#   services and 448 for the jobs. A Node process has about 12 threads when idle, and a
+#   Python one under ten, so the limits leave a wide margin; LB-07's browser sandbox, Node and
+#   Chromium's processes, peaked at 83.
+#
+# --- Adding a service ---------------------------------------------------------------------
+#   One block here (and one for each job it needs: a migration, a seed), one route in
+#   caddy/Caddyfile, one entry in .github/workflows/images.yml, one Dockerfile in docker/,
+#   and its credentials: a Postgres role, a Redis user, a gateway key. Copy the blocks of a
+#   service that looks like yours: flask-api for a web service with data of its own,
+#   node-api and node-worker for a service with a queue. docs/DEPLOY.md has the checklist.
+
+name: lb
+
+x-hardening: &hardening
+  restart: unless-stopped
+  # A real PID 1, so signals reach the service and zombies are reaped.
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  # json-file keeps logs on the box's disk without limit unless told otherwise.
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+# The Django systems: one image, three jobs (the release step, the API, the worker).
+x-django: &django
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-django-systems:${LB_TAG:?LB_TAG must name the release to run}
+  env_file:
+    - ${LB_SECRETS_DIR:-/run/lb/secrets}/django-systems.env
+  environment:
+    # The API's own public name is the only host Django answers to.
+    DJANGO_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
+    DJANGO_DEBUG: "false"
+    # Each system logs in as its own role, which owns its schema and can reach nothing but
+    # that and the shared extensions schema (btree_gist, pgvector). The shared URL is only
+    # the fallback for a system without its own, and it is LB-01's least-privileged login,
+    # so a system that forgets its own URL fails closed: LB-02 would find no schema there.
+    LB_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01:?LB_PG_PASSWORD_LB01 is not set}@postgres:5432/lb
+    LB01_DATABASE_URL: postgres://lb01:${LB_PG_PASSWORD_LB01}@postgres:5432/lb
+    LB02_DATABASE_URL: postgres://lb02:${LB_PG_PASSWORD_LB02:?LB_PG_PASSWORD_LB02 is not set}@postgres:5432/lb
+    LB09_DATABASE_URL: postgres://lb09:${LB_PG_PASSWORD_LB09:?LB_PG_PASSWORD_LB09 is not set}@postgres:5432/lb
+    # LB-09: where a recording waits between the API and the worker (the memory-backed volume
+    # below, shared by the two and nobody else), and the private transcriber's weights, baked
+    # into the image (infra/docker/django-systems.Dockerfile).
+    LB09_AUDIO_DIR: /var/lib/lb/audio
+    LB09_WHISPER_DIR: /app/whisper/base
+    # The site's public key: every visitor token is checked against it.
+    LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
+    LB_REDIS_URL: redis://django-systems:${LB_REDIS_PASSWORD_DJANGO_SYSTEMS:?LB_REDIS_PASSWORD_DJANGO_SYSTEMS is not set}@redis:6379/0
+    LB_GATEWAY_URL: http://gateway:8080
+    LB_SERVICE_NAME: django-systems
+    # R2 and Sentry, when a system uses them, go through the systems' proxy.
+    HTTPS_PROXY: http://egress-systems:3128
+    NO_PROXY: localhost,127.0.0.1,gateway,postgres,redis
+  tmpfs:
+    - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+    # Where the entrypoint writes the service's private key, readable by this user only.
+    - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
+  networks: [app, data, egress-systems]
+  stop_grace_period: 30s
+
+# The Flask systems (LB-03, LB-05 and LB-10): one image, three jobs (the migration, the data, the API).
+# LB-10 is a module of the same API process and adds no container: its runs are a few kilobytes of text
+# waiting on the gateway, inside flask-api's limit, and its nightly commands run in GitHub Actions.
+# Each job names the environment it needs and nothing more: only the API gets a secret, and the
+# jobs that need no Redis or database are given a URL that goes nowhere or no network at all.
+x-flask: &flask
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-flask-systems:${LB_TAG:?LB_TAG must name the release to run}
+  tmpfs:
+    - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+  stop_grace_period: 30s
+
+# The Node systems (LB-08): one image, four jobs (the migration, the seed, the API, the
+# worker), each a script of the service. Only the API gets a secret, its gateway key.
+x-node: &node
+  <<: *hardening
+  image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-node-systems:${LB_TAG:?LB_TAG must name the release to run}
+  tmpfs:
+    - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+  stop_grace_period: 30s
+
+services:
+  # ------------------------------------------------------------------------------------
+  # Data
+  # ------------------------------------------------------------------------------------
+  postgres:
+    <<: *hardening
+    image: pgvector/pgvector:0.8.6-pg17-bookworm@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    # The image's own user. Started as postgres from the first instruction, so it needs no
+    # capability to change identity.
+    user: postgres
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    environment:
+      POSTGRES_DB: lb
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/postgres.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # The unix socket, shared with the provisioner and with nothing else.
+      - postgres-socket:/var/run/postgresql
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    tmpfs:
+      - /tmp:size=64m,uid=999,gid=999,mode=1777
+    shm_size: 128m
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "/var/run/postgresql", "-d", "lb", "-q"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    # A fast shutdown (the image's SIGINT) with time to checkpoint.
+    stop_grace_period: 60s
+    # What postgresql.conf lets it hold for itself is about 640 MiB (shared_buffers, and three
+    # autovacuum workers with maintenance_work_mem each); the rest is per connection, a few MiB
+    # each and work_mem for every sort. 2048 leaves about 1400 MiB of that for connections (the
+    # header, Resources).
+    mem_limit: 2048m
+    memswap_limit: 2048m
+    cpus: 1.5
+    cpu_shares: 1536
+    pids_limit: 300
+
+  # Brings the schemas, extensions, roles and passwords to what the repository describes,
+  # on every deploy (infra/postgres/provision.sh). It reaches the superuser socket through
+  # the shared volume and has no network at all. It is wave 1 of a deploy's three waves of
+  # jobs, which never overlap (the header, Resources): every other job waits for it.
+  postgres-provision:
+    <<: *hardening
+    restart: "no"
+    image: pgvector/pgvector:0.8.6-pg17-bookworm@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    user: postgres
+    command: ["/provision/provision.sh"]
+    environment:
+      PGDATABASE: lb
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/postgres-roles.env
+    volumes:
+      - postgres-socket:/var/run/postgresql
+      - ./postgres:/provision:ro
+    network_mode: none
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+
+  redis:
+    <<: *hardening
+    image: redis:8.10-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+    # The image's own user (uid 999, gid 1000), from the first instruction.
+    user: "999:1000"
+    # Writes the ACL file from the template and the passwords, then starts Redis.
+    entrypoint: ["/usr/local/bin/lb-redis-entrypoint"]
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/redis.env
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+      - ./redis/users.acl.tmpl:/etc/redis/users.acl.tmpl:ro
+      - ./redis/entrypoint.sh:/usr/local/bin/lb-redis-entrypoint:ro
+    tmpfs:
+      # The rendered ACL file: hashes only, readable by Redis alone.
+      - /run/redis:size=1m,uid=999,gid=1000,mode=0700
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$LB_REDIS_PASSWORD_HEALTH\" redis-cli --user health --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    stop_grace_period: 30s
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 0.5
+    cpu_shares: 1536
+    pids_limit: 64
+
+  # ------------------------------------------------------------------------------------
+  # Services
+  # ------------------------------------------------------------------------------------
+  gateway:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-gateway:${LB_TAG:?LB_TAG must name the release to run}
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/gateway.env
+    environment:
+      LB_GATEWAY_HOST: 0.0.0.0
+      LB_GATEWAY_PORT: "8080"
+      # The production profile keeps providers whose terms forbid production (NVIDIA)
+      # off every chain, and the proxy's list does not name them either.
+      LB_GATEWAY_PROFILE: production
+      LB_REDIS_URL: redis://gateway:${LB_REDIS_PASSWORD_GATEWAY:?LB_REDIS_PASSWORD_GATEWAY is not set}@redis:6379
+      # Node 24's fetch honours the proxy variables only when asked to.
+      NODE_USE_ENV_PROXY: "1"
+      HTTPS_PROXY: http://egress-gateway:3128
+      NO_PROXY: localhost,127.0.0.1
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+    networks: [app, data, egress-gateway]
+    depends_on:
+      redis:
+        condition: service_healthy
+      egress-gateway:
+        condition: service_healthy
+        required: false
+    healthcheck:
+      # Readiness, not liveness: Redis answering and a provider configured. The image has no
+      # shell, so the check is a node one-liner.
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "fetch('http://127.0.0.1:8080/readyz',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 20s
+    # The gateway closes its connections after 8 seconds (src/main.ts).
+    stop_grace_period: 15s
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 256
+
+  # Migrates and seeds the systems' schemas before the API and the worker start. The
+  # schema is the system's own role's, so a migration can't touch another system. LB-02's
+  # first migration finds btree_gist in the extensions schema, where the provisioner made it.
+  # Wave 2 of a deploy's jobs, beside flask-migrate and node-migrate.
+  django-migrate:
+    <<: *django
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --database lb01 --noinput
+        && python manage.py migrate --database lb02 --noinput
+        && python manage.py migrate --database lb09 --noinput
+        && python manage.py seed_lb01
+        && python manage.py seed_lb02
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    pids_limit: 64
+
+  django-api:
+    <<: *django
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/lb-healthcheck", "8000", "DJANGO_ALLOWED_HOSTS"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    # LB-09's recordings, written here by the API and deleted by the worker once transcribed.
+    volumes:
+      - lb09-audio:/var/lib/lb/audio
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # Celery's worker with its scheduler: the ticket pipeline, LB-09's meeting pipeline, the
+  # 24-hour sweeps, the nightly reseed. Two processes at most, and each is recycled before it
+  # grows large. LB-09's private transcriber (faster-whisper, the base model in int8) runs here,
+  # which is what the memory is for: a one-minute private meeting measured 472 to 484 MiB in its
+  # child and 638 MiB in the whole worker, and two at once 974 MiB, so they take turns (a file
+  # lock, lb09/transcribers.py) and the child is replaced after each one (it is over the 300 MB
+  # below, on purpose), so the worker never holds two models. Measured on an x86-64 development
+  # machine, not on this box (docs/DEPLOY.md, "The memory budget").
+  django-worker:
+    <<: *django
+    command:
+      - celery
+      - -A
+      - config
+      - worker
+      - --beat
+      - --loglevel
+      - INFO
+      - --concurrency
+      - "2"
+      - --max-memory-per-child
+      - "300000"
+      - --schedule
+      - /tmp/celerybeat-schedule
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # A control-channel ping to this very worker. It starts a Python process, so it runs
+      # rarely.
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME -t 8 > /dev/null"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
+    # LB-09's recordings: the worker reads a recording the API wrote here and deletes it.
+    volumes:
+      - lb09-audio:/var/lib/lb/audio
+    # Warm shutdown: a task in flight may take up to its deadline to finish. A private
+    # transcription may take most of LB-09's 150-second task limit (lb09/limits.py).
+    stop_grace_period: 180s
+    mem_limit: 1024m
+    memswap_limit: 1024m
+    cpus: 1.0
+    pids_limit: 128
+
+  # LB-03 and LB-05 (the Flask systems). LB-05's only Postgres table holds the daily question
+  # counters, and its data is a DuckDB file, which the service opens read-only. LB-03 keeps its
+  # documents in Postgres and their files in a private bucket on R2 for an hour.
+  #
+  # The settings insist on a Redis URL and a database URL even for a job that touches
+  # neither. The migration needs the database, and is given the lb03 and lb05 logins, one for
+  # each schema it creates; whatever a job does not need is given a URL that goes nowhere.
+  # Wave 2 of a deploy's jobs, beside django-migrate and node-migrate.
+  flask-migrate:
+    <<: *flask
+    restart: "no"
+    command: ["python", "manage.py", "migrate"]
+    environment:
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
+      LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
+      LB10_DATABASE_URL: postgres://lb10:${LB_PG_PASSWORD_LB10:?LB_PG_PASSWORD_LB10 is not set}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  # Makes LB-05's synthetic sales data (about two million orders) into the warehouse volume,
+  # unless the volume already holds a dataset the service accepts (infra/docker/flask-seed.py).
+  # It is the only container that can write the volume, and it has no network, no secret and
+  # no database: the API mounts the volume read-only, so a compromised API cannot change the
+  # data it answers from, and a read-only root filesystem needs no other place for the file.
+  # The volume is derived data and is not backed up: a lost one is made again here.
+  flask-seed:
+    <<: *flask
+    restart: "no"
+    command: ["python", "seed_warehouse.py"]
+    environment:
+      LB05_WAREHOUSE_DIR: /warehouse/lb05
+      LB05_SEED_SIZE: full
+      FLASK_ALLOWED_HOSTS: localhost
+      LB_DATABASE_URL: postgres://seed:none@127.0.0.1:1/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    volumes:
+      - lb05-warehouse:/warehouse
+    network_mode: none
+    # Wave 3 of a deploy's jobs, beside node-seed. It touches no database, so it waits for the
+    # three migrations (and through them the provision) for memory alone: started at once, as
+    # it was, it ran beside them, and its 1280 MiB came on top of theirs (the header, Resources).
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      flask-migrate:
+        condition: service_completed_successfully
+      node-migrate:
+        condition: service_completed_successfully
+    # numpy builds the whole dataset in memory: 923 MB at its peak (measured), for about
+    # fifteen seconds, once, when the volume is empty or the generator changed.
+    mem_limit: 1280m
+    memswap_limit: 1280m
+    cpus: 1.0
+    pids_limit: 64
+
+  flask-api:
+    <<: *flask
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/flask-systems.env
+    environment:
+      # The API's own public name is the only host Flask answers to.
+      FLASK_ALLOWED_HOSTS: ${LB_API_HOST:?LB_API_HOST is not set}
+      # Each system logs in as its own role, which owns its schema and can reach nothing else.
+      # The shared URL is LB-05's login, so a system that forgets its own fails closed: LB-03
+      # would find no schema there.
+      LB_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05:?LB_PG_PASSWORD_LB05 is not set}@postgres:5432/lb
+      LB05_DATABASE_URL: postgres://lb05:${LB_PG_PASSWORD_LB05}@postgres:5432/lb
+      LB03_DATABASE_URL: postgres://lb03:${LB_PG_PASSWORD_LB03:?LB_PG_PASSWORD_LB03 is not set}@postgres:5432/lb
+      LB10_DATABASE_URL: postgres://lb10:${LB_PG_PASSWORD_LB10:?LB_PG_PASSWORD_LB10 is not set}@postgres:5432/lb
+      LB_REDIS_URL: redis://flask-systems:${LB_REDIS_PASSWORD_FLASK_SYSTEMS:?LB_REDIS_PASSWORD_FLASK_SYSTEMS is not set}@redis:6379/0
+      LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: flask-systems
+      LB05_WAREHOUSE_DIR: /warehouse/lb05
+      # One DuckDB per worker process, and its limit is per process: this is the number the
+      # container's memory limit is sized from, with the Python process and its threads on top.
+      LB05_DUCKDB_MEMORY_LIMIT: 1GB
+      LB05_DUCKDB_THREADS: "2"
+      # LB-03's files: a private bucket on R2, reached through the systems' egress proxy (the
+      # R2 endpoint's host is in LB_EGRESS_SYSTEMS_ALLOW), with the one token made for that
+      # bucket (flask-systems.env). The service deletes them at one hour itself; the bucket's
+      # lifecycle rule, in whole days, is the backstop (docs/DEPLOY.md, part 5).
+      LB03_STORAGE: s3
+      LB03_S3_BUCKET: ${LB_LB03_BUCKET:?LB_LB03_BUCKET is not set}
+      LB03_S3_ENDPOINT: ${LB_R2_ENDPOINT:?LB_R2_ENDPOINT is not set}
+      HTTPS_PROXY: http://egress-systems:3128
+      NO_PROXY: localhost,127.0.0.1,gateway,postgres,redis
+      # One OCR worker at a time, on the two cores the box has, in a folder of its own that
+      # nothing else uses (below). A kernel or a container with no Landlock leaves the OCR
+      # worker's cage one wall short: once a document's trace on the box shows `landlock_abi`
+      # above 0, set LB_LB03_REQUIRE_LANDLOCK=true in compose.env, and a box that loses it
+      # reads nothing instead of reading with less (docs/DEPLOY.md).
+      LB03_OCR_WORKERS: "1"
+      LB03_SCRATCH_DIR: /lb03-scratch
+      LB03_REQUIRE_LANDLOCK: ${LB_LB03_REQUIRE_LANDLOCK:-false}
+      # gunicorn.conf.py binds the loopback unless told otherwise, and Caddy is another
+      # container. Nothing here reads a client address or a forwarded header, so
+      # GUNICORN_FORWARDED_ALLOW_IPS stays at its default: Caddy's X-Forwarded-* are ignored.
+      GUNICORN_BIND: 0.0.0.0:8102
+    tmpfs:
+      - /tmp:size=64m,uid=10001,gid=10001,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=10001,gid=10001,mode=0700
+      # Where each OCR worker gets a folder of its own to leave its words and page pictures
+      # in: memory-backed, for one document at a time, and emptied the moment it is read.
+      - /lb03-scratch:size=48m,uid=10001,gid=10001,mode=0700
+    volumes:
+      - lb05-warehouse:/warehouse:ro
+    networks: [app, data, egress-systems]
+    depends_on:
+      flask-migrate:
+        condition: service_completed_successfully
+      flask-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Readiness: every system's database answers, and the dataset is in place.
+      test: ["CMD", "/usr/local/bin/lb-healthcheck", "8102", "FLASK_ALLOWED_HOSTS"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    # DuckDB's limit, the OCR worker's peak and the Python process (the header, Resources).
+    mem_limit: 2048m
+    memswap_limit: 2048m
+    cpus: 1.5
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # LB-08, LB-04, LB-06 and LB-07 (the Node systems). Their migrations and their seeds are two jobs,
+  # because the image has no shell to chain them with, and each system logs in as its own role,
+  # which owns its own schema (lb08, lb04, lb06, lb07) and can reach nothing else. The Redis URL
+  # they must have goes nowhere. LB-07's browser runs in a container of its own, lb07-sandbox, below.
+  # Wave 2 of a deploy's jobs, beside django-migrate and flask-migrate.
+  node-migrate:
+    <<: *node
+    restart: "no"
+    command: ["src/cli/migrate.ts"]
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08:?LB_PG_PASSWORD_LB08 is not set}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04:?LB_PG_PASSWORD_LB04 is not set}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06:?LB_PG_PASSWORD_LB06 is not set}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07:?LB_PG_PASSWORD_LB07 is not set}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    depends_on:
+      postgres-provision:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  node-seed:
+    <<: *node
+    restart: "no"
+    command: ["src/cli/seed.ts"]
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
+      LB_REDIS_URL: redis://127.0.0.1:1/0
+    # Wave 3 of a deploy's jobs, beside flask-seed. Its own schemas need node-migrate alone; it
+    # waits for the other two migrations as well, so that no job of wave 2 still runs beside
+    # wave 3 (the header, Resources).
+    depends_on:
+      django-migrate:
+        condition: service_completed_successfully
+      flask-migrate:
+        condition: service_completed_successfully
+      node-migrate:
+        condition: service_completed_successfully
+    networks: [data]
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+
+  node-api:
+    <<: *node
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/node-systems.env
+    environment:
+      LB_NODE_HOST: 0.0.0.0
+      LB_NODE_PORT: "8002"
+      # LB-08 logs in as the lb08 role, LB-04 as the lb04 role, LB-06 as the lb06 role and LB-07 as
+      # the lb07 role, each of which owns its own schema and can reach nothing else. The shared URL
+      # is LB-08's login, so a system that forgets its own fails closed. The API only queues LB-07's
+      # runs: it has no way to the browser sandbox and no key for its shop.
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
+      LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS:?LB_REDIS_PASSWORD_NODE_SYSTEMS is not set}@redis:6379/0
+      LB_WEB_TOKEN_KEY: ${LB_WEB_TOKEN_KEY:?LB_WEB_TOKEN_KEY is not set}
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: node-systems
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=65532,gid=65532,mode=0700
+    networks: [app, data]
+    depends_on:
+      node-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Readiness, not liveness: every system's schema and Redis answer. The image has no
+      # shell, so the check is a node one-liner.
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "fetch('http://127.0.0.1:8002/api/readyz',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # BullMQ's workers with their sweeps: one job per LB-08 workflow step, one per LB-04
+  # contract under review, one per LB-06 incident for its whole life (a few minutes: the
+  # simulated clock ticks every two seconds, and the agents' calls run beside it), and one per
+  # LB-07 test run, one at a time, which drives the browser in lb07-sandbox. It serves no
+  # HTTP, but a review, an incident and a test run make model calls, so it has the gateway and the service's key, as the API has, and
+  # starts with neither missing. Its health check reads a heartbeat file that the entrypoint
+  # renews while the event loop turns.
+  node-worker:
+    <<: *node
+    command: ["src/worker.ts"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/node-systems.env
+    environment:
+      LB_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB08_DATABASE_URL: postgres://lb08:${LB_PG_PASSWORD_LB08}@postgres:5432/lb
+      LB04_DATABASE_URL: postgres://lb04:${LB_PG_PASSWORD_LB04}@postgres:5432/lb
+      LB06_DATABASE_URL: postgres://lb06:${LB_PG_PASSWORD_LB06}@postgres:5432/lb
+      LB07_DATABASE_URL: postgres://lb07:${LB_PG_PASSWORD_LB07}@postgres:5432/lb
+      LB_REDIS_URL: redis://node-systems:${LB_REDIS_PASSWORD_NODE_SYSTEMS}@redis:6379/0
+      LB_GATEWAY_URL: http://gateway:8080
+      LB_SERVICE_NAME: node-systems
+      LB_HEARTBEAT_FILE: /tmp/lb-heartbeat
+      # LB-07's browser runner, on the sandbox network, and the key the worker signs each run's
+      # bug token with (lb07-sandbox.env; the sandbox's shop verifies with the same one). The
+      # shop's origin is where the sandbox serves it, inside its own container: a generated
+      # test names it, and it must match the sandbox's LB07_SHOP_PORT.
+      LB07_RUNNER_URL: http://lb07-sandbox:8008
+      LB07_SHOP_ORIGIN: http://127.0.0.1:8007
+      LB07_SHOP_TOKEN_KEY: ${LB07_SHOP_TOKEN_KEY:?LB07_SHOP_TOKEN_KEY is not set}
+    tmpfs:
+      - /tmp:size=16m,uid=65532,gid=65532,mode=1777
+      # Where the entrypoint writes the service's private key, readable by this user only.
+      - /run/lb:size=1m,uid=65532,gid=65532,mode=0700
+    # The gateway is on the app network, and so is the way to it. The sandbox network is the
+    # one way to LB-07's browser runner, and nothing on it can reach this container's other two.
+    networks: [app, data, sandbox]
+    depends_on:
+      node-seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "try{process.exit(Date.now()-require('node:fs').statSync('/tmp/lb-heartbeat').mtimeMs<30000?0:1)}catch{process.exit(1)}"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Workers finish the step they are on, then exit. A test run of LB-07's that is cut short is
+    # run again from its plan by the next worker.
+    stop_grace_period: 45s
+    # A contract's PDF is opened in a thread of its own, limited to 192 MB of old and 32 MB of
+    # young heap and a 4 MB stack, and a worker reviews two contracts at once. Measured on a
+    # 30-page contract, two extractions at once raised the process from 99 MB to 291 MB; with
+    # the process's own working set that is about 400 MB, and the limits above allow up to
+    # about 760 MB if a hostile file takes everything a thread may have. Past the container's
+    # limit the process is killed and BullMQ gives its jobs to the next worker, a contract
+    # is started at most six times before it is ended as failed, and a thread that reaches its
+    # own limit fails only its file. LB-06 adds no container and no limit: an incident's tick
+    # rebuilds its shop from the seed in about 15 to 20 ms every two seconds (under 1% of a core
+    # each, eight at once at most) and keeps a few kilobytes beside its log in Postgres, so it
+    # lives inside this limit and the API's. LB-07 adds a test run's bookkeeping and its HTTP
+    # calls to the runner, one run at a time: the browser itself is in lb07-sandbox.
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    pids_limit: 128
+
+  # LB-07's browser sandbox (infra/docker/lb07-sandbox.Dockerfile): one Node process that holds the
+  # staging shop on its loopback interface, the one place its headless Chromium may go, and the
+  # runner's API on the sandbox network, which only node-worker joins. The datasheet's first idea,
+  # a container per run, would need the Docker socket, which nothing on the box is given. What
+  # stands in for it (docs/SECURITY.md, section 6):
+  #   - a container with no secret but the shop's key, no capability, no writable root, no
+  #     package manager, no shell, and no network but the sandbox one, which reaches neither the
+  #     internet nor the host;
+  #   - a fresh browser context (cookies, storage, cache) for every pass of a run, closed when it
+  #     ends, with every request for another origin than the shop's aborted;
+  #   - a fresh process: after LB07_RUNS_PER_LIFE browser sessions (a test run opens up to three:
+  #     its plan, the second engine, the green pass) the runner refuses new ones, exits once the
+  #     last has closed, and Docker starts it again, so the session in flight is never cut short.
+  # Chromium's own sandbox needs user namespaces, which a container without capabilities is not
+  # given, so it runs with --no-sandbox and this container is its sandbox. It keeps its shared
+  # memory in /tmp (--disable-dev-shm-usage), so /dev/shm holds nothing.
+  lb07-sandbox:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-lb07-sandbox:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # The key the shop verifies bug tokens with (lb07-sandbox.env): read once and taken out of
+      # the process's environment. The worker signs with the same one.
+      LB07_SHOP_TOKEN_KEY: ${LB07_SHOP_TOKEN_KEY:?LB07_SHOP_TOKEN_KEY is not set}
+      LB07_RUNS_PER_LIFE: "20"
+    tmpfs:
+      # Chromium's profile and shared memory, and fontconfig's cache: 27 MiB at the peak of the
+      # heaviest golden plan (measured).
+      - /tmp:size=128m,uid=65532,gid=65532,mode=1777
+    shm_size: 16m
+    networks: [sandbox]
+    healthcheck:
+      # Both servers answer from inside the container: the runner's API on the container's
+      # address, the shop on its loopback interface (infra/docker/lb07-sandbox-healthcheck.mjs).
+      test: ["CMD", "/nodejs/bin/node", "/usr/local/lib/lb/healthcheck.mjs"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 30s
+    # The runner closes the browser and both servers on SIGTERM.
+    stop_grace_period: 15s
+    # Five runs in a row of the heaviest golden plan peaked at about 270 MiB under this limit
+    # and at about 330 MiB with none (the header, Resources).
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 1.0
+    # 83 tasks at the peak: Node's threads and Chromium's processes and theirs.
+    pids_limit: 192
+
+  # ------------------------------------------------------------------------------------
+  # Edge
+  # ------------------------------------------------------------------------------------
+  caddy:
+    <<: *hardening
+    image: caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+    user: "65532:65532"
+    # The official binary carries a file capability (cap_net_bind_service), and the kernel
+    # won't start it unless the container has that one capability. Caddy listens on 8080,
+    # so it is never used.
+    cap_add: [NET_BIND_SERVICE]
+    environment:
+      LB_API_HOST: ${LB_API_HOST:?LB_API_HOST is not set}
+      LB_SITE_ORIGIN: ${LB_SITE_ORIGIN:?LB_SITE_ORIGIN is not set}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    tmpfs:
+      - /data:size=16m,uid=65532,gid=65532,mode=0700
+      - /config:size=4m,uid=65532,gid=65532,mode=0700
+    networks: [edge, app]
+    # Every upstream is healthy before the tunnel can send it a request.
+    depends_on:
+      gateway:
+        condition: service_healthy
+      django-api:
+        condition: service_healthy
+      flask-api:
+        condition: service_healthy
+      node-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    cpu_shares: 1536
+    pids_limit: 128
+
+  # The Cloudflare Tunnel: the only way in. It dials out, so the box has no open port. The
+  # hostname-to-service mapping lives in the tunnel's own configuration, which the token
+  # (cloudflared.env) selects: api.<domain> -> http://caddy:8080 (docs/DEPLOY.md).
+  cloudflared:
+    <<: *hardening
+    image: cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c
+    # The image's entrypoint is `cloudflared --no-autoupdate`: updates are deploys.
+    command: ["tunnel", "--metrics", "127.0.0.1:2000", "run"]
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/cloudflared.env
+    networks: [edge, outbound]
+    depends_on:
+      caddy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 30s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 128
+
+  # ------------------------------------------------------------------------------------
+  # The only ways out: one proxy per caller group, each allowing HTTPS tunnels to its own
+  # host names (infra/egress). A new provider in services/gateway/routing.yaml needs its
+  # host here; `just infra-check` fails until it has one.
+  # ------------------------------------------------------------------------------------
+  egress-gateway:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-egress:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # Groq, Cloudflare Workers AI and OpenRouter: the hosts of the production providers
+      # in routing.yaml. NVIDIA's catalog is not here, because its trial terms forbid
+      # production use.
+      LB_EGRESS_ALLOW: api.groq.com,api.cloudflare.com,openrouter.ai
+    tmpfs:
+      - /run/lb-egress:size=64k,uid=31,gid=31,mode=0700
+      - /tmp:size=16m,uid=31,gid=31,mode=1777
+    networks: [egress-gateway, outbound]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3128"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+
+  egress-systems:
+    <<: *hardening
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-egress:${LB_TAG:?LB_TAG must name the release to run}
+    environment:
+      # Cloudflare R2 (<account>.r2.cloudflarestorage.com) and Sentry's ingest host, set in
+      # the encrypted compose.enc.env once those are in use. Exact names, not wildcards: a
+      # wildcard would also allow other people's buckets and projects. Empty means nothing
+      # may leave, which is right until a system needs one.
+      LB_EGRESS_ALLOW: ${LB_EGRESS_SYSTEMS_ALLOW:-}
+    tmpfs:
+      - /run/lb-egress:size=64k,uid=31,gid=31,mode=0700
+      - /tmp:size=16m,uid=31,gid=31,mode=1777
+    networks: [egress-systems, outbound]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3128"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+
+  # ------------------------------------------------------------------------------------
+  # Jobs the host starts (a systemd timer: infra/systemd), not part of `up`
+  # ------------------------------------------------------------------------------------
+  backup:
+    <<: *hardening
+    profiles: [backup]
+    restart: "no"
+    # Its unit runs it under the deploy's lock (infra/systemd/lb-backup.service), so it never
+    # runs beside a deploy's jobs, and the memory budget counts it as a group of its own (the
+    # header, Resources). compose-policy.jq reads this label, and refuses a one-shot job that
+    # no deploy starts and that does not carry it.
+    labels:
+      lb.runs-under-deploy-lock: "true"
+    image: ${LB_REGISTRY:-ghcr.io/landry12-bas}/lb-backup:${LB_TAG:?LB_TAG must name the release to run}
+    env_file:
+      - ${LB_SECRETS_DIR:-/run/lb/secrets}/backup.env
+    environment:
+      # The read-only login: it can read every schema and write nothing.
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: lb
+      PGUSER: lbbackup
+      PGPASSWORD: ${LB_PG_PASSWORD_LBBACKUP:-}
+      HTTPS_PROXY: http://egress-systems:3128
+    # The encrypted dump is written here, in memory, and uploaded from here. Its size is under
+    # the memory limit below, so a dump that outgrows it fails as a full disk, not as a kill.
+    tmpfs:
+      - /tmp:size=512m,uid=10002,gid=10002,mode=0700
+    networks: [data, egress-systems]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      egress-systems:
+        condition: service_healthy
+        # A local stack backs up to a folder and runs without the proxies.
+        required: false
+    # pg_dump, age and rclone, and the encrypted dump in /tmp (up to 512 MB): the database holds
+    # synthetic data and none of the visitors' rows (backup/excluded-data.txt), a few MiB.
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    pids_limit: 64
+
+networks:
+  outbound: {}
+  edge:
+    internal: true
+  app:
+    internal: true
+  data:
+    internal: true
+  egress-gateway:
+    internal: true
+  egress-systems:
+    internal: true
+  # LB-07's browser sandbox and the Node worker. Internal, like the others, and its bridge is
+  # given no address on the host: an internal network's gateway address is the host's own, and
+  # through it a container reaches whatever the host listens on with every address it has
+  # (infra/sandbox/test.sh checks that the sandbox reaches neither).
+  sandbox:
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.inhibit_ipv4: "true"
+
+volumes:
+  postgres-data:
+  postgres-socket:
+  redis-data:
+  # LB-05's generated warehouse: written by flask-seed, read-only in flask-api.
+  lb05-warehouse:
+  # LB-09's recordings, in memory and never on disk: written by django-api, read and deleted by
+  # django-worker. 64 MiB holds the day's five 3 MiB uploads of a dozen visitors at once; a file
+  # older than an hour is removed by the worker's sweep, and a restart empties it.
+  lb09-audio:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=64m,uid=10001,gid=10001,mode=0700"

@@ -1,0 +1,40 @@
+{
+  "name": "@lb/api-clients",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed clients for the back ends' APIs, generated from their committed OpenAPI documents; the table of routes the site's server may forward; and a mock back end that implements the same documents, for tests.",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./routes": "./src/routes.ts",
+    "./mock-identity": "./src/mock-identity.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.ts",
+    "check": "node scripts/generate.ts --check",
+    "mock": "node src/testing/serve.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@lb/common": "workspace:*",
+    "@types/node": "^24.19.0",
+    "@types/ws": "8.18.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "openapi-typescript": "^7.13.0",
+    "vitest": "^5.0.2",
+    "ws": "8.22.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  }
+}

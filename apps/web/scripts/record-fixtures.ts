@@ -1,0 +1,176 @@
+// Makes the recordings the end-to-end tests replay (`pnpm --filter @lb/web record:fixtures [system...]`),
+// by running a few of each system's samples on the test mock with the same recorder `just
+// record-sample` uses on a real back end. They are written under e2e/fixtures/recordings, labelled
+// `mock`, and bundled into the end-to-end build alone: the site never shows a mock recording outside
+// that build. They are fixtures, not measurements: the mock's timings and token counts are made up.
+//
+// With no arguments every system is recorded again; with system names (`record:fixtures lb-08`)
+// only those are, so a board's fixtures can be made without touching another board's files.
+//
+// LB-02's are made on a mock whose clock stands still at one moment (2 October 2026, 11:30 in Prague),
+// so the days and times a replay shows do not depend on the day the fixtures were made.
+import { generateKeyPairSync } from 'node:crypto'
+import { join } from 'node:path'
+
+import { startMockBackend } from '@lb/api-clients/testing'
+import { ServiceTokens } from '@lb/common/tokens'
+
+import { Backend } from './record/backend.ts'
+import type { Clock } from './record/backend.ts'
+import { recordSample, writeRecording } from './record/record.ts'
+
+// The samples recorded for each system.
+const SAMPLES: Readonly<Record<string, readonly string[]>> = {
+  // One sample that drafts a cited reply in English, one handed to a person, one in Czech.
+  'lb-01': ['torn-bag', 'injection-admin-mode', 'stale-decaf'],
+  // The booking in English, the double-booking attempt and the Czech conversation in which another
+  // visitor's hold runs out. Its other two samples (the Czech booking and the injection attempt) have
+  // no recording, so the tests can run them live.
+  'lb-02': ['book-cupping-en', 'double-book-taken-slot-en', 'two-tabs-held-by-other-cs'],
+  // Three curated questions (a bar, a line and a point chart), and three attacks that end in different
+  // ways: stopped by the first layer, stopped by the second, and declined by the model after a stop.
+  // The dump of every order is left out on purpose: its thousand rows make a large file, and the
+  // end-to-end journeys run that one live on the mock.
+  'lb-05': [
+    'revenue-by-product-last-quarter',
+    'monthly-revenue-last-year',
+    'active-subscriptions-by-frequency',
+    'drop-orders-table',
+    'information-schema-tables',
+    'missing-salary',
+  ],
+  // One run with a step that fails once and then works, one whose step uses all its attempts and goes
+  // to the dead-letter queue and is replayed, and one that waits for an approval. The Czech sample is
+  // left without a recording on purpose, so the tests can see a sample that has none.
+  'lb-08': ['wholesale-order', 'low-stock-reorder', 'refund-approval'],
+  // The clean PDF that passes every check, the planted total that fails one and is returned with it, and the
+  // hostile invoice the injection check stops. The other three samples (the euro invoice, the crumpled photo
+  // and the handwritten receipt) are left without a recording on purpose, so the tests can read them live.
+  'lb-03': ['clean-pdf', 'planted-total', 'prompt-injection'],
+  // A report with a redline, a fair contract with nothing to report, and a scan the system must refuse.
+  // The other three samples have no recording on purpose, so the tests can run them live on the mock.
+  'lb-04': ['wholesale-supply', 'clean-supply', 'scanned-supply'],
+  // The bad deploy that a rollback cures and the slow payment provider that the agents trace to its flag. The other
+  // two samples (the memory leak and the cache stampede) have no recording on purpose, so the tests can run them live.
+  'lb-06': ['bad-deploy', 'slow-payment'],
+  // The doubled coupon (one finding, the test kept), the one-item cart that the mock plans wrong once and puts right with
+  // a re-plan, and the link out of the shop that the sandbox stops (nothing to verify). The other five samples have no
+  // recording on purpose, so the tests can run them live.
+  'lb-07': ['coupon-double-discount', 'cart-count', 'partner-link'],
+  // The roasting plan (four speakers, five items) and the staffing meeting (a joke that must not become
+  // a task). The newsletter draft is left without a recording on purpose, so the tests can see a sample
+  // that has none and run it live.
+  'lb-09': ['monday-roasting-plan', 'weekend-staffing'],
+  // The drafter's word limit (one lucky case won back, which the paired interval calls no detectable difference), the
+  // classifier without its JSON rule on both providers (prose back on every case, a verdict of worse) and the SQL writer
+  // unchanged (production's prompt alone, run once). The planner's and the generator's edits have no recording on purpose,
+  // so the tests can see a prepared edit that has none.
+  'lb-10': ['drafter-word-limit', 'classifier-without-json', 'sql-writer-unchanged'],
+}
+
+// The moment LB-02's mock stands still at.
+const LB02_NOW = Date.parse('2026-10-02T09:30:00.000Z')
+
+// The systems whose mock moves on with time (LB-08's retry waits for its backoff, LB-07's run is worked out
+// beat by beat, a meeting's stages take their time) need a clock that the recorder moves by waiting; the others move on
+// as they are read and never wait.
+const TIMED = new Set(['lb-08', 'lb-07', 'lb-09'])
+// The systems whose mock runs on a timer of its own (LB-06's shop ticks every few milliseconds) are read on the wall clock.
+const REAL_TIME = new Set(['lb-06'])
+
+/** A clock that moves only when the recorder waits, shared by the recorder, its tokens and the mock. */
+function virtualClock(): Clock {
+  let now = Date.now()
+  return {
+    now: () => now,
+    sleep: (ms) => {
+      now += ms
+      return Promise.resolve()
+    },
+  }
+}
+
+/** A clock that is the wall clock: the mock moves on by itself, and the recorder waits for it. */
+function realClock(): Clock {
+  return { now: () => Date.now(), sleep: ms => new Promise(resolve => setTimeout(resolve, ms)) }
+}
+
+/** A clock that never waits: the mock's pipeline moves on as it is read. */
+function instantClock(): Clock {
+  return { now: () => Date.now(), sleep: () => Promise.resolve() }
+}
+
+/** A clock that stands still at one moment, so what a replay shows does not depend on the day it was made. */
+function stillClock(at: number): Clock {
+  return { now: () => at, sleep: () => Promise.resolve() }
+}
+
+/** Picks the clock a system's recording runs on. */
+function clockFor(system: string): Clock {
+  if (system === 'lb-02') return stillClock(LB02_NOW)
+  if (REAL_TIME.has(system)) return realClock()
+  return TIMED.has(system) ? virtualClock() : instantClock()
+}
+
+/** Lays the mock's LB-02 out afresh: no conversations, a calendar nobody has booked. */
+async function resetLb02(origin: string): Promise<void> {
+  const answer = await fetch(new URL('/__mock/lb02/reset', origin), { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+  if (!answer.ok) throw new Error(`The mock would not reset LB-02 (status ${answer.status}).`)
+}
+
+/** Records some of a system's samples on one mock and writes them under the folder. */
+async function recordOnOneMock(system: string, samples: readonly string[], folder: string): Promise<void> {
+  const clock = clockFor(system)
+  const siteKeys = generateKeyPairSync('ed25519')
+  const webKeys = generateKeyPairSync('ed25519')
+  const mock = await startMockBackend({
+    siteKey: siteKeys.publicKey.export({ format: 'jwk' }).x ?? '',
+    webKey: webKeys.publicKey.export({ format: 'jwk' }).x ?? '',
+    now: clock.now,
+    // LB-06's shop ticks slowly enough that a recording shows the incident unfold in steps, and not as one jump.
+    lb06: { tickMs: 150 },
+    // LB-07's beats are longer than the recorder's pause between reads, so every state of a run is read at least once.
+    lb07: { tickMs: 700 },
+  })
+  try {
+    const backend = new Backend({
+      apiUrl: new URL(mock.url),
+      gatewayUrl: new URL(mock.url),
+      signingKey: siteKeys.privateKey,
+      gatewayTokens: new ServiceTokens('web', webKeys.privateKey, () => clock.now() / 1_000),
+      fetch,
+      clock,
+    })
+    for (const sample of samples) {
+      // Each LB-02 sample starts on a calendar nobody has touched, as the golden set's cases do.
+      if (system === 'lb-02') await resetLb02(mock.url)
+      console.log(`Wrote ${writeRecording(folder, await recordSample(backend, system, sample))}`)
+    }
+  }
+  finally {
+    await mock.close()
+  }
+}
+
+// The systems that let a visitor start one or two things a day (LB-06's incident, LB-07's runs, LB-10's run) get a fresh mock for each sample, as a fresh day.
+const FRESH_MOCK_PER_SAMPLE = new Set(['lb-06', 'lb-07', 'lb-10'])
+
+/** Records a system's samples on a mock of its own, or on one mock for each when the system allows one a day, and writes them under the folder. */
+async function recordSystem(system: string, samples: readonly string[], folder: string): Promise<void> {
+  if (!FRESH_MOCK_PER_SAMPLE.has(system)) {
+    await recordOnOneMock(system, samples, folder)
+    return
+  }
+  for (const sample of samples) await recordOnOneMock(system, [sample], folder)
+}
+
+const asked = process.argv.slice(2)
+const unknown = asked.filter(system => !Object.hasOwn(SAMPLES, system))
+if (unknown.length > 0) {
+  console.error(`No fixtures are made for ${unknown.join(', ')}. Systems that have them: ${Object.keys(SAMPLES).join(', ')}.`)
+  process.exit(1)
+}
+const folder = join(import.meta.dirname, '..', 'e2e/fixtures/recordings')
+for (const [system, samples] of Object.entries(SAMPLES)) {
+  if (asked.length === 0 || asked.includes(system)) await recordSystem(system, samples, folder)
+}
