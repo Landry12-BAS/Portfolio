@@ -96,10 +96,10 @@ function inPhase(phase: 1 | 2 | 3) {
         <li
           v-for="item in phases"
           :key="item.phase"
-          :class="{ later: item.phase === 3 }"
         >
           <div class="ph-top">
-            <LbPill :variant="item.phase === 1 ? 'solid' : item.phase === 3 ? 'dashed' : 'outline'">
+            <!-- The three phases are the order the systems were built in, and all three are done. -->
+            <LbPill variant="solid">
               {{ t('home.build.phase', { n: item.phase }) }}
             </LbPill>
             <h3>{{ item.title }}</h3>
@@ -244,10 +244,6 @@ h1 {
   align-content: start;
   padding: 16px 18px;
   border: 1.5px solid var(--lb-ink);
-}
-
-.phases > li.later {
-  border-style: dashed;
 }
 
 .ph-top {

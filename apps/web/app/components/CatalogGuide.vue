@@ -28,11 +28,6 @@ const techniqueOptions = computed<[Technique | 'all', string][]>(() => [
   ...TECHNIQUES.map((key): [Technique, string] => [key, t(`catalog.techniqueNames.${key}`)]),
 ])
 
-/** Returns the pill style for a build phase: solid now, outline next, dashed last. */
-function phaseVariant(phase: 1 | 2 | 3) {
-  return phase === 1 ? 'solid' : phase === 3 ? 'dashed' : 'outline'
-}
-
 /** Returns a system's techniques as one line of labels in this language. */
 function techniqueList(keys: readonly Technique[]) {
   return keys.map(key => t(`catalog.techniqueNames.${key}`)).join(' · ')
@@ -158,7 +153,8 @@ function techniqueList(keys: readonly Technique[]) {
               {{ techniqueList(system.techniques) }}
             </td>
             <td>
-              <LbPill :variant="phaseVariant(system.phase)">
+              <!-- Every phase is built, so every pill is solid: an outline or a dashed one would read as "later". -->
+              <LbPill variant="solid">
                 {{ system.phase }}
               </LbPill>
             </td>

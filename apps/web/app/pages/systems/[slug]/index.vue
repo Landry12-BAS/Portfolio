@@ -36,7 +36,6 @@ const board = hasBoard(system.slug)
 const index = datasheets.value.findIndex(item => item.slug === system.slug)
 const previous = datasheets.value[index - 1]
 const next = datasheets.value[index + 1]
-const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed' : 'outline'
 </script>
 
 <template>
@@ -72,7 +71,8 @@ const phaseVariant = system.phase === 1 ? 'solid' : system.phase === 3 ? 'dashed
         </NuxtLinkLocale>
       </div>
       <div class="meta">
-        <LbPill :variant="phaseVariant">
+        <!-- Solid whatever the phase: all three are built. -->
+        <LbPill variant="solid">
           {{ t('datasheet.phase', { n: system.phase }) }}
         </LbPill>
         <span class="meta-line">{{ system.runtime }} · {{ t('datasheet.size', { size: system.size }) }}</span>
