@@ -73,7 +73,10 @@ describe('LB-06\'s store', () => {
     await until(() => store.runPhase === 'over', 'the incident to end', 60_000)
     await until(() => scope.phase === 'finished', 'the Scope to find the trace', 20_000)
     expect(scope.spans.length).toBeGreaterThan(0)
-  })
+    // Its own limit, the integration tests' 20 s: this one steps the clock through the Scope giving up, a
+    // whole incident and the Scope's second look. Half a second on a laptop, but 2.2 to 4.9 s on CI's shared
+    // runners, where the default 5 s limit failed it once at 5.04 s with nothing wrong.
+  }, 20_000)
 
   it('starts a curated incident live, follows it over the socket, and draws its minutes as they come', async () => {
     const { site, store, scope } = await begin()
