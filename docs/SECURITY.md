@@ -36,12 +36,14 @@ flowchart LR
 - DNS and HTTPS through Cloudflare; the origin IP is never published.
 - Cloudflare Tunnel: the box runs `cloudflared`, an outbound-only connector. There is
   no inbound firewall rule for HTTP or SSH.
-- Cloudflare's free managed WAF rules, Bot Fight Mode, a per-IP rate-limiting rule on the
-  WebSocket path of the API hostname only (`/ws/`, where the address is the visitor's own),
-  and DDoS protection. There is deliberately no per-IP rule for the rest of the API hostname:
-  the site's server relays every visitor's call from Vercel's addresses, which all visitors
-  share, so such a rule would see the site and let one visitor block it for everyone.
-  [`docs/DEPLOY.md`](DEPLOY.md), part 5, says what to use instead.
+- Cloudflare's free managed WAF rules, a per-IP rate-limiting rule on the WebSocket path of
+  the API hostname only (`/ws/`, where the address is the visitor's own), and DDoS
+  protection. There is deliberately no per-IP rule for the rest of the API hostname: the
+  site's server relays every visitor's call from Vercel's addresses, which all visitors
+  share, so such a rule would see the site and let one visitor block it for everyone. For the
+  same reason Bot Fight Mode stays off: the caller it would judge is the site's server, and
+  the free plan cannot exempt it. [`docs/DEPLOY.md`](DEPLOY.md), part 5, says what to use
+  instead.
 - TLS 1.3 and HSTS with preload.
 
 ## 2. Visitors without accounts

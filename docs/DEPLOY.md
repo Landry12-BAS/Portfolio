@@ -374,10 +374,16 @@ What to use instead:
    host is `api.example.com` and the URI path starts with `/ws/`, more than 20 requests in 10
    seconds from one IP address, block.
 2. **For the rest of the API hostname, which the site relays, no per-IP rule.** Leave
-   Cloudflare's managed WAF rules, Bot Fight Mode and DDoS protection on: they judge a request
-   by what it is, not by how many its address sent. Caddy serves only the routes it lists
-   (part 11 checks this), and everything past it is limited per session and per system as above.
-3. **If you want a per-IP limit on what the site relays, put it where the visitor's address is
+   Cloudflare's managed WAF rules and DDoS protection on: they judge a request by what it is,
+   not by how many its address sent. Caddy serves only the routes it lists (part 11 checks
+   this), and everything past it is limited per session and per system as above.
+3. **Bot Fight Mode off** (Security, Bots). It judges who is calling, and on this hostname the
+   caller is the site's own server: `fetch` from Vercel's data-centre addresses, which it can
+   take for a bot and challenge. A challenged call is a `403` with `cf-mitigated: challenge`,
+   and then every demo fails. On the free plan no WAF rule can exempt a path or a caller from
+   it. What it would guard is guarded already: the routes Caddy lists want a visitor token,
+   which the site mints only after Turnstile.
+4. **If you want a per-IP limit on what the site relays, put it where the visitor's address is
    visible: on the site.** Vercel's Firewall can rate-limit `/api/*` by the visitor's address
    (check what your plan allows; that menu has not been run here). The site's own server has
    no limiter on purpose: one per serverless instance would not see all requests.
@@ -639,7 +645,9 @@ Create a project from this repository, then:
 | Node.js Version | 24.x |
 | Install Command | `pnpm install --frozen-lockfile` |
 | Build Command | the default (`nuxt build`) |
-| Domains | `example.com` and `www.example.com`, with the DNS records Vercel shows (kept DNS-only in Cloudflare). `example.com` is the site's one address: the site sends every other host on to it (below) |
+| Function region | The Vercel region nearest the box (`fra1` for Oracle's Frankfurt region; Settings, Functions). The site's server calls the API for every demo, so this keeps those calls short |
+| Domains | `example.com`, and `www.example.com` set to redirect to it with a `308` (in the domain's settings), with the DNS records Vercel shows (kept DNS-only in Cloudflare). `example.com` is the site's one address: Vercel sends `www` on to it, and the site sends any other host (below) |
+| Deployment Protection | Vercel Authentication on everything except the custom domains (Standard Protection): the project's `*.vercel.app` addresses then ask for a Vercel login, so the public reaches the site only at `example.com` |
 
 Environment variables, for **Production** (Preview deployments need no API access, and
 the API refuses their origin on purpose: it answers cross-origin calls from
@@ -709,8 +717,10 @@ From a machine **outside** the tailnet:
       site relays everything else from Vercel's addresses, shared by every visitor).
 - [ ] `https://example.com` loads, in both languages, in both themes.
 - [ ] `curl -sI https://www.example.com/systems/lb-01?x=1` is `308` with `location:
-      https://example.com/systems/lb-01?x=1`, no `set-cookie` and `cache-control: no-store`;
-      so is the same request to the project's `https://<project>.vercel.app` address. And
+      https://example.com/systems/lb-01?x=1` and no `set-cookie` (Vercel's domain redirect).
+      The same request to the project's `https://<project>.vercel.app` address is `401` from
+      Vercel Authentication; with that protection off, it is the site's own `308` to the same
+      place, with no `set-cookie` and `cache-control: no-store`. And
       `curl -si https://example.com/api` is the JSON `404` the API's other unknown paths give,
       not a `503`.
 - [ ] `curl -si https://example.com/api/session` carries one `set-cookie`, `__Host-lb_session`
@@ -845,7 +855,9 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   arm64: all publish arm64 builds, and nobody has run them there.
 - **Cloudflare**: the tunnel actually carrying traffic (`cloudflared` was not started),
   the DNS records, the WAF and rate-limit rule, Turnstile, R2 (the upload was tested
-  against a local folder).
+  against a local folder). That Bot Fight Mode would challenge the site's calls from Vercel
+  (part 5) comes from what it judges and what the free plan lets a rule exempt; it was not
+  observed, and the guide keeps it off either way.
 - **Tailscale**: the OAuth client, the tags and policy, `tailscale ssh` from a runner,
   the `ping` wait before it.
 - **The deploy's waves and the backup's lock on the box**: the waves were checked in the
