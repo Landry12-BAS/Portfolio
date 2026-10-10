@@ -223,9 +223,10 @@ Tailscale first, prove you can get in through it, and only then delete that rule
 5. **Make the host firewall agree**, so that nothing but Tailscale is let in. Oracle's
    Ubuntu image has no `ufw`. It ships iptables rules of its own in `/etc/iptables/rules.v4`,
    which `netfilter-persistent` loads at boot: they let in replies, ICMP, the loopback
-   interface, NTP and new SSH connections on port 22, and reject the rest. Delete the SSH
-   line and nothing else. The `InstanceServices` chain in the same file keeps the box's
-   boot volume, metadata and clock reachable, and Oracle says never to remove it:
+   interface and new SSH connections on port 22, and reject the rest. Delete the SSH line
+   and nothing else. The `InstanceServices` chain in the same file, on the way out, keeps the
+   box's boot volume, metadata and clock (Oracle's own time service) reachable, and Oracle
+   says never to remove it:
 
    ```sh
    grep -n -- '--dport 22' /etc/iptables/rules.v4    # one line: -A INPUT ... --dport 22 -j ACCEPT
@@ -243,8 +244,11 @@ Tailscale first, prove you can get in through it, and only then delete that rule
    without that file, `ufw` does the same: `sudo ufw allow in on tailscale0`,
    `sudo ufw default deny incoming`, `sudo ufw --force enable`.)
 6. **Check from outside** (your phone on mobile data, or any machine that is not on the
-   tailnet): `ssh -o ConnectTimeout=8 ubuntu@<public ip>` must time out, and
-   `tailscale ssh ubuntu@lb-box` must still work.
+   tailnet): `ssh -o ConnectTimeout=8 ubuntu@<public ip>` must fail, and
+   `tailscale ssh ubuntu@lb-box` must still work. With step 4 done, the attempt times out:
+   the security list drops it without an answer. If it is turned away at once instead
+   (refused, or "No route to host"), the security list still lets it through and only the
+   host's own rules reject it, which is just as closed; do step 4, and it times out.
 
 ## 4. The box: system, Docker, folders, tools, keys
 
