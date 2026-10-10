@@ -1,6 +1,7 @@
 // The shared Playwright fixture: every end-to-end test fails if the page breaks the
 // security policy, throws, or logs an error, not just when its own assertions fail.
 import { test as base, expect } from '@playwright/test'
+import type { Locator } from '@playwright/test'
 
 /** What went wrong on a page while a test ran. */
 interface PageProblems {
@@ -50,5 +51,20 @@ export const test = base.extend<{ problems: PageProblems }>({
     expect(problems.errors, 'page errors').toEqual([])
   }, { auto: true }],
 })
+
+/**
+ * Presses a toggle button until the page reports it pressed (`aria-pressed="true"`).
+ *
+ * The server renders the page before Vue hydrates it, and a click that lands in between finds
+ * a button with no handler yet and is lost; on a busy CI runner that gap is long enough to
+ * catch a test that clicks right after `goto`. Use it only on a button that sets a value
+ * rather than flipping one, such as a catalog filter, so that pressing it again is harmless.
+ */
+export async function pressUntilPressed(button: Locator): Promise<void> {
+  await expect(async () => {
+    await button.click()
+    await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 1_000 })
+  }).toPass({ timeout: 15_000 })
+}
 
 export { expect }

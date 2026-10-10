@@ -1,6 +1,6 @@
 // End-to-end tests for the two languages: Czech pages at /cs, the page language and
 // hreflang links, the language switch, and links that stay in the visitor's language.
-import { expect, test } from './fixtures'
+import { expect, pressUntilPressed, test } from './fixtures'
 
 test.describe('languages', () => {
   test('serves Czech at /cs, marked as Czech for browsers and search engines', async ({ page }) => {
@@ -39,7 +39,8 @@ test.describe('languages', () => {
   test('filters the catalog in Czech and keeps its links in Czech', async ({ page }) => {
     await page.goto('/cs')
     const backend = page.getByRole('group', { name: 'Filtrovat podle backendu' })
-    await backend.getByRole('button', { name: 'Django' }).click()
+    // The first press may land before hydration; see pressUntilPressed.
+    await pressUntilPressed(backend.getByRole('button', { name: 'Django' }))
     await expect(page.getByText('Zobrazeno 3 z 10 systémů')).toBeVisible()
 
     await page.getByRole('region', { name: 'Systémy' }).getByRole('link', { name: 'LB-09', exact: true }).click()

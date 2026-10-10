@@ -1,5 +1,5 @@
 // End-to-end tests for the selection guide: filtering, and opening a datasheet.
-import { expect, test } from './fixtures'
+import { expect, pressUntilPressed, test } from './fixtures'
 
 test.describe('catalog', () => {
   test('lists the ten systems and filters them like a parts distributor', async ({ page }) => {
@@ -13,7 +13,8 @@ test.describe('catalog', () => {
     const backend = page.getByRole('group', { name: 'Filter by back end' })
     const technique = page.getByRole('group', { name: 'Filter by technique' })
 
-    await backend.getByRole('button', { name: 'Django' }).click()
+    // The first press may land before hydration; see pressUntilPressed.
+    await pressUntilPressed(backend.getByRole('button', { name: 'Django' }))
     await expect(rows).toHaveCount(3)
     await expect(page.getByText('Showing 3 of 10 systems')).toBeVisible()
     await expect(backend.getByRole('button', { name: 'Django' })).toHaveAttribute('aria-pressed', 'true')
