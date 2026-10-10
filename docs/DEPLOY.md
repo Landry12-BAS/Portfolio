@@ -616,13 +616,18 @@ change and the box.
 2. The `images` job builds the seven images for amd64 and arm64 under QEMU (the first time
    it takes a while, since nothing is cached), pushes them to GHCR, scans them, signs
    them, and checks its own signature.
-3. **The first run stops at the box's pull.** GHCR creates each package private. Make the
-   seven packages public (GitHub, your profile, Packages, each `lb-*` package, Package
-   settings, Change visibility): the images hold the code of this public repository and
-   its synthetic data, and no secret. Then, in the failed Deploy run, choose **Re-run
-   failed jobs**. (If you would rather keep them private, log the `deploy` user in once
-   with a read-only token: `echo <token> | sudo -u deploy docker login ghcr.io -u <you>
-   --password-stdin`; the token then lives in that user's `~/.docker/config.json`.)
+3. **The box pulls the images without logging in, so the seven packages must be public.**
+   On the first push from this public repository GHCR made them public by itself (seen on
+   2026-10-10: each `lb-*` package's settings said "This package is currently public", and
+   a tag list asked for with no login answered 200). Check once (GitHub, your profile,
+   Packages): if a package is private, the deploy stops at the box's pull; make it public
+   (Package settings, Change visibility), then choose **Re-run failed jobs** in the failed
+   Deploy run. The images hold the code of this public repository and its synthetic data,
+   and no secret: every build context starts from nothing and names what it takes in
+   (`infra/docker/*.dockerignore`). (If you would rather keep them private, log the
+   `deploy` user in once with a read-only token: `echo <token> | sudo -u deploy docker
+   login ghcr.io -u <you> --password-stdin`; the token then lives in that user's
+   `~/.docker/config.json`, one more credential on the box.)
 4. The `deploy` job sends the commit's `infra/` folder to `/opt/lb/releases/<commit>` and
    runs `deploy.sh`. It decrypts the secrets, pulls, checks the signatures, starts
    everything, waits for every health check, runs the smoke test (through the public

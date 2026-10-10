@@ -14,10 +14,16 @@ LABEL org.opencontainers.image.title="lb-backup" \
 # hadolint ignore=DL3018
 RUN apk add --no-cache bash age postgresql17-client rclone \
  && addgroup -S -g 10002 lbbackup \
- && adduser -S -u 10002 -G lbbackup -H -h /nonexistent -s /sbin/nologin lbbackup
+ && adduser -S -u 10002 -G lbbackup -H -h /nonexistent -s /sbin/nologin lbbackup \
+ && mkdir -m 0555 /usr/local/share/lb-backup
 COPY --chmod=0555 infra/backup/backup.sh /usr/local/bin/lb-backup
 # What the script sources and reads: the dump's arguments, and the tables whose rows it leaves out.
+# Their folder is made above, with the mode a folder needs: a folder that COPY makes takes the
+# mode given for the files, and 0444 on a folder lets nobody but root open what is in it. The
+# first backup on the box stopped there, "lib.sh: Permission denied".
 COPY --chmod=0444 infra/backup/lib.sh infra/backup/excluded-data.txt /usr/local/share/lb-backup/
 ENV LB_BACKUP_SHARE=/usr/local/share/lb-backup
 USER 10002:10002
+# The build stops here if the user the backup runs as cannot read what the script needs.
+RUN test -r "$LB_BACKUP_SHARE/lib.sh" && test -r "$LB_BACKUP_SHARE/excluded-data.txt"
 ENTRYPOINT ["/usr/local/bin/lb-backup"]
