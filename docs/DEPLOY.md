@@ -254,16 +254,19 @@ Tailscale first, prove you can get in through it, and only then delete that rule
 
 All of this runs as `ubuntu` (`tailscale ssh ubuntu@lb-box`).
 
-**The `deploy` user.** CI and you operate the stack as `deploy`. It is in the `docker`
-group, which is root-equivalent on the box, so it is reachable only through the Tailscale
-SSH rules above, with no password and no key:
+**The `deploy` user.** CI and you operate the stack as `deploy`. It joins the `docker`
+group once Docker is installed (below), which is root-equivalent on the box, so it is
+reachable only through the Tailscale SSH rules above, with no password and no key:
 
 ```sh
 sudo adduser --disabled-password --gecos "" deploy
-sudo usermod -aG docker deploy
 printf 'PasswordAuthentication no\nPermitRootLogin no\n' | sudo tee /etc/ssh/sshd_config.d/10-lb.conf
-sudo systemctl reload ssh
+sudo sshd -t                # checks the settings; prints nothing when they are right
 ```
+
+Ubuntu 24.04 starts `sshd` only when a connection arrives on port 22 (socket activation),
+and with that port closed nothing starts it, so there is nothing to reload: the settings
+apply whenever it next starts. Tailscale SSH does not go through `sshd`.
 
 **Automatic security updates**, with a reboot at 04:30 UTC, after the 02:30 backup:
 
@@ -290,6 +293,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker deploy      # the docker group exists from here on
 ```
 
 Then keep containers running while the Docker daemon restarts, publish nothing by

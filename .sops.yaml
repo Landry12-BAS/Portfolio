@@ -6,8 +6,11 @@
 #
 #   owner  made by `just secrets-init`, which keeps the private half OUTSIDE the repository
 #          (~/.config/sops/age/keys.txt) and lists only the public half
-#   box    made on the VM during the first deploy; `just secrets-add-recipient box <key>`
+#   box    made on the VM in part 4 of docs/DEPLOY.md; `just secrets-add-recipient box <key>`
 #          lists it and re-encrypts every file, so the deploy can decrypt them on the box
+#
+# List the owner's key first: `just secrets-init` lists it only while the list is empty, and
+# a file made while the box's key is the only one listed could be opened by the box alone.
 #
 # A public key is not a secret. A private key (AGE-SECRET-KEY-...) never goes in this file.
 creation_rules:
