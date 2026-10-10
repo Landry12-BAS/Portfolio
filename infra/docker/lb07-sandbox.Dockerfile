@@ -12,7 +12,7 @@
 # the one key the sandbox holds comes from Compose at run time. Base images are pinned by digest:
 # `just pin-images` refreshes them.
 
-FROM node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS deps
+FROM node:24.21.0-trixie-slim@sha256:173f125896c3b47ddf056734c7ea789d04595a6a08769a8f78e0df642781fb66 AS deps
 WORKDIR /repo
 # corepack reads `packageManager` from package.json, so the image installs with the same pnpm as
 # CI and local runs.
@@ -34,7 +34,7 @@ RUN mkdir -p /sandbox/node_modules/@lb \
         services/node-systems/node_modules/zod /sandbox/node_modules/ \
  && ln -s ../../packages/contracts /sandbox/node_modules/@lb/contracts
 
-FROM node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS browser
+FROM node:24.21.0-trixie-slim@sha256:173f125896c3b47ddf056734c7ea789d04595a6a08769a8f78e0df642781fb66 AS browser
 # What the download needs, the libraries Chrome Headless Shell links against (its deb.deps, less
 # what a headless shell never opens), and fontconfig's settings with one font family (DejaVu, which
 # fontconfig prefers for every generic name; fonts-dejavu-mono comes with it). The versions

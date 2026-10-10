@@ -39,6 +39,16 @@ FROM python:3.13.15-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd218179
 LABEL org.opencontainers.image.title="lb-flask-systems" \
       org.opencontainers.image.description="The Flask systems (LB-03 Invoice Reader, LB-05 Data Analyst): API, migration and data generation." \
       org.opencontainers.image.source="https://github.com/Landry12-BAS/Portfolio"
+# Debian's security fixes that this base image does not have yet: pcre2 and OpenSSL were fixed
+# after python:3.13.15-slim-trixie was last built (CVE-2026-103111, CVE-2026-84782), and the
+# scan in images.yml stops a release that ships a HIGH finding with a fix. Only these four
+# packages are upgraded, to the versions Debian 13 has at build time: pinning them would break
+# the build at the next fix. Take this step out once `just pin-images` moves the base to a
+# build that has them, when it would upgrade nothing.
+# hadolint ignore=DL3008
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0 libssl3t64 openssl openssl-provider-legacy \
+ && rm -rf /var/lib/apt/lists/*
 # An unprivileged user with no home and no shell. The numeric id is what docker-compose.yml
 # gives the tmpfs mounts, so the two must agree. /warehouse is where LB-05's dataset lives:
 # the seed job writes it there and the API reads it, each as a mount of one named volume.

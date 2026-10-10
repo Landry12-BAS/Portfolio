@@ -18,3 +18,5 @@ creation_rules:
     key_groups:
       - age:
           # One recipient per line, written as "- <public key>  # <who it belongs to>".
+          - age1fz4jkta27ws4fkn3vlav7uzqqf3zvpvfkw4n8fwffh9zf5dxh3nsv5qhnf  # owner
+          - age1c0uy9adkfsz2he7qg9j6mrnu9ualuu77eu7err3prrszfpv33amqhkfkex  # box
