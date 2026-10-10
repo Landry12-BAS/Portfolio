@@ -3,6 +3,10 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "cache": false
+    },
+    "@lb/icons#build": {
+      "dependsOn": ["^build"],
       "inputs": ["svg/**", "scripts/**"],
       "outputs": ["sprite.svg", "src/generated/**"]
     },
