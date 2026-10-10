@@ -220,15 +220,28 @@ Tailscale first, prove you can get in through it, and only then delete that rule
 4. **Delete the SSH rule.** In the OCI console: Networking, Virtual cloud networks, your
    VCN, Security Lists, the default one, Ingress Rules: delete the rule for TCP port 22
    from `0.0.0.0/0`, and the ICMP rules too. The list now admits nothing inbound.
-5. **Make the host firewall agree**, so that only Tailscale's interface accepts anything.
-   Docker publishes no port here, so it does not interfere:
+5. **Make the host firewall agree**, so that nothing but Tailscale is let in. Oracle's
+   Ubuntu image has no `ufw`. It ships iptables rules of its own in `/etc/iptables/rules.v4`,
+   which `netfilter-persistent` loads at boot: they let in replies, ICMP, the loopback
+   interface, NTP and new SSH connections on port 22, and reject the rest. Delete the SSH
+   line and nothing else. The `InstanceServices` chain in the same file keeps the box's
+   boot volume, metadata and clock reachable, and Oracle says never to remove it:
 
    ```sh
-   sudo ufw allow in on tailscale0
-   sudo ufw default deny incoming
-   sudo ufw --force enable
+   grep -n -- '--dport 22' /etc/iptables/rules.v4    # one line: -A INPUT ... --dport 22 -j ACCEPT
+   sudo sed -i '/-A INPUT .*--dport 22 -j ACCEPT/d' /etc/iptables/rules.v4
+   grep -c -- '--dport 22' /etc/iptables/rules.v4    # 0
+   sudo reboot
    ```
 
+   After the reboot, `sudo iptables -S INPUT` has no `--dport 22` rule, and `tailscale ssh`
+   still works: Tailscale adds its own rules when it starts, which accept what comes in on
+   `tailscale0`. Apply the file only by rebooting, never with `netfilter-persistent reload`
+   or `iptables-restore` on a running box: either replaces the whole table, and with it the
+   rules Tailscale and Docker added when they started, which lose their network until they
+   restart. Docker publishes no port here, so it needs no rule of its own. (On an Ubuntu image
+   without that file, `ufw` does the same: `sudo ufw allow in on tailscale0`,
+   `sudo ufw default deny incoming`, `sudo ufw --force enable`.)
 6. **Check from outside** (your phone on mobile data, or any machine that is not on the
    tailnet): `ssh -o ConnectTimeout=8 ubuntu@<public ip>` must time out, and
    `tailscale ssh ubuntu@lb-box` must still work.
@@ -836,8 +849,12 @@ the run in flight having finished (`infra/sandbox/test.sh`, which CI runs too).
   29 here, not on the box's Docker. The whole of LB-07 (the API, the worker and the sandbox
   together, with a model) has not run in the Compose stack: the worker's side was stood in for
   by a client that calls the runner as the worker does.
-- Everything on **Oracle Cloud**: creating the VM, the capacity retries, the security
-  list, the reclaim rule, and the 2 OCPU and 12 GB sizing under real load. The memory
+- On **Oracle Cloud**, parts 2 and 3 have been run on the box, in Frankfurt: the first
+  availability domain was out of Ampere capacity and the second was not, the boot volume was
+  grown to 100 GB, Tailscale joined with its tag, and port 22 was closed in the host's
+  firewall (which is how step 5 came to describe Oracle's own rules rather than `ufw`). Not
+  yet: the security list's ingress rules removed, the reclaim rule, and the 2 OCPU and 12 GB
+  sizing under real load. The memory
   limits of what runs all the time add up to 8576 MiB, and to 10112 at the peak with a
   deploy's biggest wave of jobs (the sums are at the top of `infra/docker-compose.yml`, and
   the table is in part 2); idle, the stack used about 0.7 GiB here (without `cloudflared`
