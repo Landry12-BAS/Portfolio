@@ -665,7 +665,7 @@ Create a project from this repository, then:
 | Root Directory | `apps/web` (leave "Include source files outside of the Root Directory" on: the site uses the workspace packages `@lb/ui` and `@lb/icons`) |
 | Node.js Version | 24.x |
 | Install Command | `pnpm install --frozen-lockfile` |
-| Build Command | the default (`nuxt build`) |
+| Build Command | the default. Vercel finds `turbo.json` and runs the site's build through Turborepo (`turbo run build` for `apps/web`, whose script is `nuxt build`), with Vercel's remote cache. `turbo.json` keeps that task out of the cache, so every deployment builds the site for real: a replayed build would restore no output, and the deployment would fail with "No Output Directory named dist" (`apps/web/test/unit/build-cache.test.ts` holds this) |
 | Function region | The Vercel region nearest the box (`fra1` for Oracle's Frankfurt region; Settings, Functions). The site's server calls the API for every demo, so this keeps those calls short |
 | Domains | `example.com`, and `www.example.com` set to redirect to it with a `308` (in the domain's settings), with the DNS records Vercel shows (kept DNS-only in Cloudflare). `example.com` is the site's one address: Vercel sends `www` on to it, and the site sends any other host (below) |
 | Deployment Protection | Vercel Authentication on everything except the custom domains (Standard Protection): the project's `*.vercel.app` addresses then ask for a Vercel login, so the public reaches the site only at `example.com` |
