@@ -27,8 +27,8 @@ Motion
 
 1. Everything moves with CSS alone: keyframes and transitions, no library. The security policy stays as it is.
 2. One pace for the whole site, in tokens: fast (160 ms) for a control that answers, slow (420 ms) for a part that arrives as the page is scrolled, enter (640 ms) for a page's first screen, and one easing, quick to start and soft to land.
-3. The first screen comes in once, top to bottom, the Scope a beat after the headline. What is below the fold comes in as the visitor reaches it, with a short rise and fade, siblings staggered by 50 ms (useRevealOnScroll). Nothing is ever hidden from someone who can see it: the page renders whole, and only parts still below the fold are set back, once the page is scripted.
-4. Pages change with a short fade and a four-pixel rise, the old one leaving before the new one comes.
+3. The first screen comes in once, top to bottom, the Scope a beat after the headline: it rises and wipes in, the way a sheet prints. What is below the fold comes in as the visitor reaches it, with a short rise, siblings staggered by 50 ms (useRevealOnScroll). Nothing fades: text at partial opacity reads as low contrast, to an accessibility check that runs while it arrives and to anyone who catches that moment. Nothing is ever hidden from someone who can see it: the page renders whole, and only parts still below the fold are set back, once the page is scripted.
+4. Pages change with a four-pixel rise of the new page; the old one leaves at once. No fade here either: a visitor who follows a link within the site reaches the next page's text at once, at full contrast.
 5. One load-bearing motion per screen: the playhead. The tiles' scenes are quiet loops, under four seconds each, and none carries meaning on its own.
 6. Every animation has a still state under prefers-reduced-motion: the playhead parks at the drafting step, the scenes stop, hover lifts are off, the reveals and page changes are instant.
 7. Hover lifts a tile two pixels and darkens its border; nothing else reacts to the pointer.

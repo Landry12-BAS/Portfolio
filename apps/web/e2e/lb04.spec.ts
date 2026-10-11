@@ -84,6 +84,14 @@ async function inkOnPage(page: Page): Promise<number> {
   })
 }
 
+/**
+ * Waits until the page is drawn with at least this much ink. The viewer says it is ready before its first drawing lands, and a redraw
+ * (the frame changing width as the agreement line arrives) clears the canvas before it draws again, so one sample can land on a blank canvas.
+ */
+async function expectInk(page: Page, atLeast: number): Promise<void> {
+  await expect.poll(() => inkOnPage(page), { timeout: 30_000 }).toBeGreaterThan(atLeast)
+}
+
 /** Measures the ink on the drawn page under the first highlight, and under a strip of the same size at the top of the page, where there is none. */
 async function inkUnderFirstHighlight(page: Page): Promise<{ under: number, area: number, control: number }> {
   return page.evaluate(() => {
@@ -336,7 +344,7 @@ test.describe('the visitor\'s own PDF', () => {
     await page.locator('article[data-finding]').first().getByRole('button', { name: 'Show in the contract' }).click()
     await waitForViewer(page)
     await expect(page.getByTestId('text-agreement')).toHaveAttribute('data-state', 'match')
-    expect(await inkOnPage(page)).toBeGreaterThan(2_000)
+    await expectInk(page, 2_000)
     expect(requests.filter(request => /\/file$/.test(request))).toEqual([])
   })
 })
@@ -414,7 +422,7 @@ test.describe('the PDF viewer', () => {
 
     await openViewer(page)
 
-    expect(await inkOnPage(page)).toBeGreaterThan(2_000)
+    await expectInk(page, 2_000)
     await expect(page.getByTestId('text-agreement')).toHaveAttribute('data-state', 'match')
     await expect(page.getByTestId('text-agreement')).toContainText('all 11 pages')
   })
@@ -432,6 +440,7 @@ test.describe('the PDF viewer', () => {
     await expect(first.getByRole('button', { name: 'Show in the contract' })).toHaveAttribute('aria-pressed', 'true')
     const boxes = page.locator(`[data-testid="highlight"][data-finding="${id}"]`)
     expect(await boxes.count()).toBeGreaterThan(0)
+    await expectInk(page, 1_000)
     const ink = await inkUnderFirstHighlight(page)
     expect(ink.under / ink.area).toBeGreaterThan(0.04)
     expect(ink.control).toBe(0)
@@ -519,7 +528,7 @@ test.describe('the PDF viewer', () => {
 
       await expect(page.getByTestId('text-agreement')).toHaveAttribute('data-state', 'match')
       await expect(page.getByTestId('text-agreement')).toContainText(`all ${sample.pages} pages`)
-      expect(await inkOnPage(page)).toBeGreaterThan(1_000)
+      await expectInk(page, 1_000)
     })
   }
 })

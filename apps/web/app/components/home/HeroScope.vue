@@ -134,7 +134,9 @@ function detail(step: HeroStep): string {
   align-items: center;
 }
 
-/* The first screen comes in once, top to bottom, the Scope a beat after the headline. */
+/* The first screen comes in once, top to bottom, the Scope a beat after the headline. It rises and
+   wipes in, the way a sheet prints, and never fades: text at partial opacity reads as low contrast to
+   an accessibility check that runs while it is still arriving, and to anyone who catches that moment. */
 .intro > *,
 .scope {
   animation: rise var(--lb-motion-enter) var(--lb-ease) both;
@@ -149,12 +151,12 @@ function detail(step: HeroStep): string {
 
 @keyframes rise {
   from {
-    opacity: 0;
-    transform: translateY(10px);
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(14px);
   }
 
   to {
-    opacity: 1;
+    clip-path: inset(0);
     transform: none;
   }
 }
