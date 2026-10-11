@@ -29,7 +29,7 @@ test.describe('languages', () => {
     await expect(page).toHaveURL(/\/cs\/systems\/lb-01$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Agent zákaznické podpory')
     await expect(page.getByRole('heading', { name: 'Signálový řetězec' })).toBeVisible()
-    await expect(page.getByRole('table')).toContainText('Požadavků na návštěvníka za den')
+    await expect(page.getByRole('table', { name: 'Tabulka 1. Provozní limity' })).toContainText('Požadavků na návštěvníka za den')
 
     await page.getByRole('navigation', { name: 'Jazyk' }).getByRole('link', { name: 'EN English' }).click()
     await expect(page).toHaveURL(/\/systems\/lb-01$/)

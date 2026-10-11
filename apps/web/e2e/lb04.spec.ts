@@ -92,6 +92,16 @@ async function expectInk(page: Page, atLeast: number): Promise<void> {
   await expect.poll(() => inkOnPage(page), { timeout: 30_000 }).toBeGreaterThan(atLeast)
 }
 
+/** Measures the ink under the first highlight once the page is drawn there: a redraw clears the canvas before it draws again, so one sample can be blank. */
+async function inkUnderFirstHighlightOnceDrawn(page: Page): Promise<{ under: number, area: number, control: number }> {
+  let ink = await inkUnderFirstHighlight(page)
+  await expect.poll(async () => {
+    ink = await inkUnderFirstHighlight(page)
+    return ink.under
+  }, { timeout: 30_000 }).toBeGreaterThan(0)
+  return ink
+}
+
 /** Measures the ink on the drawn page under the first highlight, and under a strip of the same size at the top of the page, where there is none. */
 async function inkUnderFirstHighlight(page: Page): Promise<{ under: number, area: number, control: number }> {
   return page.evaluate(() => {
@@ -440,8 +450,7 @@ test.describe('the PDF viewer', () => {
     await expect(first.getByRole('button', { name: 'Show in the contract' })).toHaveAttribute('aria-pressed', 'true')
     const boxes = page.locator(`[data-testid="highlight"][data-finding="${id}"]`)
     expect(await boxes.count()).toBeGreaterThan(0)
-    await expectInk(page, 1_000)
-    const ink = await inkUnderFirstHighlight(page)
+    const ink = await inkUnderFirstHighlightOnceDrawn(page)
     expect(ink.under / ink.area).toBeGreaterThan(0.04)
     expect(ink.control).toBe(0)
     // The cited words are also text: the passage under the finding, and the page's own text with the same words marked.

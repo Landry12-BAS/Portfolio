@@ -9,6 +9,8 @@ import { useI18n } from 'vue-i18n'
 import type { MeasuredRun } from '#shared/data/measured'
 import { recordedDayOf } from '#shared/data/measured'
 
+import { useDatasheetFormat } from '~/composables/useDatasheetFormat'
+
 const props = defineProps<{
   /** The rows, one per curated sample. */
   rows: readonly MeasuredRun[]

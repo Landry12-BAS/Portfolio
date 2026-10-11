@@ -9,6 +9,8 @@ import { useI18n } from 'vue-i18n'
 
 import type { HeroTrace } from '#shared/data/hero-trace'
 
+import { useDatasheetFormat } from '~/composables/useDatasheetFormat'
+
 const props = defineProps<{
   /** The recorded run, reduced to its steps. */
   trace: HeroTrace

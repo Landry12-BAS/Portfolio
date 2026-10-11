@@ -10,6 +10,8 @@ import { useI18n } from 'vue-i18n'
 
 import type { HeroStepKind } from '#shared/data/hero-trace'
 
+import { useDatasheetFormat } from '~/composables/useDatasheetFormat'
+
 import type { StepState } from '../pipeline'
 
 defineProps<{

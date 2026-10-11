@@ -201,7 +201,14 @@ watch(() => props.focus, async (focus) => {
 onMounted(() => {
   void open(props.pdf)
   if (typeof ResizeObserver === 'undefined' || !frame.value) return
-  observer = new ResizeObserver(() => {
+  // The page is drawn at the frame's width, so only a change of width calls for a drawing again. The
+  // frame grows and shrinks in height as the agreement line, the boxes and the page's text come and
+  // go, and a drawing on each of those cleared the canvas for a moment every time.
+  let drawnWidth = frame.value.clientWidth
+  observer = new ResizeObserver((entries) => {
+    const width = entries[0]?.contentRect.width ?? drawnWidth
+    if (width === drawnWidth) return
+    drawnWidth = width
     if (resizeTimer !== undefined) clearTimeout(resizeTimer)
     resizeTimer = setTimeout(() => void draw(), 150)
   })
