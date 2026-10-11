@@ -61,4 +61,15 @@ describe('pipelineSteps', () => {
     const fake: Span = { ...firstSpans(1)[0]!, name: 'classify', kind: 'gateway.call' }
     expect(pipelineSteps(CHAIN, [fake], false)[2]?.state).toBe('waiting')
   })
+
+  it('draws a finished step in the channel of the call it made, with how long it took', () => {
+    const steps = pipelineSteps(CHAIN, mockSpans(RUN, 0, undefined, 3) as Span[], true)
+    expect(steps.map(step => step.kind)).toEqual(['step', 'guard', 'model', 'retrieval', 'retrieval', 'tool', 'model', 'step', 'step'])
+    expect(steps.map(step => step.durationMs)).toEqual([3, 187, 530, 210, 200, 10, 1500, 20, 10])
+  })
+
+  it('draws a step that has no span yet as a plain step with no time', () => {
+    const steps = pipelineSteps(CHAIN, firstSpans(2), false)
+    expect(steps.slice(2).every(step => step.kind === 'step' && step.durationMs === undefined)).toBe(true)
+  })
 })
