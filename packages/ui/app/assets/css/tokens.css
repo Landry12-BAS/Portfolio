@@ -48,6 +48,13 @@
   --lb-font-sans: "Archivo Variable", "Helvetica Neue", Arial, sans-serif;
   --lb-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --lb-gutter: 16px;
+  /* Motion, one pace for the whole site: fast for a control that answers, slow for a part that arrives
+     as the page is scrolled, enter for a page's first screen. One easing, quick to start and soft to
+     land. base.css ends every animation and transition for a visitor who asked for less motion. */
+  --lb-motion-fast: 160ms;
+  --lb-motion-slow: 420ms;
+  --lb-motion-enter: 640ms;
+  --lb-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* Marks drawn on the picture of a document: a line round a field, the outline and the highlighter of the
      field in view. The picture is white paper in both themes, so these are the same in both. */
   --lb-page-line: #045efe;

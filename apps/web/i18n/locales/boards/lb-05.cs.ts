@@ -31,7 +31,7 @@ const lb05 = {
     counter: '{count} z {max}',
     submit: 'Zeptat se analytika',
     asking: 'Čekám na analytika…',
-    privacy: 'Váš text se přes AI bránu odešle jazykovému modelu, aby napsal SQL. Nezadávejte osobní údaje. Data jsou smyšlená a záznam běhu obsahuje jen počty a názvy, nikdy vaše slova.',
+    privacy: 'Váš text se přes AI bránu odešle jazykovému modelu, aby napsal SQL. Nezadávejte osobní údaje. Data jsou ukázková a záznam běhu obsahuje jen počty a názvy, nikdy vaše slova.',
   },
   attack: {
     title: 'Zkuste ho přimět, aby smazal data',

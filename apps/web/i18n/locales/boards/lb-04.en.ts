@@ -71,7 +71,7 @@ const lb04 = {
       tooLarge: 'The file is larger than {size}.',
       notPdf: 'The file is not a PDF.',
     },
-    privacy: 'Use only documents that are synthetic or public. The file goes to a model that does not train on it, but this is a demo: do not send anything confidential.',
+    privacy: 'Use only sample or public documents. The file goes to a model that does not train on it, but this is a demo: do not send anything confidential.',
     cost: 'Reviewing it takes one of your {contracts} contracts today and one of your files, and makes two to five model calls. A refused file gives the contract back.',
     submit: 'Review this PDF',
   },

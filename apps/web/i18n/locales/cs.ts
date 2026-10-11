@@ -19,7 +19,7 @@ import type { Messages } from './en'
 
 const cs = {
   site: {
-    description: 'Deset živých AI systémů, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
+    description: 'Deset živých AI systémů pro výběrovou kávovou firmu, otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
     skip: 'Přejít na obsah',
   },
   toolbar: {
@@ -37,13 +37,13 @@ const cs = {
   footer: {
     folder: 'Katalog dílů',
     allParts: 'Všechny díly',
-    note: 'Landry Bodjona · LB. Basalt & Bean Coffee Co. je smyšlená firma a všechna dema běží na syntetických datech.',
+    note: 'Landry Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
   },
   home: {
     title: 'Deset živých AI systémů',
-    kicker: 'Deset živých AI systémů · Jedna smyšlená firma',
+    kicker: 'Deset živých AI systémů · Jedna platforma',
     heading: 'Portfolio, které si můžete vyzkoušet',
-    lede: 'Deset AI systémů v produkční kvalitě, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
+    lede: 'AI systémy v produkční kvalitě. Skutečná volání nástrojů. Sledovatelný běh. Postavené k vyzkoušení, ne jen k obdivu.',
     quickref: {
       label: 'Stručný přehled',
       stamp: 'Všech deset systémů hotovo',
@@ -60,6 +60,37 @@ const cs = {
       languagesValue: 'Angličtina a čeština',
       accounts: 'Účty',
       accountsValue: 'Žádné. Návštěvníci zůstávají anonymní',
+    },
+    hero: {
+      label: 'Úvod',
+      pick: 'Vyberte systém',
+      trace: 'Přečíst tento záznam',
+      facts: 'Bez účtů · Angličtina a čeština · Bezplatné tarify modelů za jedinou bránou',
+      scope: {
+        title: 'Scope',
+        run: 'LB-01 Agent zákaznické podpory · zaznamenaný běh',
+        live: 'Přehrávání',
+        step: 'Krok',
+        time: 'Čas, 0 až {seconds} s',
+        model: 'Model · tokeny',
+        tokens: '{in} na vstupu, {out} na výstupu',
+        instant: 'pod 10 ms',
+        ms: '{n} ms',
+        s: '{n} s',
+        summary: '{steps} kroků a {calls} volání modelu za {seconds} sekund, zaznamenáno {date}.',
+        footer: '{calls} volání modelu · {steps} kroků · {seconds} s · zaznamenáno {date}',
+        legend: {
+          model: 'Model',
+          tool: 'Nástroj',
+          retrieval: 'Vyhledávání',
+          guard: 'Ochrana',
+        },
+      },
+    },
+    wall: {
+      label: 'Deset dílů při práci',
+      kicker: 'Deset systémů, jedna platforma. Každá dlaždice je stroj při práci.',
+      open: 'Otevřít {part}, {name}',
     },
     guide: {
       title: 'Průvodce výběrem',

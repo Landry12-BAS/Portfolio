@@ -10,7 +10,7 @@ const lb02 = {
   pwa: {
     name: 'Rezervační asistent Basalt & Bean',
     shortName: 'Asistent',
-    description: 'Chatovací asistent, který rezervuje degustace, cuppingy a pražící workshopy v živém kalendáři, jejž nejde obsadit dvakrát. Ukázka na smyšlených datech.',
+    description: 'Chatovací asistent, který rezervuje degustace, cuppingy a pražící workshopy v živém kalendáři, jejž nejde obsadit dvakrát. Běží na ukázkových datech.',
   },
   start: {
     title: 'Zahájit konverzaci',
