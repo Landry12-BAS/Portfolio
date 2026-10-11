@@ -89,8 +89,8 @@ allowance since Oracle's June 2026 cut (`STACK.md`, Infrastructure and hosting).
    service up, the stack idles at about 1.8 GB, which is 15% of 12 GB (measured on
    2026-10-10), so memory alone does not clear the line, and a quiet portfolio will not
    clear it on CPU or network either. Part 9, step 5 therefore installs
-   `lb-ballast.service` (`infra/systemd`), which holds 768 MiB of memory and lifts the idle
-   box to about 22%. In the first week, read the instance's metrics all the same (Compute,
+   `lb-ballast.service` (`infra/systemd`), which holds 1 GiB of memory and lifts the idle
+   box to about 24% (768 MiB left it at 20.6% right after a deploy, too close to the line). In the first week, read the instance's metrics all the same (Compute,
    Instance, Metrics) and check that memory shows above 20%. The other way out is to move
    the tenancy to pay-as-you-go, which Oracle does not reclaim and which keeps the same
    free allowance at the price of billing risk.
