@@ -43,7 +43,7 @@ const cs = {
     title: 'Deset živých AI systémů',
     kicker: 'Deset živých AI systémů · Jedna platforma',
     heading: 'Portfolio, které si můžete vyzkoušet',
-    lede: 'Deset AI systémů v produkční kvalitě pro výběrovou kávovou firmu Basalt & Bean, otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
+    lede: 'AI systémy v produkční kvalitě. Skutečná volání nástrojů. Sledovatelný běh. Postavené k vyzkoušení, ne jen k obdivu.',
     quickref: {
       label: 'Stručný přehled',
       stamp: 'Všech deset systémů hotovo',

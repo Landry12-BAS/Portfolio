@@ -41,7 +41,7 @@ const en = {
     title: 'Ten live AI systems',
     kicker: 'Ten live AI systems · One platform',
     heading: 'A portfolio you can operate',
-    lede: 'Ten production-grade AI systems for a specialty coffee business, Basalt & Bean, open to every visitor. Each one runs live on this site, shows every step it takes, and invites people to try to break it.',
+    lede: 'Production-grade AI systems. Real tool calls. Observable execution. Built to be tested, not just admired.',
     quickref: {
       label: 'Quick reference',
       stamp: 'All ten systems built',
