@@ -86,7 +86,7 @@ const en = {
       },
     },
     wall: {
-      label: 'The ten systems',
+      label: 'Ten parts, at work',
       kicker: 'Ten systems, one platform. Each tile is a machine at work.',
       open: 'Open {part}, {name}',
     },

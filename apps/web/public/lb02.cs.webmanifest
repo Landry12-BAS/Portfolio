@@ -2,7 +2,7 @@
   "id": "/cs/systems/lb-02/board",
   "name": "Rezervační asistent Basalt & Bean",
   "short_name": "Asistent",
-  "description": "Chatovací asistent, který rezervuje degustace, cuppingy a pražící workshopy v živém kalendáři, jejž nejde obsadit dvakrát. Ukázka na smyšlených datech.",
+  "description": "Chatovací asistent, který rezervuje degustace, cuppingy a pražící workshopy v živém kalendáři, jejž nejde obsadit dvakrát. Běží na ukázkových datech.",
   "lang": "cs",
   "dir": "ltr",
   "start_url": "/cs/systems/lb-02/board",

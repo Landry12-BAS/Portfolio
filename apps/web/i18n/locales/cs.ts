@@ -88,7 +88,7 @@ const cs = {
       },
     },
     wall: {
-      label: 'Deset systémů',
+      label: 'Deset dílů při práci',
       kicker: 'Deset systémů, jedna platforma. Každá dlaždice je stroj při práci.',
       open: 'Otevřít {part}, {name}',
     },
