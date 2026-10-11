@@ -73,7 +73,7 @@ const datasheets = useDatasheets()
   text-decoration: none;
   background: var(--lb-sheet);
   border: 1.5px solid var(--lb-rule);
-  transition: border-color 160ms ease, transform 160ms ease;
+  transition: border-color var(--lb-motion-fast) var(--lb-ease), transform var(--lb-motion-fast) var(--lb-ease);
 }
 
 .tile:hover {

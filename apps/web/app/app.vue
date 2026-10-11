@@ -6,6 +6,8 @@
 
 <template>
   <NuxtLayout>
-    <NuxtPage />
+    <!-- Pages change with a short fade and a four-pixel rise (the page classes in packages/ui, base.css),
+         the old one leaving before the new one comes, so nothing overlaps or flashes. -->
+    <NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />
   </NuxtLayout>
 </template>

@@ -134,6 +134,31 @@ function detail(step: HeroStep): string {
   align-items: center;
 }
 
+/* The first screen comes in once, top to bottom, the Scope a beat after the headline. */
+.intro > *,
+.scope {
+  animation: rise var(--lb-motion-enter) var(--lb-ease) both;
+}
+
+.intro > :nth-child(1) { animation-delay: 40ms; }
+.intro > :nth-child(2) { animation-delay: 110ms; }
+.intro > :nth-child(3) { animation-delay: 180ms; }
+.intro > :nth-child(4) { animation-delay: 250ms; }
+.intro > :nth-child(5) { animation-delay: 320ms; }
+.scope { animation-delay: 240ms; }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .intro {
   display: grid;
   gap: 18px;

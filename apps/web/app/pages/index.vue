@@ -7,6 +7,9 @@ const datasheets = useDatasheets()
 
 useSeoMeta({ title: () => t('home.title') })
 
+// What is below the fold comes in as the visitor reaches it: the tiles of the wall, then each section.
+useRevealOnScroll(['.tiles > li', '#systems', '#anatomy', '#build'])
+
 // The three build phases, with their names and descriptions in this language.
 const phases = computed(() => [
   { phase: 1 as const, title: t('home.build.foundation'), text: t('home.build.foundationText') },

@@ -26,9 +26,12 @@ Only the tokens in packages/ui/app/assets/css/tokens.css, each with a light and 
 Motion
 
 1. Everything moves with CSS alone: keyframes and transitions, no library. The security policy stays as it is.
-2. One load-bearing motion per screen: the playhead. The tiles' scenes are quiet loops, under four seconds each, and none carries meaning on its own.
-3. Every animation has a still state under prefers-reduced-motion: the playhead parks at the drafting step, the scenes stop, hover lifts are off.
-4. Hover lifts a tile two pixels and darkens its border; nothing else reacts to the pointer.
+2. One pace for the whole site, in tokens: fast (160 ms) for a control that answers, slow (420 ms) for a part that arrives as the page is scrolled, enter (640 ms) for a page's first screen, and one easing, quick to start and soft to land.
+3. The first screen comes in once, top to bottom, the Scope a beat after the headline. What is below the fold comes in as the visitor reaches it, with a short rise and fade, siblings staggered by 50 ms (useRevealOnScroll). Nothing is ever hidden from someone who can see it: the page renders whole, and only parts still below the fold are set back, once the page is scripted.
+4. Pages change with a short fade and a four-pixel rise, the old one leaving before the new one comes.
+5. One load-bearing motion per screen: the playhead. The tiles' scenes are quiet loops, under four seconds each, and none carries meaning on its own.
+6. Every animation has a still state under prefers-reduced-motion: the playhead parks at the drafting step, the scenes stop, hover lifts are off, the reveals and page changes are instant.
+7. Hover lifts a tile two pixels and darkens its border; nothing else reacts to the pointer.
 
 Layout
 
