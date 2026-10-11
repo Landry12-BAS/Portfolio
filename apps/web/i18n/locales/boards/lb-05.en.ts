@@ -33,7 +33,7 @@ const lb05 = {
     counter: '{count} of {max}',
     submit: 'Ask the analyst',
     asking: 'Waiting for the analyst…',
-    privacy: 'Your text is sent to a language model through the AI gateway to write the SQL. Do not type personal data. The data is synthetic, and the trace of a run holds counts and names only, never your words.',
+    privacy: 'Your text is sent to a language model through the AI gateway to write the SQL. Do not type personal data. The data is demo data, and the trace of a run holds counts and names only, never your words.',
   },
   attack: {
     title: 'Try to make it delete data',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// <SiteFooter>: the product folder (a link to every part's datasheet) and the note that
-// the company and its data are fictional.
+// <SiteFooter>: the product folder (a link to every part's datasheet) and the signature line:
+// who built the platform, the reference business it ships with, and that the demos run on demo data.
 const { t } = useI18n()
 const datasheets = useDatasheets()
 </script>

@@ -20,9 +20,9 @@ const lb01 = {
     runInstead: 'Spustit ji raději naživo',
     noLive: 'Tato kopie webu teď nemůže spouštět požadavky naživo.',
     noAllowance: 'Dnešní požadavky jsou vyčerpané, takže běh naživo je vypnutý, dokud se kvóta neobnoví. Zaznamenané ukázky lze přesto přehrát.',
-    noCustomers: 'Smyšlené zákazníky se nepodařilo načíst, takže vlastní požadavek teď nejde založit. Ukázky fungují dál.',
+    noCustomers: 'Ukázkové zákazníky se nepodařilo načíst, takže vlastní požadavek teď nejde založit. Ukázky fungují dál.',
     customer: 'Zákazník',
-    customerHint: 'Smyšlení zákazníci firmy Basalt & Bean Coffee Co.',
+    customerHint: 'Ukázkoví zákazníci firmy Basalt & Bean Coffee Co.',
     language: 'Jazyk požadavku',
     languages: {
       en: 'Angličtina',

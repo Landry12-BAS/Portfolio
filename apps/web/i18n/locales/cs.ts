@@ -19,7 +19,7 @@ import type { Messages } from './en'
 
 const cs = {
   site: {
-    description: 'Deset živých AI systémů, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
+    description: 'Deset živých AI systémů pro výběrovou kávovou firmu, otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
     skip: 'Přejít na obsah',
   },
   toolbar: {
@@ -37,13 +37,13 @@ const cs = {
   footer: {
     folder: 'Katalog dílů',
     allParts: 'Všechny díly',
-    note: 'Landry Bodjona · LB. Basalt & Bean Coffee Co. je smyšlená firma a všechna dema běží na syntetických datech.',
+    note: 'Landry Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
   },
   home: {
     title: 'Deset živých AI systémů',
-    kicker: 'Deset živých AI systémů · Jedna smyšlená firma',
+    kicker: 'Deset živých AI systémů · Jedna platforma',
     heading: 'Portfolio, které si můžete vyzkoušet',
-    lede: 'Deset AI systémů v produkční kvalitě, postavených pro jednu smyšlenou kávovou firmu a otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
+    lede: 'Deset AI systémů v produkční kvalitě pro výběrovou kávovou firmu Basalt & Bean, otevřených každému návštěvníkovi. Každý z nich běží živě na tomto webu, ukazuje každý svůj krok a vybízí vás, abyste se ho pokusili rozbít.',
     quickref: {
       label: 'Stručný přehled',
       stamp: 'Všech deset systémů hotovo',

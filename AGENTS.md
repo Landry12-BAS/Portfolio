@@ -4,8 +4,10 @@ Guidance for coding agents working in this repository.
 
 ## Project
 
-A live AI portfolio: ten AI systems (LB-01 to LB-10) built for one fictional company,
-Basalt & Bean Coffee Co., on a shared platform (LB-00). Every system runs live on the
+A live AI portfolio: ten AI systems (LB-01 to LB-10) built around one reference business,
+Basalt & Bean Coffee Co. (invented for the platform; its data is generated), on a shared
+platform (LB-00). The site never calls it fictional: the owner's rule of 2026-10-11 is that
+the copy reads as a product, so it says "reference business" and "demo data". Every system runs live on the
 main site and any visitor can try it, inspect its trace, and try to break it.
 
 - Stack and the reasons behind it: [`docs/STACK.md`](docs/STACK.md)

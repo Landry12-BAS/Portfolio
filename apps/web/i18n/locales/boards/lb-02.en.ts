@@ -11,7 +11,7 @@ const lb02 = {
   pwa: {
     name: 'Basalt & Bean booking concierge',
     shortName: 'Concierge',
-    description: 'A chat concierge that books tastings, cuppings and roasting workshops on a live calendar that cannot be double-booked. A demo on synthetic data.',
+    description: 'A chat concierge that books tastings, cuppings and roasting workshops on a live calendar that cannot be double-booked. It runs on demo data.',
   },
   start: {
     title: 'Start a conversation',

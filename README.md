@@ -6,8 +6,9 @@
 # Landry Bodjona · Portfolio
 Where real-world work meets AI, agentic intelligence, and powerful tools.
 
-Ten live AI systems built for one fictional company, Basalt & Bean Coffee Co. Every
-system runs on the site, open to any visitor, with a trace of every step it takes.
+Ten live AI systems on one platform, built around a specialty coffee business, Basalt &
+Bean Coffee Co., the platform's reference business. Every system runs on the site, open to
+any visitor, on demo data, with a trace of every step it takes.
 
 | Part | System | Back end |
 |---|---|---|

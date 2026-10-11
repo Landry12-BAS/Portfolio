@@ -71,7 +71,7 @@ const lb04 = {
       tooLarge: 'Soubor je větší než {size}.',
       notPdf: 'Soubor není PDF.',
     },
-    privacy: 'Používejte jen syntetické nebo veřejné dokumenty. Soubor jde modelu, který se na něm neučí, ale je to ukázka: neposílejte nic důvěrného.',
+    privacy: 'Používejte jen ukázkové nebo veřejné dokumenty. Soubor jde modelu, který se na něm neučí, ale je to ukázka: neposílejte nic důvěrného.',
     cost: 'Kontrola spotřebuje jednu z vašich {contracts} smluv dnes a jeden z vašich souborů a zavolá model dvakrát až pětkrát. Odmítnutý soubor smlouvu vrátí.',
     submit: 'Zkontrolovat toto PDF',
   },

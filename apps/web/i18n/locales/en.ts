@@ -17,7 +17,7 @@ import lb10 from './boards/lb-10.en'
 
 const en = {
   site: {
-    description: 'Ten live AI systems, built for one fictional coffee company and open to every visitor, with a trace of every step they take.',
+    description: 'Ten live AI systems for a specialty coffee business, open to every visitor, with a trace of every step they take.',
     skip: 'Skip to content',
   },
   toolbar: {
@@ -35,13 +35,13 @@ const en = {
   footer: {
     folder: 'Product folder',
     allParts: 'All parts',
-    note: 'Landry Bodjona · LB. Basalt & Bean Coffee Co. is fictional, and every demo runs on synthetic data.',
+    note: 'Landry Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
   },
   home: {
     title: 'Ten live AI systems',
-    kicker: 'Ten live AI systems · One fictional company',
+    kicker: 'Ten live AI systems · One platform',
     heading: 'A portfolio you can operate',
-    lede: 'Ten production-grade AI systems, built for one fictional coffee company and open to every visitor. Each one runs live on this site, shows every step it takes, and invites people to try to break it.',
+    lede: 'Ten production-grade AI systems for a specialty coffee business, Basalt & Bean, open to every visitor. Each one runs live on this site, shows every step it takes, and invites people to try to break it.',
     quickref: {
       label: 'Quick reference',
       stamp: 'All ten systems built',
