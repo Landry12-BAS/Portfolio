@@ -4,9 +4,10 @@
 # percent of the 12 GB (measured on the box on 2026-10-10): healthy, and under the line. Of
 # the two remedies the guide names, this is the one that costs nothing: the unit asks the
 # kernel for LB_BALLAST_MIB of ordinary memory, writes one byte to each page so the kernel
-# counts it as used, and sleeps. 768 MiB lifts the idle box to about 22 percent, and keeps the
-# memory budget whole: the stack's peak is 10112 MiB and the budget 11264 of the box's 12288
-# (infra/docker-compose.yml, Resources), so 768 for this still leaves the system its share.
+# counts it as used, and sleeps. 1 GiB lifts the idle box to about 24 percent (768 MiB left it
+# at 20.6 right after a deploy, too close to the line), and keeps the memory budget whole: the
+# stack's peak is 10112 MiB and the budget 11264 of the box's 12288 (infra/docker-compose.yml,
+# Resources), so 1024 for this still leaves the system its share.
 #
 # It is the first thing the kernel takes back under pressure (OOMScoreAdjust), since nothing
 # depends on it, and it comes back by itself. Stop it with `sudo systemctl stop lb-ballast`
@@ -20,11 +21,11 @@ Description=Hold memory so that Oracle does not reclaim the idle box
 
 [Service]
 Type=simple
-Environment=LB_BALLAST_MIB=768
+Environment=LB_BALLAST_MIB=1024
 # -I: Python ignores the environment's module paths and the user's site packages. The script
 # allocates the block, touches one byte in every 4 KiB page, then waits for a signal forever.
 ExecStart=/usr/bin/python3 -I -c "import os, signal; size = int(os.environ['LB_BALLAST_MIB']) * 1024 * 1024; held = bytearray(size); held[::4096] = b'\\x01' * len(held[::4096]); signal.pause()"
-MemoryMax=1G
+MemoryMax=1200M
 OOMScoreAdjust=1000
 Nice=19
 Restart=on-failure
