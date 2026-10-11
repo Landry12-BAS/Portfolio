@@ -31,13 +31,15 @@ OpenRouter behind one gateway, with NVIDIA NIM for private experiments.
 - [Security design](docs/SECURITY.md): no accounts, no login, zero inbound ports
 - [The LB mark](brand/README.md)
 
-Status: all ten systems are built and tested, each with its evaluation board on the site in
+Status: all ten systems are built, tested and live, each with its evaluation board on the site in
 English and Czech, and the AI gateway (LB-00) that every model call goes through
-([how it works](services/gateway/README.md)). `just dev-mock` opens every demo against the mock
-back end with no keys at all. What is not done needs the owner's provider keys and the box: no
-hosted model has been called yet, so the recorded sample runs, the live evals and the live
-baselines are still to be made, and deploying is the owner's step
-([`docs/DEPLOY.md`](docs/DEPLOY.md) is the runbook). [`AGENTS.md`](AGENTS.md) says where each
+([how it works](services/gateway/README.md)). The site runs on Vercel at
+[landrybodjona.com](https://landrybodjona.com) and the ten systems on the owner's Oracle box
+behind a Cloudflare tunnel, deployed and verified by the runbook
+([`docs/DEPLOY.md`](docs/DEPLOY.md), parts 9 and 11, on 2026-10-10). `just dev-mock` opens every
+demo against the mock back end with no keys at all. Still to come: the live evals and LB-10's
+nightly, judge and baselines, which the free tiers' daily budgets spread over several days, and
+one curated sample's recording (LB-07's partner link). [`AGENTS.md`](AGENTS.md) says where each
 system lives, and every README says what was measured and what was not.
 
 Run it with Node 22.18 or later, pnpm 10 and uv: `just install`, then `just dev`. The
