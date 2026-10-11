@@ -85,14 +85,15 @@ allowance since Oracle's June 2026 cut (`STACK.md`, Infrastructure and hosting).
    Creating the VM with 1 OCPU and 6 GB and editing the shape to 2 and 12 afterwards is a
    known way around a shortage; it needs a reboot.
 4. **Mind the reclaim rule.** Oracle reclaims an Always Free VM whose CPU, network and
-   memory all stay under 20% (at the 95th percentile) for 7 days. In testing, the stack
-   used about 0.7 GB when idle, which is 6% of 12 GB, so memory alone does not clear the
-   line, and a quiet portfolio will not clear it on CPU or network either. In the first
-   week, read the instance's metrics (Compute, Instance, Metrics). If all three stay
-   under 20%, decide before Oracle does: keep memory above 2.4 GB on purpose (a larger
-   Postgres `shared_buffers` and a small always-on job that holds memory are the usual
-   ways), or move the tenancy to pay-as-you-go, which Oracle does not reclaim and which
-   keeps the same free allowance at the price of billing risk.
+   memory all stay under 20% (at the 95th percentile) for 7 days. On the box, with every
+   service up, the stack idles at about 1.8 GB, which is 15% of 12 GB (measured on
+   2026-10-10), so memory alone does not clear the line, and a quiet portfolio will not
+   clear it on CPU or network either. Part 9, step 5 therefore installs
+   `lb-ballast.service` (`infra/systemd`), which holds 768 MiB of memory and lifts the idle
+   box to about 22%. In the first week, read the instance's metrics all the same (Compute,
+   Instance, Metrics) and check that memory shows above 20%. The other way out is to move
+   the tenancy to pay-as-you-go, which Oracle does not reclaim and which keeps the same
+   free allowance at the price of billing risk.
 5. Note the instance's public IP, and connect once:
 
    ```sh
@@ -542,7 +543,10 @@ cage round itself before it reads a visitor's file, and Landlock is one wall of 
 kernel and the container must allow. Where it is missing the worker still reads, with one wall
 less, and says so. After the first deploy (part 11) check that the box has it, and then make
 the service insist: `just secrets-edit compose`, add `LB_LB03_REQUIRE_LANDLOCK=true`, deploy.
-From then on a box that loses Landlock reads nothing, which is the better failure.
+From then on a box that loses Landlock reads nothing, which is the better failure. (On the
+box this was checked on 2026-10-11 with the worker's own system call from inside the
+`flask-api` container: the kernel, 7.0.0-1013-oracle, offers Landlock ABI 8, and the flag is
+set.)
 
 `lb07-sandbox` holds one value, `LB07_SHOP_TOKEN_KEY`: the key LB-07's bug tokens are signed
 with. The Node worker signs a token for each test run and the staging shop, inside the browser's
@@ -641,14 +645,16 @@ change and the box.
 5. **Install the units**, once, from the release that is now live:
 
    ```sh
-   sudo install -m 0644 /opt/lb/current/infra/systemd/lb-secrets.service /opt/lb/current/infra/systemd/lb-backup.service /opt/lb/current/infra/systemd/lb-backup.timer /etc/systemd/system/
+   sudo install -m 0644 /opt/lb/current/infra/systemd/lb-secrets.service /opt/lb/current/infra/systemd/lb-backup.service /opt/lb/current/infra/systemd/lb-backup.timer /opt/lb/current/infra/systemd/lb-ballast.service /etc/systemd/system/
    sudo systemctl daemon-reload
    sudo systemctl enable lb-secrets.service
    sudo systemctl enable --now lb-backup.timer
+   sudo systemctl enable --now lb-ballast.service
    ```
 
    `lb-secrets` decrypts the secrets again after a reboot, when `/run` is empty; the timer
-   starts the nightly backup. Repeat this step whenever a release changes
+   starts the nightly backup; `lb-ballast` holds enough memory to keep the box out of
+   Oracle's idle reclaim (part 2, step 4). Repeat this step whenever a release changes
    `infra/systemd`.
 6. Test the backup now rather than at 02:30:
 
@@ -744,9 +750,10 @@ From a machine **outside** the tailnet:
 - [ ] `https://example.com` loads, in both languages, in both themes.
 - [ ] `curl -sI https://www.example.com/systems/lb-01?x=1` is `308` with `location:
       https://example.com/systems/lb-01?x=1` and no `set-cookie` (Vercel's domain redirect).
-      The same request to the project's `https://<project>.vercel.app` address is `401` from
-      Vercel Authentication; with that protection off, it is the site's own `308` to the same
-      place, with no `set-cookie` and `cache-control: no-store`. And
+      The same request to the project's `https://<project>.vercel.app` address never reaches the
+      site: Vercel Authentication answers `302` to Vercel's login (`location: https://vercel.com/sso-api…`)
+      for a browser, and `401` for a client that asks for JSON. With that protection off, it is
+      the site's own `308` to the same place, with no `set-cookie` and `cache-control: no-store`. And
       `curl -si https://example.com/api` is the JSON `404` the API's other unknown paths give,
       not a `503`.
 - [ ] `curl -si https://example.com/api/session` carries one `set-cookie`, `__Host-lb_session`
@@ -943,10 +950,17 @@ send the commit's `infra/` folder to the box, run `deploy.sh`. A deploy that you
 approve first waits at the `production` environment. To deploy the same commit again,
 re-run the Deploy workflow from the Actions page.
 
+A merge that changes only the site (`apps/web`, `packages/ui`, `packages/icons`), the
+docs, the brand or the three root documents builds and deploys nothing: the workflow's
+first job compares the commit with its parent and skips the rest, since Vercel publishes
+the site by itself. Anything else, the lockfile included, deploys.
+
 `deploy.sh`'s exit status tells you what happened: **0** the release is live; **1** it was
 refused or did not come up, and the previous release is running again (or was never
-touched); **2** the rollback failed too and the box needs you. The log of the last
-deploys is `/opt/lb/deploys.log`; the full output is in the Actions run.
+touched); **2** the box needs you: either the rollback failed too, or the previous release
+is running again but fails its smoke test as well, which means a fault both releases share
+(the message says which of the two, and the smoke test's output names the check). The log
+of the last deploys is `/opt/lb/deploys.log`; the full output is in the Actions run.
 
 A deploy and the nightly backup take turns: both hold `/opt/lb/deploy.lock` while they work,
 so the backup never runs beside a deploy's jobs (part 2, The memory budget). A deploy that
