@@ -1,0 +1,49 @@
+# Holds memory on the box so that Oracle does not take the box back. Oracle reclaims an Always
+# Free instance whose CPU, network and memory all stay under 20 percent for seven days
+# (docs/DEPLOY.md, part 2, step 4). With every service up the platform idles at about 15
+# percent of the 12 GB (measured on the box on 2026-10-10): healthy, and under the line. Of
+# the two remedies the guide names, this is the one that costs nothing: the unit asks the
+# kernel for LB_BALLAST_MIB of ordinary memory, writes one byte to each page so the kernel
+# counts it as used, and sleeps. 768 MiB lifts the idle box to about 22 percent, and keeps the
+# memory budget whole: the stack's peak is 10112 MiB and the budget 11264 of the box's 12288
+# (infra/docker-compose.yml, Resources), so 768 for this still leaves the system its share.
+#
+# It is the first thing the kernel takes back under pressure (OOMScoreAdjust), since nothing
+# depends on it, and it comes back by itself. Stop it with `sudo systemctl stop lb-ballast`
+# while measuring something, and disable it on a box that is not Always Free.
+#
+# Install (docs/DEPLOY.md, part 9, step 5):
+#   sudo install -m 0644 infra/systemd/lb-ballast.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now lb-ballast.service
+[Unit]
+Description=Hold memory so that Oracle does not reclaim the idle box
+
+[Service]
+Type=simple
+Environment=LB_BALLAST_MIB=768
+# -I: Python ignores the environment's module paths and the user's site packages. The script
+# allocates the block, touches one byte in every 4 KiB page, then waits for a signal forever.
+ExecStart=/usr/bin/python3 -I -c "import os, signal; size = int(os.environ['LB_BALLAST_MIB']) * 1024 * 1024; held = bytearray(size); held[::4096] = b'\\x01' * len(held[::4096]); signal.pause()"
+MemoryMax=1G
+OOMScoreAdjust=1000
+Nice=19
+Restart=on-failure
+RestartSec=30s
+DynamicUser=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=none
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

@@ -123,7 +123,9 @@ switch_over() {
 }
 
 # Starts the release that was live before, from its own folder with its own secrets.
-# Returns 2 when there is nothing to go back to, or going back does not work either.
+# Returns 2 when there is nothing to go back to or the previous release does not come up,
+# and 3 when it is running again but fails its own smoke test: then the fault is one both
+# releases share, or something outside them, and the message must not say the rollback failed.
 roll_back() {
     if [ -z "$previous" ]; then
         say "there is no earlier release to go back to."
@@ -132,9 +134,9 @@ roll_back() {
     local previous_infra="$root/releases/$previous/infra"
     say "going back to release $previous"
     export LB_TAG="$previous"
-    "$previous_infra/scripts/decrypt-secrets.sh" || return 2
-    "$previous_infra/scripts/compose.sh" up --detach --pull never --remove-orphans --wait --wait-timeout "$wait_seconds" || return 2
-    "$previous_infra/scripts/smoke.sh" || return 2
+    "$previous_infra/scripts/decrypt-secrets.sh" || { say "the secrets of release $previous could not be decrypted."; return 2; }
+    "$previous_infra/scripts/compose.sh" up --detach --pull never --remove-orphans --wait --wait-timeout "$wait_seconds" || { say "release $previous did not come up either."; return 2; }
+    "$previous_infra/scripts/smoke.sh" || return 3
 }
 
 # Makes the `current` link point at the release, in one atomic step.
@@ -180,8 +182,16 @@ fi
 say "release $release did not come up."
 status=0
 roll_back || status=$?
-if [ "$status" -eq 0 ]; then
-    die "release $previous is running again, and release $release is not."
-fi
-say "THE ROLLBACK DID NOT WORK either. Look at the containers: $infra/scripts/compose.sh ps"
-exit 2
+case "$status" in
+    0)
+        die "release $previous is running again, and release $release is not."
+        ;;
+    3)
+        say "release $previous is running again, but its smoke test fails too: the check it names above fails on both releases, so look there, not at the rollback."
+        exit 2
+        ;;
+    *)
+        say "THE ROLLBACK DID NOT WORK either. Look at the containers: $infra/scripts/compose.sh ps"
+        exit 2
+        ;;
+esac

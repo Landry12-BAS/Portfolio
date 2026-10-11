@@ -104,17 +104,39 @@ function isAt(moment: Moment, body: string): boolean {
  */
 export async function holdRunAt(page: Page, moment: Moment): Promise<() => Promise<void>> {
   let held: string | undefined
+  let released = false
+  const inFlight = new Set<Promise<void>>()
   /** Answers a read of the run: with the held view once there is one, else as the site does. */
-  async function answer(route: Route): Promise<void> {
-    if (route.request().method() !== 'GET') return route.continue()
+  async function answerRead(route: Route): Promise<void> {
     if (held !== undefined) return route.fulfill({ status: 200, contentType: 'application/json', body: held })
     const response = await route.fetch()
     const body = await response.text()
     if (response.ok() && isAt(moment, body)) held = body
-    return route.fulfill({ response, body })
+    await route.fulfill({ response, body })
+  }
+  /** Takes a request for the run: a read is answered here and counted while it is, anything else goes through. */
+  async function answer(route: Route): Promise<void> {
+    if (released || route.request().method() !== 'GET') return route.fallback()
+    const work = answerRead(route)
+    inFlight.add(work)
+    try {
+      await work
+    }
+    finally {
+      inFlight.delete(work)
+    }
   }
   await page.route(RUN_VIEW, answer)
-  return () => page.unroute(RUN_VIEW, answer)
+  // Removing the handler while a read is in flight is a race Playwright loses on purpose: `unroute`
+  // takes the handler away on the browser side too, which then continues any request the handler
+  // is still fetching for, and the handler's own fulfil that follows finds the route handled and
+  // throws ("Route is already handled!"), which ends the test. So first let new reads through, then
+  // wait for the reads in flight to be answered, and only then take the handler away.
+  return async () => {
+    released = true
+    await Promise.allSettled([...inFlight])
+    await page.unroute(RUN_VIEW, answer)
+  }
 }
 
 /** How many pixels the page is wider than the window, which a visitor would have to scroll sideways for: zero when it fits. */

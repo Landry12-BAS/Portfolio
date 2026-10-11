@@ -41,11 +41,11 @@ The shared design lives in the playbook ([`docs/PLAYBOOK.md`](docs/PLAYBOOK.md))
 three waves and only the biggest counts, with the nightly backup under the deploy's lock): `just
 infra-check` fails a change that breaks it, and `docs/DEPLOY.md` says why.
 
-What is not done: the samples still without a recording (`just record-sample <system> <sample>`), the
-live evals (`just eval-lb0N`, `just wer-lb09` in fast mode) and the nightly, judge and gate of LB-10, which
-the free tiers' daily budgets spread over several days; and, needing the owner (the box or an account), the
-deploy secrets and the Cloudflare rules (`docs/DEPLOY.md`), and timings and memory on the box's Ampere A1
-(everything measured so far was measured on an x86-64 development machine).
+What is not done: the one sample still without a recording (LB-07's partner link, `just record-sample
+<system> <sample>`), the live evals (`just eval-lb0N`, `just wer-lb09` in fast mode) and the nightly, judge
+and gate of LB-10, which the free tiers' daily budgets spread over several days; and timings under load on
+the box's Ampere A1 (the platform has run there since 2026-10-10, `docs/DEPLOY.md` part 11, but every
+timing in the READMEs was measured on an x86-64 development machine).
 
 Add each new command to the Commands section in the change that introduces it.
 
