@@ -95,17 +95,15 @@ mark {
   transition: transform var(--lb-motion-slow) var(--lb-ease) var(--lb-reveal-delay, 0ms);
 }
 
-/* One page gives way to the next: a short fade and a four-pixel rise (apps/web, app.vue). */
-.page-enter-active,
-.page-leave-active {
-  transition:
-    opacity var(--lb-motion-fast) var(--lb-ease),
-    transform var(--lb-motion-fast) var(--lb-ease);
+/* One page gives way to the next: the new page comes in with a four-pixel rise (apps/web, app.vue). The old
+   one leaves at once, and nothing fades, for the same reason the reveals do not: a visitor who reaches the
+   next page by a link within the site would read its text at partial opacity, and so does an accessibility
+   check that runs the moment the page is there. */
+.page-enter-active {
+  transition: transform var(--lb-motion-fast) var(--lb-ease);
 }
 
-.page-enter-from,
-.page-leave-to {
-  opacity: 0;
+.page-enter-from {
   transform: translateY(4px);
 }
 
