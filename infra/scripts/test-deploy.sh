@@ -12,7 +12,8 @@
 #   - an unsigned image, a failed pull or a failed decrypt stops the deploy before anything
 #     is started, and puts the live release's secrets back;
 #   - a release that does not come up (compose, smoke) is replaced by the previous one,
-#     and `current` never moves; when that fails too the exit status is 2;
+#     and `current` never moves; when that fails too the exit status is 2, and the message
+#     says whether the previous release came up and only failed its smoke test;
 #   - a bad release name, a wrong folder, a mismatched RELEASE file and a second deploy at
 #     the same time are refused;
 #   - the nightly backup, started with its unit's own command (infra/systemd/lb-backup.service),
@@ -353,6 +354,17 @@ expect_equal "both failing: the exit status is 2" "2" "$status"
 expect_output "and it says so" "THE ROLLBACK DID NOT WORK"
 expect_equal "current still names the last good release" "2" "$(live)"
 rm -f "$BEHAVIOUR/fail-up-$(sha 6)" "$BEHAVIOUR/fail-up-$b"
+
+# The first release on the box did this: both releases failed the same smoke check (a Redis rule),
+# and the message blamed the rollback, which had in fact brought the previous release back up.
+make_release 7
+touch "$BEHAVIOUR/fail-smoke-$(sha 7)" "$BEHAVIOUR/fail-smoke-$b"
+: > "$CALLS"
+deploy 7
+expect_equal "the previous release comes up but fails its smoke test too: the exit status is 2" "2" "$status"
+expect_output "and the message says it is running, and where to look" "release $b is running again, but its smoke test fails too"
+expect_equal "current still names the last good release" "2" "$(live)"
+rm -f "$BEHAVIOUR/fail-smoke-$(sha 7)" "$BEHAVIOUR/fail-smoke-$b"
 
 reset
 make_release 1
