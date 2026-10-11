@@ -13,6 +13,12 @@ name: Deploy
 # Tailscale, as a node tagged tag:ci that the tailnet's policy lets reach the box's SSH as
 # the deploy user and nothing else. No SSH key and no age key is stored in GitHub.
 #
+# A commit that changes only what never reaches the box (the site, which Vercel builds and
+# publishes by itself, its UI packages, the docs, the brand, the three root documents) builds
+# and deploys nothing: the first job compares the commit with its parent and the rest is
+# skipped, so a change to the site does not rebuild seven images or ask the owner to approve
+# a deploy. Anything else, the lockfile and the workflows included, deploys.
+#
 # Settings it needs, all in docs/DEPLOY.md, GitHub:
 #   secrets   TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET   (the `production` environment)
 #   variable  LB_BOX_HOST                            the box's name on the tailnet
@@ -32,14 +38,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  images:
-    name: Build, push and sign the images
+  changes:
+    name: Does the commit reach the box?
     # Only a push to main in this repository that passed CI. A fork's branch can also be
     # called main, so the repository is checked as well.
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      box: ${{ steps.paths.outputs.box }}
+    env:
+      RELEASE: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      # Depth 2 brings the commit and its parents, which is all the comparison needs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      # The paths that never reach the box. Everything else does: the services, infra/, the
+      # shared packages the services build with, the data and evals the images copy in, the
+      # lockfile, and the workflows that build and deploy. A merge commit is compared with its
+      # first parent, which is main before the merge, so every file the merge brought counts.
+      - name: Compare the commit with its parent
+        id: paths
+        run: |
+          if ! git rev-parse --verify --quiet "${RELEASE}^1" >/dev/null; then
+            echo "The commit has no parent: it deploys."
+            echo "box=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "${RELEASE}^1" "$RELEASE")"
+          reaching="$(printf '%s\n' "$changed" | grep -vE '^(apps/web/|packages/ui/|packages/icons/|docs/|brand/|README\.md$|AGENTS\.md$|SECURITY\.md$)' || true)"
+          if [ -z "$reaching" ]; then
+            echo "Only the site, the docs or the brand changed: nothing to build or deploy for the box."
+            echo "box=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "These files reach the box, so it deploys:"
+            printf '%s\n' "$reaching" | sed 's/^/  /'
+            echo "box=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  images:
+    name: Build, push and sign the images
+    needs: changes
+    if: needs.changes.outputs.box == 'true'
     permissions:
       contents: read
       packages: write
