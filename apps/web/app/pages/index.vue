@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// The home page: the masthead with a quick reference, the selection guide (section 1),
-// what every system page shows (section 2), and the build order (section 3).
+// The home page: the first screen (the headline beside the Scope playing a recorded run), the wall of
+// the ten systems at work, then the selection guide (section 1), what every system page shows
+// (section 2), and the build order (section 3).
 const { t } = useI18n()
 const datasheets = useDatasheets()
 
@@ -21,39 +22,9 @@ function inPhase(phase: 1 | 2 | 3) {
 
 <template>
   <div class="home">
-    <header class="masthead">
-      <div class="intro">
-        <p class="kicker">
-          {{ t('home.kicker') }}
-        </p>
-        <h1>{{ t('home.heading') }}</h1>
-        <p class="lede">
-          {{ t('home.lede') }}
-        </p>
-      </div>
-      <aside
-        class="quickref"
-        :aria-label="t('home.quickref.label')"
-      >
-        <span class="stamp">{{ t('home.quickref.stamp') }}</span>
-        <dl>
-          <dt>{{ t('home.quickref.owner') }}</dt>
-          <dd>Landry Bodjona</dd>
-          <dt>{{ t('home.quickref.systems') }}</dt>
-          <dd>{{ t('home.quickref.systemsValue') }}</dd>
-          <dt>{{ t('home.quickref.backends') }}</dt>
-          <dd>{{ t('home.quickref.backendsValue') }}</dd>
-          <dt>{{ t('home.quickref.frontend') }}</dt>
-          <dd>{{ t('home.quickref.frontendValue') }}</dd>
-          <dt>{{ t('home.quickref.ai') }}</dt>
-          <dd>{{ t('home.quickref.aiValue') }}</dd>
-          <dt>{{ t('home.quickref.languages') }}</dt>
-          <dd>{{ t('home.quickref.languagesValue') }}</dd>
-          <dt>{{ t('home.quickref.accounts') }}</dt>
-          <dd>{{ t('home.quickref.accountsValue') }}</dd>
-        </dl>
-      </aside>
-    </header>
+    <HomeHeroScope />
+
+    <HomeSystemsWall />
 
     <section id="systems">
       <LbSectionHead
@@ -134,76 +105,6 @@ function inPhase(phase: 1 | 2 | 3) {
   gap: clamp(44px, 6vw, 76px);
 }
 
-.masthead {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: 32px 40px;
-  align-items: start;
-}
-
-.kicker {
-  font-family: var(--lb-font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--lb-signal);
-}
-
-h1 {
-  margin-top: 12px;
-  font-size: clamp(2.2rem, 1.3rem + 3.3vw, 3.9rem);
-  font-weight: 800;
-  font-stretch: 115%;
-  line-height: 1;
-  letter-spacing: -0.015em;
-}
-
-.lede {
-  max-width: 58ch;
-  margin-top: 18px;
-  font-size: 1.125rem;
-}
-
-.quickref {
-  display: grid;
-  gap: 14px;
-  padding: 16px 18px 18px;
-  border: 1.5px solid var(--lb-ink);
-}
-
-.stamp {
-  justify-self: start;
-  padding: 5px 9px;
-  font-family: var(--lb-font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  border: 1.5px solid var(--lb-ink);
-}
-
-.quickref dl {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 7px 14px;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.quickref dt {
-  padding-top: 3px;
-  font-family: var(--lb-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--lb-graphite);
-}
-
-.quickref dd {
-  margin: 0;
-}
-
 .sec-intro {
   max-width: 70ch;
   margin-bottom: 22px;
@@ -280,7 +181,6 @@ h1 {
 }
 
 @media (max-width: 900px) {
-  .masthead,
   .points,
   .phases {
     grid-template-columns: minmax(0, 1fr);
