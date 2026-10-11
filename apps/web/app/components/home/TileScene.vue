@@ -184,6 +184,14 @@ const wave = [22, 48, 70, 40, 58, 30, 64, 44, 20, 52, 36, 60]
   color: var(--lb-signal);
 }
 
+/* The scenes with a drawing in the middle keep the note's line clear under it. */
+.scene[data-scene="lb-03"],
+.scene[data-scene="lb-06"],
+.scene[data-scene="lb-07"] {
+  box-sizing: border-box;
+  padding-bottom: 22px;
+}
+
 /* LB-01: lines of a reply, one cited, and the pipeline's dot running over them. */
 .lines {
   display: flex;

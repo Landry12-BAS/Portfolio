@@ -101,7 +101,9 @@ const datasheets = useDatasheets()
 }
 
 .part {
+  flex: none;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .tile--lit .part {
@@ -109,7 +111,12 @@ const datasheets = useDatasheets()
 }
 
 .runtime {
+  min-width: 0;
+  overflow: hidden;
   color: var(--lb-graphite);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tile-foot {

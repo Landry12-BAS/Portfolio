@@ -129,7 +129,7 @@ function detail(step: HeroStep): string {
 <style scoped>
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
   gap: 32px 44px;
   align-items: center;
 }
@@ -151,7 +151,7 @@ function detail(step: HeroStep): string {
 }
 
 h1 {
-  font-size: clamp(2.4rem, 1.2rem + 4.2vw, 5.2rem);
+  font-size: clamp(2.4rem, 1.2rem + 4vw, 4.8rem);
   font-weight: 800;
   font-stretch: 118%;
   line-height: 0.96;
