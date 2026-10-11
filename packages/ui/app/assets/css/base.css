@@ -83,18 +83,16 @@ mark {
 
 /* A part of a page that comes in as the visitor scrolls to it (apps/web, useRevealOnScroll): set back
    a little once the page is on screen and scripted, then brought in with its own delay among its
-   siblings. Without a script nothing is set back, so the page is whole either way. */
+   siblings. It moves and never fades, so its text keeps full contrast at every moment and an
+   accessibility check sees every part of the page. Without a script nothing is set back, so the page
+   is whole either way. */
 .lb-reveal {
-  opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(16px);
 }
 
 .lb-reveal-in {
-  opacity: 1;
   transform: none;
-  transition:
-    opacity var(--lb-motion-slow) var(--lb-ease) var(--lb-reveal-delay, 0ms),
-    transform var(--lb-motion-slow) var(--lb-ease) var(--lb-reveal-delay, 0ms);
+  transition: transform var(--lb-motion-slow) var(--lb-ease) var(--lb-reveal-delay, 0ms);
 }
 
 /* One page gives way to the next: a short fade and a four-pixel rise (apps/web, app.vue). */
