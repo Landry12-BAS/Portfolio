@@ -77,7 +77,12 @@ const unobserved = computed(() => scope.spans.length === 0)
 const steps = computed(() => {
   const blind = phase.value === 'idle' || unobserved.value
   const marked = pipelineSteps(english?.chain ?? [], scope.spans, scope.phase === 'finished')
-  return marked.map((step, index) => ({ label: system.value?.chain[index] ?? step.name, state: blind ? ('waiting' as const) : step.state }))
+  return marked.map((step, index) => ({
+    label: system.value?.chain[index] ?? step.name,
+    state: blind ? ('waiting' as const) : step.state,
+    kind: blind ? ('step' as const) : step.kind,
+    ...(blind || step.durationMs === undefined ? {} : { durationMs: step.durationMs }),
+  }))
 })
 // A live run is going and its trace has not arrived: say why the steps are not marked yet.
 const stepsPending = computed(() => runMode.value === 'live' && unobserved.value && (scope.phase === 'waiting' || scope.phase === 'following'))

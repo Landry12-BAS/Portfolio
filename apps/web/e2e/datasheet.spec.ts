@@ -7,11 +7,21 @@ test.describe('datasheet', () => {
     await expect(page).toHaveTitle('LB-01 Support Desk Agent · Landry Bodjona')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Support Desk Agent')
     await expect(page.getByRole('heading', { name: 'Signal chain' })).toBeVisible()
-    await expect(page.getByRole('table')).toContainText('Tickets per visitor per day')
+    await expect(page.getByRole('table', { name: 'Table 1. Operating limits' })).toContainText('Tickets per visitor per day')
+    // What LB-01's recordings measured: the first figure times the torn-bag run step by step, and the
+    // second table has a row per curated sample, with the one injection attempt handed to a person.
+    const figure = page.getByRole('figure', { name: 'Figure 1. Time per step' })
+    await expect(figure).toContainText('rerank')
+    await expect(figure).toContainText('6.1 s')
+    const measured = page.getByRole('table', { name: 'Table 2. Measured characteristics' })
+    await expect(measured.getByRole('row')).toHaveCount(9)
+    await expect(measured.getByRole('row', { name: /Injection attempt/ })).toContainText('Handed to a person: injection attempt')
+    await expect(page.getByText(/^Measured on October 7, 2026 on a development machine/)).toBeVisible()
 
     const modes = page.getByRole('group', { name: 'Reading mode' })
     await modes.getByRole('button', { name: 'Brief' }).click()
     await expect(page.getByRole('heading', { name: 'Signal chain' })).toBeHidden()
+    await expect(page.getByRole('table', { name: 'Table 2. Measured characteristics' })).toBeHidden()
     await expect(page.getByRole('heading', { name: 'Problem' })).toBeVisible()
 
     await page.reload()

@@ -45,10 +45,25 @@ Honesty
 2. The hero says when the run was recorded.
 3. The scenes are decoration and are hidden from assistive technology; the words on each tile say everything the scene does.
 
+The datasheet (from the LB-01 slice, 2026-10-11)
+
+A datasheet states what was measured, under what conditions. Each system's page keeps its title block, its Brief and Technical readings and its operating limits, and the Technical reading gains two things the recordings can prove:
+
+1. Figure 1, time per step: the signal chain drawn as one recorded run, a row per step in the chain's order, a bar against the longest step, the time in words beside it, in the Scope's four channel colours (a plain step in ink). The caption names the sample, the number of steps, the total time and the day. The bars grow in once, left to right, 40 ms apart, and nothing fades; the names and times are text, so the figure reads without the bars. A part with no reduced recording lists its chain as before.
+2. Table 2, measured characteristics: one row per curated sample, with its language, steps taken, calls through the gateway, tokens in and out, time, and how the run ended. The row where a person had to take over is set in bold. The note under the table says the day, the machine and the free tiers it was measured on, and that a live run varies.
+3. Table 1 is the operating limits, captioned so. Numbers are grouped in the visitor's language (1,351 and 1 351) and days are written out.
+4. The title block: the part number larger in the mono face, the name at the headline's stretch, and a third line on the right that says what a visitor does there.
+
+The numbers come from apps/web/recordings, reduced by shared/data/measured.ts and shared/data/hero-trace.ts; unit tests reduce every recording again and fail when a constant drifts. Adding a system to the datasheet's figures means a recording, a reduced constant and the test, nothing typed in by hand.
+
+The board follows the same colours: a finished pipeline step shows how long it took and takes the channel of the call it made, read from its span, so a run reads the same on the landing page, the datasheet and the board.
+
 Where it lives
 
 1. apps/web/app/components/home/HeroScope.vue, SystemsWall.vue and TileScene.vue.
 2. apps/web/shared/data/hero-trace.ts and its test, apps/web/test/unit/hero-trace.test.ts.
 3. The strings under home.hero and home.wall in apps/web/i18n/locales/en.ts and cs.ts.
+4. apps/web/app/components/datasheet/RunFigure.vue and MeasuredTable.vue, apps/web/app/composables/useDatasheetFormat.ts, apps/web/shared/data/measured.ts and its test, and the strings under datasheet.figure and datasheet.measured.
+5. apps/web/app/boards/lb-01/pipeline.ts and components/PipelineSteps.vue.
 
 Still to come in this slice, once the owner sends them: his own presence on the page (a short text, where to reach him, a CV, a portrait if he wants one) and the image shown when a link is shared.

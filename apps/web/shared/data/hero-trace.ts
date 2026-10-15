@@ -4,7 +4,7 @@
 // constant is written out by hand so that it ships with the page; test/unit/hero-trace.test.ts reduces the
 // recording the same way and fails when the two drift apart, so the numbers on the landing page are always
 // the recording's.
-import type { Recording } from '@lb/contracts'
+import type { Recording, Span } from '@lb/contracts'
 
 /** How a step is drawn: the Scope's four channels, plus a plain step with no model behind it. */
 export type HeroStepKind = 'step' | 'tool' | 'guard' | 'retrieval' | 'model'
@@ -44,6 +44,22 @@ function kindOf(spanKind: string, call: HeroCall | undefined): HeroStepKind {
   return 'model'
 }
 
+/** Reads the gateway call a step made, from the call span under it, if any. */
+export function callOfStep(step: Span, spans: readonly Span[]): HeroCall | undefined {
+  const callSpan = spans.find(other => other.kind === 'gateway.call' && other.parentId === step.spanId)
+  if (!callSpan) return undefined
+  const attrs = (callSpan.attrs ?? {}) as Record<string, unknown>
+  const tokens = typeof attrs.inputTokens === 'number' && typeof attrs.outputTokens === 'number'
+    ? { in: attrs.inputTokens, out: attrs.outputTokens }
+    : undefined
+  return { alias: String(attrs.alias ?? callSpan.name), provider: String(attrs.provider ?? ''), model: String(attrs.model ?? '').replace(/^[a-z-]+\//, ''), ...(tokens ? { tokens } : {}) }
+}
+
+/** Tells how a step's span is drawn, from the call made under it: the board's pipeline uses the same channels as the hero. */
+export function kindOfStep(step: Span, spans: readonly Span[]): HeroStepKind {
+  return kindOf(step.kind, callOfStep(step, spans))
+}
+
 /** Reduces a recording to the trace the hero draws: the steps in order, each with the model call made under it. */
 export function heroTraceOf(recording: Recording): HeroTrace {
   const spans = [...recording.trace.spans].sort((a, b) => a.startMs - b.startMs)
@@ -53,14 +69,7 @@ export function heroTraceOf(recording: Recording): HeroTrace {
   const steps = spans
     .filter(span => span.kind === 'system.step' || span.kind === 'system.tool')
     .map((span) => {
-      const callSpan = spans.find(other => other.kind === 'gateway.call' && other.parentId === span.spanId)
-      const attrs = (callSpan?.attrs ?? {}) as Record<string, unknown>
-      const tokens = typeof attrs.inputTokens === 'number' && typeof attrs.outputTokens === 'number'
-        ? { in: attrs.inputTokens, out: attrs.outputTokens }
-        : undefined
-      const call: HeroCall | undefined = callSpan
-        ? { alias: String(attrs.alias ?? callSpan.name), provider: String(attrs.provider ?? ''), model: String(attrs.model ?? '').replace(/^[a-z-]+\//, ''), ...(tokens ? { tokens } : {}) }
-        : undefined
+      const call = callOfStep(span, spans)
       return { name: span.name, kind: kindOf(span.kind, call), startMs: span.startMs - first, endMs: span.endMs - first, ...(call ? { call } : {}) }
     })
   return { system: recording.system, sample: recording.sample, recordedAt: recording.recordedAt.slice(0, 10), totalMs: last - first, steps }
