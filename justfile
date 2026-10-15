@@ -248,7 +248,8 @@ test-lb07-sandbox:
 # Check every dependency, npm and Python, against known vulnerabilities.
 audit:
     pnpm audit --audit-level high
-    uv audit --preview-features audit-command
+    # GHSA-8pqf-f4m5-798g: Twisted's IMAP code, unused here; ignored only until a fixed release exists (see ci.yml).
+    uv audit --preview-features audit-command --ignore-until-fixed GHSA-8pqf-f4m5-798g
 
 # The journeys run against a test build, which differs from the production build in two ways: it accepts a
 # fixed stand-in for a Turnstile token, and it bundles the test recordings (`just check-build` proves the
