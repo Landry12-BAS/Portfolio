@@ -19,7 +19,7 @@ import type { Messages } from './en'
 
 const cs = {
   site: {
-    description: 'Deset živých AI systémů pro výběrovou kávovou firmu, otevřených každému návštěvníkovi, se záznamem každého kroku, který udělají.',
+    description: 'Deset živých AI systémů pro firmu zaměřenou na výběrovou kávu. Každý návštěvník si je může vyzkoušet a každý jejich krok je zaznamenán.',
     skip: 'Přejít na obsah',
   },
   toolbar: {
@@ -43,7 +43,7 @@ const cs = {
     title: 'Deset živých AI systémů',
     kicker: 'Deset živých AI systémů · Jedna platforma',
     heading: 'Portfolio, které si můžete vyzkoušet',
-    lede: 'AI systémy v produkční kvalitě. Skutečná volání nástrojů. Sledovatelný běh. Postavené k vyzkoušení, ne jen k obdivu.',
+    lede: 'AI systémy v produkční kvalitě. Skutečná volání nástrojů. Dohledatelný průběh. Postavené k vyzkoušení, ne jen k obdivu.',
     quickref: {
       label: 'Stručný přehled',
       stamp: 'Všech deset systémů hotovo',
@@ -64,11 +64,11 @@ const cs = {
     hero: {
       label: 'Úvod',
       pick: 'Vyberte systém',
-      trace: 'Přečíst tento záznam',
+      trace: 'Zobrazit tento záznam',
       facts: 'Bez účtů · Angličtina a čeština · Bezplatné tarify modelů za jedinou bránou',
       scope: {
         title: 'Scope',
-        run: 'LB-01 Agent zákaznické podpory · zaznamenaný běh',
+        run: 'LB-01 Agent zákaznické podpory · záznam běhu',
         live: 'Přehrávání',
         step: 'Krok',
         time: 'Čas, 0 až {seconds} s',
@@ -89,21 +89,21 @@ const cs = {
     },
     wall: {
       label: 'Deset dílů při práci',
-      kicker: 'Deset systémů, jedna platforma. Každá dlaždice je stroj při práci.',
+      kicker: 'Deset systémů, jedna platforma. Každá dlaždice ukazuje systém při práci.',
       open: 'Otevřít {part}, {name}',
     },
     guide: {
       title: 'Průvodce výběrem',
-      intro: 'Vyfiltrujte si deset systémů podle backendu nebo techniky, tak jako inženýři hledají součástky u distributora. Kliknutím na číslo dílu otevřete jeho katalogový list.',
+      intro: 'Filtrujte deset systémů podle backendu nebo techniky, stejně jako inženýři hledají součástky u distributora. Kliknutím na číslo dílu otevřete jeho katalogový list.',
     },
     anatomy: {
       title: 'Co ukazuje stránka každého systému',
       datasheet: 'Katalogový list',
-      datasheetText: 'Co systém dělá, jaký problém řeší a jaké má provozní limity – ve stručné třicetisekundové verzi, nebo v plné technické.',
+      datasheetText: 'Co systém dělá, jaký problém řeší a jaké má provozní limity, ve stručné třicetisekundové verzi nebo v plné technické verzi.',
       board: 'Vývojová deska',
       boardText: 'Živé demo. Otevře se na vybraných ukázkách s uloženými výsledky; vlastní vstup běží naostro v rámci denní kvóty návštěvníka.',
       scope: 'Scope',
-      scopeText: 'Záznam každého běhu: každý krok, volání nástroje, token i model, s latencí a poskytovatelem, který odpověděl.',
+      scopeText: 'Záznam každého běhu: každý krok, volání nástroje, tokeny i použitý model včetně latence a poskytovatele, který odpověděl.',
     },
     build: {
       title: 'Pořadí vývoje',
@@ -112,7 +112,7 @@ const cs = {
       foundation: 'Základy',
       foundationText: 'Tyto systémy pokrývají všechny tři backendy, bránu, trasování, kvóty i evaluační sadu. Všechno další na nich staví.',
       breadth: 'Šíře',
-      breadthText: 'Chat v reálném čase, zpracování obrazu, dlouhé dokumenty a automatizace prohlížeče na stabilním základu.',
+      breadthText: 'Chat v reálném čase, zpracování obrazu, dlouhé dokumenty a automatizace prohlížeče, vše na stabilním základu.',
       showpieces: 'Vlajkové lodě',
       showpiecesText: 'Nejsložitější systémy přijdou nakonec. Eval Lab dorazí se zlatými sadami, které rostou už od fáze 1.',
     },
@@ -132,7 +132,7 @@ const cs = {
     visitorAction: 'Co návštěvník udělá',
     techniques: 'Techniky',
     phase: 'Fáze',
-    empty: 'Oběma filtrům neodpovídá žádný systém. Zrušte jeden z nich a uvidíte víc.',
+    empty: 'Kombinaci těchto filtrů neodpovídá žádný systém. Zrušte jeden z nich a uvidíte víc.',
     backends: {
       django: 'Django',
       flask: 'Flask',
@@ -141,7 +141,7 @@ const cs = {
     techniqueNames: {
       rag: 'RAG',
       tool: 'Volání nástrojů',
-      multi: 'Více agentů',
+      multi: 'Multiagentní systém',
       vision: 'Zpracování obrazu',
       voice: 'Hlas',
       browser: 'Agent v prohlížeči',
@@ -173,12 +173,12 @@ const cs = {
     otherParts: 'Další díly',
     allSystems: 'Všechny systémy',
     openBoard: 'Otevřít vývojovou desku',
-    boardOpen: 'Vývojová deska tohoto dílu je otevřená. Začíná na vybraných ukázkách a váš vlastní text běží naživo v rámci denní kvóty.',
+    boardOpen: 'Vývojová deska tohoto dílu je otevřená. Ve výchozím stavu zobrazuje vybrané ukázky a váš vlastní text se zpracovává naživo v rámci denní kvóty.',
     visitorDoes: 'Co návštěvník udělá',
     limitsTable: 'Tabulka 1. Provozní limity',
     figure: {
       title: 'Obrázek 1. Čas na krok',
-      caption: 'Ukázka {sample} podle záznamu: {steps} kroků za {seconds} s dne {date}. Každý sloupec je vynesen vůči nejdelšímu kroku.',
+      caption: 'Ukázka {sample} podle záznamu: {steps} kroků za {seconds} s dne {date}. Délka každého sloupce je vztažena k nejdelšímu kroku.',
       legend: 'Kanály',
     },
     measured: {
@@ -187,33 +187,33 @@ const cs = {
       language: 'Jazyk',
       steps: 'Kroky',
       calls: 'Volání modelu',
-      tokens: 'Tokeny vstup / výstup',
+      tokens: 'Tokeny na vstupu / výstupu',
       time: 'Čas',
       outcome: 'Výsledek',
       draft: 'Návrh čeká na schválení',
       escalated: 'Předáno člověku: {reason}',
       reasons: {
-        injection: 'pokus o injekci',
+        injection: 'pokus o podvržení instrukcí',
       },
       languages: {
         en: 'angličtina',
         cs: 'čeština',
       },
-      note: 'Naměřeno {date} na vývojovém stroji, přes bránu a bezplatné tarify poskytovatelů. Hodnoty živého běhu se liší podle vytížení poskytovatelů.',
-      noteMixed: 'Naměřeno na vývojovém stroji, přes bránu a bezplatné tarify poskytovatelů, v den uvedený u každého řádku. Hodnoty živého běhu se liší podle vytížení poskytovatelů.',
+      note: 'Naměřeno {date} na vývojovém stroji prostřednictvím brány a bezplatných tarifů poskytovatelů. Hodnoty živého běhu se liší podle vytížení poskytovatelů.',
+      noteMixed: 'Naměřeno na vývojovém stroji prostřednictvím brány a bezplatných tarifů poskytovatelů, vždy v den uvedený u příslušného řádku. Hodnoty živého běhu se liší podle vytížení poskytovatelů.',
     },
   },
   boardPage: {
     title: '{name}, vývojová deska',
     back: 'Zpět na katalogový list',
     missing: 'Tento díl zatím nemá vývojovou desku',
-    missingText: 'Jeho katalogový list je otevřený a živé demo přibude, jakmile bude díl hotový.',
+    missingText: 'Jeho katalogový list je otevřený a živé demo bude dostupné, jakmile bude díl hotový.',
     loading: 'Načítám vývojovou desku…',
   },
   runs: {
     title: 'Záznam běhu {id}',
     heading: 'Záznam běhu',
-    lede: 'Záznam jednoho běhu ze Scope: každý krok, volání nástroje a volání modelu s časováním. Uchovávají se jen metadata, nikdy to, co se psalo nebo odpovídalo, a záznam se po 24 hodinách maže.',
+    lede: 'Záznam jednoho běhu ze Scope: každý krok, volání nástroje a volání modelu včetně časování. Uchovávají se pouze metadata, nikdy obsah vstupu ani odpovědi, a záznam se po 24 hodinách smaže.',
     system: 'Systém',
     runId: 'ID běhu',
     back: 'Zpět do katalogu',
