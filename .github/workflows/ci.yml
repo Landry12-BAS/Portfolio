@@ -187,8 +187,11 @@ jobs:
       - name: Install uv
         run: pipx install uv==0.12.19
       - run: uv sync
+      # GHSA-8pqf-f4m5-798g (2026-10-15) is a ReDoS in Twisted's IMAP server code (twisted.mail.imap4). Twisted is here
+      # only as Daphne's network layer for the WebSockets; nothing imports twisted.mail, so the function is unreachable.
+      # It has no fixed release yet: --ignore-until-fixed lets it pass only until one exists, then the check fails again.
       - name: No known vulnerabilities in Python dependencies
-        run: uv audit --preview-features audit-command
+        run: uv audit --preview-features audit-command --ignore-until-fixed GHSA-8pqf-f4m5-798g
       - run: uv run ruff check python scripts services/django-systems services/flask-systems infra
       - run: uv run ruff format --check python scripts services/django-systems services/flask-systems infra
       - name: Every module, class and function has a docstring
