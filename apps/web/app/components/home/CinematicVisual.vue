@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// The orbit uses the real, approved vector mark from the brand assets.
+import brandMark from '#brand/lb-mark-dark.svg?url'
+
 const { t } = useI18n()
 </script>
 
@@ -9,7 +12,14 @@ const { t } = useI18n()
       <div class="planet-longitudes" />
       <div class="planet-latitudes" />
       <div class="planet-core">
-        LB
+        <img
+          :src="brandMark"
+          alt=""
+          width="180"
+          height="145"
+          loading="eager"
+          decoding="async"
+        >
       </div>
     </div>
     <div class="orbit orbit-one" />
@@ -117,6 +127,12 @@ const { t } = useI18n()
   color: rgb(227 247 255 / 85%);
   text-shadow: 0 0 30px rgb(42 177 255 / 80%), 0 0 100px rgb(21 101 255 / 95%);
   mix-blend-mode: screen;
+}
+.planet-core img {
+  display: block;
+  width: clamp(130px, 17vw, 210px);
+  height: auto;
+  filter: drop-shadow(0 0 17px rgb(51 173 255 / 48%));
 }
 .orbit {
   position: absolute;
