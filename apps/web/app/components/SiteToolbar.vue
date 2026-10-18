@@ -23,10 +23,12 @@ const themeLabels = computed(() => ({
   system: t('toolbar.theme.system'),
 }))
 
+/** Close the mobile menu after navigation or dismissal. */
 function closeMobileMenu() {
   mobileOpen.value = false
 }
 
+/** Dismiss the menu if the user interacts outside the sticky header. */
 function closeOnOutsidePointer(event: PointerEvent) {
   if (mobileOpen.value && event.target instanceof Node && !toolbarRef.value?.contains(event.target)) {
     closeMobileMenu()
@@ -36,11 +38,18 @@ function closeOnOutsidePointer(event: PointerEvent) {
 // Closing on navigation prevents an open menu after clicking a same-page anchor,
 // changing the language, or using the browser back button.
 watch(() => route.fullPath, closeMobileMenu)
+/** Keep Escape working even if focus moves from the menu to the page. */
+function closeOnEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeMobileMenu()
+}
+
 onMounted(() => {
   document.addEventListener('pointerdown', closeOnOutsidePointer)
+  document.addEventListener('keydown', closeOnEscape)
 })
 onUnmounted(() => {
   document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  document.removeEventListener('keydown', closeOnEscape)
 })
 </script>
 
@@ -48,7 +57,6 @@ onUnmounted(() => {
   <header
     ref="toolbarRef"
     class="toolbar"
-    @keydown.esc="closeMobileMenu"
   >
     <NuxtLinkLocale
       to="/"
