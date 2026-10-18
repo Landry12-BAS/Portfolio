@@ -55,7 +55,7 @@ test.describe('languages', () => {
     await page.goto('/cs')
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
     await expect(page).toHaveTitle('Full-stack a AI vývojář · Landry Bodjona')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Vytvářím AI systémy, které můžete používat, prověřit a rozvíjet.')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.')
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Portfolio Landryho Bodjony/)
 
     // Each page links to its twin in the other language, and to a default for everyone else.

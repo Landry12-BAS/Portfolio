@@ -1,5 +1,10 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const headingParts = computed(() => {
+  const heading = t('home.heading')
+  const split = heading.lastIndexOf(' ')
+  return { lead: heading.slice(0, split), accent: heading.slice(split + 1) }
+})
 </script>
 
 <template>
@@ -15,7 +20,10 @@ const { t } = useI18n()
         <p class="role">
           {{ t('home.hero.role') }}
         </p>
-        <h1>{{ t('home.heading') }}</h1>
+        <h1>
+          {{ headingParts.lead }}
+          <span class="heading-accent">{{ headingParts.accent }}</span>
+        </h1>
         <p class="lede">
           {{ t('home.lede') }}
         </p>
@@ -111,6 +119,24 @@ h1 {
   letter-spacing: -.058em;
   text-wrap: balance;
 }
+.heading-accent {
+  background: linear-gradient(110deg, #58baff, #a8eaff 66%, #e3faff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 14px rgb(61 157 255 / 22%));
+}
+.intro > * {
+  animation: text-arrive 680ms cubic-bezier(.18,.8,.2,1) both;
+}
+.intro > :nth-child(2) { animation-delay: 60ms; }
+.intro > :nth-child(3) { animation-delay: 120ms; }
+.intro > :nth-child(4) { animation-delay: 180ms; }
+.intro > :nth-child(5) { animation-delay: 240ms; }
+@keyframes text-arrive {
+  from { transform: translateY(16px); clip-path: inset(0 0 100% 0); }
+  to { transform: none; clip-path: inset(0); }
+}
 .lede {
   max-width: 52ch;
   color: #c0d2e9;
@@ -172,6 +198,7 @@ h1 {
   .way { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .intro > * { animation: none; }
   .way { transition: none; }
   .way:hover { transform: none; }
 }

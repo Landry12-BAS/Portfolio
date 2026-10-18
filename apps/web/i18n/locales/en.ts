@@ -44,7 +44,7 @@ const en = {
   home: {
     title: 'Full-stack and AI engineer',
     kicker: 'Landry Bodjona · Full-stack and AI engineering',
-    heading: 'I build AI systems you can operate, inspect, and scale.',
+    heading: 'I build AI systems you can operate, inspect, and trust.',
     lede: 'I build full-stack applications, AI agents and reliable workflows. Explore ten working demos, inspect their traces and see the engineering decisions behind them.',
     quickref: {
       label: 'Quick reference',

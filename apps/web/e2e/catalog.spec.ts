@@ -5,7 +5,7 @@ test.describe('catalog', () => {
   test('lists the ten systems and filters them like a parts distributor', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle('Full-stack and AI engineer · Landry Bodjona')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('I build AI systems you can operate, inspect, and scale.')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('I build AI systems you can operate, inspect, and trust.')
 
     const rows = page.getByRole('region', { name: 'Systems' }).locator('tbody tr')
     await expect(rows).toHaveCount(10)

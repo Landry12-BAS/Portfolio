@@ -46,7 +46,7 @@ const cs = {
   home: {
     title: 'Full-stack a AI vývojář',
     kicker: 'Landry Bodjona · Full-stack vývoj a AI',
-    heading: 'Vytvářím AI systémy, které můžete používat, prověřit a rozvíjet.',
+    heading: 'Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.',
     lede: 'Navrhuji a vyvíjím full-stack aplikace, AI agenty a spolehlivé automatizace. Vyzkoušejte deset funkčních ukázek, prozkoumejte záznamy jejich běhu a poznejte technická rozhodnutí za každým systémem.',
     quickref: {
       label: 'Stručný přehled',
