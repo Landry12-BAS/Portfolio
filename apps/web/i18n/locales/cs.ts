@@ -43,9 +43,9 @@ const cs = {
     note: 'Landry Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
   },
   home: {
-    title: 'Landry Bodjona — Full-stack a AI vývojář',
+    title: 'Full-stack a AI vývojář',
     kicker: 'Landry Bodjona · Full-stack vývoj a AI',
-    heading: 'AI systémy, které si můžete sami vyzkoušet.',
+    heading: 'Vytvářím AI systémy, které můžete používat, prověřit a rozvíjet.',
     lede: 'Navrhuji a vyvíjím full-stack aplikace, AI agenty a spolehlivé automatizace. Vyzkoušejte deset funkčních ukázek, prozkoumejte záznamy jejich běhu a poznejte technická rozhodnutí za každým systémem.',
     quickref: {
       label: 'Stručný přehled',

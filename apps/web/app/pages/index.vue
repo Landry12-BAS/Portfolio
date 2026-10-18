@@ -16,45 +16,10 @@ useSeoMeta({
   ogUrl: () => canonicalUrl.value,
   twitterCard: 'summary',
 })
-// Server-rendered, factual metadata. The visible datasheets remain the source of truth.
+// Canonical URLs are compatible with the strict Trusted Types security policy.
+// Structured data will be introduced with a server-only HTML solution.
 useHead(() => ({
   link: [{ rel: 'canonical', href: canonicalUrl.value }],
-  script: [{
-    key: 'portfolio-schema',
-    type: 'application/ld+json',
-    textContent: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@graph': [
-        {
-          '@type': 'Person',
-          '@id': 'https://landrybodjona.com/#person',
-          name: 'Landry Bodjona',
-          jobTitle: 'Full-stack and AI engineer',
-          url: 'https://landrybodjona.com/',
-          sameAs: ['https://github.com/Landry12-BAS'],
-          knowsAbout: ['Full-stack development', 'AI agents', 'AI evaluation', 'Backend systems'],
-        },
-        {
-          '@type': 'WebSite',
-          '@id': 'https://landrybodjona.com/#website',
-          name: 'Landry Bodjona — Portfolio',
-          url: 'https://landrybodjona.com/',
-          inLanguage: ['en', 'cs'],
-        },
-        {
-          '@type': 'ItemList',
-          name: t('home.featured.all'),
-          numberOfItems: datasheets.value.length,
-          itemListElement: datasheets.value.map((item, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: item.name,
-            url: `${(canonicalUrl.value.endsWith('/') ? canonicalUrl.value.slice(0, -1) : canonicalUrl.value)}/systems/${item.slug}`,
-          })),
-        },
-      ],
-    }),
-  }],
 }))
 
 // What is below the fold comes in as the visitor reaches it: the tiles of the wall, then each section.
@@ -172,7 +137,9 @@ function inPhase(phase: 1 | 2 | 3) {
 
     <section id="about" class="about-panel">
       <div>
-        <p class="section-eyebrow">{{ t('home.career.aboutLabel') }}</p>
+        <p class="section-eyebrow">
+          {{ t('home.career.aboutLabel') }}
+        </p>
         <h2>{{ t('home.career.aboutTitle') }}</h2>
       </div>
       <div class="about-copy">
@@ -185,7 +152,9 @@ function inPhase(phase: 1 | 2 | 3) {
 
     <section id="contact" class="contact-panel">
       <div>
-        <p class="section-eyebrow">{{ t('home.career.contactLabel') }}</p>
+        <p class="section-eyebrow">
+          {{ t('home.career.contactLabel') }}
+        </p>
         <h2>{{ t('home.career.contactTitle') }}</h2>
         <p>{{ t('home.career.contactBody') }}</p>
       </div>

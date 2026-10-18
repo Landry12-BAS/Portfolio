@@ -41,9 +41,9 @@ const en = {
     note: 'Landry Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
   },
   home: {
-    title: 'Landry Bodjona — Full-stack and AI engineer',
+    title: 'Full-stack and AI engineer',
     kicker: 'Landry Bodjona · Full-stack and AI engineering',
-    heading: 'AI systems you can actually test.',
+    heading: 'I build AI systems you can operate, inspect, and scale.',
     lede: 'I build full-stack applications, AI agents and reliable workflows. Explore ten working demos, inspect their traces and see the engineering decisions behind them.',
     quickref: {
       label: 'Quick reference',

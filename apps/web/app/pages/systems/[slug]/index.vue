@@ -33,24 +33,9 @@ useSeoMeta({
   ogUrl: () => canonicalUrl.value,
   twitterCard: 'summary',
 })
+// Static canonical metadata only. JSON-LD requires a server-only Trusted Types-safe path.
 useHead(() => ({
   link: [{ rel: 'canonical', href: canonicalUrl.value }],
-  script: [{
-    key: 'system-schema',
-    type: 'application/ld+json',
-    textContent: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      name: system.name,
-      description: system.function,
-      url: canonicalUrl.value,
-      applicationCategory: 'DeveloperApplication',
-      isAccessibleForFree: true,
-      inLanguage: locale.value,
-      creator: { '@type': 'Person', '@id': 'https://landrybodjona.com/#person', name: 'Landry Bodjona' },
-      featureList: system.tags,
-    }),
-  }],
 }))
 
 // The reading mode is shared with every datasheet and board, and remembered between visits.

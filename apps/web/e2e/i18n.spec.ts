@@ -6,9 +6,9 @@ test.describe('languages', () => {
   test('serves Czech at /cs, marked as Czech for browsers and search engines', async ({ page }) => {
     await page.goto('/cs')
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
-    await expect(page).toHaveTitle('Deset živých AI systémů · Landry Bodjona')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Portfolio, které si můžete vyzkoušet')
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Deset živých AI systémů/)
+    await expect(page).toHaveTitle('Full-stack a AI vývojář · Landry Bodjona')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Vytvářím AI systémy, které můžete používat, prověřit a rozvíjet.')
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Portfolio Landryho Bodjony/)
 
     // Each page links to its twin in the other language, and to a default for everyone else.
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute('href', /^https?:\/\/[^/]+\/?$/)
