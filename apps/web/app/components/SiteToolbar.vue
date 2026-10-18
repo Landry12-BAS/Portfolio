@@ -637,4 +637,86 @@ onUnmounted(() => {
     transition: none;
   }
 }
+/* Distinct light treatment for the navigation and settings drawer. */
+:global(html.light) .toolbar {
+  color: #163454;
+  background: rgb(246 251 255 / 95%);
+  border-bottom-color: #b9cee4;
+}
+:global(html.light) .brand,
+:global(html.light) .desktop-nav a {
+  color: #143858;
+}
+:global(html.light) .desktop-nav a:hover {
+  color: #005f9d;
+  border-bottom-color: #1a8aca;
+}
+:global(html.light) .desktop-nav .contact-link {
+  color: #06304e;
+  border-color: #2075b2;
+  background: rgb(90 182 255 / 9%);
+}
+:global(html.light) .desktop-nav .contact-link:hover {
+  background: rgb(90 182 255 / 22%);
+}
+@media (max-width: 850px) {
+  :global(html.light) .mobile-trigger {
+    color: #164a76;
+    background: #e3f2ff;
+    border-color: #96bbda;
+  }
+  :global(html.light) .mobile-trigger[aria-expanded="true"] {
+    background: #d1eafa;
+    border-color: #2587c4;
+  }
+  :global(html.light) .mobile-panel {
+    color: #173c5b;
+    border-color: #9ebbd7;
+    background:
+      radial-gradient(circle at 89% -9%, rgb(63 149 221 / 13%), transparent 43%),
+      #f5fbff;
+    box-shadow: 0 20px 52px rgb(24 58 96 / 20%);
+  }
+  :global(html.light) .mobile-menu-heading,
+  :global(html.light) .preference-label {
+    color: #37678e;
+  }
+  :global(html.light) .menu-heading-mark,
+  :global(html.light) .nav-index {
+    color: #517ca1;
+  }
+  :global(html.light) .mobile-nav a {
+    color: #133956;
+  }
+  :global(html.light) .mobile-nav a:hover,
+  :global(html.light) .mobile-nav a:focus-visible {
+    border-color: #b5d5ec;
+    background: #e2f2fc;
+  }
+  :global(html.light) .nav-arrow {
+    color: #0e80c4;
+  }
+  :global(html.light) .mobile-preferences {
+    border-top-color: #c6deef;
+  }
+  :global(html.light) .mobile-preferences :deep(.lang--expanded),
+  :global(html.light) .appearance-option {
+    color: #205072;
+    background: #e9f4fc;
+    border-color: #bdd7e8;
+  }
+  :global(html.light) .mobile-preferences :deep(.lang--expanded[aria-current="true"]),
+  :global(html.light) .appearance-option--active {
+    color: #093859;
+    border-color: #188cce;
+    background: #d6f0ff;
+  }
+  :global(html.light) .mobile-preferences :deep(.lang-full) {
+    color: #456b88;
+  }
+  :global(html.light) .appearance-option--active .appearance-dot {
+    background: #007fc2;
+    box-shadow: 0 0 7px rgb(0 127 194 / 35%);
+  }
+}
 </style>
