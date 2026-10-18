@@ -21,6 +21,7 @@ const en = {
     skip: 'Skip to content',
   },
   toolbar: {
+    closeMenu: 'Close menu',
     menu: 'Menu',
     about: 'About',
     contact: 'Contact',

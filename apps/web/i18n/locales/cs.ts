@@ -23,6 +23,7 @@ const cs = {
     skip: 'Přejít na obsah',
   },
   toolbar: {
+    closeMenu: 'Zavřít nabídku',
     menu: 'Nabídka',
     about: 'O mně',
     contact: 'Kontakt',

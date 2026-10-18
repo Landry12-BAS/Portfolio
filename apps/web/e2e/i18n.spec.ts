@@ -3,6 +3,31 @@
 import { expect, pressUntilPressed, test } from './fixtures'
 
 test.describe('languages', () => {
+  test('keeps mobile navigation and settings inside the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+
+    const trigger = page.getByRole('button', { name: 'Menu' })
+    await expect(trigger).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Language' })).toBeHidden()
+    await expect(page.getByRole('group', { name: 'Theme' })).toBeHidden()
+
+    await trigger.click()
+    await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('navigation', { name: 'Language' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible()
+
+    const menu = page.locator('#mobile-navigation-panel')
+    const rect = await menu.boundingBox()
+    expect(rect).not.toBeNull()
+    expect(rect!.x).toBeGreaterThanOrEqual(0)
+    expect(rect!.x + rect!.width).toBeLessThanOrEqual(391)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
+
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+  })
+
   test('serves Czech at /cs, marked as Czech for browsers and search engines', async ({ page }) => {
     await page.goto('/cs')
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
