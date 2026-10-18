@@ -8,6 +8,7 @@ const route = useRoute()
 const colorMode = useColorMode()
 const mobileOpen = ref(false)
 const toolbarRef = ref<HTMLElement | null>(null)
+let openScrollY = 0
 
 const preference = computed<ColorPreference>({
   get: () => (['light', 'dark'].includes(colorMode.preference) ? colorMode.preference : 'system') as ColorPreference,
@@ -23,9 +24,33 @@ const themeLabels = computed(() => ({
   system: t('toolbar.theme.system'),
 }))
 
+const mobileThemes = computed<{ value: ColorPreference, label: string, icon: string }[]>(() => [
+  { value: 'light', label: themeLabels.value.light, icon: '☀' },
+  { value: 'dark', label: themeLabels.value.dark, icon: '☾' },
+  { value: 'system', label: themeLabels.value.system, icon: '◉' },
+])
+
 /** Close the mobile menu after navigation or dismissal. */
 function closeMobileMenu() {
   mobileOpen.value = false
+}
+
+/** Toggle the drawer and remember the page position at which it opened. */
+function toggleMobileMenu() {
+  if (mobileOpen.value) {
+    closeMobileMenu()
+  }
+  else {
+    openScrollY = window.scrollY
+    mobileOpen.value = true
+  }
+}
+
+/** Close the drawer when the document scrolls, not when its own contents scroll. */
+function closeOnPageScroll() {
+  if (mobileOpen.value && Math.abs(window.scrollY - openScrollY) > 8) {
+    closeMobileMenu()
+  }
 }
 
 /** Dismiss the menu if the user interacts outside the sticky header. */
@@ -46,10 +71,12 @@ function closeOnEscape(event: KeyboardEvent) {
 onMounted(() => {
   document.addEventListener('pointerdown', closeOnOutsidePointer)
   document.addEventListener('keydown', closeOnEscape)
+  window.addEventListener('scroll', closeOnPageScroll, { passive: true })
 })
 onUnmounted(() => {
   document.removeEventListener('pointerdown', closeOnOutsidePointer)
   document.removeEventListener('keydown', closeOnEscape)
+  window.removeEventListener('scroll', closeOnPageScroll)
 })
 </script>
 
@@ -115,7 +142,7 @@ onUnmounted(() => {
       :aria-label="mobileOpen ? t('toolbar.closeMenu') : t('toolbar.menu')"
       :aria-expanded="mobileOpen"
       aria-controls="mobile-navigation-panel"
-      @click="mobileOpen = !mobileOpen"
+      @click="toggleMobileMenu"
     >
       <span
         class="trigger-lines"
@@ -132,6 +159,10 @@ onUnmounted(() => {
       id="mobile-navigation-panel"
       class="mobile-panel"
     >
+      <div class="mobile-menu-heading">
+        <span>{{ t('toolbar.menu') }}</span>
+        <span class="menu-heading-mark" aria-hidden="true">LB / 2026</span>
+      </div>
       <nav
         class="mobile-nav"
         :aria-label="t('toolbar.sections')"
@@ -140,25 +171,33 @@ onUnmounted(() => {
           :to="{ path: '/', hash: '#featured' }"
           @click="closeMobileMenu"
         >
+          <span class="nav-index" aria-hidden="true">01</span>
           {{ t('toolbar.systems') }}
+          <span class="nav-arrow" aria-hidden="true">↗</span>
         </NuxtLinkLocale>
         <NuxtLinkLocale
           :to="{ path: '/', hash: '#build' }"
           @click="closeMobileMenu"
         >
+          <span class="nav-index" aria-hidden="true">02</span>
           {{ t('toolbar.build') }}
+          <span class="nav-arrow" aria-hidden="true">↗</span>
         </NuxtLinkLocale>
         <NuxtLinkLocale
           :to="{ path: '/', hash: '#about' }"
           @click="closeMobileMenu"
         >
+          <span class="nav-index" aria-hidden="true">03</span>
           {{ t('toolbar.about') }}
+          <span class="nav-arrow" aria-hidden="true">↗</span>
         </NuxtLinkLocale>
         <NuxtLinkLocale
           :to="{ path: '/', hash: '#contact' }"
           @click="closeMobileMenu"
         >
+          <span class="nav-index" aria-hidden="true">04</span>
           {{ t('toolbar.contact') }}
+          <span class="nav-arrow" aria-hidden="true">↗</span>
         </NuxtLinkLocale>
       </nav>
 
@@ -167,18 +206,31 @@ onUnmounted(() => {
           <p class="preference-label">
             {{ t('toolbar.language') }}
           </p>
-          <LanguageSwitch />
+          <LanguageSwitch show-full-labels />
         </div>
         <div class="preference-row">
           <p class="preference-label">
             {{ t('toolbar.theme.group') }}
           </p>
-          <ClientOnly>
-            <LbThemeToggle
-              v-model="preference"
-              :labels="themeLabels"
-            />
-          </ClientOnly>
+          <div
+            class="appearance-options"
+            role="group"
+            :aria-label="themeLabels.group"
+          >
+            <button
+              v-for="option in mobileThemes"
+              :key="option.value"
+              type="button"
+              class="appearance-option"
+              :class="{ 'appearance-option--active': preference === option.value }"
+              :aria-pressed="preference === option.value"
+              @click="preference = option.value"
+            >
+              <span class="appearance-symbol" aria-hidden="true">{{ option.icon }}</span>
+              <span class="appearance-caption">{{ option.label }}</span>
+              <span class="appearance-dot" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -411,4 +463,179 @@ onUnmounted(() => {
     transition: none;
   }
 }
+
+/* Editorial mobile settings rather than stretched desktop segmented controls. */
+@media (max-width: 850px) {
+  .mobile-panel {
+    width: min(390px, calc(100vw - 24px));
+    padding: clamp(16px, 4vw, 24px);
+    border-color: rgb(123 181 244 / 48%);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 88% -10%, rgb(31 108 218 / 20%), transparent 43%),
+      #0a1728;
+  }
+  .mobile-menu-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 6px 13px;
+    color: #93cef5;
+    font: 700 10px/1.5 var(--lb-font-mono);
+    text-transform: uppercase;
+    letter-spacing: .13em;
+  }
+  .menu-heading-mark {
+    color: #7b99b8;
+    font-weight: 500;
+  }
+  .mobile-nav {
+    gap: 5px;
+  }
+  .mobile-nav a {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 20px;
+    gap: 12px;
+    min-height: 54px;
+    padding: 11px 13px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .mobile-nav a:hover,
+  .mobile-nav a:focus-visible {
+    border-color: #355579;
+  }
+  .nav-index {
+    color: #76b9eb;
+    font: 500 10px var(--lb-font-mono);
+  }
+  .nav-arrow {
+    justify-self: end;
+    color: #8bdcff;
+    font-size: 16px;
+  }
+  .mobile-preferences {
+    gap: 24px;
+    margin-top: 18px;
+    padding-top: 22px;
+    border-top-color: rgb(125 171 229 / 28%);
+  }
+  .preference-row {
+    gap: 12px;
+  }
+  .preference-label {
+    color: #91bddf;
+    font-size: 10px;
+    letter-spacing: .11em;
+  }
+  .mobile-preferences :deep(.langs--expanded) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 10px;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .mobile-preferences :deep(.lang--expanded) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    min-width: 0;
+    min-height: 67px;
+    padding: 9px;
+    border: 1px solid #395777;
+    border-radius: 10px;
+    background: #112239;
+    color: #d8eafa;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+  .mobile-preferences :deep(.lang--expanded + .lang--expanded) {
+    border: 1px solid #395777;
+  }
+  .mobile-preferences :deep(.lang--expanded[aria-current="true"]) {
+    border-color: #8ddcff;
+    background: #143554;
+    color: #e5f6ff;
+    box-shadow: inset 0 0 0 1px rgb(139 217 255 / 24%);
+  }
+  .mobile-preferences :deep(.lang-short) {
+    font: 800 17px/1.1 var(--lb-font-sans);
+    letter-spacing: .03em;
+  }
+  .mobile-preferences :deep(.lang-full) {
+    font: 500 11px/1.2 var(--lb-font-sans);
+    letter-spacing: 0;
+    color: #a7c3df;
+  }
+  .appearance-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .appearance-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    min-width: 0;
+    min-height: 84px;
+    padding: 11px 5px;
+    color: #b6cee7;
+    border: 1px solid #395777;
+    border-radius: 10px;
+    background: #112239;
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .appearance-option:hover {
+    border-color: #83caff;
+    background: #163151;
+  }
+  .appearance-option--active {
+    color: #e9f7ff;
+    border-color: #8ddcff;
+    background: #153555;
+    box-shadow: inset 0 0 0 1px rgb(139 217 255 / 24%);
+  }
+  .appearance-option:focus-visible {
+    outline: 2px solid #abecff;
+    outline-offset: 3px;
+  }
+  .appearance-symbol {
+    font-size: 25px;
+    line-height: 1;
+    font-family: var(--lb-font-sans);
+  }
+  .appearance-caption {
+    font: 600 11px/1.25 var(--lb-font-sans);
+    text-align: center;
+  }
+  .appearance-dot {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .appearance-option--active .appearance-dot {
+    background: #8ee7ff;
+    box-shadow: 0 0 10px #3cafff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .appearance-option,
+  .mobile-preferences :deep(.lang--expanded) {
+    transition: none;
+  }
+}
+
 </style>
