@@ -45,7 +45,9 @@ function detail(step: HeroStep): string {
       <p class="kicker">
         {{ t('home.kicker') }}
       </p>
-      <p class="role">{{ t('home.hero.role') }}</p>
+      <p class="role">
+        {{ t('home.hero.role') }}
+      </p>
       <h1>{{ t('home.heading') }}</h1>
       <p class="lede">
         {{ t('home.lede') }}

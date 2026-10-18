@@ -7,18 +7,38 @@ const featured = computed(() => datasheets.value.filter(s => chosen.has(s.slug))
 </script>
 
 <template>
-  <section id="featured" class="featured" aria-labelledby="featured-heading">
+  <section
+    id="featured"
+    class="featured"
+    aria-labelledby="featured-heading"
+  >
     <div class="featured-head">
       <div>
-        <p class="eyebrow">{{ t('home.featured.kicker') }}</p>
-        <h2 id="featured-heading">{{ t('home.featured.title') }}</h2>
+        <p class="eyebrow">
+          {{ t('home.featured.kicker') }}
+        </p>
+        <h2 id="featured-heading">
+          {{ t('home.featured.title') }}
+        </h2>
       </div>
-      <p class="summary">{{ t('home.featured.intro') }}</p>
+      <p class="summary">
+        {{ t('home.featured.intro') }}
+      </p>
     </div>
     <ol class="cards">
-      <li v-for="system in featured" :key="system.part">
-        <NuxtLinkLocale class="card" :to="'/systems/' + system.slug" :aria-label="t('home.featured.open', { name: system.name })">
-          <div class="top"><span class="part">{{ system.part }}</span><span class="runtime">{{ system.runtime }}</span></div>
+      <li
+        v-for="system in featured"
+        :key="system.part"
+      >
+        <NuxtLinkLocale
+          class="card"
+          :to="'/systems/' + system.slug"
+          :aria-label="t('home.featured.open', { name: system.name })"
+        >
+          <div class="top">
+            <span class="part">{{ system.part }}</span>
+            <span class="runtime">{{ system.runtime }}</span>
+          </div>
           <div class="scene-wrap">
             <span class="scene-label">{{ t('home.featured.preview') }}</span>
             <HomeTileScene :slug="system.slug" />
@@ -28,7 +48,10 @@ const featured = computed(() => datasheets.value.filter(s => chosen.has(s.slug))
             <p>{{ system.function }}</p>
             <div class="details">
               <span>{{ system.tags.slice(0, 2).join(' · ') }}</span>
-              <strong>{{ t('home.featured.explore') }} <span aria-hidden="true">↗</span></strong>
+              <strong>
+                {{ t('home.featured.explore') }}
+                <span aria-hidden="true">↗</span>
+              </strong>
             </div>
           </div>
         </NuxtLinkLocale>
@@ -36,7 +59,13 @@ const featured = computed(() => datasheets.value.filter(s => chosen.has(s.slug))
     </ol>
     <div class="footer-row">
       <p>{{ t('home.featured.disclaimer') }}</p>
-      <NuxtLinkLocale class="all" :to="{ path: '/', hash: '#systems' }">{{ t('home.featured.all') }} <span aria-hidden="true">→</span></NuxtLinkLocale>
+      <NuxtLinkLocale
+        class="all"
+        :to="{ path: '/', hash: '#systems' }"
+      >
+        {{ t('home.featured.all') }}
+        <span aria-hidden="true">→</span>
+      </NuxtLinkLocale>
     </div>
   </section>
 </template>

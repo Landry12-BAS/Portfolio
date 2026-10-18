@@ -59,10 +59,18 @@ const themeLabels = computed(() => ({
           <span class="menu-bars" aria-hidden="true">☰</span>
         </summary>
         <nav :aria-label="t('toolbar.sections')" class="mobile-menu-panel">
-          <NuxtLinkLocale :to="{ path: '/', hash: '#featured' }">{{ t('toolbar.systems') }}</NuxtLinkLocale>
-          <NuxtLinkLocale :to="{ path: '/', hash: '#build' }">{{ t('toolbar.build') }}</NuxtLinkLocale>
-          <NuxtLinkLocale :to="{ path: '/', hash: '#about' }">{{ t('toolbar.about') }}</NuxtLinkLocale>
-          <NuxtLinkLocale :to="{ path: '/', hash: '#contact' }">{{ t('toolbar.contact') }}</NuxtLinkLocale>
+          <NuxtLinkLocale :to="{ path: '/', hash: '#featured' }">
+            {{ t('toolbar.systems') }}
+          </NuxtLinkLocale>
+          <NuxtLinkLocale :to="{ path: '/', hash: '#build' }">
+            {{ t('toolbar.build') }}
+          </NuxtLinkLocale>
+          <NuxtLinkLocale :to="{ path: '/', hash: '#about' }">
+            {{ t('toolbar.about') }}
+          </NuxtLinkLocale>
+          <NuxtLinkLocale :to="{ path: '/', hash: '#contact' }">
+            {{ t('toolbar.contact') }}
+          </NuxtLinkLocale>
         </nav>
       </details>
       <LanguageSwitch />

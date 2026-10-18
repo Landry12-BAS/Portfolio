@@ -13,7 +13,9 @@ const datasheets = useDatasheets()
   >
     <div class="wall-head">
       <div>
-        <p class="kicker">{{ t('home.wall.kicker') }}</p>
+        <p class="kicker">
+          {{ t('home.wall.kicker') }}
+        </p>
         <h2>{{ t('home.wall.title') }}</h2>
       </div>
       <span class="wall-count">{{ datasheets.length }} / {{ t('home.wall.count') }}</span>
