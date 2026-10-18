@@ -38,6 +38,7 @@ function detail(step: HeroStep): string {
       <p class="kicker">
         {{ t('home.kicker') }}
       </p>
+      <p class="role">{{ t('home.hero.role') }}</p>
       <h1>{{ t('home.heading') }}</h1>
       <p class="lede">
         {{ t('home.lede') }}
@@ -45,7 +46,7 @@ function detail(step: HeroStep): string {
       <div class="ways">
         <NuxtLinkLocale
           class="way way--solid"
-          :to="{ path: '/', hash: '#systems' }"
+          :to="{ path: '/', hash: '#featured' }"
         >
           {{ t('home.hero.pick') }}
         </NuxtLinkLocale>
@@ -474,5 +475,57 @@ h1 {
     flex-basis: 100%;
     margin-left: 0;
   }
+}
+
+/* Premium showcase wraps the authentic measured trace. No synthetic measurements. */
+.hero {
+  --lb-ink: #f4f8ff; --lb-graphite: #b5c7df; --lb-sheet: #101b2d;
+  --lb-rule: rgb(145 191 245 / 23%); --lb-shade: rgb(66 139 239 / 20%);
+  --lb-signal: #80d9ff; --lb-ch1: #73c0ff; --lb-ch2: #73ddcc;
+  --lb-ch3: #b1a6ff; --lb-ch4: #ffcf84;
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: 520px; padding: clamp(24px, 4vw, 54px);
+  color: #f4f8ff; border: 1px solid rgb(113 163 237 / 31%); border-radius: 20px;
+  background: radial-gradient(ellipse at 82% 9%, rgb(31 108 229 / 29%), transparent 56%),
+    radial-gradient(ellipse at 10% 93%, rgb(23 154 247 / 12%), transparent 53%), #070d18;
+}
+.hero::before {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; content: '';
+  background-image: linear-gradient(rgb(131 181 247 / 5%) 1px,transparent 1px),
+    linear-gradient(90deg,rgb(131 181 247 / 5%) 1px,transparent 1px);
+  background-size: 46px 46px; mask-image: linear-gradient(to bottom,#000,transparent 94%);
+}
+.hero::after {
+  position: absolute; z-index: -1; top: -175px; right: -150px;
+  width: 490px; height: 490px; pointer-events: none; content: '';
+  background: radial-gradient(circle, rgb(47 133 255 / 16%), transparent 67%);
+  animation: hero-ambient 14s ease-in-out infinite alternate;
+}
+@keyframes hero-ambient { to { transform: translate(-65px, 65px); } }
+.hero .kicker { color: #8bdaff; }
+.hero .role { margin: 0; color: #b8cee7; font: 12px/1.5 var(--lb-font-mono); letter-spacing: .045em; }
+.hero h1 { max-width: 13ch; font-size: clamp(2.45rem, 4.7vw, 5.1rem); line-height: .99; letter-spacing: -.05em; }
+.hero .lede { color: #c5d4e7; font-size: clamp(1rem, 1.4vw, 1.15rem); line-height: 1.55; }
+.hero .way { color: #e0efff; border-color: rgb(151 198 255 / 55%); border-radius: 6px;
+  transition: transform 240ms ease, background 240ms ease, box-shadow 240ms ease; }
+.hero .way--solid { color: #041524; background: #8edaff; border-color: #8edaff; box-shadow: 0 0 25px rgb(45 147 255 / 23%); }
+.hero .way:hover { transform: translateY(-2px); background: rgb(74 153 255 / 24%); }
+.hero .way--solid:hover { color: #041524; background: #bdeeff; box-shadow: 0 0 34px rgb(63 164 255 / 35%); }
+.hero .way:focus-visible { outline: 2px solid #d4f0ff; outline-offset: 4px; }
+.hero .facts,.hero .stamp { color: #b3c8e0; }
+.hero .stamp { border-color: rgb(151 198 255 / 50%); }
+.hero .scope { min-width: 0; color: #eef7ff; background: rgb(13 26 46 / 96%);
+  border: 1px solid rgb(128 184 255 / 46%); border-radius: 13px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 35%), 0 0 42px rgb(33 110 246 / 12%); }
+.hero .scope-head,.hero .legend { border-color: rgb(151 196 248 / 20%); }
+.hero .scope-run,.hero .scope-live,.hero .axis,.hero .detail,.hero .n,.hero .legend { color: #b3c7df; }
+.hero .playhead { box-shadow: 0 0 14px rgb(110 214 255 / 88%); }
+@media (max-width: 640px) {
+  .hero { min-height: 0; padding: 24px 18px; border-radius: 14px; }
+  .hero h1 { max-width: 14ch; font-size: clamp(2.3rem, 10vw, 4rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::after,.hero .intro > *,.hero .scope { animation: none; }
+  .hero .way { transition: none; } .hero .way:hover { transform: none; }
 }
 </style>

@@ -17,7 +17,7 @@ import lb10 from './boards/lb-10.en'
 
 const en = {
   site: {
-    description: 'Ten live AI systems for a specialty coffee business, open to every visitor, with a trace of every step they take.',
+    description: 'Explore Landry Bodjona\'s full-stack and AI engineering work: ten interactive systems, execution traces and documented technical decisions.',
     skip: 'Skip to content',
   },
   toolbar: {
@@ -38,10 +38,10 @@ const en = {
     note: 'Landry Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
   },
   home: {
-    title: 'Ten live AI systems',
-    kicker: 'Ten live AI systems · One platform',
-    heading: 'A portfolio you can operate',
-    lede: 'Production-grade AI systems. Real tool calls. Observable execution. Built to be tested, not just admired.',
+    title: 'Landry Bodjona — Full-stack and AI engineer',
+    kicker: 'Landry Bodjona · Full-stack and AI engineering',
+    heading: 'AI systems you can actually test.',
+    lede: 'I build full-stack applications, AI agents and reliable workflows. Explore ten working demos, inspect their traces and see the engineering decisions behind them.',
     quickref: {
       label: 'Quick reference',
       stamp: 'All ten systems built',
@@ -60,8 +60,9 @@ const en = {
       accountsValue: 'None. Visitors stay anonymous',
     },
     hero: {
+      role: 'Full-stack engineer · AI systems · Product engineering',
       label: 'Introduction',
-      pick: 'Pick a system',
+      pick: 'Explore selected work',
       trace: 'Read this trace',
       facts: 'No accounts · English and Czech · Free model tiers behind one gateway',
       scope: {
@@ -84,6 +85,16 @@ const en = {
           guard: 'Guard',
         },
       },
+    },
+    featured: {
+      kicker: 'Selected engineering work',
+      title: 'Engineering you can explore.',
+      intro: 'Start with grounded customer support, multi-agent incident response and systematic AI evaluation.',
+      preview: 'Interactive system',
+      explore: 'Explore the system',
+      open: 'Explore {name}',
+      disclaimer: 'Demos use a fictional reference business and demonstration data. Each datasheet documents operating limits and measurements.',
+      all: 'Explore all ten systems',
     },
     wall: {
       label: 'Ten parts, at work',
