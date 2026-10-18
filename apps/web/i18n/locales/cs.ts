@@ -23,6 +23,9 @@ const cs = {
     skip: 'Přejít na obsah',
   },
   toolbar: {
+    menu: 'Nabídka',
+    about: 'O mně',
+    contact: 'Kontakt',
     sections: 'Oddíly',
     systems: 'Systémy',
     build: 'Pořadí vývoje',
@@ -99,9 +102,28 @@ const cs = {
       all: 'Zobrazit všech deset systémů',
     },
     wall: {
+      title: 'Prozkoumejte všech deset systémů',
+      count: 'systémů',
       label: 'Deset dílů při práci',
       kicker: 'Deset systémů, jedna platforma. Každá dlaždice ukazuje systém při práci.',
       open: 'Otevřít {part}, {name}',
+    },
+    proof: {
+      label: 'Vývoj v číslech',
+      systems: 'funkčních AI systémů',
+      backends: 'backendové technologie',
+      languages: 'jazykové verze',
+      traces: 'dohledatelné záznamy běhů',
+    },
+    career: {
+      aboutLabel: 'O mně · Jak pracuji',
+      aboutTitle: 'Zvědavost při návrhu. Důslednost při realizaci.',
+      aboutBody: 'Jsem Landry Bodjona, full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající modelovou firmu a demonstrační data.',
+      github: 'Prohlédnout projekty na GitHubu',
+      contactLabel: 'Pojďme vytvořit něco užitečného',
+      contactTitle: 'Hledáte vývojáře, který zvládne celý produkt?',
+      contactBody: 'Jsem otevřený spolupráci na dálku, technickým projektům a partnerstvím. Prohlédněte si kód, vyzkoušejte systémy a ozvěte se.',
+      contactAction: 'Spojit se přes GitHub',
     },
     guide: {
       title: 'Průvodce výběrem',

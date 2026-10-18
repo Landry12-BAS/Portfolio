@@ -21,6 +21,9 @@ const en = {
     skip: 'Skip to content',
   },
   toolbar: {
+    menu: 'Menu',
+    about: 'About',
+    contact: 'Contact',
     sections: 'Sections',
     systems: 'Systems',
     build: 'Build order',
@@ -97,9 +100,28 @@ const en = {
       all: 'Explore all ten systems',
     },
     wall: {
+      title: 'Explore all ten systems',
+      count: 'systems',
       label: 'Ten parts, at work',
       kicker: 'Ten systems, one platform. Each tile is a machine at work.',
       open: 'Open {part}, {name}',
+    },
+    proof: {
+      label: 'Engineering at a glance',
+      systems: 'working AI systems',
+      backends: 'backend stacks',
+      languages: 'language options',
+      traces: 'inspectable execution traces',
+    },
+    career: {
+      aboutLabel: 'About · Engineering mindset',
+      aboutTitle: 'Built with curiosity. Shipped with discipline.',
+      aboutBody: 'I\'m Landry Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a fictional reference business and demo data.',
+      github: 'Review my GitHub work',
+      contactLabel: 'Let\'s build something useful',
+      contactTitle: 'Need an engineer who can build the whole thing?',
+      contactBody: 'Open to remote engineering projects and technical collaborations. Explore the code, test the systems and start a conversation.',
+      contactAction: 'Connect on GitHub',
     },
     guide: {
       title: 'Selection guide',

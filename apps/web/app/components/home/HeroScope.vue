@@ -34,6 +34,13 @@ function detail(step: HeroStep): string {
     class="hero"
     :aria-label="t('home.hero.label')"
   >
+    <div class="orbital-scene" aria-hidden="true">
+      <span class="orbital-globe" />
+      <span class="orbital-ring orbital-ring--one" />
+      <span class="orbital-ring orbital-ring--two" />
+      <span class="orbital-point orbital-point--one" />
+      <span class="orbital-point orbital-point--two" />
+    </div>
     <div class="intro">
       <p class="kicker">
         {{ t('home.kicker') }}
@@ -527,5 +534,63 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   .hero::after,.hero .intro > *,.hero .scope { animation: none; }
   .hero .way { transition: none; } .hero .way:hover { transform: none; }
+}
+
+/* Sitewide cinematic direction: wider hero, stronger lighting, real recorded trace. */
+.hero {
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 75px);
+  min-height: 640px;
+  border: 0;
+  border-radius: 0;
+  padding: clamp(48px, 6vw, 95px) clamp(18px, 3vw, 44px);
+  background: radial-gradient(ellipse at 69% 33%,rgb(24 91 199 / 21%),transparent 46%);
+}
+.hero::before { background-size: 52px 52px; }
+.hero::after { animation-duration: 18s; }
+.hero .intro { z-index: 1; max-width: 670px; }
+.hero .kicker { font-size: 11px; letter-spacing: .17em; }
+.hero .role { color: #9ebee4; text-transform: uppercase; letter-spacing: .09em; font-size: 11px; }
+.hero h1 { max-width: 12.6ch; font-size: clamp(3.3rem, 5vw, 5.75rem); letter-spacing: -.058em; line-height: 1.02; }
+.hero .ways { gap: 15px; margin-top: 18px; }
+.hero .way { min-height: 52px; padding-inline: 22px; }
+.hero .scope { z-index: 1; transform: perspective(1100px) rotateY(-3deg);
+  box-shadow: 0 24px 78px #000a,0 0 82px #1e80ed25; }
+.hero .facts { margin-top: 26px; }
+.orbital-scene { position: absolute; z-index: 0; pointer-events: none;
+  top: -110px; right: 2%; width: min(660px, 64vw); aspect-ratio: 1; opacity: .62; }
+.orbital-globe { position: absolute; inset: 19%; border-radius: 50%;
+  background: radial-gradient(circle at 28% 25%,#5ed9ff55 0%,#147ff233 17%,#12347a2b 51%,transparent 69%);
+  border: 1px solid #6ac7ff55;
+  box-shadow: inset -18px -12px 60px #1148ac4f,0 0 80px #235ff03d;
+}
+.orbital-globe::before { content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: repeating-linear-gradient(100deg,transparent 0 32px,#66b9ff1e 33px 34px,transparent 35px 56px);
+  clip-path: circle(50% at center); transform: rotate(-18deg); }
+.orbital-ring { position: absolute; border: 1px solid #7cbeff80; border-radius: 50%;
+  box-shadow: 0 0 23px #187cf333; }
+.orbital-ring--one { inset: 25% 3%; transform: rotate(-22deg); animation: orbital-tilt 22s ease-in-out infinite alternate; }
+.orbital-ring--two { inset: 8% 31%; transform: rotate(29deg); animation: orbital-pulse 9s ease-in-out infinite alternate; }
+.orbital-point { position: absolute; width: 9px; height: 9px; border: 1px solid #fff;
+  border-radius: 50%; background: #76e3ff; box-shadow: 0 0 20px #70c8ff,0 0 40px #2389ff; }
+.orbital-point--one { top: 40%; right: 5%; }
+.orbital-point--two { bottom: 24%; left: 27%; }
+@keyframes orbital-tilt { to { transform: rotate(-33deg) scale(1.05); } }
+@keyframes orbital-pulse { to { opacity: .38; transform: rotate(39deg); } }
+@media (max-width: 1030px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 35px; min-height: auto; }
+  .hero .intro { max-width: 720px; }
+  .hero .scope { transform: none; }
+  .orbital-scene { top: 0; right: -24%; width: 80vw; opacity: .36; }
+}
+@media (max-width: 640px) {
+  .hero { padding: 35px 8px 25px; }
+  .hero h1 { font-size: clamp(2.8rem, 11vw, 4.25rem); }
+  .hero .way { min-height: 50px; }
+  .orbital-scene { top: -10%; right: -58%; width: 125vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbital-ring { animation: none; }
+  .hero .scope { transform: none; }
 }
 </style>
