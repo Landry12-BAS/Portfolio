@@ -637,5 +637,4 @@ onUnmounted(() => {
     transition: none;
   }
 }
-
 </style>

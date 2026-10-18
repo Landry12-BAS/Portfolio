@@ -34,7 +34,6 @@ test.describe('languages', () => {
     await expect(menu).toBeHidden()
   })
 
-
   test('closes the mobile drawer on page scroll but keeps settings interactive', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
