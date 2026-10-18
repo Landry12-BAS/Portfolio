@@ -1,32 +1,5 @@
 <script setup lang="ts">
-// <HomeHeroScope>: the landing page's first screen. The headline and the two ways in on the left; on the
-// right, the Scope playing a real recorded run of LB-01: its nine steps as bars on one time axis, the
-// model call under each with its tokens, and a playhead that crosses the run in the run's own time. The
-// numbers come from shared/data/hero-trace.ts, which a test keeps equal to the recording, so what moves
-// here is what happened. The bars are decoration for the eye; the list reads in full without them.
-import { HERO_TRACE } from '~~/shared/data/hero-trace'
-import type { HeroStep } from '~~/shared/data/hero-trace'
-
 const { t } = useI18n()
-
-const total = HERO_TRACE.totalMs
-const seconds = (total / 1000).toFixed(1)
-const steps = HERO_TRACE.steps.map((step, index) => ({ ...step, index, left: `${(step.startMs / total * 100).toFixed(2)}%`, width: `${Math.max(0.4, (step.endMs - step.startMs) / total * 100).toFixed(2)}%` }))
-const calls = HERO_TRACE.steps.filter(step => step.call).length
-
-/** Words a step's duration the way the Scope does: under ten milliseconds, milliseconds, or seconds to one decimal. */
-function duration(step: HeroStep): string {
-  const ms = step.endMs - step.startMs
-  if (ms < 10) return t('home.hero.scope.instant')
-  if (ms < 1000) return t('home.hero.scope.ms', { n: ms })
-  return t('home.hero.scope.s', { n: (ms / 1000).toFixed(1) })
-}
-
-/** The right-hand cell of a step: its model and tokens when it called one, else how long it took. */
-function detail(step: HeroStep): string {
-  if (!step.call) return duration(step)
-  return step.call.tokens ? `${step.call.model} · ${t('home.hero.scope.tokens', { in: step.call.tokens.in, out: step.call.tokens.out })}` : step.call.model
-}
 </script>
 
 <template>
@@ -34,565 +7,172 @@ function detail(step: HeroStep): string {
     class="hero"
     :aria-label="t('home.hero.label')"
   >
-    <div class="orbital-scene" aria-hidden="true">
-      <span class="orbital-globe" />
-      <span class="orbital-ring orbital-ring--one" />
-      <span class="orbital-ring orbital-ring--two" />
-      <span class="orbital-point orbital-point--one" />
-      <span class="orbital-point orbital-point--two" />
+    <div class="hero-grid">
+      <div class="intro">
+        <p class="kicker">
+          {{ t('home.kicker') }}
+        </p>
+        <p class="role">
+          {{ t('home.hero.role') }}
+        </p>
+        <h1>{{ t('home.heading') }}</h1>
+        <p class="lede">
+          {{ t('home.lede') }}
+        </p>
+        <div class="ways">
+          <NuxtLinkLocale
+            class="way way--solid"
+            :to="{ path: '/', hash: '#featured' }"
+          >
+            {{ t('home.hero.pick') }}
+            <span aria-hidden="true">↗</span>
+          </NuxtLinkLocale>
+          <NuxtLinkLocale
+            class="way"
+            :to="{ path: '/', hash: '#scope' }"
+          >
+            {{ t('home.hero.trace') }}
+            <span aria-hidden="true">⌁</span>
+          </NuxtLinkLocale>
+        </div>
+        <div class="skills" :aria-label="t('home.quickref.backends')">
+          <span>Python</span>
+          <span>Django</span>
+          <span>Flask</span>
+          <span>Node.js</span>
+          <span>TypeScript</span>
+          <span>Nuxt / Vue</span>
+        </div>
+        <p class="facts">
+          <span class="stamp">{{ t('home.quickref.stamp') }}</span>
+          <span>{{ t('home.hero.facts') }}</span>
+        </p>
+      </div>
+      <HomeCinematicVisual />
     </div>
-    <div class="intro">
-      <p class="kicker">
-        {{ t('home.kicker') }}
-      </p>
-      <p class="role">
-        {{ t('home.hero.role') }}
-      </p>
-      <h1>{{ t('home.heading') }}</h1>
-      <p class="lede">
-        {{ t('home.lede') }}
-      </p>
-      <div class="ways">
-        <NuxtLinkLocale
-          class="way way--solid"
-          :to="{ path: '/', hash: '#featured' }"
-        >
-          {{ t('home.hero.pick') }}
-        </NuxtLinkLocale>
-        <NuxtLinkLocale
-          class="way"
-          :to="{ path: '/', hash: '#scope' }"
-        >
-          {{ t('home.hero.trace') }}
-        </NuxtLinkLocale>
-      </div>
-      <p class="facts">
-        <span class="stamp">{{ t('home.quickref.stamp') }}</span>
-        <span>{{ t('home.hero.facts') }}</span>
-      </p>
-    </div>
-
-    <figure
-      id="scope"
-      class="scope"
-      :aria-label="t('home.hero.scope.title')"
-    >
-      <figcaption class="scope-head">
-        <span class="scope-title">{{ t('home.hero.scope.title') }}</span>
-        <span class="scope-run">{{ t('home.hero.scope.run') }}</span>
-        <span class="scope-live"><span
-          class="pulse"
-          aria-hidden="true"
-        />{{ t('home.hero.scope.live') }}</span>
-      </figcaption>
-      <p class="sr-only">
-        {{ t('home.hero.scope.summary', { steps: steps.length, calls, seconds, date: HERO_TRACE.recordedAt }) }}
-      </p>
-      <div
-        class="axis"
-        aria-hidden="true"
-      >
-        <span>{{ t('home.hero.scope.step') }}</span>
-        <span>{{ t('home.hero.scope.time', { seconds }) }}</span>
-        <span class="right">{{ t('home.hero.scope.model') }}</span>
-      </div>
-      <ol
-        class="steps"
-        :style="{ '--hero-run': `${total}ms` }"
-      >
-        <li
-          v-for="step in steps"
-          :key="step.name"
-          class="step"
-          :data-kind="step.kind"
-        >
-          <span class="name"><span class="n">{{ String(step.index + 1).padStart(2, '0') }}</span> {{ step.name }}</span>
-          <span
-            class="lane"
-            aria-hidden="true"
-          ><span
-            class="bar"
-            :style="{ left: step.left, width: step.width }"
-          /></span>
-          <span class="detail">{{ detail(step) }}</span>
-        </li>
-        <li
-          class="playhead-row"
-          aria-hidden="true"
-        >
-          <span />
-          <span class="lane lane--head"><span class="playhead" /></span>
-          <span />
-        </li>
-      </ol>
-      <div class="legend">
-        <span data-kind="model">{{ t('home.hero.scope.legend.model') }}</span>
-        <span data-kind="tool">{{ t('home.hero.scope.legend.tool') }}</span>
-        <span data-kind="retrieval">{{ t('home.hero.scope.legend.retrieval') }}</span>
-        <span data-kind="guard">{{ t('home.hero.scope.legend.guard') }}</span>
-        <span class="legend-sum">{{ t('home.hero.scope.footer', { calls, steps: steps.length, seconds, date: HERO_TRACE.recordedAt }) }}</span>
-      </div>
-    </figure>
   </section>
 </template>
 
 <style scoped>
 .hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 620px;
+  color: #f5faff;
+  border: 1px solid rgb(96 161 246 / 42%);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 73% 30%, rgb(16 116 251 / 15%), transparent 53%),
+    radial-gradient(ellipse at 12% 82%, rgb(0 94 222 / 14%), transparent 53%),
+    #050d1c;
+  box-shadow: 0 0 0 1px rgb(95 165 242 / 7%), 0 20px 80px rgb(0 0 0 / 17%);
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgb(128 184 255 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(128 184 255 / 4%) 1px, transparent 1px);
+  background-size: 65px 65px;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 95%);
+}
+.hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
-  gap: 32px 44px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   align-items: center;
+  gap: clamp(12px, 2vw, 32px);
+  padding: clamp(36px, 5vw, 72px);
 }
-
-/* The first screen comes in once, top to bottom, the Scope a beat after the headline. It rises and
-   wipes in, the way a sheet prints, and never fades: text at partial opacity reads as low contrast to
-   an accessibility check that runs while it is still arriving, and to anyone who catches that moment. */
-.intro > *,
-.scope {
-  animation: rise var(--lb-motion-enter) var(--lb-ease) both;
-}
-
-.intro > :nth-child(1) { animation-delay: 40ms; }
-.intro > :nth-child(2) { animation-delay: 110ms; }
-.intro > :nth-child(3) { animation-delay: 180ms; }
-.intro > :nth-child(4) { animation-delay: 250ms; }
-.intro > :nth-child(5) { animation-delay: 320ms; }
-.scope { animation-delay: 240ms; }
-
-@keyframes rise {
-  from {
-    clip-path: inset(0 0 100% 0);
-    transform: translateY(14px);
-  }
-
-  to {
-    clip-path: inset(0);
-    transform: none;
-  }
-}
-
 .intro {
   display: grid;
-  gap: 18px;
-  align-content: start;
-  max-width: 540px;
+  position: relative;
+  z-index: 2;
+  align-content: center;
+  justify-items: start;
+  gap: clamp(12px, 1.8vw, 20px);
 }
-
-.kicker {
+.kicker,
+.role {
   font-family: var(--lb-font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--lb-signal);
+  letter-spacing: .11em;
+  font-size: 11px;
 }
-
+.kicker { color: #8edbff; }
+.role { color: #9db8d9; font-size: 10px; }
 h1 {
-  font-size: clamp(2.4rem, 1.2rem + 4vw, 4.8rem);
-  font-weight: 800;
-  font-stretch: 118%;
-  line-height: 0.96;
-  letter-spacing: -0.02em;
+  max-width: 13ch;
+  font-size: clamp(3.15rem, 5.1vw, 5.95rem);
+  font-weight: 850;
+  line-height: .99;
+  letter-spacing: -.058em;
+  text-wrap: balance;
 }
-
 .lede {
-  max-width: 46ch;
-  font-size: 1.125rem;
-  line-height: 1.45;
-  color: var(--lb-graphite);
+  max-width: 52ch;
+  color: #c0d2e9;
+  font-size: clamp(14px, 1.4vw, 17px);
+  line-height: 1.65;
 }
-
 .ways {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 4px;
+  padding-top: 7px;
 }
-
 .way {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0 20px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--lb-ink);
+  justify-content: center;
+  gap: 18px;
+  min-height: 48px;
+  padding: 10px 18px;
+  color: #e6f3ff;
+  font-size: 13px;
+  font-weight: 800;
   text-decoration: none;
-  border: 1.5px solid var(--lb-ink);
-  border-radius: 4px;
+  border: 1px solid #547ba6;
+  border-radius: 7px;
+  background: rgb(8 23 43 / 45%);
+  transition: transform 240ms ease, background 240ms ease, box-shadow 240ms ease;
 }
-
+.way:hover { transform: translateY(-3px); border-color: #b2e8ff; background: #132c4d; }
 .way--solid {
-  color: var(--lb-sheet);
-  background: var(--lb-ink);
+  border-color: #8cdbff;
+  background: linear-gradient(135deg,#71c9ff,#b6eeff);
+  color: #031424;
+  box-shadow: 0 0 28px rgb(31 153 255 / 32%);
 }
-
-.way:hover {
-  background: var(--lb-shade);
-}
-
-.way--solid:hover {
-  background: var(--lb-ink-hover);
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  margin-top: 8px;
-  font-family: var(--lb-font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--lb-graphite);
-}
-
-.stamp {
+.way--solid:hover { background: #d1f4ff; box-shadow: 0 0 43px rgb(31 153 255 / 58%); }
+.way:focus-visible { outline: 2px solid #d4f7ff; outline-offset: 4px; }
+.skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+.skills span {
   padding: 5px 9px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--lb-ink);
-  border: 1.5px solid var(--lb-ink);
+  font: 600 10px/1.35 var(--lb-font-mono);
+  border-radius: 4px;
+  color: #cbe7ff;
+  border: 1px solid rgb(120 174 241 / 29%);
+  background: rgb(18 45 80 / 49%);
 }
-
-/* The instrument. */
-.scope {
-  display: grid;
-  margin: 0;
-  font-family: var(--lb-font-mono);
-  background: var(--lb-sheet);
-  border: 1.5px solid var(--lb-ink);
-  box-shadow: 0 30px 60px -44px rgb(0 0 0 / 60%);
+.facts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: #9bbbdc;
+  font: 500 10px/1.6 var(--lb-font-mono); }
+.stamp { padding: 5px 9px; color: #dbf2ff; border: 1px solid rgb(124 185 253 / 48%); border-radius: 4px; }
+@media (max-width: 1050px) {
+  .hero-grid { grid-template-columns: 1fr; padding: clamp(22px, 4vw, 44px); }
+  .intro { max-width: 680px; }
+  h1 { font-size: clamp(3rem, 7vw, 5rem); }
 }
-
-.scope-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  align-items: center;
-  padding: 11px 18px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-bottom: 1.5px solid var(--lb-ink);
-}
-
-.scope-title {
-  font-weight: 700;
-}
-
-.scope-run {
-  color: var(--lb-graphite);
-}
-
-.scope-live {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: auto;
-}
-
-.pulse {
-  width: 8px;
-  height: 8px;
-  background: var(--lb-signal);
-  border-radius: 50%;
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.axis,
-.step,
-.playhead-row {
-  display: grid;
-  grid-template-columns: minmax(130px, 150px) minmax(0, 1fr) minmax(120px, 170px);
-  gap: 14px;
-  align-items: center;
-}
-
-.axis {
-  padding: 14px 18px 6px;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--lb-graphite);
-}
-
-.axis .right,
-.detail {
-  text-align: right;
-}
-
-.steps {
-  display: grid;
-  gap: 6px;
-  padding: 2px 18px 10px;
-  margin: 0;
-  list-style: none;
-}
-
-.step {
-  min-height: 22px;
-  font-size: 11px;
-}
-
-.name {
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.n {
-  margin-right: 4px;
-  color: var(--lb-graphite);
-}
-
-.detail {
-  color: var(--lb-graphite);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lane {
-  position: relative;
-  display: block;
-  height: 12px;
-}
-
-.bar {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  background: var(--lb-graphite);
-  border-radius: 2px;
-}
-
-.step[data-kind="model"] .bar { background: var(--lb-ch1); }
-.step[data-kind="tool"] .bar { background: var(--lb-ch2); }
-.step[data-kind="retrieval"] .bar { background: var(--lb-ch3); }
-.step[data-kind="guard"] .bar { background: var(--lb-ch4); }
-
-.playhead-row {
-  margin-top: -6px;
-}
-
-.lane--head {
-  height: 0;
-}
-
-/* The playhead crosses the lane in the run's own time (--hero-run), then starts again. */
-.playhead {
-  position: absolute;
-  top: calc(-9 * 28px);
-  bottom: 0;
-  width: 2px;
-  background: var(--lb-signal);
-  animation: sweep var(--hero-run) linear infinite;
-}
-
-@keyframes sweep {
-  from { left: 0; }
-  to { left: 100%; }
-}
-
-@keyframes pulse {
-  50% { opacity: 0.35; }
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  padding: 10px 18px 14px;
-  font-size: 10.5px;
-  color: var(--lb-graphite);
-  border-top: 1px solid var(--lb-rule);
-}
-
-.legend [data-kind]::before {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 6px;
-  vertical-align: -1px;
-  content: "";
-}
-
-.legend [data-kind="model"]::before { background: var(--lb-ch1); }
-.legend [data-kind="tool"]::before { background: var(--lb-ch2); }
-.legend [data-kind="retrieval"]::before { background: var(--lb-ch3); }
-.legend [data-kind="guard"]::before { background: var(--lb-ch4); }
-
-.legend-sum {
-  margin-left: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .playhead {
-    left: 77%;
-    animation: none;
-  }
-
-  .pulse {
-    animation: none;
-  }
-}
-
-@media (max-width: 980px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .intro {
-    max-width: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .axis,
-  .step,
-  .playhead-row {
-    grid-template-columns: minmax(96px, 110px) minmax(0, 1fr);
-  }
-
-  .axis .right,
-  .detail,
-  .playhead-row > :last-child {
-    display: none;
-  }
-
-  .scope-head,
-  .axis,
-  .steps,
-  .legend {
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .legend-sum {
-    flex-basis: 100%;
-    margin-left: 0;
-  }
-}
-
-/* Premium showcase wraps the authentic measured trace. No synthetic measurements. */
-.hero {
-  --lb-ink: #f4f8ff; --lb-graphite: #b5c7df; --lb-sheet: #101b2d;
-  --lb-rule: rgb(145 191 245 / 23%); --lb-shade: rgb(66 139 239 / 20%);
-  --lb-signal: #80d9ff; --lb-ch1: #73c0ff; --lb-ch2: #73ddcc;
-  --lb-ch3: #b1a6ff; --lb-ch4: #ffcf84;
-  position: relative; isolation: isolate; overflow: hidden;
-  min-height: 520px; padding: clamp(24px, 4vw, 54px);
-  color: #f4f8ff; border: 1px solid rgb(113 163 237 / 31%); border-radius: 20px;
-  background: radial-gradient(ellipse at 82% 9%, rgb(31 108 229 / 29%), transparent 56%),
-    radial-gradient(ellipse at 10% 93%, rgb(23 154 247 / 12%), transparent 53%), #070d18;
-}
-.hero::before {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none; content: '';
-  background-image: linear-gradient(rgb(131 181 247 / 5%) 1px,transparent 1px),
-    linear-gradient(90deg,rgb(131 181 247 / 5%) 1px,transparent 1px);
-  background-size: 46px 46px; mask-image: linear-gradient(to bottom,#000,transparent 94%);
-}
-.hero::after {
-  position: absolute; z-index: -1; top: -175px; right: -150px;
-  width: 490px; height: 490px; pointer-events: none; content: '';
-  background: radial-gradient(circle, rgb(47 133 255 / 16%), transparent 67%);
-  animation: hero-ambient 14s ease-in-out infinite alternate;
-}
-@keyframes hero-ambient { to { transform: translate(-65px, 65px); } }
-.hero .kicker { color: #8bdaff; }
-.hero .role { margin: 0; color: #b8cee7; font: 12px/1.5 var(--lb-font-mono); letter-spacing: .045em; }
-.hero h1 { max-width: 13ch; font-size: clamp(2.45rem, 4.7vw, 5.1rem); line-height: .99; letter-spacing: -.05em; }
-.hero .lede { color: #c5d4e7; font-size: clamp(1rem, 1.4vw, 1.15rem); line-height: 1.55; }
-.hero .way { color: #e0efff; border-color: rgb(151 198 255 / 55%); border-radius: 6px;
-  transition: transform 240ms ease, background 240ms ease, box-shadow 240ms ease; }
-.hero .way--solid { color: #041524; background: #8edaff; border-color: #8edaff; box-shadow: 0 0 25px rgb(45 147 255 / 23%); }
-.hero .way:hover { transform: translateY(-2px); background: rgb(74 153 255 / 24%); }
-.hero .way--solid:hover { color: #041524; background: #bdeeff; box-shadow: 0 0 34px rgb(63 164 255 / 35%); }
-.hero .way:focus-visible { outline: 2px solid #d4f0ff; outline-offset: 4px; }
-.hero .facts,.hero .stamp { color: #b3c8e0; }
-.hero .stamp { border-color: rgb(151 198 255 / 50%); }
-.hero .scope { min-width: 0; color: #eef7ff; background: rgb(13 26 46 / 96%);
-  border: 1px solid rgb(128 184 255 / 46%); border-radius: 13px;
-  box-shadow: 0 24px 60px rgb(0 0 0 / 35%), 0 0 42px rgb(33 110 246 / 12%); }
-.hero .scope-head,.hero .legend { border-color: rgb(151 196 248 / 20%); }
-.hero .scope-run,.hero .scope-live,.hero .axis,.hero .detail,.hero .n,.hero .legend { color: #b3c7df; }
-.hero .playhead { box-shadow: 0 0 14px rgb(110 214 255 / 88%); }
-@media (max-width: 640px) {
-  .hero { min-height: 0; padding: 24px 18px; border-radius: 14px; }
-  .hero h1 { max-width: 14ch; font-size: clamp(2.3rem, 10vw, 4rem); }
+@media (max-width: 600px) {
+  .hero { min-height: 0; }
+  .hero-grid { padding: 27px 20px 14px; }
+  h1 { font-size: clamp(2.55rem, 10.2vw, 4rem); }
+  .way { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero::after,.hero .intro > *,.hero .scope { animation: none; }
-  .hero .way { transition: none; } .hero .way:hover { transform: none; }
-}
-
-/* Sitewide cinematic direction: wider hero, stronger lighting, real recorded trace. */
-.hero {
-  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
-  gap: clamp(28px, 5vw, 75px);
-  min-height: 640px;
-  border: 0;
-  border-radius: 0;
-  padding: clamp(48px, 6vw, 95px) clamp(18px, 3vw, 44px);
-  background: radial-gradient(ellipse at 69% 33%,rgb(24 91 199 / 21%),transparent 46%);
-}
-.hero::before { background-size: 52px 52px; }
-.hero::after { animation-duration: 18s; }
-.hero .intro { z-index: 1; max-width: 670px; }
-.hero .kicker { font-size: 11px; letter-spacing: .17em; }
-.hero .role { color: #9ebee4; text-transform: uppercase; letter-spacing: .09em; font-size: 11px; }
-.hero h1 { max-width: 12.6ch; font-size: clamp(3.3rem, 5vw, 5.75rem); letter-spacing: -.058em; line-height: 1.02; }
-.hero .ways { gap: 15px; margin-top: 18px; }
-.hero .way { min-height: 52px; padding-inline: 22px; }
-.hero .scope { z-index: 1; transform: perspective(1100px) rotateY(-3deg);
-  box-shadow: 0 24px 78px #000a,0 0 82px #1e80ed25; }
-.hero .facts { margin-top: 26px; }
-.orbital-scene { position: absolute; z-index: 0; pointer-events: none;
-  top: -110px; right: 2%; width: min(660px, 64vw); aspect-ratio: 1; opacity: .62; }
-.orbital-globe { position: absolute; inset: 19%; border-radius: 50%;
-  background: radial-gradient(circle at 28% 25%,#5ed9ff55 0%,#147ff233 17%,#12347a2b 51%,transparent 69%);
-  border: 1px solid #6ac7ff55;
-  box-shadow: inset -18px -12px 60px #1148ac4f,0 0 80px #235ff03d;
-}
-.orbital-globe::before { content: ''; position: absolute; inset: 0; border-radius: inherit;
-  background: repeating-linear-gradient(100deg,transparent 0 32px,#66b9ff1e 33px 34px,transparent 35px 56px);
-  clip-path: circle(50% at center); transform: rotate(-18deg); }
-.orbital-ring { position: absolute; border: 1px solid #7cbeff80; border-radius: 50%;
-  box-shadow: 0 0 23px #187cf333; }
-.orbital-ring--one { inset: 25% 3%; transform: rotate(-22deg); animation: orbital-tilt 22s ease-in-out infinite alternate; }
-.orbital-ring--two { inset: 8% 31%; transform: rotate(29deg); animation: orbital-pulse 9s ease-in-out infinite alternate; }
-.orbital-point { position: absolute; width: 9px; height: 9px; border: 1px solid #fff;
-  border-radius: 50%; background: #76e3ff; box-shadow: 0 0 20px #70c8ff,0 0 40px #2389ff; }
-.orbital-point--one { top: 40%; right: 5%; }
-.orbital-point--two { bottom: 24%; left: 27%; }
-@keyframes orbital-tilt { to { transform: rotate(-33deg) scale(1.05); } }
-@keyframes orbital-pulse { to { opacity: .38; transform: rotate(39deg); } }
-@media (max-width: 1030px) {
-  .hero { grid-template-columns: minmax(0, 1fr); gap: 35px; min-height: auto; }
-  .hero .intro { max-width: 720px; }
-  .hero .scope { transform: none; }
-  .orbital-scene { top: 0; right: -24%; width: 80vw; opacity: .36; }
-}
-@media (max-width: 640px) {
-  .hero { padding: 35px 8px 25px; }
-  .hero h1 { font-size: clamp(2.8rem, 11vw, 4.25rem); }
-  .hero .way { min-height: 50px; }
-  .orbital-scene { top: -10%; right: -58%; width: 125vw; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .orbital-ring { animation: none; }
-  .hero .scope { transform: none; }
+  .way { transition: none; }
+  .way:hover { transform: none; }
 }
 </style>

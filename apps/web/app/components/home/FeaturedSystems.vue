@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// Curated selection drawn entirely from the shared EN/CZ datasheet source.
+// All content comes from the translated technical datasheets, never decorative metrics.
 const { t } = useI18n()
 const datasheets = useDatasheets()
-const chosen = new Set(['lb-01', 'lb-06', 'lb-10'])
-const featured = computed(() => datasheets.value.filter(s => chosen.has(s.slug)))
+const order = ['lb-01', 'lb-06', 'lb-10', 'lb-05']
+const featured = computed(() => order.flatMap(slug => datasheets.value.filter(s => s.slug === slug)))
 </script>
 
 <template>
@@ -14,122 +14,291 @@ const featured = computed(() => datasheets.value.filter(s => chosen.has(s.slug))
   >
     <div class="featured-head">
       <div>
-        <p class="eyebrow">
-          {{ t('home.featured.kicker') }}
-        </p>
+        <p class="eyebrow">{{ t('home.featured.kicker') }}</p>
         <h2 id="featured-heading">
           {{ t('home.featured.title') }}
         </h2>
       </div>
-      <p class="summary">
-        {{ t('home.featured.intro') }}
-      </p>
-    </div>
-    <ol class="cards">
-      <li
-        v-for="system in featured"
-        :key="system.part"
-      >
-        <NuxtLinkLocale
-          class="card"
-          :to="'/systems/' + system.slug"
-          :aria-label="t('home.featured.open', { name: system.name })"
-        >
-          <div class="top">
-            <span class="part">{{ system.part }}</span>
-            <span class="runtime">{{ system.runtime }}</span>
-          </div>
-          <div class="scene-wrap">
-            <span class="scene-label">{{ t('home.featured.preview') }}</span>
-            <HomeTileScene :slug="system.slug" />
-          </div>
-          <div class="card-content">
-            <h3>{{ system.name }}</h3>
-            <p>{{ system.function }}</p>
-            <div class="details">
-              <span>{{ system.tags.slice(0, 2).join(' · ') }}</span>
-              <strong>
-                {{ t('home.featured.explore') }}
-                <span aria-hidden="true">↗</span>
-              </strong>
-            </div>
-          </div>
-        </NuxtLinkLocale>
-      </li>
-    </ol>
-    <div class="footer-row">
-      <p>{{ t('home.featured.disclaimer') }}</p>
-      <NuxtLinkLocale
-        class="all"
-        :to="{ path: '/', hash: '#systems' }"
-      >
+      <NuxtLinkLocale class="see-all" :to="{ path: '/', hash: '#systems' }">
         {{ t('home.featured.all') }}
         <span aria-hidden="true">→</span>
       </NuxtLinkLocale>
     </div>
+    <p class="featured-summary">{{ t('home.featured.intro') }}</p>
+    <ol class="cards">
+      <li
+        v-for="(system, i) in featured"
+        :key="system.part"
+      >
+        <NuxtLinkLocale
+          class="card"
+          :class="`card--${system.slug}`"
+          :to="`/systems/${system.slug}`"
+          :aria-label="t('home.featured.open', { name: system.name })"
+        >
+          <div class="card-beam" aria-hidden="true" />
+          <div class="card-head">
+            <span class="card-icon" aria-hidden="true">{{ ['◈', '△', '✧', '▥'][i] }}</span>
+            <span class="card-part">{{ system.part }}</span>
+            <span class="demo-badge"><span class="demo-dot" />{{ t('home.featured.preview') }}</span>
+          </div>
+          <div class="scene-wrap">
+            <HomeTileScene :slug="system.slug" />
+          </div>
+          <div class="card-copy">
+            <h3>{{ system.name }}</h3>
+            <p>{{ system.function }}</p>
+            <div class="tag-row">
+              <span
+                v-for="tag in system.tags.slice(0, 3)"
+                :key="tag"
+                class="tag"
+              >{{ tag }}</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <span>{{ system.runtime }}</span>
+            <strong>
+              {{ t('home.featured.explore') }}
+              <span aria-hidden="true">↗</span>
+            </strong>
+          </div>
+        </NuxtLinkLocale>
+      </li>
+    </ol>
+    <p class="featured-disclaimer">
+      {{ t('home.featured.disclaimer') }}
+    </p>
   </section>
 </template>
 
 <style scoped>
 .featured {
-  --lb-ink: #f4f8ff; --lb-graphite: #b1c6de; --lb-sheet: #111d30;
-  --lb-rule: rgb(143 190 242 / 23%); --lb-shade: rgb(74 144 235 / 17%); --lb-signal: #83d9ff;
-  position: relative; isolation: isolate; display: grid; gap: clamp(24px, 3vw, 40px);
-  overflow: hidden; padding: clamp(24px, 4vw, 50px); color: #f4f8ff;
-  border: 1px solid rgb(116 166 237 / 30%); border-radius: 20px;
-  background: radial-gradient(ellipse at 90% 0%, rgb(35 111 219 / 22%), transparent 55%), #080e19;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 0;
+  color: #f5f9ff;
+  border: 0;
+  background: none;
 }
-.featured::before {
-  position: absolute; z-index: -1; inset: 0; pointer-events: none; content: '';
-  background-image: linear-gradient(rgb(130 174 237 / 4%) 1px,transparent 1px),
-    linear-gradient(90deg,rgb(130 174 237 / 4%) 1px,transparent 1px);
-  background-size: 44px 44px; mask-image: linear-gradient(to bottom,#000,transparent 85%);
+.featured-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
 }
-.featured-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
-.eyebrow,.part,.runtime,.scene-label,.details,.all { font-family: var(--lb-font-mono); font-size: 11px; }
-.eyebrow { margin: 0 0 14px; color: #91dcff; letter-spacing: .12em; text-transform: uppercase; }
-h2 { max-width: 16ch; margin: 0; font-size: clamp(2rem,4vw,3.4rem); letter-spacing: -.045em; line-height: 1.02; }
-.summary { max-width: 35ch; margin: 0; color: #b9cce3; line-height: 1.6; font-size: 15px; }
-.cards { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);
-  gap: 14px; padding: 0; margin: 0; list-style: none; }
-.cards li:first-child { grid-row: span 2; }
-.card { display: flex; flex-direction: column; height: 100%; min-height: 235px;
-  overflow: hidden; color: #f4f8ff; text-decoration: none; border-radius: 14px;
-  border: 1px solid rgb(142 182 237 / 25%); background: linear-gradient(140deg,#182740,#101a2b);
-  transition: border-color 230ms ease, transform 230ms ease, box-shadow 230ms ease; }
-.card:hover { transform: translateY(-4px); border-color: #91dcff; box-shadow: 0 18px 40px rgb(22 101 229 / 19%); }
-.card:focus-visible,.all:focus-visible { outline: 2px solid #d1efff; outline-offset: 4px; }
-.top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
-  padding: 15px 18px; border-bottom: 1px solid rgb(145 183 231 / 18%); }
-.part { color: #92dfff; font-weight: 700; } .runtime { color: #b0c2db; }
-.scene-wrap { position: relative; display: grid; flex: 1; align-content: center; min-height: 124px;
-  padding: 16px 12px 8px; background: radial-gradient(ellipse at 50% 120%,rgb(38 118 242 / 26%),transparent 72%),#101c2f; }
-.cards li:first-child .scene-wrap { min-height: 220px; }
-.scene-label { position: absolute; top: 12px; left: 18px; color: #b4cce7; }
-.scene-wrap :deep(.scene) { width: min(100%,440px); margin: 8px auto 0; border-color: rgb(155 190 234 / 16%); }
-.card-content { display: grid; gap: 10px; padding: 18px; }
-h3 { margin: 0; font-size: clamp(1.25rem,2.1vw,1.65rem); letter-spacing: -.025em; }
-.card-content > p { max-width: 55ch; margin: 0; color: #bccfe4; line-height: 1.55; font-size: 14px; }
-.details { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  gap: 10px; margin-top: 9px; padding-top: 14px; color: #b4c8de;
-  border-top: 1px solid rgb(145 183 231 / 20%); }
-.details strong { color: #9adfff; font-size: 12px; white-space: nowrap; }
-.footer-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.footer-row p { max-width: 62ch; margin: 0; color: #b3c9df; font-size: 12px; line-height: 1.5; }
-.all { display: inline-flex; min-height: 44px; flex: none; align-items: center; gap: 10px;
-  color: #bfe9ff; font-weight: 700; text-decoration: none; }
-.all:hover { color: #fff; }
-@media (max-width: 800px) {
-  .featured-head { display: grid; }
-  .cards { grid-template-columns: minmax(0,1fr); }
-  .cards li:first-child { grid-row: auto; }
-  .cards li:first-child .scene-wrap { min-height: 145px; }
+.eyebrow {
+  margin-bottom: 11px;
+  color: #81d4ff;
+  font: 700 10px/1.5 var(--lb-font-mono);
+  text-transform: uppercase;
+  letter-spacing: .16em;
 }
-@media (max-width: 520px) {
-  .featured { padding: 20px 16px; border-radius: 14px; }
-  .footer-row { flex-direction: column; align-items: start; }
+.featured h2 {
+  max-width: none;
+  font-size: clamp(1.7rem, 3.4vw, 2.8rem);
+  line-height: 1.05;
+  letter-spacing: -.045em;
+}
+.see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  min-height: 43px;
+  color: #9bdfff;
+  font: 700 11px/1.3 var(--lb-font-mono);
+  text-decoration: none;
+}
+.see-all:hover { color: #fff; }
+.featured-summary {
+  max-width: 65ch;
+  margin: 0 0 6px;
+  color: #aac3df;
+  line-height: 1.5;
+  font-size: 13px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 1.5vw, 18px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cards > li { min-width: 0; }
+.card {
+  --system-color: #65b7ff;
+  --system-rgb: 65 183 255;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f3f9ff;
+  text-decoration: none;
+  border: 1px solid rgb(var(--system-rgb) / 50%);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 45% 10%, rgb(var(--system-rgb) / 17%), transparent 64%),
+    linear-gradient(155deg, #121e34, #090f1d);
+  box-shadow: inset 0 0 20px rgb(var(--system-rgb) / 7%), 0 10px 20px rgb(0 0 0 / 12%);
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1), border-color 320ms ease, box-shadow 320ms ease;
+}
+.card--lb-06 { --system-color: #ff797b; --system-rgb: 255 102 112; }
+.card--lb-10 { --system-color: #bb8aff; --system-rgb: 169 104 255; }
+.card--lb-05 { --system-color: #6df0d1; --system-rgb: 82 224 197; }
+.card:hover {
+  transform: translateY(-8px);
+  border-color: var(--system-color);
+  box-shadow: 0 14px 45px rgb(var(--system-rgb) / 23%),
+    inset 0 0 30px rgb(var(--system-rgb) / 12%),
+    0 0 0 1px rgb(var(--system-rgb) / 22%);
+}
+.card:focus-visible {
+  outline: 3px solid #c1eeff;
+  outline-offset: 5px;
+}
+.card-beam {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  inset: -35%;
+  background: conic-gradient(from 100deg at 50% 50%, transparent 0 72%, rgb(var(--system-rgb) / 12%) 80%, transparent 89% 100%);
+  animation: beam-spin 19s linear infinite;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 16px 15px 0;
+}
+.card-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  font-size: 18px;
+  color: var(--system-color);
+  border: 1px solid rgb(var(--system-rgb) / 43%);
+  border-radius: 9px;
+  background: rgb(var(--system-rgb) / 10%);
+  box-shadow: 0 0 20px rgb(var(--system-rgb) / 18%);
+}
+.card-part {
+  color: #acc5df;
+  font: 600 10px/1.2 var(--lb-font-mono);
+}
+.demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: #a6dbc9;
+  font: 600 9px/1.2 var(--lb-font-mono);
+}
+.demo-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #72e7b7;
+  box-shadow: 0 0 10px #59cda5;
+}
+.scene-wrap {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: 145px;
+  margin: 12px 12px 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--system-rgb) / 21%);
+  border-radius: 9px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 21px, rgb(var(--system-rgb) / 5%) 22px),
+    radial-gradient(ellipse at center, rgb(var(--system-rgb) / 17%), transparent 75%), #0a1426;
+}
+.scene-wrap :deep(.scene) {
+  align-self: center;
+  width: calc(100% - 18px);
+  max-width: none;
+  margin: 0 auto;
+  border: 0;
+  --lb-ink: #caebff;
+  --lb-rule: rgb(var(--system-rgb) / 28%);
+  --lb-signal: var(--system-color);
+}
+.card-copy {
+  display: grid;
+  gap: 10px;
+  padding: 19px 16px 14px;
+}
+.card-copy h3 {
+  margin: 0;
+  font-size: clamp(1.12rem, 1.65vw, 1.45rem);
+  line-height: 1.2;
+  letter-spacing: -.03em;
+}
+.card-copy p {
+  display: -webkit-box;
+  min-height: 4.7em;
+  overflow: hidden;
+  color: #b6cae2;
+  font-size: 12px;
+  line-height: 1.58;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  padding: 4px 6px;
+  border: 1px solid rgb(var(--system-rgb) / 27%);
+  border-radius: 4px;
+  color: #abc4e0;
+  background: rgb(var(--system-rgb) / 7%);
+  font: 500 9px/1.25 var(--lb-font-mono);
+}
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding: 13px 15px;
+  color: #9db8d5;
+  border-top: 1px solid rgb(var(--system-rgb) / 21%);
+  font: 600 10px/1.3 var(--lb-font-mono);
+}
+.card-foot strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--system-color);
+  text-align: right;
+  font-size: 10px;
+}
+.featured-disclaimer {
+  margin-top: 0;
+  color: #91a9c5;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@keyframes beam-spin { to { transform: rotate(360deg); } }
+@media (max-width: 1100px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+  .cards { grid-template-columns: 1fr; }
+  .card { min-height: 0; }
+  .scene-wrap { min-height: 170px; }
+  .card-copy p { min-height: 0; }
+  .featured-summary { font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .card-beam { animation: none; }
   .card { transition: none; }
   .card:hover { transform: none; }
 }

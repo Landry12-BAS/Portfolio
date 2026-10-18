@@ -199,4 +199,53 @@ const datasheets = useDatasheets()
 @media (max-width: 700px) { .wall .tiles { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 420px) { .wall .tiles { grid-template-columns: minmax(0,1fr); } .wall .tile { min-height: 260px; } }
 @media (prefers-reduced-motion: reduce) { .wall .tile { transition: none; } .wall .tile:hover { transform: none; } }
+
+/* Full catalog: consistent 10-card immersive grid with distinct system accents. */
+.wall .tiles > li { min-width: 0; }
+.wall .tile { position: relative; isolation: isolate; border-radius: 10px; }
+.wall .tiles > li:nth-child(5n+1) .tile { --tile-rgb: 81 173 255; }
+.wall .tiles > li:nth-child(5n+2) .tile { --tile-rgb: 255 105 116; }
+.wall .tiles > li:nth-child(5n+3) .tile { --tile-rgb: 162 114 255; }
+.wall .tiles > li:nth-child(5n+4) .tile { --tile-rgb: 97 221 196; }
+.wall .tiles > li:nth-child(5n+5) .tile { --tile-rgb: 111 152 255; }
+.wall .tile {
+  border-color: rgb(var(--tile-rgb) / 36%);
+  background:
+    radial-gradient(ellipse at 50% -10%, rgb(var(--tile-rgb) / 15%), transparent 57%),
+    linear-gradient(160deg, #101d31, #080f1d);
+}
+.wall .tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(125deg, transparent 18%, rgb(var(--tile-rgb) / 11%) 48%, transparent 76%);
+  transform: translateX(-35%);
+  transition: opacity 350ms ease, transform 350ms ease;
+}
+.wall .tile:hover::before { opacity: 1; transform: none; }
+.wall .tile:hover {
+  border-color: rgb(var(--tile-rgb) / 80%);
+  box-shadow: 0 14px 42px rgb(var(--tile-rgb) / 18%);
+}
+.wall .tile-head { border-bottom: 1px solid rgb(var(--tile-rgb) / 15%); }
+.wall .tile .part { color: rgb(var(--tile-rgb)); }
+.wall .tile :deep(.scene) {
+  --lb-signal: rgb(var(--tile-rgb));
+  --lb-rule: rgb(var(--tile-rgb) / 23%);
+}
+.wall .tile-cta { color: #a1dfff; }
+@media (max-width: 700px) {
+  .wall .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .wall .tile { min-height: 258px; }
+  .wall .action { font-size: 11px; line-height: 1.45; }
+}
+@media (max-width: 390px) {
+  .wall .tiles { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall .tile::before { transition: none; }
+}
 </style>

@@ -42,6 +42,16 @@ function inPhase(phase: 1 | 2 | 3) {
   <div class="home">
     <HomeHeroScope />
 
+    <HomeActivityStrip />
+
+
+
+    <HomeFeaturedSystems />
+
+    <HomeSystemsWall />
+
+    <HomeTraceConsole />
+
     <section class="proof-strip" :aria-label="t('home.proof.label')">
       <div class="proof-unit">
         <strong>{{ datasheets.length }}</strong>
@@ -60,10 +70,6 @@ function inPhase(phase: 1 | 2 | 3) {
         <span>{{ t('home.proof.traces') }}</span>
       </div>
     </section>
-
-    <HomeFeaturedSystems />
-
-    <HomeSystemsWall />
 
     <section id="systems">
       <LbSectionHead
@@ -254,7 +260,7 @@ function inPhase(phase: 1 | 2 | 3) {
   }
 }
 
-.home { gap: clamp(75px, 8vw, 128px); }
+.home { gap: clamp(38px, 5.4vw, 75px); }
 .home > section { scroll-margin-top: 92px; }
 .proof-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0;
   margin-top: -40px; overflow: hidden; border: 1px solid #274369; border-radius: 12px;
@@ -306,4 +312,26 @@ function inPhase(phase: 1 | 2 | 3) {
   .contact-button { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .contact-button { transition: none; } .contact-button:hover { transform: none; } }
+
+/* More precise cinematic page rhythm, matching the approved editorial mockup. */
+.home { gap: clamp(30px, 4.3vw, 56px); }
+.home :deep(.activity) { margin-top: -11px; }
+.home :deep(.trace-stage) { margin-top: 5px; }
+.proof-strip {
+  margin-top: -10px;
+  border-color: rgb(95 164 250 / 36%);
+  background:
+    radial-gradient(ellipse at 35% 0%, rgb(21 102 212 / 17%), transparent 70%),
+    linear-gradient(110deg,#0d1b31,#081221);
+}
+.proof-unit { padding: 26px 23px; }
+.proof-unit strong {
+  color: #e2f4ff;
+  text-shadow: 0 0 24px rgb(38 154 255 / 30%);
+}
+.home > section { min-width: 0; }
+@media (max-width: 640px) {
+  .home { gap: 33px; }
+  .proof-strip { margin-top: 0; }
+}
 </style>
