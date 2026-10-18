@@ -23,7 +23,7 @@ useHead(() => ({
 }))
 
 // What is below the fold comes in as the visitor reaches it: the tiles of the wall, then each section.
-useRevealOnScroll(['#featured', '.tiles > li', '#systems', '#anatomy', '#build'])
+useRevealOnScroll(['#activity', '#featured .cards > li', '.tiles > li', '#scope', '.proof-unit', '#systems', '#anatomy', '#build', '#about', '#contact'])
 
 // The three build phases, with their names and descriptions in this language.
 const phases = computed(() => [

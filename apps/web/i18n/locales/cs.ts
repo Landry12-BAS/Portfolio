@@ -99,7 +99,7 @@ const cs = {
       preview: 'Interaktivní systém',
       explore: 'Prohlédnout systém',
       open: 'Prohlédnout {name}',
-      disclaimer: 'Dema využívají modelovou firmu a ukázková data. Omezení a naměřené hodnoty najdete v popisu jednotlivých systémů.',
+      disclaimer: 'Ukázky využívají referenční firmu a demonstrační data. Omezení a naměřené hodnoty najdete v popisu jednotlivých systémů.',
       all: 'Zobrazit všech deset systémů',
     },
     wall: {
@@ -119,7 +119,7 @@ const cs = {
     career: {
       aboutLabel: 'O mně · Jak pracuji',
       aboutTitle: 'Zvědavost při návrhu. Důslednost při realizaci.',
-      aboutBody: 'Jsem Landry Bodjona, full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající modelovou firmu a demonstrační data.',
+      aboutBody: 'Jsem Landry Bodjona, full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající referenční firmu a demonstrační data.',
       github: 'Prohlédnout projekty na GitHubu',
       contactLabel: 'Pojďme vytvořit něco užitečného',
       contactTitle: 'Hledáte vývojáře, který zvládne celý produkt?',

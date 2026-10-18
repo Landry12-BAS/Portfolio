@@ -23,12 +23,12 @@ function contrast(one: string, two: string): number {
 }
 
 test.describe('themes', () => {
-  test('follows a light system setting and shows the light logo', async ({ page }) => {
+  test('starts in cinematic dark even when the operating system is light', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' })
     await page.goto('/')
-    await expect(page.locator('html')).toHaveClass(/\blight\b/)
-    await expect(logo(page, 'light')).toBeVisible()
-    await expect(logo(page, 'dark')).toBeHidden()
+    await expect(page.locator('html')).toHaveClass(/\bdark\b/)
+    await expect(logo(page, 'dark')).toBeVisible()
+    await expect(logo(page, 'light')).toBeHidden()
   })
 
   test('follows a dark system setting and shows the dark logo', async ({ page }) => {

@@ -97,7 +97,7 @@ const en = {
       preview: 'Interactive system',
       explore: 'Explore the system',
       open: 'Explore {name}',
-      disclaimer: 'Demos use a fictional reference business and demonstration data. Each datasheet documents operating limits and measurements.',
+      disclaimer: 'Demos use the platform\'s reference business and demonstration data. Each datasheet documents operating limits and measurements.',
       all: 'Explore all ten systems',
     },
     wall: {
@@ -117,7 +117,7 @@ const en = {
     career: {
       aboutLabel: 'About · Engineering mindset',
       aboutTitle: 'Built with curiosity. Shipped with discipline.',
-      aboutBody: 'I\'m Landry Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a fictional reference business and demo data.',
+      aboutBody: 'I\'m Landry Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a reference business and demo data.',
       github: 'Review my GitHub work',
       contactLabel: 'Let\'s build something useful',
       contactTitle: 'Need an engineer who can build the whole thing?',
