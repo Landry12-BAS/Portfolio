@@ -570,6 +570,16 @@ h1 {
   .hero .scope { transform: none; }
 }
 .trace-stage {
+  --lb-ink: #f2faff;
+  --lb-sheet: #0b1728;
+  --lb-graphite: #a7c4e6;
+  --lb-rule: #284363;
+  --lb-signal: #7ed6ff;
+  --lb-ch1: #8fd2ff;
+  --lb-ch2: #72dfcc;
+  --lb-ch3: #d0a5ff;
+  --lb-ch4: #ffcb87;
+  color: #f3faff;
   display: grid;
   gap: 20px;
   padding: clamp(22px, 3.4vw, 38px);

@@ -44,8 +44,6 @@ function inPhase(phase: 1 | 2 | 3) {
 
     <HomeActivityStrip />
 
-
-
     <HomeFeaturedSystems />
 
     <HomeSystemsWall />
@@ -334,4 +332,7 @@ function inPhase(phase: 1 | 2 | 3) {
   .home { gap: 33px; }
   .proof-strip { margin-top: 0; }
 }
+:global(html.light) .home .sec-intro { color: #3b5875; }
+:global(html.light) .home .section-eyebrow { color: #0a669c; }
+:global(html.light) .home :deep(.wall-head h2) { color: #0c243e; }
 </style>

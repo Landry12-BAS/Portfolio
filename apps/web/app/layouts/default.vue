@@ -115,4 +115,18 @@ useSeoMeta({ description: () => t('site.description') })
     padding: 16px 12px 38px;
   }
 }
+/* Light is a luminous canvas; the engineering instruments stay high-contrast dark. */
+:global(html.light) .site--showcase {
+  --lb-desk: #e9f1fb;
+  --lb-sheet: #f7fbff;
+  --lb-ink: #102944;
+  --lb-ink-hover: #174b73;
+  --lb-graphite: #4b6480;
+  --lb-rule: #b8cfe6;
+  --lb-shade: #dceafa;
+  --lb-signal: #0467a4;
+  background:
+    radial-gradient(ellipse at 73% 12%, rgb(89 174 255 / 15%), transparent 45%),
+    #ebf3fc;
+}
 </style>

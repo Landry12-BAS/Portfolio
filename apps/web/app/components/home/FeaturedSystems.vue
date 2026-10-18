@@ -14,7 +14,9 @@ const featured = computed(() => order.flatMap(slug => datasheets.value.filter(s 
   >
     <div class="featured-head">
       <div>
-        <p class="eyebrow">{{ t('home.featured.kicker') }}</p>
+        <p class="eyebrow">
+          {{ t('home.featured.kicker') }}
+        </p>
         <h2 id="featured-heading">
           {{ t('home.featured.title') }}
         </h2>
@@ -24,7 +26,9 @@ const featured = computed(() => order.flatMap(slug => datasheets.value.filter(s 
         <span aria-hidden="true">→</span>
       </NuxtLinkLocale>
     </div>
-    <p class="featured-summary">{{ t('home.featured.intro') }}</p>
+    <p class="featured-summary">
+      {{ t('home.featured.intro') }}
+    </p>
     <ol class="cards">
       <li
         v-for="(system, i) in featured"
@@ -302,4 +306,10 @@ const featured = computed(() => order.flatMap(slug => datasheets.value.filter(s 
   .card { transition: none; }
   .card:hover { transform: none; }
 }
+/* On light canvas the four featured cards stay dark, with dark editorial text. */
+:global(html.light) .featured { color: #0c223a; }
+:global(html.light) .eyebrow { color: #075c99; }
+:global(html.light) .featured-summary { color: #365c80; }
+:global(html.light) .featured-disclaimer { color: #476685; }
+:global(html.light) .see-all { color: #075b97; }
 </style>
