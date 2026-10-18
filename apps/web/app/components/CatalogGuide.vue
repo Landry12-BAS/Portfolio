@@ -183,14 +183,6 @@ function techniqueList(keys: readonly Technique[]) {
   --lb-rule: #b7cbe0;
   --lb-shade: #e0edf8;
 }
-:global(html.light) .guide th {
-  color: #132f4e;
-  background: #dcebf9;
-}
-:global(html.dark) .guide th {
-  color: #f1f7ff;
-  background: #182943;
-}
 .filters {
   display: grid;
   gap: 10px;
@@ -268,6 +260,10 @@ table {
 }
 
 th {
+  /* Header contrast stays AA in both color modes and when embedded on
+     the cinematic homepage. No inherited surface/text pair is assumed. */
+  color: #f1f7ff;
+  background: #172c48;
   padding: 8px 10px;
   text-align: left;
   font-family: var(--lb-font-mono);
@@ -275,7 +271,6 @@ th {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: var(--lb-shade);
   border-bottom: 1.5px solid var(--lb-ink);
 }
 
