@@ -239,6 +239,11 @@ onUnmounted(() => {
 
 <style scoped>
 .toolbar {
+  /* All header controls share a surface and foreground, independent of the
+     showcase palette inherited from the homepage. */
+  --lb-ink: #edf7ff;
+  --lb-sheet: #071424;
+  --lb-shade: #1d3652;
   position: sticky;
   top: env(safe-area-inset-top, 0px);
   z-index: 30;
@@ -639,6 +644,9 @@ onUnmounted(() => {
 }
 /* Distinct light treatment for the navigation and settings drawer. */
 :global(html.light) .toolbar {
+  --lb-ink: #163454;
+  --lb-sheet: #f6fbff;
+  --lb-shade: #e0effb;
   color: #163454;
   background: rgb(246 251 255 / 95%);
   border-bottom-color: #b9cee4;

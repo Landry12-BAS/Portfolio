@@ -174,6 +174,23 @@ function techniqueList(keys: readonly Technique[]) {
 </template>
 
 <style scoped>
+/* The filterable table has its own accessible foreground and background.
+   The light-theme canvas must not borrow dark instrument-panel tokens. */
+:global(html.light) .guide {
+  --lb-ink: #142d49;
+  --lb-sheet: #f9fcff;
+  --lb-graphite: #415c75;
+  --lb-rule: #b7cbe0;
+  --lb-shade: #e0edf8;
+}
+:global(html.light) .guide th {
+  color: #132f4e;
+  background: #dcebf9;
+}
+:global(html.dark) .guide th {
+  color: #f1f7ff;
+  background: #182943;
+}
 .filters {
   display: grid;
   gap: 10px;
