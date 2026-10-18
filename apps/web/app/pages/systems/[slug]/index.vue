@@ -23,10 +23,35 @@ if (!system) {
   throw createError({ statusCode: 404, statusMessage: 'Part not found' })
 }
 
+const canonicalUrl = computed(() => `https://landrybodjona.com${locale.value === 'cs' ? '/cs' : ''}/systems/${system.slug}`)
 useSeoMeta({
   title: `${system.part} ${system.name}`,
   description: system.function,
+  ogType: 'article',
+  ogTitle: `${system.part} ${system.name} · Landry Bodjona`,
+  ogDescription: system.function,
+  ogUrl: () => canonicalUrl.value,
+  twitterCard: 'summary',
 })
+useHead(() => ({
+  link: [{ rel: 'canonical', href: canonicalUrl.value }],
+  script: [{
+    key: 'system-schema',
+    type: 'application/ld+json',
+    textContent: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: system.name,
+      description: system.function,
+      url: canonicalUrl.value,
+      applicationCategory: 'DeveloperApplication',
+      isAccessibleForFree: true,
+      inLanguage: locale.value,
+      creator: { '@type': 'Person', '@id': 'https://landrybodjona.com/#person', name: 'Landry Bodjona' },
+      featureList: system.tags,
+    }),
+  }],
+}))
 
 // The reading mode is shared with every datasheet and board, and remembered between visits.
 const { mode } = storeToRefs(useReadingStore())

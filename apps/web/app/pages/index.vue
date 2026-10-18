@@ -4,8 +4,58 @@
 // (section 2), and the build order (section 3).
 const { t } = useI18n()
 const datasheets = useDatasheets()
+const locale = useLocaleCode()
+const canonicalUrl = computed(() => locale.value === 'cs' ? 'https://landrybodjona.com/cs' : 'https://landrybodjona.com/')
 
-useSeoMeta({ title: () => t('home.title') })
+useSeoMeta({
+  title: () => t('home.title'),
+  description: () => t('site.description'),
+  ogType: 'website',
+  ogTitle: () => `${t('home.title')} · Landry Bodjona`,
+  ogDescription: () => t('site.description'),
+  ogUrl: () => canonicalUrl.value,
+  twitterCard: 'summary',
+})
+// Server-rendered, factual metadata. The visible datasheets remain the source of truth.
+useHead(() => ({
+  link: [{ rel: 'canonical', href: canonicalUrl.value }],
+  script: [{
+    key: 'portfolio-schema',
+    type: 'application/ld+json',
+    textContent: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Person',
+          '@id': 'https://landrybodjona.com/#person',
+          name: 'Landry Bodjona',
+          jobTitle: 'Full-stack and AI engineer',
+          url: 'https://landrybodjona.com/',
+          sameAs: ['https://github.com/Landry12-BAS'],
+          knowsAbout: ['Full-stack development', 'AI agents', 'AI evaluation', 'Backend systems'],
+        },
+        {
+          '@type': 'WebSite',
+          '@id': 'https://landrybodjona.com/#website',
+          name: 'Landry Bodjona — Portfolio',
+          url: 'https://landrybodjona.com/',
+          inLanguage: ['en', 'cs'],
+        },
+        {
+          '@type': 'ItemList',
+          name: t('home.featured.all'),
+          numberOfItems: datasheets.value.length,
+          itemListElement: datasheets.value.map((item, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: item.name,
+            url: `${(canonicalUrl.value.endsWith('/') ? canonicalUrl.value.slice(0, -1) : canonicalUrl.value)}/systems/${item.slug}`,
+          })),
+        },
+      ],
+    }),
+  }],
+}))
 
 // What is below the fold comes in as the visitor reaches it: the tiles of the wall, then each section.
 useRevealOnScroll(['#featured', '.tiles > li', '#systems', '#anatomy', '#build'])
