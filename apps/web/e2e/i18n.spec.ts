@@ -3,12 +3,60 @@
 import { expect, pressUntilPressed, test } from './fixtures'
 
 test.describe('languages', () => {
+  test('keeps mobile navigation and settings inside the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+
+    const trigger = page.getByRole('button', { name: 'Menu' })
+    await expect(trigger).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Language' })).toBeHidden()
+    await expect(page.getByRole('group', { name: 'Theme' })).toBeHidden()
+
+    await trigger.click()
+    const menu = page.locator('#mobile-navigation-panel')
+    await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('navigation', { name: 'Language' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible()
+    await expect(menu.getByRole('link', { name: 'EN English' })).toBeVisible()
+    await expect(menu.getByRole('link', { name: 'CZ Čeština' })).toBeVisible()
+    const theme = menu.getByRole('group', { name: 'Theme' })
+    await expect(theme.getByRole('button', { name: 'Light theme' })).toBeVisible()
+    await expect(theme.getByRole('button', { name: 'Dark theme' })).toBeVisible()
+    await expect(theme.getByRole('button', { name: 'Auto' })).toBeVisible()
+
+    const rect = await menu.boundingBox()
+    expect(rect).not.toBeNull()
+    expect(rect!.x).toBeGreaterThanOrEqual(0)
+    expect(rect!.x + rect!.width).toBeLessThanOrEqual(391)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
+
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+  })
+
+  test('closes the mobile drawer on page scroll but keeps settings interactive', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    const menu = page.locator('#mobile-navigation-panel')
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await expect(menu).toBeVisible()
+
+    const theme = menu.getByRole('group', { name: 'Theme' })
+    await theme.getByRole('button', { name: 'Light theme' }).click()
+    await expect(theme.getByRole('button', { name: 'Light theme' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(menu).toBeVisible()
+
+    await page.evaluate(() => window.scrollBy(0, 120))
+    await expect(menu).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
   test('serves Czech at /cs, marked as Czech for browsers and search engines', async ({ page }) => {
     await page.goto('/cs')
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
-    await expect(page).toHaveTitle('Deset živých AI systémů · Landry Bodjona')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Portfolio, které si můžete vyzkoušet')
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Deset živých AI systémů/)
+    await expect(page).toHaveTitle('Full-stack a AI vývojář · Landry Bodjona')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.')
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Portfolio Landryho Bodjony/)
 
     // Each page links to its twin in the other language, and to a default for everyone else.
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute('href', /^https?:\/\/[^/]+\/?$/)

@@ -17,10 +17,14 @@ import lb10 from './boards/lb-10.en'
 
 const en = {
   site: {
-    description: 'Ten live AI systems for a specialty coffee business, open to every visitor, with a trace of every step they take.',
+    description: 'Explore Landry Bodjona\'s full-stack and AI engineering work: ten interactive systems, execution traces and documented technical decisions.',
     skip: 'Skip to content',
   },
   toolbar: {
+    closeMenu: 'Close menu',
+    menu: 'Menu',
+    about: 'About',
+    contact: 'Contact',
     sections: 'Sections',
     systems: 'Systems',
     build: 'Build order',
@@ -38,10 +42,10 @@ const en = {
     note: 'Landry Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
   },
   home: {
-    title: 'Ten live AI systems',
-    kicker: 'Ten live AI systems · One platform',
-    heading: 'A portfolio you can operate',
-    lede: 'Production-grade AI systems. Real tool calls. Observable execution. Built to be tested, not just admired.',
+    title: 'Full-stack and AI engineer',
+    kicker: 'Landry Bodjona · Full-stack and AI engineering',
+    heading: 'I build AI systems you can operate, inspect, and trust.',
+    lede: 'I build full-stack applications, AI agents and reliable workflows. Explore ten working demos, inspect their traces and see the engineering decisions behind them.',
     quickref: {
       label: 'Quick reference',
       stamp: 'All ten systems built',
@@ -60,8 +64,9 @@ const en = {
       accountsValue: 'None. Visitors stay anonymous',
     },
     hero: {
+      role: 'Full-stack engineer · AI systems · Product engineering',
       label: 'Introduction',
-      pick: 'Pick a system',
+      pick: 'Explore selected work',
       trace: 'Read this trace',
       facts: 'No accounts · English and Czech · Free model tiers behind one gateway',
       scope: {
@@ -85,10 +90,39 @@ const en = {
         },
       },
     },
+    featured: {
+      kicker: 'Selected engineering work',
+      title: 'Engineering you can explore.',
+      intro: 'Start with grounded customer support, multi-agent incident response and systematic AI evaluation.',
+      preview: 'Interactive system',
+      explore: 'Explore the system',
+      open: 'Explore {name}',
+      disclaimer: 'Demos use the platform\'s reference business and demonstration data. Each datasheet documents operating limits and measurements.',
+      all: 'Explore all ten systems',
+    },
     wall: {
+      title: 'Explore all ten systems',
+      count: 'systems',
       label: 'Ten parts, at work',
       kicker: 'Ten systems, one platform. Each tile is a machine at work.',
       open: 'Open {part}, {name}',
+    },
+    proof: {
+      label: 'Engineering at a glance',
+      systems: 'working AI systems',
+      backends: 'backend stacks',
+      languages: 'language options',
+      traces: 'inspectable execution traces',
+    },
+    career: {
+      aboutLabel: 'About · Engineering mindset',
+      aboutTitle: 'Built with curiosity. Shipped with discipline.',
+      aboutBody: 'I\'m Landry Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a reference business and demo data.',
+      github: 'Review my GitHub work',
+      contactLabel: 'Let\'s build something useful',
+      contactTitle: 'Need an engineer who can build the whole thing?',
+      contactBody: 'Open to remote engineering projects and technical collaborations. Explore the code, test the systems and start a conversation.',
+      contactAction: 'Connect on GitHub',
     },
     guide: {
       title: 'Selection guide',

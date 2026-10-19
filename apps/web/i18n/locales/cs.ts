@@ -19,10 +19,14 @@ import type { Messages } from './en'
 
 const cs = {
   site: {
-    description: 'Deset živých AI systémů pro firmu zaměřenou na výběrovou kávu. Každý návštěvník si je může vyzkoušet a každý jejich krok je zaznamenán.',
+    description: 'Portfolio Landryho Bodjony: full-stack vývoj, deset interaktivních AI systémů, záznamy běhů a technicky zdokumentovaná řešení.',
     skip: 'Přejít na obsah',
   },
   toolbar: {
+    closeMenu: 'Zavřít nabídku',
+    menu: 'Nabídka',
+    about: 'O mně',
+    contact: 'Kontakt',
     sections: 'Oddíly',
     systems: 'Systémy',
     build: 'Pořadí vývoje',
@@ -40,10 +44,10 @@ const cs = {
     note: 'Landry Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
   },
   home: {
-    title: 'Deset živých AI systémů',
-    kicker: 'Deset živých AI systémů · Jedna platforma',
-    heading: 'Portfolio, které si můžete vyzkoušet',
-    lede: 'AI systémy v produkční kvalitě. Skutečná volání nástrojů. Dohledatelný průběh. Postavené k vyzkoušení, ne jen k obdivu.',
+    title: 'Full-stack a AI vývojář',
+    kicker: 'Landry Bodjona · Full-stack vývoj a AI',
+    heading: 'Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.',
+    lede: 'Navrhuji a vyvíjím full-stack aplikace, AI agenty a spolehlivé automatizace. Vyzkoušejte deset funkčních ukázek, prozkoumejte záznamy jejich běhu a poznejte technická rozhodnutí za každým systémem.',
     quickref: {
       label: 'Stručný přehled',
       stamp: 'Všech deset systémů hotovo',
@@ -62,8 +66,9 @@ const cs = {
       accountsValue: 'Žádné. Návštěvníci zůstávají anonymní',
     },
     hero: {
+      role: 'Full-stack vývojář · AI systémy · Vývoj produktů',
       label: 'Úvod',
-      pick: 'Vyberte systém',
+      pick: 'Prohlédnout vybrané projekty',
       trace: 'Zobrazit tento záznam',
       facts: 'Bez účtů · Angličtina a čeština · Bezplatné tarify modelů za jedinou bránou',
       scope: {
@@ -87,10 +92,39 @@ const cs = {
         },
       },
     },
+    featured: {
+      kicker: 'Vybrané projekty',
+      title: 'Technická řešení v praxi.',
+      intro: 'Začněte zákaznickou podporou s ověřitelnými zdroji, řešením incidentů a hodnocením AI.',
+      preview: 'Interaktivní systém',
+      explore: 'Prohlédnout systém',
+      open: 'Prohlédnout {name}',
+      disclaimer: 'Ukázky využívají referenční firmu a demonstrační data. Omezení a naměřené hodnoty najdete v popisu jednotlivých systémů.',
+      all: 'Zobrazit všech deset systémů',
+    },
     wall: {
+      title: 'Prozkoumejte všech deset systémů',
+      count: 'systémů',
       label: 'Deset dílů při práci',
       kicker: 'Deset systémů, jedna platforma. Každá dlaždice ukazuje systém při práci.',
       open: 'Otevřít {part}, {name}',
+    },
+    proof: {
+      label: 'Vývoj v číslech',
+      systems: 'funkčních AI systémů',
+      backends: 'backendové technologie',
+      languages: 'jazykové verze',
+      traces: 'dohledatelné záznamy běhů',
+    },
+    career: {
+      aboutLabel: 'O mně · Jak pracuji',
+      aboutTitle: 'Zvědavost při návrhu. Důslednost při realizaci.',
+      aboutBody: 'Jsem Landry Bodjona, full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající referenční firmu a demonstrační data.',
+      github: 'Prohlédnout projekty na GitHubu',
+      contactLabel: 'Pojďme vytvořit něco užitečného',
+      contactTitle: 'Hledáte vývojáře, který zvládne celý produkt?',
+      contactBody: 'Jsem otevřený spolupráci na dálku, technickým projektům a partnerstvím. Prohlédněte si kód, vyzkoušejte systémy a ozvěte se.',
+      contactAction: 'Spojit se přes GitHub',
     },
     guide: {
       title: 'Průvodce výběrem',

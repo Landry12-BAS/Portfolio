@@ -2,6 +2,9 @@
 // <LanguageSwitch>: links to the current page in each of the site's languages. They
 // are plain links, so they work before any script runs and search engines follow
 // them. Each link is named in its own language ("EN English", "CZ Čeština").
+const props = withDefaults(defineProps<{ showFullLabels?: boolean }>(), {
+  showFullLabels: false,
+})
 const { locale, locales, t } = useI18n()
 const switchLocalePath = useSwitchLocalePath()
 
@@ -22,6 +25,7 @@ const links = computed(() => locales.value.map(item => ({
 <template>
   <nav
     class="langs"
+    :class="{ 'langs--expanded': props.showFullLabels }"
     :aria-label="t('toolbar.language')"
   >
     <NuxtLink
@@ -29,11 +33,12 @@ const links = computed(() => locales.value.map(item => ({
       :key="link.code"
       :to="link.to"
       class="lang"
+      :class="{ 'lang--expanded': props.showFullLabels }"
       :lang="link.language"
       :hreflang="link.language"
       :aria-current="link.code === locale ? 'true' : undefined"
     >
-      {{ link.short }}<span class="lb-sr-only"> {{ link.name }}</span>
+      <span class="lang-short">{{ link.short }}</span><span :class="props.showFullLabels ? 'lang-full' : 'lb-sr-only'"> {{ link.name }}</span>
     </NuxtLink>
   </nav>
 </template>

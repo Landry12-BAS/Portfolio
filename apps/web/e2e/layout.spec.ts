@@ -6,8 +6,11 @@ for (const path of ['/', '/cs', '/systems/lb-06', '/cs/systems/lb-06']) {
   test(`${path} fits a 360-pixel screen without sideways scrolling`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 })
     await page.goto(path)
-    // The theme switch renders in the browser only; measure once it is there.
+    // On narrow screens the settings only appear inside the accessible mobile drawer.
+    const menu = page.getByRole('button', { name: /^(Menu|Nabídka)$/ })
+    await menu.click()
     await expect(page.getByRole('group', { name: /^(Theme|Motiv)$/ })).toBeVisible()
+    await page.getByRole('button', { name: /^(Close menu|Zavřít nabídku)$/ }).click()
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBe(0)

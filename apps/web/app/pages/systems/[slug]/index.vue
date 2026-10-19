@@ -23,10 +23,20 @@ if (!system) {
   throw createError({ statusCode: 404, statusMessage: 'Part not found' })
 }
 
+const canonicalUrl = computed(() => `https://landrybodjona.com${locale.value === 'cs' ? '/cs' : ''}/systems/${system.slug}`)
 useSeoMeta({
   title: `${system.part} ${system.name}`,
   description: system.function,
+  ogType: 'article',
+  ogTitle: `${system.part} ${system.name} · Landry Bodjona`,
+  ogDescription: system.function,
+  ogUrl: () => canonicalUrl.value,
+  twitterCard: 'summary',
 })
+// Static canonical metadata only. JSON-LD requires a server-only Trusted Types-safe path.
+useHead(() => ({
+  link: [{ rel: 'canonical', href: canonicalUrl.value }],
+}))
 
 // The reading mode is shared with every datasheet and board, and remembered between visits.
 const { mode } = storeToRefs(useReadingStore())

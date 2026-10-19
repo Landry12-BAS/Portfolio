@@ -9,8 +9,8 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/color-mode'],
   css: [here('./app/assets/css/main.css')],
   colorMode: {
-    // Light by default; dark follows the system until the visitor picks one. The
-    // choice lives in localStorage, never in a cookie (docs/SECURITY.md).
+    // Follow the visitor's operating-system setting until they choose a theme.
+    // This preference is saved locally, never in a cookie.
     preference: 'system',
     fallback: 'light',
     classSuffix: '',

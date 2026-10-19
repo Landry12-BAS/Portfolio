@@ -6,6 +6,8 @@
 import favicon from '#brand/lb-favicon.svg?url'
 
 const { t } = useI18n()
+const route = useRoute()
+const isHome = computed(() => ['/', '/cs', '/cs/'].includes(route.path))
 
 // `lang` on <html> (screen readers pick their voice from it), plus hreflang alternates
 // and og:locale so search engines pair the English and Czech versions of each page.
@@ -20,7 +22,7 @@ useSeoMeta({ description: () => t('site.description') })
 </script>
 
 <template>
-  <div class="site">
+  <div class="site" :class="{ 'site--showcase': isHome }">
     <a
       class="skip"
       href="#main"
@@ -79,5 +81,52 @@ useSeoMeta({ description: () => t('site.description') })
     margin-top: 16px;
     padding: 20px 14px;
   }
+}
+
+/* The homepage is a full-bleed portfolio experience, not a paper datasheet. */
+.site--showcase {
+  --lb-desk: #060b14;
+  --lb-sheet: #0b1524;
+  --lb-ink: #f4f8ff;
+  --lb-ink-hover: #d7ebff;
+  --lb-graphite: #b3c4dc;
+  --lb-rule: #293e5b;
+  --lb-shade: #111e31;
+  --lb-signal: #78ccff;
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background:
+    radial-gradient(ellipse at 76% 9%, rgb(22 84 179 / 23%), transparent 37%),
+    radial-gradient(ellipse at 5% 45%, rgb(15 65 144 / 13%), transparent 42%), #060b14;
+}
+.site--showcase .sheet {
+  max-width: 1480px;
+  margin-top: 0;
+  padding: clamp(18px, 3.2vw, 52px);
+  background: transparent;
+  border: 0;
+}
+.site--showcase .foot {
+  max-width: 1376px;
+}
+@media (max-width: 640px) {
+  .site--showcase .sheet {
+    padding: 16px 12px 38px;
+  }
+}
+/* Light is a luminous canvas; the engineering instruments stay high-contrast dark. */
+:global(html.light) .site--showcase {
+  --lb-desk: #e9f1fb;
+  --lb-sheet: #f7fbff;
+  --lb-ink: #102944;
+  --lb-ink-hover: #174b73;
+  --lb-graphite: #4b6480;
+  --lb-rule: #b8cfe6;
+  --lb-shade: #dceafa;
+  --lb-signal: #0467a4;
+  background:
+    radial-gradient(ellipse at 73% 12%, rgb(89 174 255 / 15%), transparent 45%),
+    #ebf3fc;
 }
 </style>

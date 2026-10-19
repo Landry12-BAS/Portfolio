@@ -174,6 +174,15 @@ function techniqueList(keys: readonly Technique[]) {
 </template>
 
 <style scoped>
+/* The filterable table has its own accessible foreground and background.
+   The light-theme canvas must not borrow dark instrument-panel tokens. */
+:global(html.light) .guide {
+  --lb-ink: #142d49;
+  --lb-sheet: #f9fcff;
+  --lb-graphite: #415c75;
+  --lb-rule: #b7cbe0;
+  --lb-shade: #e0edf8;
+}
 .filters {
   display: grid;
   gap: 10px;
@@ -251,6 +260,10 @@ table {
 }
 
 th {
+  /* Header contrast stays AA in both color modes and when embedded on
+     the cinematic homepage. No inherited surface/text pair is assumed. */
+  color: #f1f7ff;
+  background: #172c48;
   padding: 8px 10px;
   text-align: left;
   font-family: var(--lb-font-mono);
@@ -258,7 +271,6 @@ th {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: var(--lb-shade);
   border-bottom: 1.5px solid var(--lb-ink);
 }
 

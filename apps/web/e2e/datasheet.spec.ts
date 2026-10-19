@@ -55,6 +55,6 @@ test.describe('datasheet', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Part not found')
     await page.getByRole('button', { name: 'Back to the catalog' }).click()
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('A portfolio you can operate')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('I build AI systems you can operate, inspect, and trust.')
   })
 })

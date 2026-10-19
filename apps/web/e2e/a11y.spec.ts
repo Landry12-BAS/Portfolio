@@ -14,6 +14,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
     test(`${path} meets WCAG 2.2 AA in the ${colorScheme} theme`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
       await page.goto(path)
+      // The portfolio now defaults to dark. Explicitly choose each supported theme
+      // before checking contrast and screen-reader semantics.
+      if (colorScheme === 'light') {
+        await page.getByRole('group', { name: /^(Theme|Motiv)$/ })
+          .getByRole('button', { name: /^(Light theme|Světlý motiv)$/ })
+          .click()
+      }
       await expect(page.locator('html')).toHaveClass(themeClass[colorScheme])
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
