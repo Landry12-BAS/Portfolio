@@ -15,7 +15,7 @@ for (const path of ['/', '/cs', '/systems/lb-06', '/cs/systems/lb-06']) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBe(0)
     // The wordmark is hidden from sight here, but the home link keeps its name.
-    await expect(page.getByRole('link', { name: 'Landry Bodjona', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Tchiwa Kibolou Bodjona', exact: true })).toBeVisible()
   })
 }
 

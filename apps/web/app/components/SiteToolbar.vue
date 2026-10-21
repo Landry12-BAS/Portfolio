@@ -94,7 +94,7 @@ onUnmounted(() => {
         :height="20"
         label=""
       />
-      <span class="wordmark">Landry Bodjona</span>
+      <span class="wordmark">Tchiwa Kibolou Bodjona</span>
     </NuxtLinkLocale>
 
     <nav
@@ -727,4 +727,19 @@ onUnmounted(() => {
     box-shadow: 0 0 7px rgb(0 127 194 / 35%);
   }
 }
+/* Retain the full screen-reader name at medium desktop widths without
+   allowing the longer wordmark to crowd the navigation controls. */
+@media (min-width: 851px) and (max-width: 1160px) {
+  .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
 </style>

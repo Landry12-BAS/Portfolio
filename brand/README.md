@@ -2,7 +2,7 @@
 
 Rev C · 27 Sep 2026 · the owner's logo, traced to vector
 
-The logo of Landry Bodjona is an L and a stemless B joined by a blue ribbon. The ribbon
+The logo of Tchiwa Kibolou Bodjona is an L and a stemless B joined by a blue ribbon. The ribbon
 runs from the B's middle bar down to the foot of the L. The owner designed it in two
 versions: ink on white for the light theme and brushed silver on black for the dark
 theme. Both originals are in [`source/`](source).
@@ -33,7 +33,7 @@ of 255 inside the letters.
   interface stays flat.
 - Clear space: the width of the L's stem (16% of the mark's width) on every side.
 - Minimum width: 24 px for the marks, 16 px for the favicon.
-- Wordmark: LANDRY BODJONA in Archivo Expanded 800, beside the mark.
+- Wordmark: TCHIWA KIBOLOU BODJONA in Archivo Expanded 800, beside the mark.
 
 ## Colour
 

@@ -4,7 +4,7 @@ import { expect, test } from './fixtures'
 test.describe('datasheet', () => {
   test('shows the technical sheet, then the 30-second brief, and remembers the choice', async ({ page }) => {
     await page.goto('/systems/lb-01')
-    await expect(page).toHaveTitle('LB-01 Support Desk Agent · Landry Bodjona')
+    await expect(page).toHaveTitle('LB-01 Support Desk Agent · Tchiwa Kibolou Bodjona')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Support Desk Agent')
     await expect(page.getByRole('heading', { name: 'Signal chain' })).toBeVisible()
     await expect(page.getByRole('table', { name: 'Table 1. Operating limits' })).toContainText('Tickets per visitor per day')
