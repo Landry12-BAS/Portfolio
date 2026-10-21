@@ -36,7 +36,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       // The page language and the description come from app.vue, per language.
-      titleTemplate: '%s · Landry Bodjona',
+      titleTemplate: '%s · Tchiwa Kibolou Bodjona',
       meta: [
         { name: 'theme-color', content: '#eceff2', media: '(prefers-color-scheme: light)' },
         { name: 'theme-color', content: '#08090b', media: '(prefers-color-scheme: dark)' },

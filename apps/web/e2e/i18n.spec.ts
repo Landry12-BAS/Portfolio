@@ -54,9 +54,11 @@ test.describe('languages', () => {
   test('serves Czech at /cs, marked as Czech for browsers and search engines', async ({ page }) => {
     await page.goto('/cs')
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs')
-    await expect(page).toHaveTitle('Full-stack a AI vývojář · Landry Bodjona')
+    await expect(page).toHaveTitle('Full-stack a AI vývojář · Tchiwa Kibolou Bodjona')
+    await expect(page.getByRole('link', { name: 'Tchiwa Kibolou Bodjona', exact: true })).toBeVisible()
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', 'Tchiwa Kibolou Bodjona')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.')
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Portfolio Landryho Bodjony/)
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Tchiwa Kibolou Bodjona — portfolio/)
 
     // Each page links to its twin in the other language, and to a default for everyone else.
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute('href', /^https?:\/\/[^/]+\/?$/)
@@ -67,6 +69,9 @@ test.describe('languages', () => {
   test('keeps English as the default at /', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(page.getByRole('link', { name: 'Tchiwa Kibolou Bodjona', exact: true })).toBeVisible()
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /Tchiwa Kibolou Bodjona/)
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /Tchiwa Kibolou Bodjona/)
     const languages = page.getByRole('navigation', { name: 'Language' })
     await expect(languages.getByRole('link', { name: 'EN English' })).toHaveAttribute('aria-current', 'true')
   })

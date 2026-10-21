@@ -19,7 +19,7 @@ import type { Messages } from './en'
 
 const cs = {
   site: {
-    description: 'Portfolio Landryho Bodjony: full-stack vývoj, deset interaktivních AI systémů, záznamy běhů a technicky zdokumentovaná řešení.',
+    description: 'Tchiwa Kibolou Bodjona — portfolio zaměřené na full-stack vývoj, deset interaktivních AI systémů, záznamy běhů a technicky zdokumentovaná řešení.',
     skip: 'Přejít na obsah',
   },
   toolbar: {
@@ -41,11 +41,11 @@ const cs = {
   footer: {
     folder: 'Katalog dílů',
     allParts: 'Všechny díly',
-    note: 'Landry Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
+    note: 'Tchiwa Kibolou Bodjona · LB · Deset AI systémů, navržených, postavených a provozovaných od začátku do konce. Basalt & Bean Coffee Co. je referenční firma platformy a všechna dema běží na ukázkových datech.',
   },
   home: {
     title: 'Full-stack a AI vývojář',
-    kicker: 'Landry Bodjona · Full-stack vývoj a AI',
+    kicker: 'Tchiwa Kibolou Bodjona · Full-stack vývoj a AI',
     heading: 'Vyvíjím AI systémy, které můžete používat, kontrolovat a kterým můžete důvěřovat.',
     lede: 'Navrhuji a vyvíjím full-stack aplikace, AI agenty a spolehlivé automatizace. Vyzkoušejte deset funkčních ukázek, prozkoumejte záznamy jejich běhu a poznejte technická rozhodnutí za každým systémem.',
     quickref: {
@@ -119,7 +119,7 @@ const cs = {
     career: {
       aboutLabel: 'O mně · Jak pracuji',
       aboutTitle: 'Zvědavost při návrhu. Důslednost při realizaci.',
-      aboutBody: 'Jsem Landry Bodjona, full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající referenční firmu a demonstrační data.',
+      aboutBody: 'Jmenuji se Tchiwa Kibolou Bodjona. Jsem full-stack vývojář se zaměřením na AI. Navrhuji použitelné produkty a věnuji pozornost i tomu, co není na první pohled vidět: architektuře, backendovým procesům, testování, dohledatelnosti a uživatelskému zážitku. Těchto deset systémů tvoří interaktivní ukázky využívající referenční firmu a demonstrační data.',
       github: 'Prohlédnout projekty na GitHubu',
       contactLabel: 'Pojďme vytvořit něco užitečného',
       contactTitle: 'Hledáte vývojáře, který zvládne celý produkt?',

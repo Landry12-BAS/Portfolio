@@ -17,7 +17,7 @@ import lb10 from './boards/lb-10.en'
 
 const en = {
   site: {
-    description: 'Explore Landry Bodjona\'s full-stack and AI engineering work: ten interactive systems, execution traces and documented technical decisions.',
+    description: 'Explore Tchiwa Kibolou Bodjona\'s full-stack and AI engineering work: ten interactive systems, execution traces and documented technical decisions.',
     skip: 'Skip to content',
   },
   toolbar: {
@@ -39,11 +39,11 @@ const en = {
   footer: {
     folder: 'Product folder',
     allParts: 'All parts',
-    note: 'Landry Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
+    note: 'Tchiwa Kibolou Bodjona · LB · Ten AI systems, designed, built and run end to end. Basalt & Bean Coffee Co. is the platform’s reference business, and every demo runs on demo data.',
   },
   home: {
     title: 'Full-stack and AI engineer',
-    kicker: 'Landry Bodjona · Full-stack and AI engineering',
+    kicker: 'Tchiwa Kibolou Bodjona · Full-stack and AI engineering',
     heading: 'I build AI systems you can operate, inspect, and trust.',
     lede: 'I build full-stack applications, AI agents and reliable workflows. Explore ten working demos, inspect their traces and see the engineering decisions behind them.',
     quickref: {
@@ -117,7 +117,7 @@ const en = {
     career: {
       aboutLabel: 'About · Engineering mindset',
       aboutTitle: 'Built with curiosity. Shipped with discipline.',
-      aboutBody: 'I\'m Landry Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a reference business and demo data.',
+      aboutBody: 'I\'m Tchiwa Kibolou Bodjona, a full-stack and AI engineer. I design usable products and take care of the details behind the interface: architecture, backend workflows, testing, observability and the experience of the person using it. These ten systems are interactive demonstrations using a reference business and demo data.',
       github: 'Review my GitHub work',
       contactLabel: 'Let\'s build something useful',
       contactTitle: 'Need an engineer who can build the whole thing?',

@@ -3,7 +3,7 @@
   <img src="brand/lb-mark-light.svg" alt="LB" width="96" height="77">
 </picture>
 
-# Landry Bodjona · Portfolio
+# Tchiwa Kibolou Bodjona · Portfolio
 Where real-world work meets AI, agentic intelligence, and powerful tools.
 
 Ten live AI systems on one platform, built around a specialty coffee business, Basalt &
