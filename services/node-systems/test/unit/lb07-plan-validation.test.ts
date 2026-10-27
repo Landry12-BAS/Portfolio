@@ -4,7 +4,7 @@
 // enormous answer is refused by the schema, cheaply, before any browser session opens; a re-plan gets no repair;
 // and the one repair a plan gets carries back only the problems' paths and a bounded echo, never more.
 import { createRun, runScope, Tracer } from '@lb/common'
-import { lb07ReplanAnswerSchema, lb07StepSchema } from '@lb/contracts'
+import { LB07_LIMITS, lb07ReplanAnswerSchema, lb07StepSchema } from '@lb/contracts'
 import { describe, expect, it } from 'vitest'
 
 import { MAX_ECHO_CHARS, readReply, repairMessages } from '../../src/modules/lb07/agent/ask.ts'
@@ -102,7 +102,7 @@ describe('the agent given what is not a plan', () => {
   })
 
   it('lists problems in a repair without the values that caused them, and never more than six of them, each bounded', () => {
-    const value = JSON.parse(`{"reading":"r","steps":[{"action":"goto","path":"/"},${Array.from({ length: 30 }, () => `{"action":"click","role":"iframe","name":"${'n'.repeat(500)}","${'k'.repeat(300)}":1}`).join(',')}]}`) as unknown
+    const value = JSON.parse(`{"reading":"r","steps":[{"action":"goto","path":"/"},${Array.from({ length: LB07_LIMITS.maxPlanSteps - 1 }, () => `{"action":"click","role":"iframe","name":"${'n'.repeat(500)}","${'k'.repeat(300)}":1}`).join(',')}]}`) as unknown
     const read = readReply({ kind: 'json', value }, planAnswerSchema)
     expect('problems' in read).toBe(true)
     const problems = 'problems' in read ? read.problems : []
