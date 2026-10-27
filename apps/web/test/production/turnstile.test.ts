@@ -63,3 +63,34 @@ describe('a production build', () => {
     expect(state).toMatchObject({ available: true, testMode: false, siteKey: 'site-key-for-tests' })
   })
 })
+
+// Cloudflare owns token lifetime and single-use enforcement; production must honor those refusals.
+describe('Siteverify token lifecycle', () => {
+  it('accepts a valid token once and refuses its reuse and an expired token', async () => {
+    const used = new Set<string>()
+    const cloudflare: typeof fetch = async (_input, init) => {
+      const token = new URLSearchParams(String(init?.body)).get('response') ?? ''
+      if (token === 'expired-token' || used.has(token)) {
+        return Response.json({ 'success': false, 'error-codes': ['timeout-or-duplicate'] })
+      }
+      used.add(token)
+      return Response.json({ success: true, hostname: 'example.com' })
+    }
+    const check = { secret: 'secret-for-tests', hostname: 'example.com', fetch: cloudflare }
+
+    expect(await verifyTurnstile('fresh-token', check)).toBe('passed')
+    expect(await verifyTurnstile('fresh-token', check)).toBe('failed')
+    expect(await verifyTurnstile('expired-token', check)).toBe('failed')
+    expect(await verifyTurnstile('another-fresh-token', check)).toBe('passed')
+  })
+
+  it('fails closed when Siteverify times out or returns an invalid answer', async () => {
+    const timeout: typeof fetch = () => Promise.reject(new DOMException('Timed out', 'TimeoutError'))
+    const malformed: typeof fetch = () => Promise.resolve(Response.json({ success: 'true' }))
+    const down: typeof fetch = () => Promise.resolve(new Response(null, { status: 503 }))
+
+    for (const cloudflare of [timeout, malformed, down]) {
+      expect(await verifyTurnstile('token', { secret: 'secret-for-tests', hostname: 'example.com', fetch: cloudflare })).toBe('unavailable')
+    }
+  })
+})

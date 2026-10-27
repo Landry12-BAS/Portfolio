@@ -43,7 +43,7 @@
     "vega-lite": "^6.4.3",
     "vue": "^3.5.43",
     "vue-i18n": "^11.4.12",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
@@ -52,7 +52,7 @@
     "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "^21.0.4",
     "ioredis": "^6.0.0",
     "vitest": "^5.0.2",
     "vue-tsc": "^3.3.11",

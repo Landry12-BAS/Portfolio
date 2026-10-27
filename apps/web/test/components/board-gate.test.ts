@@ -18,6 +18,7 @@ interface Rendered {
   'callback': (token: string) => void
   'error-callback': () => void
   'timeout-callback': () => void
+  'expired-callback': () => void
 }
 
 /** Puts a stand-in widget on the page and returns what it was asked to render. */
@@ -174,6 +175,34 @@ describe('BoardTurnstileGate', () => {
     const { widget, passed } = await startCheck()
     widget.renders[0]?.['timeout-callback']()
     await expect(passed).resolves.toBe(false)
+  })
+
+  it('discards an expired token and renders a fresh widget on the next attempt', async () => {
+    const { widget, passed, session } = await startCheck()
+    widget.renders[0]?.['expired-callback']()
+    await expect(passed).resolves.toBe(false)
+    expect(session.verified).toBe(false)
+
+    const again = session.ensureVerified()
+    await vi.waitFor(() => expect(widget.renders).toHaveLength(2))
+    widget.renders[1]?.callback('good-token')
+    await expect(again).resolves.toBe(true)
+    expect(session.verified).toBe(true)
+  })
+
+  it('fails closed on a submission network error and accepts a fresh token on retry', async () => {
+    const { widget, passed, session } = await startCheck()
+    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('network down')))
+    widget.renders[0]?.callback('first-token')
+    await expect(passed).resolves.toBe(false)
+    expect(session.verified).toBe(false)
+    expect(session.problem?.kind).toBe('network')
+
+    vi.stubGlobal('fetch', new FakeSite({ testMode: false }).fetch)
+    const again = session.ensureVerified()
+    await vi.waitFor(() => expect(widget.renders).toHaveLength(2))
+    widget.renders[1]?.callback('good-token')
+    await expect(again).resolves.toBe(true)
   })
 
   it('does not start a widget in the test build, which passes the check by itself', async () => {
